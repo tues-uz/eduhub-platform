@@ -1,0 +1,250 @@
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  Users,
+  BookOpen,
+  BarChart3,
+  Settings,
+  Shield,
+  TrendingUp,
+  UserPlus,
+  GraduationCap,
+  Activity,
+  MoreHorizontal,
+  ArrowRight,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import DashboardSidebar from "@/components/DashboardSidebar";
+
+const AdminDashboard = () => {
+  const userName = localStorage.getItem("userName") || "Admin";
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem("sidebarCollapsed");
+    return saved === "true";
+  });
+
+  useEffect(() => {
+    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
+    check();
+    const id = setInterval(check, 100);
+    return () => clearInterval(id);
+  }, []);
+
+  const stats = [
+    { icon: Users, label: "Total Users", value: "2,847", change: "+142", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
+    { icon: GraduationCap, label: "Students", value: "2,521", change: "+89", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
+    { icon: BookOpen, label: "Courses", value: "48", change: "+5", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
+    { icon: TrendingUp, label: "Active Sessions", value: "312", change: "+23", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
+  ];
+
+  const recentUsers = [
+    { id: 1, name: "Sevinch", email: "Sevinch@eduhub.com", role: "Student", joined: "2024-01-10", status: "Active" },
+    { id: 2, name: "Dr. Karimov", email: "karimov@eduhub.com", role: "Teacher", joined: "2024-01-09", status: "Active" },
+    { id: 3, name: "Sarah Johnson", email: "sarah.j@eduhub.com", role: "Teacher", joined: "2024-01-08", status: "Active" },
+    { id: 4, name: "Ahmed Hassan", email: "ahmed@eduhub.com", role: "Student", joined: "2024-01-07", status: "Inactive" },
+  ];
+
+  const systemActivity = [
+    { action: "New user registered", detail: "Sevinch (Student)", time: "10 min ago" },
+    { action: "Course published", detail: "Introduction to Economics", time: "1 hour ago" },
+    { action: "Teacher account created", detail: "Dr. Karimov", time: "2 hours ago" },
+    { action: "Certificate issued", detail: "Business Fundamentals — 12 students", time: "3 hours ago" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+      <DashboardSidebar />
+      <main className={`pt-16 lg:pt-8 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+        <div className="container mx-auto px-6">
+          {/* Professional Header */}
+          <div className="mb-8 pb-6 border-b border-slate-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-semibold text-slate-900 mb-1.5 tracking-tight">
+                  {userName}
+                </h1>
+                <p className="text-slate-600 text-sm font-medium">
+                  Admin Dashboard
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md uppercase tracking-wide">
+                  Admin
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Professional Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {stats.map((stat, i) => {
+              const Icon = stat.icon;
+              return (
+                <div
+                  key={i}
+                  className="bg-white border border-slate-200 rounded-lg p-5 hover:border-slate-300 hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={`${stat.bgColor} p-2.5 rounded-md border ${stat.borderColor}`}>
+                      <Icon className={`h-5 w-5 ${stat.color}`} />
+                    </div>
+                    <div className={`flex items-center gap-1 text-xs font-medium ${
+                      stat.trend === "up" ? "text-emerald-600" : "text-red-600"
+                    }`}>
+                      {stat.trend === "up" ? <TrendingUp className="h-3 w-3" /> : <TrendingUp className="h-3 w-3 rotate-180" />}
+                      {stat.change}
+                    </div>
+                  </div>
+                  <p className="text-3xl font-bold text-slate-900 mb-1">{stat.value}</p>
+                  <p className="text-xs font-medium text-slate-600 uppercase tracking-wide">{stat.label}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="space-y-6">
+            {/* Recent Users Table */}
+            <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
+              <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Recent Users
+                </h2>
+                <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white h-8">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add User
+                </Button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Role</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {recentUsers.map((u) => (
+                      <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-medium text-slate-900">{u.name}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-slate-600">{u.email}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-700">{u.role}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`text-sm font-medium ${u.status === "Active" ? "text-emerald-600" : "text-slate-500"}`}>{u.status}</span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 hover:text-slate-900">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>View</DropdownMenuItem>
+                              <DropdownMenuItem>Edit</DropdownMenuItem>
+                              <DropdownMenuItem className="text-red-600">Deactivate</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* System Activity */}
+            <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
+              <div className="px-6 py-4 border-b border-slate-200">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  System Activity
+                </h2>
+              </div>
+              <div className="divide-y divide-slate-200">
+                {systemActivity.map((item, i) => (
+                  <div key={i} className="px-6 py-4 hover:bg-slate-50 transition-colors flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                      <Activity className="h-4 w-4 text-slate-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-900">{item.action}</p>
+                      <p className="text-xs text-slate-600 mt-0.5">{item.detail}</p>
+                      <p className="text-xs text-slate-500 mt-1">{item.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Actions and Admin Access */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
+                <div className="px-5 py-4 border-b border-slate-200">
+                  <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
+                    Quick Actions
+                  </h2>
+                </div>
+                <div className="p-4 space-y-2">
+                  <Link to="/dashboard/admin/users">
+                    <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
+                      <Users className="h-4 w-4 mr-2.5" />
+                      <span className="text-sm font-medium">Manage Users</span>
+                    </Button>
+                  </Link>
+                  <Link to="/dashboard/admin/courses">
+                    <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
+                      <BookOpen className="h-4 w-4 mr-2.5" />
+                      <span className="text-sm font-medium">Manage Courses</span>
+                    </Button>
+                  </Link>
+                  <Link to="/dashboard/admin/analytics">
+                    <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
+                      <BarChart3 className="h-4 w-4 mr-2.5" />
+                      <span className="text-sm font-medium">Analytics</span>
+                    </Button>
+                  </Link>
+                  <Link to="/dashboard/admin/settings">
+                    <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
+                      <Settings className="h-4 w-4 mr-2.5" />
+                      <span className="text-sm font-medium">System Settings</span>
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg shadow-lg p-6 text-white">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                    <Shield className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-base font-semibold">
+                    Admin Access
+                  </h2>
+                </div>
+                <p className="text-sm text-slate-300 mb-4">
+                  You have full access to users, courses, and platform configuration.
+                </p>
+                <p className="text-xs text-slate-400">Logged in as {userName}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default AdminDashboard;

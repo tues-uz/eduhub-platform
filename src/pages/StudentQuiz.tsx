@@ -1,0 +1,270 @@
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { ClipboardList, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import DashboardSidebar from "@/components/DashboardSidebar";
+
+type QuizOption = { letter: "A" | "B" | "C" | "D"; text: string; correct: boolean };
+type QuizQuestion = { id: number; question: string; image?: string; options: QuizOption[] };
+type Quiz = { id: number; title: string; questions: QuizQuestion[] };
+
+const QUIZZES: Quiz[] = [
+  {
+    id: 1,
+    title: "Introduction to Economics",
+    questions: [
+      {
+        id: 1,
+        question: "What is the main focus of microeconomics?",
+        image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=80",
+        options: [
+          { letter: "A", text: "National income and employment", correct: false },
+          { letter: "B", text: "Individual consumers and firms", correct: true },
+          { letter: "C", text: "International trade policies", correct: false },
+          { letter: "D", text: "Government budget deficits", correct: false },
+        ],
+      },
+      {
+        id: 2,
+        question: "When demand increases and supply stays the same, what happens to price?",
+        image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80",
+        options: [
+          { letter: "A", text: "Price decreases", correct: false },
+          { letter: "B", text: "Price stays the same", correct: false },
+          { letter: "C", text: "Price increases", correct: true },
+          { letter: "D", text: "Price becomes zero", correct: false },
+        ],
+      },
+      {
+        id: 3,
+        question: "What does 'opportunity cost' mean?",
+        image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
+        options: [
+          { letter: "A", text: "The price of a product in the market", correct: false },
+          { letter: "B", text: "The value of the next best alternative given up", correct: true },
+          { letter: "C", text: "The cost of producing one more unit", correct: false },
+          { letter: "D", text: "The total cost of a business", correct: false },
+        ],
+      },
+    ],
+  },
+  {
+    id: 2,
+    title: "Business Management Basics",
+    questions: [
+      {
+        id: 1,
+        question: "What is SWOT analysis used for?",
+        image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
+        options: [
+          { letter: "A", text: "Financial reporting", correct: false },
+          { letter: "B", text: "Strategic planning and assessment", correct: true },
+          { letter: "C", text: "Employee payroll", correct: false },
+          { letter: "D", text: "Inventory management", correct: false },
+        ],
+      },
+      {
+        id: 2,
+        question: "Which leadership style involves little direct supervision?",
+        image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80",
+        options: [
+          { letter: "A", text: "Autocratic", correct: false },
+          { letter: "B", text: "Laissez-faire", correct: true },
+          { letter: "C", text: "Transactional", correct: false },
+          { letter: "D", text: "Directive", correct: false },
+        ],
+      },
+    ],
+  },
+];
+
+const LETTER_COLORS = ["bg-blue-500", "bg-red-500", "bg-amber-500", "bg-green-500"] as const;
+
+const StudentQuiz = () => {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
+  const [screen, setScreen] = useState<"list" | "quiz" | "result">("list");
+  const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedOption, setSelectedOption] = useState<"A" | "B" | "C" | "D" | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [score, setScore] = useState(0);
+
+  useEffect(() => {
+    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
+    const id = setInterval(check, 100);
+    return () => clearInterval(id);
+  }, []);
+
+  const startQuiz = (quiz: Quiz) => {
+    setCurrentQuiz(quiz);
+    setCurrentIndex(0);
+    setSelectedOption(null);
+    setShowFeedback(false);
+    setScore(0);
+    setScreen("quiz");
+  };
+
+  const question = currentQuiz?.questions[currentIndex];
+
+  const handleSelectOption = (letter: "A" | "B" | "C" | "D") => {
+    if (showFeedback || !question) return;
+    setSelectedOption(letter);
+    const opt = question.options.find((o) => o.letter === letter);
+    if (opt?.correct) setScore((s) => s + 1);
+    setShowFeedback(true);
+  };
+
+  const handleNext = () => {
+    if (!currentQuiz) return;
+    if (currentIndex < currentQuiz.questions.length - 1) {
+      setCurrentIndex((i) => i + 1);
+      setSelectedOption(null);
+      setShowFeedback(false);
+    } else {
+      setScreen("result");
+    }
+  };
+
+  const resetQuiz = () => {
+    setScreen("list");
+    setCurrentQuiz(null);
+    setCurrentIndex(0);
+    setSelectedOption(null);
+    setShowFeedback(false);
+    setScore(0);
+  };
+
+  return (
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
+      <DashboardSidebar />
+      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+        <div className="container mx-auto px-6 max-w-3xl">
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
+
+          {screen === "list" && (
+            <>
+              <div className="mb-8">
+                <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
+                  Quiz
+                </h1>
+                <p className="text-foreground/70 text-sm">Choose a quiz and answer multiple choice questions (A, B, C, D).</p>
+              </div>
+              <div className="space-y-4">
+                {QUIZZES.map((quiz) => (
+                  <div
+                    key={quiz.id}
+                    className="flex items-center justify-between rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm transition-all hover:border-gray-300/50 hover:shadow-md"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100">
+                        <ClipboardList className="h-6 w-6 text-violet-600" />
+                      </div>
+                      <div>
+                        <h2 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                          {quiz.title}
+                        </h2>
+                        <p className="text-sm text-foreground/60">{quiz.questions.length} questions</p>
+                      </div>
+                    </div>
+                    <Button
+                      className="rounded-full"
+                      style={{ backgroundColor: "#3954d0" }}
+                      onClick={() => startQuiz(quiz)}
+                    >
+                      Start
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {screen === "quiz" && currentQuiz && question && (
+            <>
+              <div className="mb-6 flex items-center justify-between text-sm text-foreground/60">
+                <span>{currentQuiz.title}</span>
+                <span>Question {currentIndex + 1} of {currentQuiz.questions.length}</span>
+              </div>
+              <div className="rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm mb-6">
+                {question.image && (
+                  <div className="mb-4 rounded-lg overflow-hidden bg-gray-100 aspect-video w-full max-h-72">
+                    <img
+                      src={question.image}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <h2 className="mb-6 text-lg font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                  {question.question}
+                </h2>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {question.options.map((opt, i) => {
+                    const isSelected = selectedOption === opt.letter;
+                    return (
+                      <button
+                        key={opt.letter}
+                        type="button"
+                        disabled={showFeedback}
+                        onClick={() => handleSelectOption(opt.letter)}
+                        className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-all ${
+                          isSelected
+                            ? "border-violet-500 bg-violet-50"
+                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        <span
+                          className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white ${LETTER_COLORS[i]}`}
+                        >
+                          {opt.letter}
+                        </span>
+                        <span className="text-foreground">{opt.text}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {showFeedback && (
+                <div className="flex justify-end">
+                  <Button className="rounded-full" style={{ backgroundColor: "#3954d0" }} onClick={handleNext}>
+                    {currentIndex < currentQuiz.questions.length - 1 ? "Next question" : "Submit"}
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+
+          {screen === "result" && currentQuiz && (
+            <div className="rounded-xl border border-gray-200/50 bg-white/80 p-8 shadow-sm text-center">
+              <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                <CheckCircle2 className="h-8 w-8 text-green-600" />
+              </div>
+              <h2 className="mb-2 text-2xl font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                Quiz complete!
+              </h2>
+              <p className="mb-6 text-foreground/70">
+                The result and info of this quiz will be sent to your email.
+              </p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <Button variant="outline" className="rounded-full" onClick={resetQuiz}>
+                  Back to quizzes
+                </Button>
+                <Button className="rounded-full" style={{ backgroundColor: "#3954d0" }} onClick={() => startQuiz(currentQuiz)}>
+                  Retry quiz
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default StudentQuiz;

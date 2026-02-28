@@ -1,0 +1,272 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+@import '@fontsource/geist-sans/400.css';
+@import '@fontsource/geist-sans/500.css';
+@import '@fontsource/geist-sans/600.css';
+@import '@fontsource/geist-sans/700.css';
+@import '@fontsource/geist-sans/800.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 210 50% 14%;
+        --card: 0 0% 100%;
+        --card-foreground: 210 50% 14%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 210 50% 14%;
+        --primary: 213 100% 14%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 37 30% 69%;
+        --secondary-foreground: 210 50% 14%;
+        --muted: 210 20% 96%;
+        --muted-foreground: 210 20% 40%;
+        --accent: 37 40% 75%;
+        --accent-foreground: 210 50% 14%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 210 20% 90%;
+        --input: 210 20% 90%;
+        --ring: 213 100% 14%;
+        --radius: 0.25rem;
+        --oxford-blue: 213 100% 14%;
+        --oxford-gold: 37 40% 69%;
+        --oxford-cream: 40 30% 96%;
+        --oxford-dark: 210 50% 8%;
+        --sidebar-background: 0 0% 98%;
+        --sidebar-foreground: 240 5.3% 26.1%;
+        --sidebar-primary: 240 5.9% 10%;
+        --sidebar-primary-foreground: 0 0% 98%;
+        --sidebar-accent: 240 4.8% 95.9%;
+        --sidebar-accent-foreground: 240 5.9% 10%;
+        --sidebar-border: 220 13% 91%;
+        --sidebar-ring: 217.2 91.2% 59.8%;
+    }
+
+    .dark {
+        --background: 210 50% 8%;
+        --foreground: 0 0% 98%;
+        --card: 210 50% 12%;
+        --card-foreground: 0 0% 98%;
+        --popover: 210 50% 12%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 37 40% 69%;
+        --primary-foreground: 210 50% 8%;
+        --secondary: 213 100% 14%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 210 30% 15%;
+        --muted-foreground: 210 20% 65%;
+        --accent: 37 40% 75%;
+        --accent-foreground: 210 50% 8%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 210 30% 20%;
+        --input: 210 30% 20%;
+        --ring: 37 40% 69%;
+        --sidebar-background: 240 5.9% 10%;
+        --sidebar-foreground: 240 4.8% 95.9%;
+        --sidebar-primary: 224.3 76.3% 48%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 240 3.7% 15.9%;
+        --sidebar-accent-foreground: 240 4.8% 95.9%;
+        --sidebar-border: 240 3.7% 15.9%;
+        --sidebar-ring: 217.2 91.2% 59.8%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground font-sans antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-serif;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    [class*="animate-"],
+    [class*="transition-"] {
+        will-change: transform, opacity;
+    }
+
+    video {
+        transform: translateZ(0);
+        backface-visibility: hidden;
+    }
+
+    img {
+        content-visibility: auto;
+    }
+
+    @keyframes rotate {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .animate-rotate {
+        animation: rotate 3s linear infinite;
+    }
+
+    @keyframes scroll {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(-50%);
+        }
+    }
+
+    .animate-scroll {
+        animation: scroll 30s linear infinite;
+        width: fit-content;
+    }
+
+    @keyframes slideUp {
+        0% {
+            transform: translateY(0);
+        }
+
+        2% {
+            transform: translateY(0);
+        }
+
+        20% {
+            transform: translateY(0);
+        }
+
+        22% {
+            transform: translateY(calc(-1 * 1.2em));
+        }
+
+        40% {
+            transform: translateY(calc(-1 * 1.2em));
+        }
+
+        42% {
+            transform: translateY(calc(-2 * 1.2em));
+        }
+
+        60% {
+            transform: translateY(calc(-2 * 1.2em));
+        }
+
+        62% {
+            transform: translateY(calc(-3 * 1.2em));
+        }
+
+        80% {
+            transform: translateY(calc(-3 * 1.2em));
+        }
+
+        82% {
+            transform: translateY(calc(-4 * 1.2em));
+        }
+
+        98% {
+            transform: translateY(calc(-4 * 1.2em));
+        }
+
+        100% {
+            transform: translateY(calc(-5 * 1.2em));
+        }
+    }
+}
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .oxford-gradient {
+        background: linear-gradient(180deg, hsl(var(--oxford-blue)) 0%, hsl(var(--oxford-dark)) 100%);
+    }
+
+    .gold-gradient {
+        background: linear-gradient(135deg, hsl(var(--oxford-gold)) 0%, hsl(37 50% 60%) 100%);
+    }
+
+    .hover-shadow-bold {
+        transition: border 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hover-shadow-bold:hover {
+        border: 2px solid #000 !important;
+        box-shadow: 4px 4px 0 0 #000 !important;
+    }
+
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-color: white;
+        border: 1px solid rgba(0, 0, 0, 0.4);
+        position: relative;
+    }
+
+    input[type="checkbox"]:checked {
+        background-color: white;
+        border-color: rgba(0, 0, 0, 0.4);
+    }
+
+    input[type="checkbox"]:checked::after {
+        content: '';
+        position: absolute;
+        left: 3px;
+        top: 0px;
+        width: 4px;
+        height: 8px;
+        border: solid black;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+}
+
+@keyframes marquee-r2l {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-12.5%);
+    }
+}
+
+@keyframes marquee-l2r {
+    0% {
+        transform: translateX(-12.5%);
+    }
+
+    100% {
+        transform: translateX(0);
+    }
+}
