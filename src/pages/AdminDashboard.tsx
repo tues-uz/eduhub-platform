@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Users,
@@ -21,41 +20,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import { useAuthSession } from "@/features/auth/context";
+import { useLayoutContext } from "@/features/layout/context";
+import { useAdminOverviewQuery } from "@/features/admin/hooks/useAdminQueries";
 
 const AdminDashboard = () => {
-  const userName = localStorage.getItem("userName") || "Admin";
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem("sidebarCollapsed");
-    return saved === "true";
-  });
+  const { user } = useAuthSession();
+  const { isSidebarCollapsed } = useLayoutContext();
+  const { data } = useAdminOverviewQuery();
+  const userName = user.name;
 
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    check();
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
-
-  const stats = [
-    { icon: Users, label: "Total Users", value: "2,847", change: "+142", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
-    { icon: GraduationCap, label: "Students", value: "2,521", change: "+89", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
-    { icon: BookOpen, label: "Courses", value: "48", change: "+5", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
-    { icon: TrendingUp, label: "Active Sessions", value: "312", change: "+23", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
-  ];
-
-  const recentUsers = [
-    { id: 1, name: "Sevinch", email: "Sevinch@eduhub.com", role: "Student", joined: "2024-01-10", status: "Active" },
-    { id: 2, name: "Dr. Karimov", email: "karimov@eduhub.com", role: "Teacher", joined: "2024-01-09", status: "Active" },
-    { id: 3, name: "Sarah Johnson", email: "sarah.j@eduhub.com", role: "Teacher", joined: "2024-01-08", status: "Active" },
-    { id: 4, name: "Ahmed Hassan", email: "ahmed@eduhub.com", role: "Student", joined: "2024-01-07", status: "Inactive" },
-  ];
-
-  const systemActivity = [
-    { action: "New user registered", detail: "Sevinch (Student)", time: "10 min ago" },
-    { action: "Course published", detail: "Introduction to Economics", time: "1 hour ago" },
-    { action: "Teacher account created", detail: "Dr. Karimov", time: "2 hours ago" },
-    { action: "Certificate issued", detail: "Business Fundamentals — 12 students", time: "3 hours ago" },
-  ];
+  const stats = data?.stats ?? [];
+  const recentUsers = data?.recentUsers ?? [];
+  const systemActivity = data?.systemActivity ?? [];
 
   return (
     <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>

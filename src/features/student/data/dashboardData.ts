@@ -1,0 +1,204 @@
+import {
+  AlertCircle,
+  Award,
+  BookOpen,
+  FileText,
+  TrendingUp,
+} from "lucide-react";
+
+export const studentStats = [
+  { icon: BookOpen, label: "Courses Enrolled", value: "12", color: "text-blue-500", bgColor: "bg-blue-50" },
+  { icon: FileText, label: "Assignments", value: "8", color: "text-purple-500", bgColor: "bg-purple-50" },
+  { icon: Award, label: "Certificates", value: "5", color: "text-orange-500", bgColor: "bg-orange-50" },
+  { icon: TrendingUp, label: "Progress", value: "78%", color: "text-green-500", bgColor: "bg-green-50" },
+];
+
+export const studentCourses = [
+  {
+    id: 1,
+    title: "Introduction to Economics",
+    instructor: "Dr. Dilshod Karimov",
+    progress: 75,
+    thumbnail: "/api/placeholder/300/200",
+    status: "In Progress",
+    nextLesson: "Market Structures",
+  },
+  {
+    id: 2,
+    title: "Business Management Fundamentals",
+    instructor: "Prof. Sarah Johnson",
+    progress: 45,
+    thumbnail: "/api/placeholder/300/200",
+    status: "In Progress",
+    nextLesson: "Strategic Planning",
+  },
+  {
+    id: 3,
+    title: "Digital Marketing Essentials",
+    instructor: "Dr. Ahmed Hassan",
+    progress: 90,
+    thumbnail: "/api/placeholder/300/200",
+    status: "Almost Complete",
+    nextLesson: "Final Project",
+  },
+  {
+    id: 4,
+    title: "Financial Accounting",
+    instructor: "Prof. Maria Garcia",
+    progress: 30,
+    thumbnail: "/api/placeholder/300/200",
+    status: "In Progress",
+    nextLesson: "Balance Sheets",
+  },
+];
+
+export const studentAssignments = [
+  {
+    id: 1,
+    title: "Economic Analysis Essay",
+    course: "Introduction to Economics",
+    dueDate: "2024-01-15",
+    status: "pending",
+    priority: "high",
+  },
+  {
+    id: 2,
+    title: "Marketing Campaign Proposal",
+    course: "Digital Marketing Essentials",
+    dueDate: "2024-01-18",
+    status: "in-progress",
+    priority: "medium",
+  },
+  {
+    id: 3,
+    title: "Financial Report Review",
+    course: "Financial Accounting",
+    dueDate: "2024-01-20",
+    status: "pending",
+    priority: "low",
+  },
+];
+
+export const studentRecentActivity = [
+  { type: "completed", text: "Completed lesson: Market Structures", time: "2 hours ago" },
+  { type: "assignment", text: "Submitted: Economic Analysis Essay", time: "1 day ago" },
+  { type: "certificate", text: "Earned certificate: Business Fundamentals", time: "3 days ago" },
+  { type: "enrolled", text: "Enrolled in: Financial Accounting", time: "5 days ago" },
+];
+
+export const studentNotifications = [
+  {
+    id: 1,
+    type: "assignment",
+    title: "New Assignment Posted",
+    message: "Economic Analysis Essay due in 3 days",
+    time: "2 hours ago",
+    unread: true,
+  },
+  {
+    id: 2,
+    type: "course",
+    title: "Course Update",
+    message: "New lesson available: Market Structures",
+    time: "5 hours ago",
+    unread: true,
+  },
+  {
+    id: 3,
+    type: "certificate",
+    title: "Certificate Earned",
+    message: "You've earned a certificate for Business Fundamentals",
+    time: "1 day ago",
+    unread: false,
+  },
+  {
+    id: 4,
+    type: "announcement",
+    title: "System Maintenance",
+    message: "Scheduled maintenance on Jan 20, 2:00 AM",
+    time: "2 days ago",
+    unread: false,
+  },
+];
+
+export const notificationTypeIcons = {
+  assignment: FileText,
+  course: BookOpen,
+  certificate: Award,
+  announcement: AlertCircle,
+} as const;
+
+export const enrolledCourses = [
+  {
+    id: 1,
+    title: "Introduction to Economics",
+    instructor: "Dr. Dilshod Karimov",
+    progress: 75,
+    status: "In Progress",
+    nextLesson: "Market Structures",
+    category: "Business",
+    duration: "8 weeks",
+    modules: 12,
+    enrolledDate: "2024-09-01",
+  },
+  {
+    id: 2,
+    title: "Business Management Fundamentals",
+    instructor: "Prof. Sarah Johnson",
+    progress: 45,
+    status: "In Progress",
+    nextLesson: "Strategic Planning",
+    category: "Management",
+    duration: "10 weeks",
+    modules: 14,
+    enrolledDate: "2024-10-15",
+  },
+  {
+    id: 3,
+    title: "Digital Marketing Essentials",
+    instructor: "Dr. Ahmed Hassan",
+    progress: 90,
+    status: "Almost Complete",
+    nextLesson: "Final Project",
+    category: "Marketing",
+    duration: "6 weeks",
+    modules: 8,
+    enrolledDate: "2024-08-20",
+  },
+  {
+    id: 4,
+    title: "Financial Accounting",
+    instructor: "Prof. Maria Garcia",
+    progress: 30,
+    status: "In Progress",
+    nextLesson: "Balance Sheets",
+    category: "Finance",
+    duration: "12 weeks",
+    modules: 16,
+    enrolledDate: "2024-11-01",
+  },
+  {
+    id: 5,
+    title: "English for Business",
+    instructor: "Ms. Elena Petrova",
+    progress: 60,
+    status: "In Progress",
+    nextLesson: "Writing Reports",
+    category: "Language",
+    duration: "8 weeks",
+    modules: 10,
+    enrolledDate: "2024-09-15",
+  },
+  {
+    id: 6,
+    title: "Data Analysis with Excel",
+    instructor: "Dr. James Wilson",
+    progress: 100,
+    status: "Completed",
+    nextLesson: "—",
+    category: "Analytics",
+    duration: "6 weeks",
+    modules: 8,
+    enrolledDate: "2024-07-01",
+  },
+];
