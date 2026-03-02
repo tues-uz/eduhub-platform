@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen,
@@ -12,82 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import DashboardSidebar from "@/components/DashboardSidebar";
-
-// Enrolled courses for the logged-in user
-const ENROLLED_COURSES = [
-  {
-    id: 1,
-    title: "Introduction to Economics",
-    instructor: "Dr. Dilshod Karimov",
-    progress: 75,
-    status: "In Progress",
-    nextLesson: "Market Structures",
-    category: "Business",
-    duration: "8 weeks",
-    modules: 12,
-    enrolledDate: "2024-09-01",
-  },
-  {
-    id: 2,
-    title: "Business Management Fundamentals",
-    instructor: "Prof. Sarah Johnson",
-    progress: 45,
-    status: "In Progress",
-    nextLesson: "Strategic Planning",
-    category: "Management",
-    duration: "10 weeks",
-    modules: 14,
-    enrolledDate: "2024-10-15",
-  },
-  {
-    id: 3,
-    title: "Digital Marketing Essentials",
-    instructor: "Dr. Ahmed Hassan",
-    progress: 90,
-    status: "Almost Complete",
-    nextLesson: "Final Project",
-    category: "Marketing",
-    duration: "6 weeks",
-    modules: 8,
-    enrolledDate: "2024-08-20",
-  },
-  {
-    id: 4,
-    title: "Financial Accounting",
-    instructor: "Prof. Maria Garcia",
-    progress: 30,
-    status: "In Progress",
-    nextLesson: "Balance Sheets",
-    category: "Finance",
-    duration: "12 weeks",
-    modules: 16,
-    enrolledDate: "2024-11-01",
-  },
-  {
-    id: 5,
-    title: "English for Business",
-    instructor: "Ms. Elena Petrova",
-    progress: 60,
-    status: "In Progress",
-    nextLesson: "Writing Reports",
-    category: "Language",
-    duration: "8 weeks",
-    modules: 10,
-    enrolledDate: "2024-09-15",
-  },
-  {
-    id: 6,
-    title: "Data Analysis with Excel",
-    instructor: "Dr. James Wilson",
-    progress: 100,
-    status: "Completed",
-    nextLesson: "—",
-    category: "Analytics",
-    duration: "6 weeks",
-    modules: 8,
-    enrolledDate: "2024-07-01",
-  },
-];
+import { useLayoutContext } from "@/features/layout/context";
+import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("en-US", {
@@ -107,24 +33,12 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
 ];
 
 const StudentCourses = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem("sidebarCollapsed");
-    return saved === "true";
-  });
+  const { isSidebarCollapsed } = useLayoutContext();
+  const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
-  useEffect(() => {
-    const checkSidebarState = () => {
-      const saved = localStorage.getItem("sidebarCollapsed");
-      setIsSidebarCollapsed(saved === "true");
-    };
-    checkSidebarState();
-    const interval = setInterval(checkSidebarState, 100);
-    return () => clearInterval(interval);
-  }, []);
-
-  const filteredCourses = ENROLLED_COURSES.filter((course) => {
+  const filteredCourses = enrolledCourses.filter((course) => {
     const matchesSearch =
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.instructor.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -133,8 +47,8 @@ const StudentCourses = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const inProgressCount = ENROLLED_COURSES.filter((c) => c.status !== "Completed").length;
-  const completedCount = ENROLLED_COURSES.filter((c) => c.status === "Completed").length;
+  const inProgressCount = enrolledCourses.filter((c) => c.status !== "Completed").length;
+  const completedCount = enrolledCourses.filter((c) => c.status === "Completed").length;
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
@@ -164,7 +78,7 @@ const StudentCourses = () => {
             {/* Summary stats */}
             <div className="mb-6 flex flex-wrap gap-4 text-sm">
               <span className="rounded-full bg-blue-50 px-4 py-2 text-blue-700 font-medium">
-                {ENROLLED_COURSES.length} total enrolled
+                {enrolledCourses.length} total enrolled
               </span>
               <span className="rounded-full bg-amber-50 px-4 py-2 text-amber-700 font-medium">
                 {inProgressCount} in progress

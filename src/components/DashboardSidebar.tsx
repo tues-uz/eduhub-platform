@@ -1,13 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
-  BookOpen,
-  FileText,
-  Award,
-  BarChart3,
-  Calendar,
-  Settings,
   LogOut,
   Menu,
   X,
@@ -16,13 +9,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
-  ListChecks,
-  Users,
-  GraduationCap,
-  UserPlus,
-  Receipt,
-  Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,76 +18,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useAuthSession } from "@/features/auth/context";
+import { useLayoutContext } from "@/features/layout/context";
+import {
+  adminMenuItems,
+  studentMenuItems,
+  teacherMenuItems,
+} from "@/features/layout/navigation";
+import { dashboardHomeByRole } from "@/app/routes";
 
 const DashboardSidebar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    const saved = localStorage.getItem("sidebarCollapsed");
-    return saved === "true";
-  });
+  const { user } = useAuthSession();
+  const { isSidebarCollapsed: isCollapsed, toggleSidebar } = useLayoutContext();
   const location = useLocation();
   const navigate = useNavigate();
-  
-  // Get user info and role from localStorage
-  const userName = localStorage.getItem("userName") || "Demo User";
-  const userEmail = localStorage.getItem("userEmail") || "demo@eduhub.com";
-  const userRole = (localStorage.getItem("userRole") || "student") as "student" | "admin" | "teacher";
+  const userName = user.name;
+  const userEmail = user.email;
+  const userRole = user.role;
 
-  const toggleSidebar = () => {
-    const newState = !isCollapsed;
-    setIsCollapsed(newState);
-    localStorage.setItem("sidebarCollapsed", String(newState));
-    document.documentElement.style.setProperty("--sidebar-width", newState ? "80px" : "256px");
-  };
+  const flatMenuItems = userRole === "admin" ? adminMenuItems : studentMenuItems;
 
-  const studentMenuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: BookOpen, label: "My Courses", path: "/dashboard/courses" },
-    { icon: ListChecks, label: "Placement Test", path: "/dashboard/assignments" },
-    { icon: ClipboardList, label: "Quiz", path: "/dashboard/quiz" },
-    { icon: Award, label: "Certificates", path: "/dashboard/certificates" },
-    { icon: Bell, label: "Notifications", path: "/dashboard/notifications" },
-    { icon: Settings, label: "Settings", path: "/dashboard/settings" },
-  ];
-
-  const adminMenuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard/admin" },
-    { icon: GraduationCap, label: "All Student", path: "/dashboard/admin/students" },
-    { icon: GraduationCap, label: "All Teacher", path: "/dashboard/admin/teachers" },
-    { icon: Briefcase, label: "All Staff", path: "/dashboard/admin/staff" },
-    { icon: BookOpen, label: "All Course", path: "/dashboard/admin/courses" },
-    { icon: UserPlus, label: "Add User Role", path: "/dashboard/admin/add-user-role" },
-    { icon: Receipt, label: "Transaction", path: "/dashboard/admin/transactions" },
-    { icon: BarChart3, label: "Report", path: "/dashboard/admin/reports" },
-    { icon: Settings, label: "Settings", path: "/dashboard/admin/settings" },
-  ];
-
-  type TeacherMenuItem =
-    | { icon: typeof LayoutDashboard; label: string; path: string }
-    | { icon: typeof LayoutDashboard; label: string; children: { label: string; path: string }[] };
-  const teacherMenuItems: TeacherMenuItem[] = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard/teacher" },
-    { icon: GraduationCap, label: "All Student", path: "/dashboard/teacher/students" },
-    {
-      icon: BookOpen,
-      label: "Course",
-      children: [
-        { label: "Add new course", path: "/dashboard/teacher/courses/new" },
-        { label: "Add placement test", path: "/dashboard/teacher/placement-test" },
-      ],
-    },
-    { icon: Calendar, label: "Schedule", path: "/dashboard/teacher/schedule" },
-    { icon: Settings, label: "Settings", path: "/dashboard/teacher/settings" },
-  ];
-
-  const menuItems =
-    userRole === "admin" ? adminMenuItems :
-    userRole === "teacher" ? teacherMenuItems :
-    studentMenuItems;
-
-  const dashboardHome =
-    userRole === "admin" ? "/dashboard/admin" :
-    userRole === "teacher" ? "/dashboard/teacher" : "/dashboard";
+  const dashboardHome = dashboardHomeByRole(userRole);
 
   const handleLogout = () => {
     navigate("/signin");
@@ -220,7 +158,7 @@ const DashboardSidebar = () => {
           <nav className="flex-1 overflow-y-auto p-4">
             <div className="space-y-1">
               {userRole === "teacher"
-                ? (teacherMenuItems as TeacherMenuItem[]).map((item) => {
+                ? teacherMenuItems.map((item) => {
                     const Icon = item.icon;
                     if ("path" in item) {
                       const active = isActive(item.path);
@@ -281,7 +219,7 @@ const DashboardSidebar = () => {
                       </Collapsible>
                     );
                   })
-                : menuItems.map((item) => {
+                : flatMenuItems.map((item) => {
                     const Icon = item.icon;
                     const active = isActive(item.path);
                     return (
