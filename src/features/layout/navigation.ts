@@ -56,6 +56,7 @@ export const teacherMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
     icon: BookOpen,
     label: "Course",
     children: [
+      { label: "My courses", path: "/dashboard/teacher/courses" },
       { label: "Add new course", path: "/dashboard/teacher/courses/new" },
       { label: "Add placement test", path: "/dashboard/teacher/placement-test" },
     ],

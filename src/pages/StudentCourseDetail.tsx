@@ -8,11 +8,11 @@ import {
   Layers,
   ArrowLeft,
   CheckCircle2,
-  Circle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 
 const ENROLLED_COURSES: Record<
   number,
@@ -138,11 +138,35 @@ const LESSONS_BY_COURSE: Record<number, { id: number; title: string; duration: s
 const formatDate = (dateString: string) =>
   new Date(dateString).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
+const TEACHER_PREFIX = "teacher_";
+
 const StudentCourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
-  const id = courseId ? parseInt(courseId, 10) : NaN;
-  const course = id && ENROLLED_COURSES[id];
-  const lessons = (id && LESSONS_BY_COURSE[id]) || [];
+  const isTeacherCourse = courseId?.startsWith(TEACHER_PREFIX);
+  const teacherCourseId = isTeacherCourse ? courseId!.slice(TEACHER_PREFIX.length) : null;
+  const teacherCourse = teacherCourseId ? teacherCoursesStore.getById(teacherCourseId) : null;
+
+  const id = courseId && !isTeacherCourse ? parseInt(courseId, 10) : NaN;
+  const course = teacherCourse
+    ? {
+        id: courseId!,
+        title: teacherCourse.title,
+        instructor: teacherCourse.instructorName,
+        progress: 0,
+        status: "In Progress",
+        nextLesson: teacherCourse.lessons.length ? teacherCourse.lessons.sort((a, b) => a.order - b.order)[0]?.title ?? "—" : "—",
+        category: "Course",
+        duration: `${teacherCourse.lessons.length} lessons`,
+        modules: teacherCourse.lessons.length,
+        enrolledDate: teacherCourse.createdAt.slice(0, 10),
+      }
+    : id
+      ? ENROLLED_COURSES[id]
+      : undefined;
+  const lessonsFromTeacher = teacherCourse
+    ? [...teacherCourse.lessons].sort((a, b) => a.order - b.order).map((l) => ({ id: l.id, title: l.title, duration: l.duration ?? "—", completed: false }))
+    : [];
+  const lessons = teacherCourse ? lessonsFromTeacher : (id && LESSONS_BY_COURSE[id]) || [];
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   useEffect(() => {
@@ -167,7 +191,7 @@ const StudentCourseDetail = () => {
     );
   }
 
-  const nextLesson = lessons.find((l) => !l.completed);
+  const nextLesson = lessons.find((l) => !l.completed) ?? lessons[0];
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
@@ -232,7 +256,7 @@ const StudentCourseDetail = () => {
               Course content
             </h2>
             {nextLesson && (
-              <Link to={`/dashboard/courses/${course.id}/lessons/${nextLesson.id}`}>
+              <Link to={`/dashboard/courses/${String(course.id)}/lessons/${nextLesson.id}`}>
                 <Button size="sm" className="rounded-full" style={{ backgroundColor: "#FF2D73" }}>
                   <PlayCircle className="mr-2 h-4 w-4" />
                   Continue: {nextLesson.title}
@@ -243,7 +267,7 @@ const StudentCourseDetail = () => {
 
           <div className="space-y-2">
             {lessons.map((lesson, index) => {
-              const isUnlocked = index === 0 || lessons[index - 1].completed;
+              const isUnlocked = teacherCourse ? true : index === 0 || lessons[index - 1].completed;
               return (
                 <div
                   key={lesson.id}
@@ -278,13 +302,13 @@ const StudentCourseDetail = () => {
                     )}
                   </div>
                   {lesson.completed ? (
-                    <Link to={`/dashboard/courses/${course.id}/lessons/${lesson.id}`}>
+                    <Link to={`/dashboard/courses/${String(course.id)}/lessons/${lesson.id}`}>
                       <Button size="sm" variant="outline" className="rounded-full flex-shrink-0 px-5">
                         View
                       </Button>
                     </Link>
                   ) : isUnlocked ? (
-                    <Link to={`/dashboard/courses/${course.id}/lessons/${lesson.id}`}>
+                    <Link to={`/dashboard/courses/${String(course.id)}/lessons/${lesson.id}`}>
                       <Button size="sm" className="rounded-full flex-shrink-0" style={{ backgroundColor: "#FF2D73" }}>
                         <PlayCircle className="mr-1.5 h-4 w-4" />
                         Start
