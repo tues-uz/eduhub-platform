@@ -36,7 +36,7 @@ const StudentProgress = () => {
           </div>
           {/* Summary stats row */}
           <div className="mb-8 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-xl border border-gray-200/50 bg-gradient-to-br from-pink-500 to-rose-600 p-5 text-white shadow-sm">
+            <div className="rounded-xl border border-gray-200/50 bg-gradient-to-br from-blue-600 to-blue-800 p-5 text-white shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <Target className="h-5 w-5 opacity-90" />
                 <span className="text-sm font-medium opacity-90">Overall completion</span>

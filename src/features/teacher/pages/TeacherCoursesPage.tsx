@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, BookOpen, Plus, Pencil, Trash2, FileText, Video } from "lucide-react";
+import { ArrowLeft, BookOpen, Plus, Pencil, Trash2, FileText, Video, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,11 +20,30 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import { useAuthSession } from "@/features/auth/context";
 import { teacherCoursesStore } from "../data/teacherCoursesStore";
+import { eduhubCourses } from "@/api/eduhubClient";
+import { isUuid } from "@/api/utils";
 import type { TeacherCourse } from "../types";
 
+function parseDurationMinutes(duration?: string): number {
+  if (!duration?.trim()) return 0;
+  const m = duration.trim().match(/^(\d+)\s*min/i);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+function formatTotalDuration(minutes: number): string {
+  if (minutes <= 0) return "";
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h ${m} min` : `${h}h`;
+}
+
 const TeacherCoursesPage = () => {
+  const { user } = useAuthSession();
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
+  const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebarCollapsed");
@@ -39,17 +58,51 @@ const TeacherCoursesPage = () => {
   }, []);
 
   useEffect(() => {
-    setCourses(teacherCoursesStore.getAll());
-  }, []);
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      const local = teacherCoursesStore.getAll();
+      if (user.id) {
+        try {
+          const res = await eduhubCourses.getByLecturer(user.id);
+          const apiCourses: TeacherCourse[] = (res.content || []).map((c) => ({
+            id: c.id,
+            title: c.title,
+            description: "",
+            instructorName: c.lecturerName,
+            lessons: [],
+            createdAt: c.createdAt,
+            updatedAt: c.createdAt,
+          }));
+          if (!cancelled) setCourses([...apiCourses, ...local]);
+        } catch {
+          if (!cancelled) setCourses(local);
+        }
+      } else {
+        if (!cancelled) setCourses(local);
+      }
+      if (!cancelled) setLoading(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [user.id]);
 
-  const handleDelete = (id: string) => {
-    teacherCoursesStore.delete(id);
-    setCourses(teacherCoursesStore.getAll());
+  const handleDelete = async (id: string) => {
+    if (isUuid(id)) {
+      try {
+        await eduhubCourses.delete(id);
+      } catch {
+        return;
+      }
+    } else {
+      teacherCoursesStore.delete(id);
+    }
+    setCourses((prev) => prev.filter((c) => c.id !== id));
     setDeleteId(null);
   };
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
       <DashboardSidebar />
       <main
         className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
@@ -67,7 +120,7 @@ const TeacherCoursesPage = () => {
             <div>
               <h1
                 className="text-2xl font-bold text-foreground"
-                style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px" }}
+                style={{ fontFamily: "'Geist Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
               >
                 My Courses
               </h1>
@@ -75,7 +128,7 @@ const TeacherCoursesPage = () => {
                 Manage your courses and add lessons with PDF or video content.
               </p>
             </div>
-            <Button asChild className="rounded-full shrink-0" style={{ backgroundColor: "#FF2D73" }}>
+            <Button asChild className="rounded-full shrink-0" style={{ backgroundColor: "#1e40af" }}>
               <Link to="/dashboard/teacher/courses/new" className="inline-flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Add course
@@ -83,15 +136,21 @@ const TeacherCoursesPage = () => {
             </Button>
           </div>
 
-          {courses.length === 0 ? (
-            <Card className="border-dashed border-2">
+          {loading ? (
+            <Card className="teacher-course-card border-dashed border-2" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <p className="text-sm text-foreground/60">Loading courses…</p>
+              </CardContent>
+            </Card>
+          ) : courses.length === 0 ? (
+            <Card className="teacher-course-card border-dashed border-2" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
               <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                 <BookOpen className="h-14 w-14 text-foreground/30 mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-1">No courses yet</h3>
                 <p className="text-sm text-foreground/60 mb-6 max-w-sm">
                   Create your first course and add lessons with PDF materials or video links.
                 </p>
-                <Button asChild className="rounded-full" style={{ backgroundColor: "#FF2D73" }}>
+                <Button asChild className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
                   <Link to="/dashboard/teacher/courses/new" className="inline-flex items-center gap-2">
                     <Plus className="h-4 w-4" />
                     Add your first course
@@ -100,65 +159,112 @@ const TeacherCoursesPage = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {courses.map((course) => (
-                <Card key={course.id} className="flex flex-col">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-lg line-clamp-2">{course.title}</CardTitle>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                          <Link to={`/dashboard/teacher/courses/${course.id}/edit`} title="Edit">
-                            <Pencil className="h-4 w-4" />
-                          </Link>
-                        </Button>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {courses.map((course) => {
+                const pdfCount = course.lessons.filter((l) => l.contentType === "pdf" || l.contentType === "pdf_upload").length;
+                const videoCount = course.lessons.filter((l) => l.contentType === "video" || l.contentType === "video_upload").length;
+                const totalMin = course.lessons.reduce((sum, l) => sum + parseDurationMinutes(l.duration), 0);
+                const durationStr = formatTotalDuration(totalMin);
+                return (
+                <Link
+                  key={course.id}
+                  to={`/dashboard/teacher/courses/${course.id}/edit`}
+                  className="block"
+                >
+                  <Card
+                    className="teacher-course-card group relative flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-gray-50/30 cursor-pointer transition-shadow hover:shadow-md"
+                    style={{ fontFamily: "'Geist Sans', sans-serif" }}
+                  >
+                    <div className="flex flex-1 flex-col p-5 pt-4">
+                      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-gray-200/80">
+                        <BookOpen className="h-5 w-5 text-[#1e40af]/80" />
+                      </div>
+                      <CardTitle className="text-base font-semibold text-foreground line-clamp-2">
+                        {course.title}
+                      </CardTitle>
+                      {course.description ? (
+                        <CardDescription className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">
+                          {course.description}
+                        </CardDescription>
+                      ) : null}
+
+                      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <FileText className="h-3 w-3 shrink-0 opacity-70" />
+                          <span>{pdfCount} PDF</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Video className="h-3 w-3 shrink-0 opacity-70" />
+                          <span>{videoCount} Video</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <BookOpen className="h-3 w-3 shrink-0 opacity-70" />
+                          <span>{course.lessons.length} lessons</span>
+                        </div>
+                        {durationStr ? (
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-3 w-3 shrink-0 opacity-70" />
+                            <span>{durationStr}</span>
+                          </div>
+                        ) : null}
+                      </dl>
+
+                      <div
+                        className="mt-4 flex w-full items-center gap-4"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => setDeleteId(course.id)}
+                          className="h-8 w-8 shrink-0 rounded-md border border-gray-200 bg-white text-muted-foreground hover:bg-gray-100 hover:text-red-600"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDeleteId(course.id);
+                          }}
                           title="Delete"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 flex-1 rounded-md border border-gray-200 bg-white text-muted-foreground hover:bg-gray-100 hover:text-foreground"
+                          asChild
+                        >
+                          <Link to={`/dashboard/teacher/courses/${course.id}/edit`} className="inline-flex items-center justify-center gap-1.5 w-full" title="Edit">
+                            <Pencil className="h-3.5 w-3.5 shrink-0" />
+                            Edit
+                          </Link>
                         </Button>
                       </div>
                     </div>
-                    {course.description && (
-                      <CardDescription className="line-clamp-2">{course.description}</CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent className="pt-0 mt-auto">
-                    <div className="flex flex-wrap gap-2 text-xs text-foreground/60">
-                      <span className="flex items-center gap-1">
-                        <FileText className="h-3.5 w-3.5" />
-                        {course.lessons.filter((l) => l.contentType === "pdf").length} PDF
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Video className="h-3.5 w-3.5" />
-                        {course.lessons.filter((l) => l.contentType === "video").length} Video
-                      </span>
-                      <span>{course.lessons.length} lessons</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  </Card>
+                </Link>
+                );
+              })}
             </div>
           )}
         </div>
       </main>
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete course?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure you want to delete this course?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently remove this course and all its lessons. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteId && handleDelete(deleteId)}
+              onClick={() => {
+                if (deleteId) {
+                  handleDelete(deleteId);
+                  setDeleteId(null);
+                }
+              }}
               className="bg-red-600 hover:bg-red-700"
             >
               Delete

@@ -5,8 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { eduhubAuth, setAuthTokens } from "@/api/eduhubClient";
+import { setSessionUser } from "@/features/auth/context";
+import type { UserRole } from "@/features/auth/types";
 
-// Dummy account credentials (role: student | admin | teacher)
+function mapApiRoleToApp(apiRole: string): UserRole {
+  if (apiRole === "LECTURER") return "teacher";
+  if (apiRole === "ADMIN") return "admin";
+  return "student";
+}
+
+// Fallback dummy accounts when API is unavailable or for demo
 const DUMMY_ACCOUNTS = [
   { email: "Sevinch@eduhub.com", password: "demo123", name: "Sevinch", role: "student" as const },
   { email: "student@tues.uz", password: "student123", name: "Student Account", role: "student" as const },
@@ -23,42 +32,41 @@ const SignIn = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    // Simulate API call delay
-    setTimeout(() => {
-      // Check if credentials match any dummy account
+    try {
+      const res = await eduhubAuth.login({ email: email.trim(), password });
+      setAuthTokens(res.accessToken, res.refreshToken);
+      const role = mapApiRoleToApp(res.user.role);
+      setSessionUser({
+        id: res.user.id,
+        name: res.user.fullName,
+        email: res.user.email,
+        role,
+      });
+      toast({ title: "Welcome back!", description: `Signed in as ${res.user.fullName}` });
+      const redirect = role === "admin" ? "/dashboard/admin" : role === "teacher" ? "/dashboard/teacher" : "/dashboard";
+      navigate(redirect);
+    } catch {
+      // Fallback to dummy accounts
       const account = DUMMY_ACCOUNTS.find(
         (acc) => acc.email.toLowerCase().trim() === email.toLowerCase().trim() && acc.password === password
       );
-
       if (account) {
-        localStorage.setItem("userName", account.name);
-        localStorage.setItem("userEmail", account.email);
-        localStorage.setItem("userRole", account.role);
-        toast({
-          title: "Welcome back!",
-          description: `Successfully signed in as ${account.name}`,
-        });
-        setIsLoading(false);
-        const redirect =
-          account.role === "admin" ? "/dashboard/admin" :
-          account.role === "teacher" ? "/dashboard/teacher" : "/dashboard";
-        setTimeout(() => navigate(redirect), 500);
+        setSessionUser({ name: account.name, email: account.email, role: account.role });
+        toast({ title: "Welcome back!", description: `Signed in as ${account.name} (demo)` });
+        const redirect = account.role === "admin" ? "/dashboard/admin" : account.role === "teacher" ? "/dashboard/teacher" : "/dashboard";
+        navigate(redirect);
       } else {
-        // Error - show error message
         setError("Invalid email or password. Please try again.");
-        setIsLoading(false);
-        toast({
-          title: "Sign in failed",
-          description: "Invalid email or password. Please check your credentials.",
-          variant: "destructive",
-        });
+        toast({ title: "Sign in failed", description: "Invalid email or password.", variant: "destructive" });
       }
-    }, 800);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

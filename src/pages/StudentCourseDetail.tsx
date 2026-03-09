@@ -8,11 +8,14 @@ import {
   Layers,
   ArrowLeft,
   CheckCircle2,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
+import { eduhubCourses, eduhubModules, eduhubLessons } from "@/api/eduhubClient";
+import { isUuid } from "@/api/utils";
 
 const ENROLLED_COURSES: Record<
   number,
@@ -140,33 +143,79 @@ const formatDate = (dateString: string) =>
 
 const TEACHER_PREFIX = "teacher_";
 
+type LessonRow = { id: string; title: string; duration: string; completed: boolean; moduleId?: string };
+
 const StudentCourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
+  const [apiCourse, setApiCourse] = useState<{ id: string; title: string; instructor: string; category: string; duration: string; modules: number; enrolledDate: string } | null>(null);
+  const [apiLessons, setApiLessons] = useState<LessonRow[]>([]);
+  const [apiLoading, setApiLoading] = useState(false);
+
   const isTeacherCourse = courseId?.startsWith(TEACHER_PREFIX);
   const teacherCourseId = isTeacherCourse ? courseId!.slice(TEACHER_PREFIX.length) : null;
   const teacherCourse = teacherCourseId ? teacherCoursesStore.getById(teacherCourseId) : null;
 
-  const id = courseId && !isTeacherCourse ? parseInt(courseId, 10) : NaN;
-  const course = teacherCourse
-    ? {
-        id: courseId!,
-        title: teacherCourse.title,
-        instructor: teacherCourse.instructorName,
-        progress: 0,
-        status: "In Progress",
-        nextLesson: teacherCourse.lessons.length ? teacherCourse.lessons.sort((a, b) => a.order - b.order)[0]?.title ?? "—" : "—",
-        category: "Course",
-        duration: `${teacherCourse.lessons.length} lessons`,
-        modules: teacherCourse.lessons.length,
-        enrolledDate: teacherCourse.createdAt.slice(0, 10),
-      }
-    : id
-      ? ENROLLED_COURSES[id]
-      : undefined;
+  const id = courseId && !isTeacherCourse && !isUuid(courseId ?? "") ? parseInt(courseId, 10) : NaN;
+
+  useEffect(() => {
+    if (courseId && isUuid(courseId) && !isTeacherCourse) {
+      setApiLoading(true);
+      eduhubCourses.getById(courseId).then((c) => {
+        setApiCourse({
+          id: c.id,
+          title: c.title,
+          instructor: c.lecturer?.fullName ?? "—",
+          category: c.category ?? "Course",
+          duration: "—",
+          modules: 0,
+          enrolledDate: c.createdAt.slice(0, 10),
+        });
+        return eduhubModules.getByCourse(courseId!);
+      }).then((modules) => {
+        return Promise.all(
+          modules.map((m) =>
+            eduhubLessons.getByModule(courseId!, m.id).then((lessons) =>
+              lessons.map((l) => ({
+                id: l.id,
+                title: l.title,
+                duration: l.durationMinutes ? `${l.durationMinutes} min` : "—",
+                completed: false,
+                moduleId: m.id,
+              }))
+            )
+          )
+        );
+      }).then((arrays) => {
+        const flat = arrays.flat();
+        setApiLessons(flat);
+        setApiCourse((prev) => prev ? { ...prev, modules: flat.length } : null);
+      }).catch(() => setApiCourse(null)).finally(() => setApiLoading(false));
+    }
+  }, [courseId, isTeacherCourse]);
+
+  const course = apiCourse
+    ? { id: courseId!, ...apiCourse, progress: 0, status: "In Progress", nextLesson: apiLessons[0]?.title ?? "—" }
+    : teacherCourse
+      ? {
+          id: courseId!,
+          title: teacherCourse.title,
+          instructor: teacherCourse.instructorName,
+          progress: 0,
+          status: "In Progress",
+          nextLesson: teacherCourse.lessons.length ? teacherCourse.lessons.sort((a, b) => a.order - b.order)[0]?.title ?? "—" : "—",
+          category: "Course",
+          duration: `${teacherCourse.lessons.length} lessons`,
+          modules: teacherCourse.lessons.length,
+          enrolledDate: teacherCourse.createdAt.slice(0, 10),
+        }
+      : id
+        ? ENROLLED_COURSES[id]
+        : undefined;
+
   const lessonsFromTeacher = teacherCourse
     ? [...teacherCourse.lessons].sort((a, b) => a.order - b.order).map((l) => ({ id: l.id, title: l.title, duration: l.duration ?? "—", completed: false }))
     : [];
-  const lessons = teacherCourse ? lessonsFromTeacher : (id && LESSONS_BY_COURSE[id]) || [];
+  const lessons: LessonRow[] = apiCourse ? apiLessons : teacherCourse ? lessonsFromTeacher : (id && LESSONS_BY_COURSE[id])?.map((l) => ({ ...l, id: String(l.id), completed: false })) ?? [];
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   useEffect(() => {
@@ -174,6 +223,14 @@ const StudentCourseDetail = () => {
     const idInterval = setInterval(check, 100);
     return () => clearInterval(idInterval);
   }, []);
+
+  if (apiLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center" style={{ fontFamily: "'Comfortaa', cursive" }}>
+        <p className="text-foreground/60">Loading course…</p>
+      </div>
+    );
+  }
 
   if (!course) {
     return (
@@ -208,7 +265,7 @@ const StudentCourseDetail = () => {
 
           <div className="mb-8 rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm">
             <div className="flex flex-wrap items-start gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pink-400 to-rose-500">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-800">
                 <BookOpen className="h-6 w-6 text-white" />
               </div>
               <div className="min-w-0 flex-1">
@@ -256,8 +313,8 @@ const StudentCourseDetail = () => {
               Course content
             </h2>
             {nextLesson && (
-              <Link to={`/dashboard/courses/${String(course.id)}/lessons/${nextLesson.id}`}>
-                <Button size="sm" className="rounded-full" style={{ backgroundColor: "#FF2D73" }}>
+              <Link to={`/dashboard/courses/${String(course.id)}/lessons/${nextLesson.id}${nextLesson.moduleId ? `?moduleId=${nextLesson.moduleId}` : ""}`}>
+                <Button size="sm" className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
                   <PlayCircle className="mr-2 h-4 w-4" />
                   Continue: {nextLesson.title}
                 </Button>
@@ -302,14 +359,14 @@ const StudentCourseDetail = () => {
                     )}
                   </div>
                   {lesson.completed ? (
-                    <Link to={`/dashboard/courses/${String(course.id)}/lessons/${lesson.id}`}>
+                    <Link to={`/dashboard/courses/${String(course.id)}/lessons/${lesson.id}${lesson.moduleId ? `?moduleId=${lesson.moduleId}` : ""}`}>
                       <Button size="sm" variant="outline" className="rounded-full flex-shrink-0 px-5">
                         View
                       </Button>
                     </Link>
                   ) : isUnlocked ? (
-                    <Link to={`/dashboard/courses/${String(course.id)}/lessons/${lesson.id}`}>
-                      <Button size="sm" className="rounded-full flex-shrink-0" style={{ backgroundColor: "#FF2D73" }}>
+                    <Link to={`/dashboard/courses/${String(course.id)}/lessons/${lesson.id}${lesson.moduleId ? `?moduleId=${lesson.moduleId}` : ""}`}>
+                      <Button size="sm" className="rounded-full flex-shrink-0" style={{ backgroundColor: "#1e40af" }}>
                         <PlayCircle className="mr-1.5 h-4 w-4" />
                         Start
                       </Button>
@@ -318,7 +375,7 @@ const StudentCourseDetail = () => {
                     <Button
                       size="sm"
                       className="rounded-full flex-shrink-0"
-                      style={{ backgroundColor: "#FF2D73" }}
+                      style={{ backgroundColor: "#1e40af" }}
                       disabled
                       title="Complete the previous lesson first"
                     >
@@ -329,6 +386,28 @@ const StudentCourseDetail = () => {
                 </div>
               );
             })}
+          </div>
+
+          <div className="mt-8 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 p-6 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-violet-100">
+                <ClipboardList className="h-6 w-6 text-violet-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                  Placement test / Quiz
+                </h3>
+                <p className="mt-1 text-sm text-foreground/60 max-w-md mx-auto">
+                  After finishing the course content, take the quiz to test your knowledge and see your score.
+                </p>
+              </div>
+              <Link to="/dashboard/quiz">
+                <Button className="rounded-full mt-2" style={{ backgroundColor: "#3954d0" }}>
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  Go to Quiz
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </main>

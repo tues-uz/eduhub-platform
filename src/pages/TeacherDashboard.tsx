@@ -19,13 +19,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import { useAuthSession } from "@/features/auth/context";
+import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
+import { eduhubCourses } from "@/api/eduhubClient";
+import type { TeacherCourse } from "@/features/teacher/types";
 
 const TeacherDashboard = () => {
-  const userName = localStorage.getItem("userName") || "Teacher";
+  const { user } = useAuthSession();
+  const userName = user.name || "Teacher";
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebarCollapsed");
     return saved === "true";
   });
+  const [courses, setCourses] = useState<TeacherCourse[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
 
   useEffect(() => {
     const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
@@ -34,16 +41,41 @@ const TeacherDashboard = () => {
     return () => clearInterval(id);
   }, []);
 
-  const stats = [
-    { icon: BookOpen, label: "Active Courses", value: "4", change: "+1", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
-    { icon: Users, label: "Total Students", value: "128", change: "+12", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
-    { icon: FileText, label: "Pending Grading", value: "23", change: "-5", trend: "down", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setCoursesLoading(true);
+      const local = teacherCoursesStore.getAll();
+      if (user.id) {
+        try {
+          const res = await eduhubCourses.getByLecturer(user.id);
+          const apiCourses: TeacherCourse[] = (res.content || []).map((c) => ({
+            id: c.id,
+            title: c.title,
+            description: "",
+            instructorName: c.lecturerName,
+            lessons: [],
+            createdAt: c.createdAt,
+            updatedAt: c.createdAt,
+          }));
+          if (!cancelled) setCourses([...apiCourses, ...local]);
+        } catch {
+          if (!cancelled) setCourses(local);
+        }
+      } else {
+        if (!cancelled) setCourses(local);
+      }
+      if (!cancelled) setCoursesLoading(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [user.id]);
 
-  const teachingCourses = [
-    { id: 1, title: "Introduction to Economics", students: 42, lessons: 12, progress: 68, completionRate: 72 },
-    { id: 2, title: "Business Management Fundamentals", students: 38, lessons: 10, progress: 55, completionRate: 61 },
-    { id: 3, title: "Microeconomics", students: 28, lessons: 8, progress: 90, completionRate: 88 },
+  const courseCount = courses.length;
+  const stats = [
+    { icon: BookOpen, label: "Active Courses", value: String(courseCount), change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/courses" },
+    { icon: Users, label: "Total Students", value: "—", change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/students" },
+    { icon: FileText, label: "Pending Grading", value: "—", change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/assignments" },
   ];
 
   const pendingGrading = [
@@ -58,7 +90,7 @@ const TeacherDashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+    <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
       <DashboardSidebar />
       <main className={`pt-16 lg:pt-8 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6">
@@ -85,24 +117,33 @@ const TeacherDashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {stats.map((stat, i) => {
               const Icon = stat.icon;
-              return (
-                <div
-                  key={i}
-                  className="bg-white border border-slate-200 rounded-lg p-5 hover:border-slate-300 hover:shadow-sm transition-all"
-                >
+              const cardContent = (
+                <>
                   <div className="flex items-start justify-between mb-3">
                     <div className={`${stat.bgColor} p-2.5 rounded-md border ${stat.borderColor}`}>
                       <Icon className={`h-5 w-5 ${stat.color}`} />
                     </div>
-                    <div className={`flex items-center gap-1 text-xs font-medium ${
-                      stat.trend === "up" ? "text-emerald-600" : "text-red-600"
-                    }`}>
-                      {stat.trend === "up" ? <TrendingUp className="h-3 w-3" /> : <TrendingUp className="h-3 w-3 rotate-180" />}
-                      {stat.change}
-                    </div>
+                    {stat.change ? (
+                      <div className={`flex items-center gap-1 text-xs font-medium ${
+                        stat.trend === "up" ? "text-emerald-600" : "text-red-600"
+                      }`}>
+                        {stat.trend === "up" ? <TrendingUp className="h-3 w-3" /> : <TrendingUp className="h-3 w-3 rotate-180" />}
+                        {stat.change}
+                      </div>
+                    ) : null}
                   </div>
                   <p className="text-3xl font-bold text-slate-900 mb-1">{stat.value}</p>
                   <p className="text-xs font-medium text-slate-600 uppercase tracking-wide">{stat.label}</p>
+                </>
+              );
+              const className = "bg-white border border-slate-200 rounded-lg p-5 hover:border-slate-300 hover:shadow-sm transition-all block";
+              return stat.href ? (
+                <Link key={i} to={stat.href} className={className}>
+                  {cardContent}
+                </Link>
+              ) : (
+                <div key={i} className={className}>
+                  {cardContent}
                 </div>
               );
             })}
@@ -167,53 +208,61 @@ const TeacherDashboard = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
-                      {teachingCourses.map((course) => (
-                        <tr key={course.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                                <BookOpen className="h-5 w-5 text-slate-600" />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-slate-900 text-sm">{course.title}</p>
-                                <p className="text-xs text-slate-500 mt-0.5">{course.lessons} lessons</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4 text-slate-400" />
-                              <span className="text-sm font-medium text-slate-900">{course.students}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="w-32">
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-slate-600">Avg. Progress</span>
-                                <span className="font-semibold text-slate-900">{course.progress}%</span>
-                              </div>
-                              <Progress value={course.progress} className="h-1.5 bg-slate-200" />
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-sm font-medium text-slate-900">{course.completionRate}%</span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 hover:text-slate-900">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Course</DropdownMenuItem>
-                                <DropdownMenuItem>Manage Students</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                      {coursesLoading ? (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">
+                            Loading courses…
                           </td>
                         </tr>
-                      ))}
+                      ) : courses.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">
+                            No courses yet. <Link to="/dashboard/teacher/courses/new" className="text-slate-900 font-medium underline">Create your first course</Link>
+                          </td>
+                        </tr>
+                      ) : (
+                        courses.map((course) => (
+                          <tr key={course.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4">
+                              <Link to={`/dashboard/teacher/courses/${course.id}/edit`} className="flex items-center gap-3 hover:opacity-90">
+                                <div className="w-10 h-10 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                  <BookOpen className="h-5 w-5 text-slate-600" />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-slate-900 text-sm">{course.title}</p>
+                                  <p className="text-xs text-slate-500 mt-0.5">{course.lessons.length} lessons</p>
+                                </div>
+                              </Link>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-sm text-slate-500">—</span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-sm text-slate-500">—</span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-sm text-slate-500">—</span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 hover:text-slate-900">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem asChild>
+                                    <Link to={`/dashboard/teacher/courses/${course.id}/edit`}>Edit Course</Link>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem asChild>
+                                    <Link to="/dashboard/teacher/students">Manage Students</Link>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>

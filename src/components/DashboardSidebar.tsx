@@ -18,7 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useAuthSession } from "@/features/auth/context";
+import { useAuthSession, clearSessionUser } from "@/features/auth/context";
+import { clearAuthTokens } from "@/api/eduhubClient";
 import { useLayoutContext } from "@/features/layout/context";
 import {
   adminMenuItems,
@@ -42,6 +43,8 @@ const DashboardSidebar = () => {
   const dashboardHome = dashboardHomeByRole(userRole);
 
   const handleLogout = () => {
+    clearAuthTokens();
+    clearSessionUser();
     navigate("/signin");
   };
 
@@ -56,8 +59,8 @@ const DashboardSidebar = () => {
   const isProfessionalRole = userRole === "teacher" || userRole === "admin";
   const sidebarBg = isProfessionalRole ? "bg-slate-900" : "bg-white/95 backdrop-blur-md";
   const sidebarBorder = isProfessionalRole ? "border-slate-800" : "border-gray-200";
-  const logoFont = isProfessionalRole ? "'Inter', 'Segoe UI', system-ui, sans-serif" : "'Comfortaa', cursive";
-  const logoTextFont = isProfessionalRole ? "'Inter', 'Segoe UI', system-ui, sans-serif" : "'Fredoka One', cursive";
+  const logoFont = userRole === "teacher" ? "'Geist Sans', sans-serif" : isProfessionalRole ? "'Inter', 'Segoe UI', system-ui, sans-serif" : "'Comfortaa', cursive";
+  const logoTextFont = userRole === "teacher" ? "'Geist Sans', sans-serif" : isProfessionalRole ? "'Inter', 'Segoe UI', system-ui, sans-serif" : "'Fredoka One', cursive";
   const userCardBg = isProfessionalRole ? "bg-slate-800 border border-slate-700" : "bg-gradient-to-br from-blue-50 to-blue-100";
   const userAvatarBg = isProfessionalRole ? "bg-slate-700" : "bg-gradient-to-br from-blue-500 to-blue-600";
   const activeBg = isProfessionalRole ? "bg-slate-800 text-white" : "bg-blue-50 text-blue-600";

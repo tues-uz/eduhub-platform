@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   PlayCircle,
@@ -15,6 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
+import { eduhubCourses, eduhubLessons, eduhubModules } from "@/api/eduhubClient";
+import { isUuid } from "@/api/utils";
 
 const TEACHER_PREFIX = "teacher_";
 
@@ -73,25 +75,110 @@ function toEmbedUrl(url: string): string {
 
 const StudentLessonPage = () => {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
+  const [searchParams] = useSearchParams();
+  const moduleIdParam = searchParams.get("moduleId");
+
+  const [apiLesson, setApiLesson] = useState<{ title: string; duration: string; type: string; contentUrl?: string } | null>(null);
+  const [apiCourse, setApiCourse] = useState<{ title: string; instructor: string } | null>(null);
+  const [apiLessons, setApiLessons] = useState<{ id: string; title: string; duration: string; moduleId?: string }[]>([]);
+  const [apiLoading, setApiLoading] = useState(false);
+
   const isTeacherCourse = courseId?.startsWith(TEACHER_PREFIX);
   const teacherCourseId = isTeacherCourse && courseId ? courseId.slice(TEACHER_PREFIX.length) : null;
   const teacherCourse = teacherCourseId ? teacherCoursesStore.getById(teacherCourseId) : null;
   const teacherLessons = teacherCourse ? [...teacherCourse.lessons].sort((a, b) => a.order - b.order) : [];
   const teacherLesson = lessonId ? teacherLessons.find((l) => l.id === lessonId) : null;
 
-  const cid = courseId && !isTeacherCourse ? parseInt(courseId, 10) : NaN;
-  const lid = lessonId && !isTeacherCourse ? parseInt(lessonId, 10) : NaN;
-  const course = teacherCourse
-    ? { id: courseId!, title: teacherCourse.title, instructor: teacherCourse.instructorName }
-    : cid
-      ? ENROLLED_COURSES[cid]
-      : undefined;
-  const lessons = teacherCourse
-    ? teacherLessons.map((l) => ({ id: l.id, title: l.title, duration: l.duration ?? "—" }))
-    : (cid && LESSONS_BY_COURSE[cid]) || [];
-  const lesson = teacherLesson
-    ? { id: teacherLesson.id, title: teacherLesson.title, duration: teacherLesson.duration ?? "—" }
-    : lessons.find((l) => l.id === lid);
+  const isApiCourse = courseId && isUuid(courseId) && !isTeacherCourse;
+
+  useEffect(() => {
+    if (isApiCourse && courseId && lessonId) {
+      setApiLoading(true);
+      const moduleId = moduleIdParam;
+      if (moduleId) {
+        eduhubCourses.getById(courseId).then((c) => setApiCourse({ title: c.title, instructor: c.lecturer?.fullName ?? "—" }));
+        Promise.all([
+          eduhubLessons.getContent(courseId, moduleId, lessonId),
+          eduhubLessons.getByModule(courseId, moduleId),
+        ]).then(([content, lessonList]) => {
+          const durationStr = content.durationMinutes
+            ? content.type === "DOCUMENT"
+              ? `${content.durationMinutes} min read`
+              : `${content.durationMinutes} min`
+            : "—";
+          setApiLesson({
+            title: content.title,
+            duration: durationStr,
+            type: content.type,
+            contentUrl: content.contentUrl,
+          });
+          setApiLessons(
+            lessonList.map((l) => ({
+              id: l.id,
+              title: l.title,
+              duration: l.durationMinutes
+                ? l.type === "DOCUMENT"
+                  ? `${l.durationMinutes} min read`
+                  : `${l.durationMinutes} min`
+                : "—",
+              moduleId,
+            }))
+          );
+        }).catch(() => setApiLesson(null)).finally(() => setApiLoading(false));
+      } else {
+        eduhubCourses.getById(courseId).then((c) => {
+          setApiCourse({ title: c.title, instructor: c.lecturer?.fullName ?? "—" });
+          return eduhubModules.getByCourse(courseId);
+        }).then((modules) => {
+          const findLesson = (i: number): Promise<void> => {
+            if (i >= modules.length) {
+              setApiLoading(false);
+              return Promise.resolve();
+            }
+            return eduhubLessons.getByModule(courseId!, modules[i].id).then((lessons) => {
+              const l = lessons.find((le) => le.id === lessonId);
+              if (l) {
+                return eduhubLessons.getContent(courseId!, modules[i].id, lessonId!).then((content) => {
+                  const d = content.durationMinutes ? (content.type === "DOCUMENT" ? `${content.durationMinutes} min read` : `${content.durationMinutes} min`) : "—";
+                  setApiLesson({ title: content.title, duration: d, type: content.type, contentUrl: content.contentUrl });
+                  setApiLessons(
+                    lessons.map((le) => ({
+                      id: le.id,
+                      title: le.title,
+                      duration: le.durationMinutes ? (le.type === "DOCUMENT" ? `${le.durationMinutes} min read` : `${le.durationMinutes} min`) : "—",
+                      moduleId: modules[i].id,
+                    }))
+                  );
+                });
+              }
+              return findLesson(i + 1);
+            });
+          };
+          return findLesson(0);
+        }).catch(() => setApiLoading(false));
+      }
+    }
+  }, [isApiCourse, courseId, lessonId, moduleIdParam]);
+
+  const cid = courseId && !isTeacherCourse && !isApiCourse ? parseInt(courseId, 10) : NaN;
+  const lid = lessonId && !isTeacherCourse && !isApiCourse ? parseInt(lessonId, 10) : NaN;
+  const course = apiCourse
+    ? { id: courseId!, title: apiCourse.title, instructor: apiCourse.instructor }
+    : teacherCourse
+      ? { id: courseId!, title: teacherCourse.title, instructor: teacherCourse.instructorName }
+      : cid
+        ? ENROLLED_COURSES[cid]
+        : undefined;
+  const lessons = apiLessons.length
+    ? apiLessons
+    : teacherCourse
+      ? teacherLessons.map((l) => ({ id: l.id, title: l.title, duration: l.duration ?? "—" }))
+      : (cid && LESSONS_BY_COURSE[cid]) || [];
+  const lesson = apiLesson
+    ? { id: lessonId!, title: apiLesson.title, duration: apiLesson.duration }
+    : teacherLesson
+      ? { id: teacherLesson.id, title: teacherLesson.title, duration: teacherLesson.duration ?? "—" }
+      : lessons.find((l) => l.id === lid || l.id === lessonId);
   const lessonIndex = lesson ? lessons.findIndex((l) => l.id === lesson.id) : -1;
   const prevLesson = lessonIndex > 0 ? lessons[lessonIndex - 1] : null;
   const nextLesson = lessonIndex >= 0 && lessonIndex < lessons.length - 1 ? lessons[lessonIndex + 1] : null;
@@ -103,6 +190,14 @@ const StudentLessonPage = () => {
     const id = setInterval(check, 100);
     return () => clearInterval(id);
   }, []);
+
+  if (apiLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center" style={{ fontFamily: "'Comfortaa', cursive" }}>
+        <p className="text-foreground/60">Loading lesson…</p>
+      </div>
+    );
+  }
 
   if (!course || !lesson) {
     return (
@@ -122,6 +217,9 @@ const StudentLessonPage = () => {
 
   const backToCourseUrl = `/dashboard/courses/${courseId}`;
   const isTeacherLesson = !!teacherLesson;
+  const isApiLesson = !!apiLesson;
+  const lessonModuleId = (lesson as { moduleId?: string }).moduleId;
+  const lessonUrl = (lid: string, mid?: string) => `/dashboard/courses/${courseId}/lessons/${lid}${mid ? `?moduleId=${mid}` : ""}`;
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
@@ -157,10 +255,34 @@ const StudentLessonPage = () => {
             </p>
           )}
 
-          {/* Teacher lesson: PDF or Video */}
+          {/* API or Teacher lesson: PDF or Video */}
+          {isApiLesson && apiLesson && (
+            <div className="mb-6">
+              {apiLesson.type === "VIDEO" && apiLesson.contentUrl ? (
+                <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-gray-900">
+                  {toEmbedUrl(apiLesson.contentUrl).includes("youtube.com/embed") ? (
+                    <iframe title={apiLesson.title} src={toEmbedUrl(apiLesson.contentUrl)} className="absolute inset-0 w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                  ) : (
+                    <video className="w-full h-full object-contain" controls src={apiLesson.contentUrl} title={apiLesson.title}>Your browser does not support the video tag.</video>
+                  )}
+                </div>
+              ) : apiLesson.type === "DOCUMENT" && apiLesson.contentUrl ? (
+                <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50">
+                  <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200 bg-white">
+                    <FileText className="h-4 w-4 text-red-600" />
+                    <span className="text-sm font-medium">PDF document</span>
+                    <a href={apiLesson.contentUrl} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">Open in new tab <ExternalLink className="h-3.5 w-3.5" /></a>
+                  </div>
+                  <iframe title={apiLesson.title} src={apiLesson.contentUrl} className="w-full min-h-[60vh] aspect-[8.5/11] max-h-[70vh]" />
+                </div>
+              ) : apiLesson.contentUrl ? (
+                <div className="rounded-xl border p-4"><a href={apiLesson.contentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Open content</a></div>
+              ) : null}
+            </div>
+          )}
           {isTeacherLesson && teacherLesson && (
             <div className="mb-6">
-              {teacherLesson.contentType === "video" ? (
+              {(teacherLesson.contentType === "video" || teacherLesson.contentType === "video_upload") ? (
                 teacherLesson.contentUrl ? (
                   <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-gray-900">
                     {toEmbedUrl(teacherLesson.contentUrl).includes("youtube.com/embed") || toEmbedUrl(teacherLesson.contentUrl).includes("youtu.be") ? (
@@ -252,7 +374,7 @@ const StudentLessonPage = () => {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               {prevLesson ? (
-                <Link to={`/dashboard/courses/${courseId}/lessons/${prevLesson.id}`}>
+                <Link to={lessonUrl(String(prevLesson.id), (prevLesson as { moduleId?: string }).moduleId)}>
                   <Button variant="outline" size="sm" className="rounded-full">
                     <ChevronLeft className="mr-1.5 h-4 w-4" />
                     Previous
@@ -267,15 +389,15 @@ const StudentLessonPage = () => {
                 </Link>
               )}
               {nextLesson ? (
-                <Link to={`/dashboard/courses/${courseId}/lessons/${nextLesson.id}`}>
-                  <Button size="sm" className="rounded-full" style={{ backgroundColor: "#FF2D73" }}>
+                <Link to={lessonUrl(String(nextLesson.id), (nextLesson as { moduleId?: string }).moduleId)}>
+                  <Button size="sm" className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
                     Next lesson
                     <ChevronRight className="ml-1.5 h-4 w-4" />
                   </Button>
                 </Link>
               ) : (
                 <Link to={backToCourseUrl}>
-                  <Button size="sm" className="rounded-full" style={{ backgroundColor: "#FF2D73" }}>
+                  <Button size="sm" className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
                     <CheckCircle2 className="mr-1.5 h-4 w-4" />
                     Finish course
                   </Button>
