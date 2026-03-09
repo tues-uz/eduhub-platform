@@ -12,6 +12,7 @@ import {
   adminSystemActivity,
 } from "@/features/admin/data/dashboardData";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
+import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
 import { getAccessToken } from "./eduhubClient";
 import { eduhubEnrollments } from "./eduhubClient";
 
@@ -32,18 +33,25 @@ export type StudentCourseListItem = {
 function getTeacherCoursesAsStudentList(): StudentCourseListItem[] {
   const teacherCourses = teacherCoursesStore.getAll();
   return teacherCourses.map((c) => {
+    const courseId = `teacher_${c.id}`;
     const sortedLessons = [...c.lessons].sort((a, b) => a.order - b.order);
-    const firstLesson = sortedLessons[0];
+    const completedIds = lessonProgressStore.getCompletedIds(courseId);
+    const totalLessons = sortedLessons.length;
+    const completedCount = totalLessons ? sortedLessons.filter((l) => completedIds.includes(l.id)).length : 0;
+    const progressPercent = totalLessons ? Math.round((completedCount / totalLessons) * 100) : 0;
+    const status =
+      progressPercent >= 100 ? "Completed" : progressPercent >= 75 ? "Almost Complete" : "In Progress";
+    const nextLesson = sortedLessons.find((l) => !completedIds.includes(l.id))?.title ?? sortedLessons[0]?.title ?? "—";
     return {
-      id: `teacher_${c.id}`,
+      id: courseId,
       title: c.title,
       instructor: c.instructorName,
-      progress: 0,
-      status: "In Progress",
-      nextLesson: firstLesson?.title ?? "—",
+      progress: progressPercent,
+      status,
+      nextLesson,
       category: "Course",
-      duration: c.lessons.length ? `${c.lessons.length} lessons` : "—",
-      modules: c.lessons.length,
+      duration: totalLessons ? `${totalLessons} lessons` : "—",
+      modules: totalLessons,
       enrolledDate: c.createdAt.slice(0, 10),
     };
   });
@@ -63,6 +71,27 @@ export const dashboardApi = {
     systemActivity: adminSystemActivity,
   }),
 };
+
+/** Mock course id -> lesson count (for progress calculation from lessonProgressStore) */
+const MOCK_COURSE_LESSON_COUNTS: Record<number, number> = {
+  1: 5,
+  2: 3,
+  3: 3,
+  4: 2,
+  5: 2,
+  6: 2,
+};
+
+function enrichMockCourseProgress(course: StudentCourseListItem): StudentCourseListItem {
+  const id = typeof course.id === "number" ? course.id : null;
+  if (id == null || !(id in MOCK_COURSE_LESSON_COUNTS)) return course;
+  const total = MOCK_COURSE_LESSON_COUNTS[id];
+  const completedCount = lessonProgressStore.getCompletedIds(String(id)).length;
+  const progressPercent = total ? Math.round((completedCount / total) * 100) : course.progress;
+  const status =
+    progressPercent >= 100 ? "Completed" : progressPercent >= 75 ? "Almost Complete" : "In Progress";
+  return { ...course, progress: progressPercent, status };
+}
 
 export const coursesApi = {
   getStudentCourses: async (): Promise<StudentCourseListItem[]> => {
@@ -84,9 +113,9 @@ export const coursesApi = {
         }));
         return [...apiList, ...localTeacher];
       } catch {
-        return [...enrolledCourses, ...localTeacher];
+        return [...enrolledCourses.map(enrichMockCourseProgress), ...localTeacher];
       }
     }
-    return [...enrolledCourses, ...localTeacher];
+    return [...enrolledCourses.map(enrichMockCourseProgress), ...localTeacher];
   },
 };

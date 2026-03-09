@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
+import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
 import { eduhubCourses, eduhubModules, eduhubLessons } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 
@@ -193,29 +194,58 @@ const StudentCourseDetail = () => {
     }
   }, [courseId, isTeacherCourse]);
 
+  const lessonsFromApi = apiLessons.map((l) => ({
+    ...l,
+    completed: lessonProgressStore.isComplete(courseId ?? "", l.id),
+  }));
+  const lessonsFromTeacher = teacherCourse
+    ? [...teacherCourse.lessons].sort((a, b) => a.order - b.order).map((l) => ({
+        id: l.id,
+        title: l.title,
+        duration: l.duration ?? "—",
+        completed: lessonProgressStore.isComplete(courseId ?? "", l.id),
+      }))
+    : [];
+  const lessonsFromMock =
+    id && LESSONS_BY_COURSE[id]
+      ? LESSONS_BY_COURSE[id].map((l) => ({
+          id: String(l.id),
+          title: l.title,
+          duration: l.duration,
+          completed: l.completed || lessonProgressStore.isComplete(String(id), String(l.id)),
+        }))
+      : [];
+
+  const lessons: LessonRow[] = apiCourse ? lessonsFromApi : teacherCourse ? lessonsFromTeacher : lessonsFromMock;
+
+  const completedCount = lessons.filter((l) => l.completed).length;
+  const progressPercent = lessons.length ? Math.round((completedCount / lessons.length) * 100) : 0;
+  const statusFromProgress =
+    progressPercent >= 100 ? "Completed" : progressPercent >= 75 ? "Almost Complete" : "In Progress";
+
   const course = apiCourse
-    ? { id: courseId!, ...apiCourse, progress: 0, status: "In Progress", nextLesson: apiLessons[0]?.title ?? "—" }
+    ? { id: courseId!, ...apiCourse, progress: progressPercent, status: statusFromProgress, nextLesson: lessons.find((l) => !l.completed)?.title ?? apiLessons[0]?.title ?? "—" }
     : teacherCourse
       ? {
           id: courseId!,
           title: teacherCourse.title,
           instructor: teacherCourse.instructorName,
-          progress: 0,
-          status: "In Progress",
-          nextLesson: teacherCourse.lessons.length ? teacherCourse.lessons.sort((a, b) => a.order - b.order)[0]?.title ?? "—" : "—",
+          progress: progressPercent,
+          status: statusFromProgress,
+          nextLesson: lessons.find((l) => !l.completed)?.title ?? teacherCourse.lessons.sort((a, b) => a.order - b.order)[0]?.title ?? "—",
           category: "Course",
           duration: `${teacherCourse.lessons.length} lessons`,
           modules: teacherCourse.lessons.length,
           enrolledDate: teacherCourse.createdAt.slice(0, 10),
         }
       : id
-        ? ENROLLED_COURSES[id]
+        ? {
+            ...ENROLLED_COURSES[id],
+            progress: progressPercent,
+            status: statusFromProgress,
+            nextLesson: lessons.find((l) => !l.completed)?.title ?? ENROLLED_COURSES[id].nextLesson ?? "—",
+          }
         : undefined;
-
-  const lessonsFromTeacher = teacherCourse
-    ? [...teacherCourse.lessons].sort((a, b) => a.order - b.order).map((l) => ({ id: l.id, title: l.title, duration: l.duration ?? "—", completed: false }))
-    : [];
-  const lessons: LessonRow[] = apiCourse ? apiLessons : teacherCourse ? lessonsFromTeacher : (id && LESSONS_BY_COURSE[id])?.map((l) => ({ ...l, id: String(l.id), completed: false })) ?? [];
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   useEffect(() => {

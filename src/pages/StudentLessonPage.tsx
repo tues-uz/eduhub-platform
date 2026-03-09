@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
+import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
 import { eduhubCourses, eduhubLessons, eduhubModules } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 
@@ -186,6 +187,9 @@ const StudentLessonPage = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   const [markedComplete, setMarkedComplete] = useState(false);
   useEffect(() => {
+    if (courseId && lessonId) setMarkedComplete(lessonProgressStore.isComplete(courseId, lessonId));
+  }, [courseId, lessonId]);
+  useEffect(() => {
     const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
     const id = setInterval(check, 100);
     return () => clearInterval(id);
@@ -242,9 +246,9 @@ const StudentLessonPage = () => {
             <h1 className="font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "26px" }}>
               {lesson.title}
             </h1>
-            {!isTeacherLesson && markedComplete && (
+            {markedComplete && (
               <span className="flex-shrink-0 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                Video completed
+                Completed
               </span>
             )}
           </div>
@@ -404,26 +408,30 @@ const StudentLessonPage = () => {
                 </Link>
               )}
             </div>
-            {!isTeacherLesson && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full"
-                onClick={() => setMarkedComplete(!markedComplete)}
-              >
-                {markedComplete ? (
-                  <>
-                    <CheckCircle2 className="mr-1.5 h-4 w-4 text-green-600" />
-                    Marked complete
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                    Mark as complete
-                  </>
-                )}
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={() => {
+                if (!courseId || !lessonId) return;
+                const next = !markedComplete;
+                setMarkedComplete(next);
+                if (next) lessonProgressStore.markComplete(courseId, lessonId);
+                else lessonProgressStore.unmarkComplete(courseId, lessonId);
+              }}
+            >
+              {markedComplete ? (
+                <>
+                  <CheckCircle2 className="mr-1.5 h-4 w-4 text-green-600" />
+                  Marked complete
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                  Mark as complete
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </main>

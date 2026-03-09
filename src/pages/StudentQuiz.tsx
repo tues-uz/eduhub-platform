@@ -4,11 +4,14 @@ import { ClipboardList, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { teacherQuizStore } from "@/features/teacher/data/teacherQuizStore";
+import { quizAttemptStore } from "@/features/teacher/data/quizAttemptStore";
+import { useAuthSession } from "@/features/auth/context";
 import type { Quiz } from "@/features/teacher/quizTypes";
 
 const LETTER_COLORS = ["bg-blue-500", "bg-red-500", "bg-amber-500", "bg-green-500"] as const;
 
 const StudentQuiz = () => {
+  const { user } = useAuthSession();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [screen, setScreen] = useState<"list" | "quiz" | "result">("list");
@@ -33,9 +36,7 @@ const StudentQuiz = () => {
     setCurrentIndex(0);
     setSelectedOption(null);
     setShowFeedback(false);
-    setScore(0);
-    const total = quiz.questions.reduce((sum, q) => sum + (q.points ?? 1), 0);
-    setMaxPoints(total);
+    setCorrectCount(0);
     setScreen("quiz");
   };
 
@@ -56,6 +57,14 @@ const StudentQuiz = () => {
       setSelectedOption(null);
       setShowFeedback(false);
     } else {
+      quizAttemptStore.add(
+        currentQuiz.id,
+        user.id ?? "anonymous",
+        user.name,
+        correctCount,
+        currentQuiz.questions.length,
+        user.email
+      );
       setScreen("result");
     }
   };
@@ -68,6 +77,9 @@ const StudentQuiz = () => {
     setShowFeedback(false);
     setCorrectCount(0);
   };
+
+  const hasCompletedQuiz = (quizId: string) =>
+    quizAttemptStore.getByQuizId(quizId).some((a) => a.studentId === (user.id ?? "anonymous"));
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
@@ -97,31 +109,46 @@ const StudentQuiz = () => {
                 </div>
               ) : (
               <div className="space-y-4">
-                {quizzes.map((quiz) => (
-                  <div
-                    key={quiz.id}
-                    className="flex items-center justify-between rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm transition-all hover:border-gray-300/50 hover:shadow-md"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100">
-                        <ClipboardList className="h-6 w-6 text-violet-600" />
-                      </div>
-                      <div>
-                        <h2 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
-                          {quiz.title}
-                        </h2>
-                        <p className="text-sm text-foreground/60">{quiz.questions.length} questions</p>
-                      </div>
-                    </div>
-                    <Button
-                      className="rounded-full"
-                      style={{ backgroundColor: "#3954d0" }}
-                      onClick={() => startQuiz(quiz)}
+                {quizzes.map((quiz) => {
+                  const completed = hasCompletedQuiz(quiz.id);
+                  return (
+                    <div
+                      key={quiz.id}
+                      className="flex items-center justify-between rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm transition-all hover:border-gray-300/50 hover:shadow-md"
                     >
-                      Start
-                    </Button>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100">
+                          <ClipboardList className="h-6 w-6 text-violet-600" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                              {quiz.title}
+                            </h2>
+                            {completed && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                Completed
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-foreground/60">{quiz.questions.length} questions</p>
+                        </div>
+                      </div>
+                      {completed ? (
+                        <span className="text-sm text-muted-foreground font-medium">Done</span>
+                      ) : (
+                        <Button
+                          className="rounded-full"
+                          style={{ backgroundColor: "#3954d0" }}
+                          onClick={() => startQuiz(quiz)}
+                        >
+                          Start
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
               )}
             </>
@@ -206,9 +233,6 @@ const StudentQuiz = () => {
               <div className="flex flex-wrap justify-center gap-3">
                 <Button variant="outline" className="rounded-full" onClick={resetQuiz}>
                   Back to quizzes
-                </Button>
-                <Button className="rounded-full" style={{ backgroundColor: "#3954d0" }} onClick={() => startQuiz(currentQuiz)}>
-                  Retry quiz
                 </Button>
               </div>
             </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { format, startOfDay } from "date-fns";
-import { ArrowLeft, Plus, Trash2, ClipboardList, GripVertical, ChevronDown, ChevronUp, CalendarClock } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ClipboardList, GripVertical, ChevronDown, ChevronUp, CalendarClock, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -417,6 +417,20 @@ const TeacherQuizPage = () => {
                         <p className="text-xs text-muted-foreground mt-1">{quiz.questions.length} questions</p>
                       </div>
                       <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-lg"
+                          asChild
+                        >
+                          <Link
+                            to={`/dashboard/teacher/placement-test/${quiz.id}/results`}
+                            title="View results"
+                          >
+                            <BarChart2 className="h-4 w-4 mr-1" />
+                            Results
+                          </Link>
+                        </Button>
                         <Button variant="outline" size="sm" className="rounded-lg" onClick={() => startEdit(quiz)}>
                           Edit
                         </Button>
@@ -434,6 +448,7 @@ const TeacherQuizPage = () => {
                   ))}
                 </div>
               )}
+
             </>
           )}
 
