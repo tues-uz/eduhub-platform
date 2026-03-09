@@ -1,10 +1,10 @@
-export type LessonContentType = "pdf" | "video";
+export type LessonContentType = "pdf" | "video" | "pdf_upload" | "video_upload";
 
 export type TeacherLesson = {
   id: string;
   title: string;
   contentType: LessonContentType;
-  /** PDF URL or video embed/link URL */
+  /** PDF URL, video URL, or uploaded file URL */
   contentUrl: string;
   duration?: string;
   order: number;

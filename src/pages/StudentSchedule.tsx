@@ -67,7 +67,7 @@ const StudentSchedule = () => {
                     </p>
                   )}
                 </div>
-                <Button size="sm" className="rounded-full flex-shrink-0" style={{ backgroundColor: "#FF2D73" }}>
+                <Button size="sm" className="rounded-full flex-shrink-0" style={{ backgroundColor: "#1e40af" }}>
                   {item.type === "class" ? "Join" : "Open"}
                 </Button>
               </div>

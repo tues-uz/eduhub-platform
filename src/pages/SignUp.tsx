@@ -178,7 +178,7 @@ const SignUp = () => {
                 <Button
                   type="submit"
                   className="w-full h-12 rounded-full text-white font-semibold text-base transition-all duration-300 hover:opacity-90"
-                  style={{ backgroundColor: '#FF2D73' }}
+                  style={{ backgroundColor: '#1e40af' }}
                 >
                   Create Account
                 </Button>

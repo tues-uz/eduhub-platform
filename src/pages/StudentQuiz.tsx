@@ -3,91 +3,24 @@ import { Link } from "react-router-dom";
 import { ClipboardList, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/DashboardSidebar";
-
-type QuizOption = { letter: "A" | "B" | "C" | "D"; text: string; correct: boolean };
-type QuizQuestion = { id: number; question: string; image?: string; options: QuizOption[] };
-type Quiz = { id: number; title: string; questions: QuizQuestion[] };
-
-const QUIZZES: Quiz[] = [
-  {
-    id: 1,
-    title: "Introduction to Economics",
-    questions: [
-      {
-        id: 1,
-        question: "What is the main focus of microeconomics?",
-        image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=80",
-        options: [
-          { letter: "A", text: "National income and employment", correct: false },
-          { letter: "B", text: "Individual consumers and firms", correct: true },
-          { letter: "C", text: "International trade policies", correct: false },
-          { letter: "D", text: "Government budget deficits", correct: false },
-        ],
-      },
-      {
-        id: 2,
-        question: "When demand increases and supply stays the same, what happens to price?",
-        image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80",
-        options: [
-          { letter: "A", text: "Price decreases", correct: false },
-          { letter: "B", text: "Price stays the same", correct: false },
-          { letter: "C", text: "Price increases", correct: true },
-          { letter: "D", text: "Price becomes zero", correct: false },
-        ],
-      },
-      {
-        id: 3,
-        question: "What does 'opportunity cost' mean?",
-        image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
-        options: [
-          { letter: "A", text: "The price of a product in the market", correct: false },
-          { letter: "B", text: "The value of the next best alternative given up", correct: true },
-          { letter: "C", text: "The cost of producing one more unit", correct: false },
-          { letter: "D", text: "The total cost of a business", correct: false },
-        ],
-      },
-    ],
-  },
-  {
-    id: 2,
-    title: "Business Management Basics",
-    questions: [
-      {
-        id: 1,
-        question: "What is SWOT analysis used for?",
-        image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80",
-        options: [
-          { letter: "A", text: "Financial reporting", correct: false },
-          { letter: "B", text: "Strategic planning and assessment", correct: true },
-          { letter: "C", text: "Employee payroll", correct: false },
-          { letter: "D", text: "Inventory management", correct: false },
-        ],
-      },
-      {
-        id: 2,
-        question: "Which leadership style involves little direct supervision?",
-        image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80",
-        options: [
-          { letter: "A", text: "Autocratic", correct: false },
-          { letter: "B", text: "Laissez-faire", correct: true },
-          { letter: "C", text: "Transactional", correct: false },
-          { letter: "D", text: "Directive", correct: false },
-        ],
-      },
-    ],
-  },
-];
+import { teacherQuizStore } from "@/features/teacher/data/teacherQuizStore";
+import type { Quiz } from "@/features/teacher/quizTypes";
 
 const LETTER_COLORS = ["bg-blue-500", "bg-red-500", "bg-amber-500", "bg-green-500"] as const;
 
 const StudentQuiz = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [screen, setScreen] = useState<"list" | "quiz" | "result">("list");
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<"A" | "B" | "C" | "D" | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [score, setScore] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+
+  useEffect(() => {
+    setQuizzes(teacherQuizStore.getAll());
+  }, [screen]);
 
   useEffect(() => {
     const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
@@ -101,6 +34,8 @@ const StudentQuiz = () => {
     setSelectedOption(null);
     setShowFeedback(false);
     setScore(0);
+    const total = quiz.questions.reduce((sum, q) => sum + (q.points ?? 1), 0);
+    setMaxPoints(total);
     setScreen("quiz");
   };
 
@@ -110,7 +45,7 @@ const StudentQuiz = () => {
     if (showFeedback || !question) return;
     setSelectedOption(letter);
     const opt = question.options.find((o) => o.letter === letter);
-    if (opt?.correct) setScore((s) => s + 1);
+    if (opt?.correct) setCorrectCount((c) => c + 1);
     setShowFeedback(true);
   };
 
@@ -131,7 +66,7 @@ const StudentQuiz = () => {
     setCurrentIndex(0);
     setSelectedOption(null);
     setShowFeedback(false);
-    setScore(0);
+    setCorrectCount(0);
   };
 
   return (
@@ -155,8 +90,14 @@ const StudentQuiz = () => {
                 </h1>
                 <p className="text-foreground/70 text-sm">Choose a quiz and answer multiple choice questions (A, B, C, D).</p>
               </div>
+              {quizzes.length === 0 ? (
+                <div className="rounded-xl border border-gray-200/50 bg-white/80 p-8 text-center">
+                  <ClipboardList className="mx-auto h-12 w-12 text-foreground/30 mb-3" />
+                  <p className="text-foreground/60">No quizzes available yet. Your teacher may add placement tests or quizzes soon.</p>
+                </div>
+              ) : (
               <div className="space-y-4">
-                {QUIZZES.map((quiz) => (
+                {quizzes.map((quiz) => (
                   <div
                     key={quiz.id}
                     className="flex items-center justify-between rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm transition-all hover:border-gray-300/50 hover:shadow-md"
@@ -182,6 +123,7 @@ const StudentQuiz = () => {
                   </div>
                 ))}
               </div>
+              )}
             </>
           )}
 
@@ -240,7 +182,11 @@ const StudentQuiz = () => {
             </>
           )}
 
-          {screen === "result" && currentQuiz && (
+          {screen === "result" && currentQuiz && (() => {
+            const totalQuestions = currentQuiz.questions.length;
+            const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+            const maxPoints = 100;
+            return (
             <div className="rounded-xl border border-gray-200/50 bg-white/80 p-8 shadow-sm text-center">
               <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
                 <CheckCircle2 className="h-8 w-8 text-green-600" />
@@ -248,8 +194,14 @@ const StudentQuiz = () => {
               <h2 className="mb-2 text-2xl font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
                 Quiz complete!
               </h2>
-              <p className="mb-6 text-foreground/70">
-                The result and info of this quiz will be sent to your email.
+              <p className="mb-2 text-foreground/70">
+                Your score
+              </p>
+              <p className="mb-6 text-4xl font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                {score} <span className="text-2xl font-semibold text-foreground/60">/ {maxPoints}</span>
+              </p>
+              <p className="mb-6 text-sm text-foreground/60">
+                {correctCount} correct out of {totalQuestions} questions. Total score is out of 100 (100 ÷ {totalQuestions} = {totalQuestions > 0 ? Math.round(100 / totalQuestions) : 0} pts per question).
               </p>
               <div className="flex flex-wrap justify-center gap-3">
                 <Button variant="outline" className="rounded-full" onClick={resetQuiz}>
@@ -260,7 +212,8 @@ const StudentQuiz = () => {
                 </Button>
               </div>
             </div>
-          )}
+            );
+          })()}
         </div>
       </main>
     </div>

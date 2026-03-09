@@ -270,3 +270,33 @@
         transform: translateX(0);
     }
 }
+
+/* Teacher dashboard: force Geist on course cards (overrides base h3/h4 font-serif) */
+.teacher-course-card,
+.teacher-course-card h3,
+.teacher-course-card h4,
+.teacher-course-card p,
+.teacher-course-card span,
+.teacher-course-card dl,
+.teacher-course-card dd,
+.teacher-course-card dt {
+    font-family: 'Geist Sans', sans-serif !important;
+}
+
+/* Teacher course form page: force Geist on all content (overrides base heading font-serif) */
+.teacher-course-form-page,
+.teacher-course-form-page h1,
+.teacher-course-form-page h2,
+.teacher-course-form-page h3,
+.teacher-course-form-page h4,
+.teacher-course-form-page h5,
+.teacher-course-form-page h6,
+.teacher-course-form-page p,
+.teacher-course-form-page span,
+.teacher-course-form-page label,
+.teacher-course-form-page input,
+.teacher-course-form-page textarea,
+.teacher-course-form-page button,
+.teacher-course-form-page select {
+    font-family: 'Geist Sans', sans-serif !important;
+}

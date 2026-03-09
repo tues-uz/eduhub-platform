@@ -1,11 +1,28 @@
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 import type { SessionUser, UserRole } from "./types";
 
+const USER_ID_KEY = "userId";
+
 function readSessionUser(): SessionUser {
   const role = (localStorage.getItem("userRole") || "student") as UserRole;
   const name = localStorage.getItem("userName") || (role === "admin" ? "Admin" : "Demo User");
   const email = localStorage.getItem("userEmail") || "demo@eduhub.com";
-  return { name, email, role };
+  const id = localStorage.getItem(USER_ID_KEY) || undefined;
+  return { id, name, email, role };
+}
+
+export function setSessionUser(user: SessionUser): void {
+  if (user.id) localStorage.setItem(USER_ID_KEY, user.id);
+  localStorage.setItem("userName", user.name);
+  localStorage.setItem("userEmail", user.email);
+  localStorage.setItem("userRole", user.role);
+}
+
+export function clearSessionUser(): void {
+  localStorage.removeItem(USER_ID_KEY);
+  localStorage.removeItem("userName");
+  localStorage.removeItem("userEmail");
+  localStorage.removeItem("userRole");
 }
 
 type AuthSessionValue = {
