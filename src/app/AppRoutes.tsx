@@ -5,6 +5,7 @@ import SignUp from "@/pages/SignUp";
 import VerifyEmail from "@/pages/VerifyEmail";
 import DashboardRedirect from "@/pages/DashboardRedirect";
 import StudentCoursesPage from "@/features/student/pages/StudentCoursesPage";
+import StudentAvailableCourses from "@/pages/StudentAvailableCourses";
 import StudentCourseDetail from "@/pages/StudentCourseDetail";
 import StudentLessonPage from "@/pages/StudentLessonPage";
 import StudentAssignments from "@/pages/StudentAssignments";
@@ -33,6 +34,7 @@ export function AppRoutes() {
       <Route path={appRoutes.signIn} element={<SignIn />} />
       <Route path={appRoutes.register} element={<SignUp />} />
       <Route path={appRoutes.verifyEmail} element={<VerifyEmail />} />
+      <Route path="/verifyemail" element={<VerifyEmail />} />
 
       <Route path={appRoutes.dashboard} element={<DashboardRedirect />} />
 
@@ -60,6 +62,7 @@ export function AppRoutes() {
       <Route path="/dashboard/teacher/settings" element={<TeacherPlaceholder />} />
 
       <Route path="/dashboard/courses" element={<StudentCoursesPage />} />
+      <Route path="/dashboard/available-courses" element={<StudentAvailableCourses />} />
       <Route path="/dashboard/courses/:courseId" element={<StudentCourseDetail />} />
       <Route path="/dashboard/courses/:courseId/lessons/:lessonId" element={<StudentLessonPage />} />
       <Route path="/dashboard/assignments" element={<StudentAssignments />} />

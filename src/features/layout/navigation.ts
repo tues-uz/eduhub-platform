@@ -12,6 +12,7 @@ import {
   UserPlus,
   Receipt,
   Briefcase,
+  Library,
 } from "lucide-react";
 
 type MenuItemBase = {
@@ -30,6 +31,7 @@ export type NestedMenuItem = MenuItemBase & {
 export const studentMenuItems: FlatMenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: BookOpen, label: "My Courses", path: "/dashboard/courses" },
+  { icon: Library, label: "Available Courses", path: "/dashboard/available-courses" },
   { icon: ListChecks, label: "Placement Test", path: "/dashboard/assignments" },
   { icon: ClipboardList, label: "Quiz", path: "/dashboard/quiz" },
   { icon: Award, label: "Certificates", path: "/dashboard/certificates" },

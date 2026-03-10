@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { eduhubAuth, setAuthTokens } from "@/api/eduhubClient";
-import { setSessionUser } from "@/features/auth/context";
+import { setSessionUser, useAuthSession } from "@/features/auth/context";
 import type { UserRole } from "@/features/auth/types";
 
 function mapApiRoleToApp(apiRole: string): UserRole {
@@ -31,6 +31,7 @@ const SignIn = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { refreshUser } = useAuthSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +48,7 @@ const SignIn = () => {
         email: res.user.email,
         role,
       });
+      refreshUser();
       toast({ title: "Welcome back!", description: `Signed in as ${res.user.fullName}` });
       const redirect = role === "admin" ? "/dashboard/admin" : role === "teacher" ? "/dashboard/teacher" : "/dashboard";
       navigate(redirect);
@@ -57,6 +59,7 @@ const SignIn = () => {
       );
       if (account) {
         setSessionUser({ name: account.name, email: account.email, role: account.role });
+        refreshUser();
         toast({ title: "Welcome back!", description: `Signed in as ${account.name} (demo)` });
         const redirect = account.role === "admin" ? "/dashboard/admin" : account.role === "teacher" ? "/dashboard/teacher" : "/dashboard";
         navigate(redirect);

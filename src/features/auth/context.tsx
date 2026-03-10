@@ -1,7 +1,15 @@
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 import type { SessionUser, UserRole } from "./types";
+import { getAccessToken } from "@/api/eduhubClient";
+import { eduhubAuth } from "@/api/eduhubClient";
 
 const USER_ID_KEY = "userId";
+
+function mapApiRoleToApp(apiRole: string): UserRole {
+  if (apiRole === "LECTURER") return "teacher";
+  if (apiRole === "ADMIN") return "admin";
+  return "student";
+}
 
 function readSessionUser(): SessionUser {
   const role = (localStorage.getItem("userRole") || "student") as UserRole;
@@ -28,12 +36,36 @@ export function clearSessionUser(): void {
 type AuthSessionValue = {
   user: SessionUser;
   setRole: (role: UserRole) => void;
+  /** Sync context from localStorage (e.g. after login). Call after setSessionUser to update UI without refresh. */
+  refreshUser: () => void;
 };
 
 const AuthSessionContext = createContext<AuthSessionValue | null>(null);
 
 export function AuthSessionProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<SessionUser>(readSessionUser);
+
+  const refreshUser = useMemo(() => () => setUser(readSessionUser()), []);
+
+  // On mount: if we have a token, fetch current user from API so role/profile are correct without hard refresh
+  useEffect(() => {
+    if (!getAccessToken()) return;
+    eduhubAuth
+      .me()
+      .then((me) => {
+        const role = mapApiRoleToApp(me.role);
+        setSessionUser({
+          id: me.id,
+          name: me.fullName,
+          email: me.email,
+          role,
+        });
+        setUser(readSessionUser());
+      })
+      .catch(() => {
+        // Token invalid or API error; leave existing session as-is
+      });
+  }, []);
 
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
@@ -53,8 +85,9 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
         localStorage.setItem("userRole", role);
         setUser(readSessionUser());
       },
+      refreshUser,
     }),
-    [user]
+    [user, refreshUser]
   );
 
   return <AuthSessionContext.Provider value={value}>{children}</AuthSessionContext.Provider>;

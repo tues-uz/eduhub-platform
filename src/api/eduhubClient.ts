@@ -145,6 +145,17 @@ export const eduhubCourses = {
     sp.set("size", String(params?.size ?? 50));
     return request<PageResponse<CourseSummaryResponse>>(`/courses/lecturer/${lecturerId}?${sp}`);
   },
+
+  /**
+   * Available courses from lecturers (Swagger: getMyCourses — GET /courses/my-courses).
+   * Returns courses created by lecturers that the current user can browse/enroll in.
+   */
+  getAvailableCourses: (params?: Pageable) => {
+    const sp = new URLSearchParams();
+    sp.set("page", String(params?.page ?? 0));
+    sp.set("size", String(params?.size ?? 100));
+    return request<PageResponse<CourseSummaryResponse>>(`/courses/my-courses?${sp}`);
+  },
 };
 
 /** Modules */
