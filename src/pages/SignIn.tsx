@@ -40,7 +40,7 @@ const SignIn = () => {
 
     try {
       const res = await eduhubAuth.login({ email: email.trim(), password });
-      setAuthTokens(res.accessToken, res.refreshToken);
+      setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);
       const role = mapApiRoleToApp(res.user.role);
       setSessionUser({
         id: res.user.id,

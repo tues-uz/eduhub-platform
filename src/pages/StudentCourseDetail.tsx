@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   BookOpen,
   PlayCircle,
@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   ClipboardList,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -17,6 +18,8 @@ import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
 import { eduhubCourses, eduhubModules, eduhubLessons } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
+import { useEnrollMutation } from "@/features/student/hooks/useStudentQueries";
+import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 
 const ENROLLED_COURSES: Record<
   number,
@@ -148,15 +151,21 @@ type LessonRow = { id: string; title: string; duration: string; completed: boole
 
 const StudentCourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
+  const navigate = useNavigate();
   const [apiCourse, setApiCourse] = useState<{ id: string; title: string; instructor: string; category: string; duration: string; modules: number; enrolledDate: string } | null>(null);
   const [apiLessons, setApiLessons] = useState<LessonRow[]>([]);
   const [apiLoading, setApiLoading] = useState(false);
+
+  const { data: enrolledCourses = [] } = useStudentCoursesQuery();
+  const enrollMutation = useEnrollMutation();
 
   const isTeacherCourse = courseId?.startsWith(TEACHER_PREFIX);
   const teacherCourseId = isTeacherCourse ? courseId!.slice(TEACHER_PREFIX.length) : null;
   const teacherCourse = teacherCourseId ? teacherCoursesStore.getById(teacherCourseId) : null;
 
   const id = courseId && !isTeacherCourse && !isUuid(courseId ?? "") ? parseInt(courseId, 10) : NaN;
+
+  const isEnrolled = courseId ? enrolledCourses.some((c) => c.id === courseId || c.id === courseId) : false;
 
   useEffect(() => {
     if (courseId && isUuid(courseId) && !isTeacherCourse) {
@@ -193,6 +202,12 @@ const StudentCourseDetail = () => {
       }).catch(() => setApiCourse(null)).finally(() => setApiLoading(false));
     }
   }, [courseId, isTeacherCourse]);
+
+  const handleEnroll = async () => {
+    if (!courseId || isTeacherCourse) return;
+    await enrollMutation.mutateAsync(courseId);
+    navigate(`/dashboard/courses/${courseId}`);
+  };
 
   const lessonsFromApi = apiLessons.map((l) => ({
     ...l,
@@ -318,42 +333,63 @@ const StudentCourseDetail = () => {
                     <Layers className="h-3.5 w-3.5" />
                     {course.modules} modules
                   </span>
-                  <span>Enrolled {formatDate(course.enrolledDate)}</span>
+                  {isEnrolled && <span>Enrolled {formatDate(course.enrolledDate)}</span>}
                 </div>
-                <div className="mt-4">
-                  <div className="mb-2 flex justify-between text-xs text-foreground/60">
-                    <span>Progress</span>
-                    <span className="font-semibold text-foreground">{course.progress}%</span>
+                {isEnrolled ? (
+                  <div className="mt-4">
+                    <div className="mb-2 flex justify-between text-xs text-foreground/60">
+                      <span>Progress</span>
+                      <span className="font-semibold text-foreground">{course.progress}%</span>
+                    </div>
+                    <Progress value={course.progress} className="h-2 bg-gray-200" />
                   </div>
-                  <Progress value={course.progress} className="h-2 bg-gray-200" />
-                </div>
+                ) : (
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-full"
+                      style={{ backgroundColor: "#3954d0" }}
+                      onClick={handleEnroll}
+                      disabled={enrollMutation.isPending}
+                    >
+                      {enrollMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : null}
+                      Enroll Now
+                    </Button>
+                  </div>
+                )}
               </div>
-              <span
-                className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                  course.status === "Completed" ? "bg-green-100 text-green-700" : course.status === "Almost Complete" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
-                }`}
-              >
-                {course.status}
-              </span>
+              {isEnrolled && (
+                <span
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                    course.status === "Completed" ? "bg-green-100 text-green-700" : course.status === "Almost Complete" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+                  }`}
+                >
+                  {course.status}
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
-              Course content
-            </h2>
-            {nextLesson && (
-              <Link to={`/dashboard/courses/${String(course.id)}/lessons/${nextLesson.id}${nextLesson.moduleId ? `?moduleId=${nextLesson.moduleId}` : ""}`}>
-                <Button size="sm" className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
-                  <PlayCircle className="mr-2 h-4 w-4" />
-                  Continue: {nextLesson.title}
-                </Button>
-              </Link>
-            )}
-          </div>
+          {isEnrolled && (
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                Course content
+              </h2>
+              {nextLesson && (
+                <Link to={`/dashboard/courses/${String(course.id)}/lessons/${nextLesson.id}${nextLesson.moduleId ? `?moduleId=${nextLesson.moduleId}` : ""}`}>
+                  <Button size="sm" className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
+                    <PlayCircle className="mr-2 h-4 w-4" />
+                    Continue: {nextLesson.title}
+                  </Button>
+                </Link>
+              )}
+            </div>
+          )}
 
-          <div className="space-y-2">
-            {lessons.map((lesson, index) => {
+          {isEnrolled && (
+            <div className="space-y-2">
+              {lessons.map((lesson, index) => {
               const isUnlocked = teacherCourse ? true : index === 0 || lessons[index - 1].completed;
               return (
                 <div
@@ -417,6 +453,7 @@ const StudentCourseDetail = () => {
               );
             })}
           </div>
+          )}
 
           <div className="mt-8 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 p-6 text-center">
             <div className="flex flex-col items-center gap-3">

@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Search, User, Clock, Layers, DollarSign, Loader2 } from "lucide-react";
+import { BookOpen, Search, User, Clock, Layers, DollarSign, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { useLayoutContext } from "@/features/layout/context";
-import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
+import { useStudentCoursesQuery, useEnrollMutation } from "@/features/student/hooks/useStudentQueries";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { eduhubCourses } from "@/api/eduhubClient";
 
@@ -33,6 +33,7 @@ function formatPrice(price: number | undefined): string {
 const StudentAvailableCourses = () => {
   const { isSidebarCollapsed } = useLayoutContext();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
+  const enrollMutation = useEnrollMutation();
   const [searchQuery, setSearchQuery] = useState("");
   const [courses, setCourses] = useState<AvailableCourseItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +89,7 @@ const StudentAvailableCourses = () => {
 
       try {
         const seenIds = new Set<string>();
-        let apiItems: AvailableCourseItem[] = [];
+        const apiItems: AvailableCourseItem[] = [];
 
         // 1) GET /courses = getAllPublishedCourses (Swagger): lecturer-created courses that are PUBLISHED. Students explore these.
         try {
@@ -103,19 +104,6 @@ const StudentAvailableCourses = () => {
           // API down or auth issue
         }
 
-        // 2) GET /courses/my-courses = getMyCourses: backend-defined (e.g. extra “available to me” courses)
-        try {
-          const res = await eduhubCourses.getAvailableCourses({ page: 0, size: 100 });
-          (res.content ?? []).forEach((c) => {
-            if (!seenIds.has(c.id)) {
-              seenIds.add(c.id);
-              apiItems.push(mapApiToItem(c));
-            }
-          });
-        } catch {
-          // ignore
-        }
-
         const localOnly = localItems.filter((c) => !seenIds.has(c.id));
         if (!cancelled) {
           setCourses([...apiItems, ...localOnly]);
@@ -128,6 +116,12 @@ const StudentAvailableCourses = () => {
     load();
     return () => { cancelled = true; };
   }, [enrolledCourses]);
+
+  const handleEnroll = async (courseId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await enrollMutation.mutateAsync(courseId);
+  };
 
   // Show all courses (API + teacher-created) so students can see and take teacher courses
   const filteredCourses = courses.filter((course) => {
@@ -221,15 +215,31 @@ const StudentAvailableCourses = () => {
                     </div>
 
                     <div className="mt-auto border-t border-gray-100 pt-4">
-                      <Link to={`/dashboard/courses/${course.linkId}`} className="block">
+                      {course.enrolled ? (
+                        <Link to={`/dashboard/courses/${course.linkId}`} className="block">
+                          <Button
+                            size="sm"
+                            className="w-full rounded-full"
+                            style={{ backgroundColor: "#3954d0" }}
+                          >
+                            Continue
+                          </Button>
+                        </Link>
+                      ) : (
                         <Button
                           size="sm"
                           className="w-full rounded-full"
                           style={{ backgroundColor: "#3954d0" }}
+                          onClick={(e) => handleEnroll(course.linkId, e)}
+                          disabled={enrollMutation.isPending}
                         >
-                          {course.enrolled ? "Continue" : "View course"}
+                          {enrollMutation.isPending ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            "Enroll"
+                          )}
                         </Button>
-                      </Link>
+                      )}
                     </div>
                   </div>
                 ))}

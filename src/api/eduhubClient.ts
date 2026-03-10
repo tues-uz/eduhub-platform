@@ -22,23 +22,34 @@ const BASE = EDUHUB_API_BASE_URL + EDUHUB_API_PREFIX;
 
 const AUTH_ACCESS_TOKEN_KEY = "eduhub_accessToken";
 const AUTH_REFRESH_TOKEN_KEY = "eduhub_refreshToken";
+const AUTH_EXPIRES_AT_KEY = "eduhub_expiresAt";
+
+const TOKEN_REFRESH_BUFFER_MS = 60 * 1000;
 
 export function getAccessToken(): string | null {
   return localStorage.getItem(AUTH_ACCESS_TOKEN_KEY);
 }
 
-export function setAuthTokens(accessToken: string, refreshToken: string): void {
+export function setAuthTokens(accessToken: string, refreshToken: string, expiresIn: number = 3600): void {
   localStorage.setItem(AUTH_ACCESS_TOKEN_KEY, accessToken);
   localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refreshToken);
+  localStorage.setItem(AUTH_EXPIRES_AT_KEY, String(Date.now() + expiresIn * 1000));
 }
 
 export function clearAuthTokens(): void {
   localStorage.removeItem(AUTH_ACCESS_TOKEN_KEY);
   localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
+  localStorage.removeItem(AUTH_EXPIRES_AT_KEY);
 }
 
 export function getRefreshToken(): string | null {
   return localStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+}
+
+function isTokenExpiringSoon(): boolean {
+  const expiresAt = localStorage.getItem(AUTH_EXPIRES_AT_KEY);
+  if (!expiresAt) return false;
+  return Date.now() + TOKEN_REFRESH_BUFFER_MS > parseInt(expiresAt, 10);
 }
 
 /** Auth API shape. Staging Swagger: https://eduhub-platform-api-staging.kubeletto.app/swagger-ui/index.html */
@@ -55,6 +66,15 @@ async function request<T>(
     if (token) headers.set("Authorization", `Bearer ${token}`);
   }
 
+  // Proactive token refresh before expiry
+  if (!skipAuth && !_retrying && isTokenExpiringSoon() && getRefreshToken()) {
+    try {
+      await refreshAuth();
+    } catch {
+      // Continue with request, let it fail with 401 if needed
+    }
+  }
+
   const res = await fetch(url, { ...init, headers });
   const text = await res.text();
 
@@ -65,6 +85,10 @@ async function request<T>(
     } catch {
       clearAuthTokens();
     }
+  }
+
+  if (res.status === 403) {
+    throw new Error("Access denied. You don't have permission to perform this action.");
   }
 
   if (res.status === 204) return undefined as T;
@@ -94,7 +118,7 @@ export async function refreshAuth(): Promise<boolean> {
   if (!res.ok) return false;
   const data = (await res.json()) as AuthResponse;
   if (data.accessToken) {
-    setAuthTokens(data.accessToken, data.refreshToken ?? refreshToken);
+    setAuthTokens(data.accessToken, data.refreshToken ?? refreshToken, data.expiresIn);
     return true;
   }
   return false;
@@ -139,6 +163,19 @@ export const eduhubCourses = {
 
   publish: (id: string) => request<void>(`/courses/${id}/publish`, { method: "PATCH" }),
 
+  archive: (id: string) => request<void>(`/courses/${id}/archive`, { method: "PATCH" }),
+
+  getEnrollmentCount: (id: string) => request<number>(`/courses/${id}/enrollment-count`),
+
+  getAvailableCourses: (params?: { page?: number; size?: number; category?: string; search?: string }) => {
+    const sp = new URLSearchParams();
+    sp.set("page", String(params?.page ?? 0));
+    sp.set("size", String(params?.size ?? 50));
+    if (params?.category) sp.set("category", params.category);
+    if (params?.search) sp.set("search", params.search);
+    return request<PageResponse<CourseSummaryResponse>>(`/courses/available?${sp}`);
+  },
+
   getByLecturer: (lecturerId: string, params?: Pageable) => {
     const sp = new URLSearchParams();
     sp.set("page", String(params?.page ?? 0));
@@ -146,16 +183,6 @@ export const eduhubCourses = {
     return request<PageResponse<CourseSummaryResponse>>(`/courses/lecturer/${lecturerId}?${sp}`);
   },
 
-  /**
-   * Available courses from lecturers (Swagger: getMyCourses — GET /courses/my-courses).
-   * Returns courses created by lecturers that the current user can browse/enroll in.
-   */
-  getAvailableCourses: (params?: Pageable) => {
-    const sp = new URLSearchParams();
-    sp.set("page", String(params?.page ?? 0));
-    sp.set("size", String(params?.size ?? 100));
-    return request<PageResponse<CourseSummaryResponse>>(`/courses/my-courses?${sp}`);
-  },
 };
 
 /** Modules */

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, BookOpen, Plus, Pencil, Trash2, FileText, Video, Clock } from "lucide-react";
+import { ArrowLeft, BookOpen, Plus, Pencil, Trash2, FileText, Video, Clock, Eye, EyeOff, Archive, ArchiveRestore } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -45,6 +45,7 @@ const TeacherCoursesPage = () => {
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebarCollapsed");
     return saved === "true";
@@ -73,6 +74,7 @@ const TeacherCoursesPage = () => {
             lessons: [],
             createdAt: c.createdAt,
             updatedAt: c.createdAt,
+            status: c.status as "DRAFT" | "PUBLISHED",
           }));
           if (!cancelled) setCourses([...apiCourses, ...local]);
         } catch {
@@ -99,6 +101,38 @@ const TeacherCoursesPage = () => {
     }
     setCourses((prev) => prev.filter((c) => c.id !== id));
     setDeleteId(null);
+  };
+
+  const handlePublish = async (id: string) => {
+    if (!isUuid(id)) return;
+    setPublishingId(id);
+    try {
+      await eduhubCourses.publish(id);
+      setCourses((prev) =>
+        prev.map((c) =>
+          c.id === id ? { ...c, status: c.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED" } : c
+        )
+      );
+    } catch {
+      // ignore
+    }
+    setPublishingId(null);
+  };
+
+  const handleArchive = async (id: string) => {
+    if (!isUuid(id)) return;
+    setPublishingId(id);
+    try {
+      await eduhubCourses.archive(id);
+      setCourses((prev) =>
+        prev.map((c) =>
+          c.id === id ? { ...c, status: c.status === "ARCHIVED" ? "PUBLISHED" : "ARCHIVED" } : c
+        )
+      );
+    } catch {
+      // ignore
+    }
+    setPublishingId(null);
   };
 
   return (
@@ -176,8 +210,21 @@ const TeacherCoursesPage = () => {
                     style={{ fontFamily: "'Geist Sans', sans-serif" }}
                   >
                     <div className="flex flex-1 flex-col p-5 pt-4">
-                      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-gray-200/80">
-                        <BookOpen className="h-5 w-5 text-[#1e40af]/80" />
+                      <div className="mb-3 flex items-start justify-between gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-gray-200/80">
+                          <BookOpen className="h-5 w-5 text-[#1e40af]/80" />
+                        </div>
+                        {course.status && (
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                              course.status === "PUBLISHED"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {course.status}
+                          </span>
+                        )}
                       </div>
                       <CardTitle className="text-base font-semibold text-foreground line-clamp-2">
                         {course.title}
@@ -213,6 +260,56 @@ const TeacherCoursesPage = () => {
                         className="mt-4 flex w-full items-center gap-4"
                         onClick={(e) => e.stopPropagation()}
                       >
+                        {isUuid(course.id) && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={`h-8 w-8 shrink-0 rounded-md border border-gray-200 bg-white hover:bg-gray-100 ${
+                                course.status === "PUBLISHED"
+                                  ? "text-green-600 hover:text-green-700"
+                                  : "text-muted-foreground hover:text-foreground"
+                              }`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handlePublish(course.id);
+                              }}
+                              disabled={publishingId === course.id}
+                              title={course.status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                            >
+                              {course.status === "PUBLISHED" ? (
+                                <Eye className="h-3.5 w-3.5 shrink-0" />
+                              ) : (
+                                <EyeOff className="h-3.5 w-3.5 shrink-0" />
+                              )}
+                            </Button>
+                            {course.status !== "DRAFT" && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`h-8 w-8 shrink-0 rounded-md border border-gray-200 bg-white hover:bg-gray-100 ${
+                                  course.status === "ARCHIVED"
+                                    ? "text-amber-600 hover:text-amber-700"
+                                    : "text-orange-600 hover:text-orange-700"
+                                }`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleArchive(course.id);
+                                }}
+                                disabled={publishingId === course.id}
+                                title={course.status === "ARCHIVED" ? "Unarchive" : "Archive"}
+                              >
+                                {course.status === "ARCHIVED" ? (
+                                  <ArchiveRestore className="h-3.5 w-3.5 shrink-0" />
+                                ) : (
+                                  <Archive className="h-3.5 w-3.5 shrink-0" />
+                                )}
+                              </Button>
+                            )}
+                          </>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
