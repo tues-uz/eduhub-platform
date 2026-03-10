@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import EduHub from "@/pages/EduHub";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
+import VerifyEmail from "@/pages/VerifyEmail";
 import DashboardRedirect from "@/pages/DashboardRedirect";
 import StudentCoursesPage from "@/features/student/pages/StudentCoursesPage";
 import StudentCourseDetail from "@/pages/StudentCourseDetail";
@@ -31,6 +32,7 @@ export function AppRoutes() {
       <Route path={appRoutes.home} element={<EduHub />} />
       <Route path={appRoutes.signIn} element={<SignIn />} />
       <Route path={appRoutes.register} element={<SignUp />} />
+      <Route path={appRoutes.verifyEmail} element={<VerifyEmail />} />
 
       <Route path={appRoutes.dashboard} element={<DashboardRedirect />} />
 

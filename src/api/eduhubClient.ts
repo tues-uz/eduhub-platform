@@ -105,6 +105,12 @@ export const eduhubAuth = {
   login: (body: LoginRequest) =>
     request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify(body), skipAuth: true }),
 
+  register: (body: Record<string, any>) =>
+    request<{ message: string }>("/auth/register", { method: "POST", body: JSON.stringify(body), skipAuth: true }),
+
+  verifyEmail: (token: string) =>
+    request<void>(`/auth/verify-email?token=${token}`, { method: "POST", skipAuth: true }),
+
   me: () => request<{ id: string; fullName: string; email: string; role: string }>("/auth/me"),
 
   refresh: refreshAuth,
