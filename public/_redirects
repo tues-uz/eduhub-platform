@@ -1,0 +1,3 @@
+# SPA fallback: serve index.html for all routes so client-side routing works (e.g. /verify-email).
+# Used by Netlify. Vercel uses vercel.json rewrites.
+/*    /index.html   200
