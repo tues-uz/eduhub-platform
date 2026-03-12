@@ -189,6 +189,15 @@ export const eduhubCourses = {
     return request<PageResponse<CourseSummaryResponse>>(`/courses/lecturer/${lecturerId}?${sp}`);
   },
 
+  getEnrolledStudents: (courseId: string, page = 0, size = 20) => {
+    const sp = new URLSearchParams();
+    sp.set("page", String(page));
+    sp.set("size", String(size));
+    return request<PageResponse<{ id: string; fullName: string; email: string; avatarUrl?: string }>>(
+      `/courses/${courseId}/students?${sp}`
+    );
+  },
+
 };
 
 /** Modules */
@@ -257,6 +266,53 @@ export const eduhubLessonProgress = {
     ),
 };
 
+/** Quiz - tied to lessons */
+export const eduhubQuizzes = {
+  get: (courseId: string, moduleId: string, lessonId: string) =>
+    request<QuizResponse>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz`),
+
+  getResults: (courseId: string, moduleId: string, lessonId: string) =>
+    request<QuizResultResponse[]>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/results`),
+
+  publish: (courseId: string, moduleId: string, lessonId: string) =>
+    request<QuizResponse>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/publish`, { method: "PATCH" }),
+};
+
+/** Quiz types */
+export interface QuizResponse {
+  id: string;
+  title: string;
+  description?: string;
+  timeLimitMinutes: number;
+  passingScore: number;
+  isPublished: boolean;
+  questions: QuizQuestionResponse[];
+}
+
+export interface QuizQuestionResponse {
+  id: string;
+  question: string;
+  imageUrl?: string;
+  timeLimitSeconds?: number;
+  points: number;
+  options: QuizOptionResponse[];
+}
+
+export interface QuizOptionResponse {
+  letter: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface QuizResultResponse {
+  id: string;
+  student: { id: string; fullName: string; email: string };
+  scorePercent: number;
+  correctCount: number;
+  totalQuestions: number;
+  completedAt: string;
+}
+
 /** Enrollments */
 export const eduhubEnrollments = {
   getMy: () => request<EnrollmentResponse[]>("/enrollments/me"),
@@ -273,6 +329,22 @@ export const eduhubEnrollments = {
 
   markComplete: (id: string) =>
     request<void>(`/enrollments/${id}/complete`, { method: "PATCH" }),
+};
+
+/** Lecturer - stats and student management */
+export const eduhubLecturer = {
+  getStats: () => request<{
+    totalCourses: number;
+    totalStudents: number;
+    activeEnrollments: number;
+    completedEnrollments: number;
+    pendingGrading: number;
+  }>("/lecturers/me/stats"),
+
+  getEnrolledStudents: (courseId: string, page = 0, size = 20) =>
+    request<PageResponse<{ id: string; fullName: string; email: string; avatarUrl?: string }>>(
+      `/courses/${courseId}/students?page=${page}&size=${size}`
+    ),
 };
 
 /** Admin */

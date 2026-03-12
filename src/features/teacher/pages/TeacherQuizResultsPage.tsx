@@ -2,48 +2,148 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
-import { ArrowLeft, BarChart2, FileSpreadsheet } from "lucide-react";
+import { ArrowLeft, BarChart2, FileSpreadsheet, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import { eduhubQuizzes, type QuizResultResponse, type QuizResponse } from "@/api/eduhubClient";
 import { teacherQuizStore } from "../data/teacherQuizStore";
-import { quizAttemptStore } from "../data/quizAttemptStore";
+
+interface LocalQuiz {
+  id: string;
+  title: string;
+  quizType?: "quiz" | "placement-test";
+}
 
 export default function TeacherQuizResultsPage() {
-  const { quizId } = useParams<{ quizId: string }>();
+  const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     () => localStorage.getItem("sidebarCollapsed") === "true"
   );
+  const [quiz, setQuiz] = useState<QuizResponse | LocalQuiz | null>(null);
+  const [results, setResults] = useState<QuizResultResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [useLocalStorage, setUseLocalStorage] = useState(false);
+
   useEffect(() => {
     const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
     check();
     const id = setInterval(check, 100);
     return () => clearInterval(id);
   }, []);
-  const quiz = quizId ? teacherQuizStore.getById(quizId) : undefined;
-  const attempts = quizId ? quizAttemptStore.getByQuizId(quizId) : [];
 
-  if (!quizId) return <Navigate to="/dashboard/teacher/placement-test" replace />;
-  if (!quiz) return <Navigate to="/dashboard/teacher/placement-test" replace />;
+  useEffect(() => {
+    if (!courseId || !moduleId || !lessonId) {
+      setLoading(false);
+      return;
+    }
 
-  const typeLabel = (quiz.quizType ?? "quiz") === "placement-test" ? "Placement test" : "Quiz";
+    async function fetchData() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const [quizData, resultsData] = await Promise.all([
+          eduhubQuizzes.get(courseId, moduleId, lessonId),
+          eduhubQuizzes.getResults(courseId, moduleId, lessonId),
+        ]);
+        setQuiz(quizData);
+        setResults(resultsData);
+        setUseLocalStorage(false);
+      } catch (err) {
+        const localQuiz = teacherQuizStore.getById(lessonId) as LocalQuiz | undefined;
+        if (localQuiz) {
+          const { quizAttemptStore } = await import("../data/quizAttemptStore");
+          const localAttempts = quizAttemptStore.getByQuizId(lessonId);
+          setQuiz(localQuiz);
+          setResults(
+            localAttempts.map((a) => ({
+              id: a.id,
+              student: { id: a.studentId || "", fullName: a.studentName, email: a.studentEmail || "" },
+              scorePercent: a.scorePercent,
+              correctCount: a.correctCount,
+              totalQuestions: a.totalQuestions,
+              completedAt: a.completedAt,
+            }))
+          );
+          setUseLocalStorage(true);
+        } else {
+          setError(err instanceof Error ? err.message : "Failed to load quiz results");
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [courseId, moduleId, lessonId]);
+
+  if (!courseId || !moduleId || !lessonId) {
+    return <Navigate to="/dashboard/teacher/placement-test" replace />;
+  }
+
+  if (loading) {
+    return (
+      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+        <DashboardSidebar />
+        <main
+          className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
+        >
+          <div className="container mx-auto px-6 max-w-3xl">
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <span className="ml-3 text-muted-foreground">Loading quiz results...</span>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !quiz) {
+    return (
+      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+        <DashboardSidebar />
+        <main
+          className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
+        >
+          <div className="container mx-auto px-6 max-w-3xl">
+            <Link
+              to="/dashboard/teacher/placement-test"
+              className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Placement test / Quiz
+            </Link>
+            <div className="py-10 text-center">
+              <p className="text-red-500">{error || "Quiz not found"}</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const typeLabel = "quiz";
+  const quizTitle = quiz.title;
 
   const exportToExcel = useCallback(() => {
     const headers = ["No.", "Student", "Email", "Score", "Correct", "Filling date"];
-    const rows = attempts.map((a, i) => [
+    const rows = results.map((a, i) => [
       i + 1,
-      a.studentName,
-      a.studentEmail ?? "—",
+      a.student.fullName,
+      a.student.email ?? "—",
       `${a.scorePercent}%`,
       `${a.correctCount} / ${a.totalQuestions}`,
       format(new Date(a.completedAt), "MMM d, yyyy · h:mm a"),
     ]);
     const data = [headers, ...rows];
     const ws = XLSX.utils.aoa_to_sheet(data);
-    const safeTitle = quiz.title.replace(/[/\\?*\[\]:]/g, "-").slice(0, 31);
+    const safeTitle = quizTitle.replace(/[/\\?*\[\]:]/g, "-").slice(0, 31);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, safeTitle || "Results");
     XLSX.writeFile(wb, `${safeTitle || "quiz-results"}-results.xlsx`);
-  }, [quiz.title, attempts]);
+  }, [quizTitle, results]);
 
   return (
     <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
@@ -68,11 +168,12 @@ export default function TeacherQuizResultsPage() {
                   className="text-2xl font-bold text-foreground"
                   style={{ fontFamily: "'Geist Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
                 >
-                  {typeLabel} results — {quiz.title}
+                  {typeLabel} results — {quizTitle}
                 </h1>
               </div>
               <p className="text-foreground/60 text-sm">
                 Student attempts and scores for this {typeLabel.toLowerCase()}.
+                {useLocalStorage && <span className="ml-2 text-amber-600">(Showing local data)</span>}
               </p>
             </div>
             <Button
@@ -99,7 +200,7 @@ export default function TeacherQuizResultsPage() {
               </tr>
             </thead>
             <tbody>
-              {attempts.length === 0 ? (
+              {results.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -109,11 +210,11 @@ export default function TeacherQuizResultsPage() {
                   </td>
                 </tr>
               ) : (
-                attempts.map((a, index) => (
+                results.map((a, index) => (
                   <tr key={a.id} className="border-b border-gray-100 last:border-0 bg-white hover:bg-gray-50/50">
                     <td className="py-3 px-4 text-muted-foreground tabular-nums">{index + 1}</td>
-                    <td className="py-3 px-4">{a.studentName}</td>
-                    <td className="py-3 px-4 text-muted-foreground">{a.studentEmail ?? "—"}</td>
+                    <td className="py-3 px-4">{a.student.fullName}</td>
+                    <td className="py-3 px-4 text-muted-foreground">{a.student.email ?? "—"}</td>
                     <td className="py-3 px-4 font-medium">{a.scorePercent}%</td>
                     <td className="py-3 px-4 text-muted-foreground">
                       {a.correctCount} / {a.totalQuestions}

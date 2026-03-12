@@ -55,7 +55,7 @@ export function AppRoutes() {
       <Route path="/dashboard/teacher/courses/new" element={<TeacherCourseFormPage />} />
       <Route path="/dashboard/teacher/courses/:courseId/edit" element={<TeacherCourseFormPage />} />
       <Route path="/dashboard/teacher/placement-test" element={<TeacherQuizPage />} />
-      <Route path="/dashboard/teacher/placement-test/:quizId/results" element={<TeacherQuizResultsPage />} />
+      <Route path="/dashboard/teacher/placement-test/:courseId/:moduleId/:lessonId/results" element={<TeacherQuizResultsPage />} />
       <Route path="/dashboard/teacher/assignments" element={<TeacherPlaceholder />} />
       <Route path="/dashboard/teacher/students" element={<TeacherStudentsPage />} />
       <Route path="/dashboard/teacher/schedule" element={<TeacherPlaceholder />} />
