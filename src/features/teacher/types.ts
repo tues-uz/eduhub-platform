@@ -20,5 +20,5 @@ export type TeacherCourse = {
   lessons: TeacherLesson[];
   createdAt: string;
   updatedAt: string;
-  status?: "DRAFT" | "PUBLISHED";
+  status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
 };

@@ -70,6 +70,8 @@ async function request<T>(
   if (!skipAuth && !_retrying && isTokenExpiringSoon() && getRefreshToken()) {
     try {
       await refreshAuth();
+      const newToken = getAccessToken();
+      if (newToken) headers.set("Authorization", `Bearer ${newToken}`);
     } catch {
       // Continue with request, let it fail with 401 if needed
     }
@@ -81,7 +83,11 @@ async function request<T>(
   if (res.status === 401 && !skipAuth && !_retrying && getRefreshToken()) {
     try {
       const refreshed = await refreshAuth();
-      if (refreshed) return request<T>(path, { ...options, _retrying: true });
+      if (refreshed) {
+        const newToken = getAccessToken();
+        if (newToken) headers.set("Authorization", `Bearer ${newToken}`);
+        return request<T>(path, { ...options, headers, _retrying: true });
+      }
     } catch {
       clearAuthTokens();
     }
@@ -267,6 +273,11 @@ export const eduhubEnrollments = {
 
   markComplete: (id: string) =>
     request<void>(`/enrollments/${id}/complete`, { method: "PATCH" }),
+};
+
+/** Admin */
+export const eduhubAdmin = {
+  getOverview: () => request<any>("/admin/overview"),
 };
 
 /** Storage: file upload (returns URL). Use multipart/form-data; do not set Content-Type. */

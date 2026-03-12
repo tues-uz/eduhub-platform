@@ -13,8 +13,7 @@ import {
 } from "@/features/admin/data/dashboardData";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
-import { getAccessToken } from "./eduhubClient";
-import { eduhubEnrollments } from "./eduhubClient";
+import { getAccessToken, eduhubEnrollments, eduhubAdmin } from "./eduhubClient";
 
 /** Student course list item (id can be number for mock or string for teacher/API courses) */
 export type StudentCourseListItem = {
@@ -65,11 +64,20 @@ export const dashboardApi = {
     recentActivity: studentRecentActivity,
     notifications: studentNotifications,
   }),
-  getAdminOverview: async () => ({
-    stats: adminStats,
-    recentUsers: adminRecentUsers,
-    systemActivity: adminSystemActivity,
-  }),
+  getAdminOverview: async () => {
+    if (getAccessToken()) {
+      try {
+        return await eduhubAdmin.getOverview();
+      } catch (e) {
+        console.error("Failed to fetch admin overview, falling back to mock data", e);
+      }
+    }
+    return {
+      stats: adminStats,
+      recentUsers: adminRecentUsers,
+      systemActivity: adminSystemActivity,
+    };
+  },
 };
 
 /** Mock course id -> lesson count (for progress calculation from lessonProgressStore) */
