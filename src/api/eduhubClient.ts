@@ -352,6 +352,85 @@ export const eduhubAdmin = {
   getOverview: () => request<any>("/admin/overview"),
 };
 
+/** Assignments */
+export const eduhubAssignments = {
+  getByCourse: (courseId: string, page = 0, size = 20) => {
+    const sp = new URLSearchParams();
+    sp.set("page", String(page));
+    sp.set("size", String(size));
+    return request<PageResponse<AssignmentResponse>>(`/courses/${courseId}/assignments?${sp}`);
+  },
+
+  create: (courseId: string, body: AssignmentRequest) =>
+    request<AssignmentResponse>(`/courses/${courseId}/assignments`, { method: "POST", body: JSON.stringify(body) }),
+
+  update: (id: string, body: AssignmentRequest) =>
+    request<AssignmentResponse>(`/assignments/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+
+  delete: (id: string) => request<void>(`/assignments/${id}`, { method: "DELETE" }),
+
+  getSubmissions: (assignmentId: string, page = 0, size = 20) => {
+    const sp = new URLSearchParams();
+    sp.set("page", String(page));
+    sp.set("size", String(size));
+    return request<PageResponse<SubmissionResponse>>(`/assignments/${assignmentId}/submissions?${sp}`);
+  },
+
+  gradeSubmission: (submissionId: string, body: GradeRequest) =>
+    request<SubmissionResponse>(`/submissions/${submissionId}/grade`, { method: "PATCH", body: JSON.stringify(body) }),
+
+  getPending: (lecturerId: string, priority?: string, page = 0, size = 20) => {
+    const sp = new URLSearchParams();
+    sp.set("page", String(page));
+    sp.set("size", String(size));
+    if (priority) sp.set("priority", priority);
+    return request<PageResponse<SubmissionResponse>>(`/lecturers/${lecturerId}/submissions/pending?${sp}`);
+  },
+};
+
+export interface AssignmentRequest {
+  title: string;
+  description?: string;
+  dueDate?: string;
+  priority?: "HIGH" | "MEDIUM" | "LOW";
+  maxScore?: number;
+  attachments?: string[];
+  status?: "DRAFT" | "PUBLISHED" | "CLOSED";
+}
+
+export interface AssignmentResponse {
+  id: string;
+  title: string;
+  description?: string;
+  dueDate?: string;
+  priority: "HIGH" | "MEDIUM" | "LOW";
+  maxScore: number;
+  attachments: string[];
+  status: "DRAFT" | "PUBLISHED" | "CLOSED";
+  course: { id: string; title: string };
+  lecturer: { id: string; fullName: string };
+  createdAt: string;
+}
+
+export interface SubmissionResponse {
+  id: string;
+  content: string;
+  attachments: string[];
+  status: "SUBMITTED" | "GRADED" | "RETURNED";
+  submittedAt: string;
+  gradedAt?: string;
+  gradedBy?: { id: string; fullName: string };
+  score?: number;
+  feedback?: string;
+  assignment: AssignmentResponse;
+  student: { id: string; fullName: string; email: string };
+}
+
+export interface GradeRequest {
+  score: number;
+  feedback?: string;
+}
+
 /** Storage: file upload (returns URL). Use multipart/form-data; do not set Content-Type. */
 export async function eduhubUploadFile(file: File, folder = "materials"): Promise<{ url: string }> {
   const url = `${BASE}/storage/upload?folder=${encodeURIComponent(folder)}`;
