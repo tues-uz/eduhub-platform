@@ -24,6 +24,7 @@ import TeacherCourseFormPage from "@/features/teacher/pages/TeacherCourseFormPag
 import TeacherQuizPage from "@/features/teacher/pages/TeacherQuizPage";
 import TeacherQuizResultsPage from "@/features/teacher/pages/TeacherQuizResultsPage";
 import TeacherStudentsPage from "@/features/teacher/pages/TeacherStudentsPage";
+import TeacherAssignmentsPage from "@/features/teacher/pages/TeacherAssignmentsPage";
 import NotFound from "@/pages/NotFound";
 import { appRoutes } from "@/app/routes";
 
@@ -56,7 +57,7 @@ export function AppRoutes() {
       <Route path="/dashboard/teacher/courses/:courseId/edit" element={<TeacherCourseFormPage />} />
       <Route path="/dashboard/teacher/placement-test" element={<TeacherQuizPage />} />
       <Route path="/dashboard/teacher/placement-test/:courseId/:moduleId/:lessonId/results" element={<TeacherQuizResultsPage />} />
-      <Route path="/dashboard/teacher/assignments" element={<TeacherPlaceholder />} />
+      <Route path="/dashboard/teacher/assignments" element={<TeacherAssignmentsPage />} />
       <Route path="/dashboard/teacher/students" element={<TeacherStudentsPage />} />
       <Route path="/dashboard/teacher/schedule" element={<TeacherPlaceholder />} />
       <Route path="/dashboard/teacher/settings" element={<TeacherPlaceholder />} />
