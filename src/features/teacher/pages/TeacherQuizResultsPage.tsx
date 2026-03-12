@@ -25,6 +25,25 @@ export default function TeacherQuizResultsPage() {
   const [error, setError] = useState<string | null>(null);
   const [useLocalStorage, setUseLocalStorage] = useState(false);
 
+  const exportToExcel = useCallback(() => {
+    const quizTitle = quiz?.title || "quiz";
+    const headers = ["No.", "Student", "Email", "Score", "Correct", "Filling date"];
+    const rows = results.map((a, i) => [
+      i + 1,
+      a.student.fullName,
+      a.student.email ?? "—",
+      `${a.scorePercent}%`,
+      `${a.correctCount} / ${a.totalQuestions}`,
+      format(new Date(a.completedAt), "MMM d, yyyy · h:mm a"),
+    ]);
+    const data = [headers, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const safeTitle = quizTitle.replace(/[/\\?*[\]:]/g, "-").slice(0, 31);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, safeTitle || "Results");
+    XLSX.writeFile(wb, `${safeTitle || "quiz-results"}-results.xlsx`);
+  }, [quiz?.title, results]);
+
   useEffect(() => {
     const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
     check();
@@ -125,25 +144,7 @@ export default function TeacherQuizResultsPage() {
   }
 
   const typeLabel = "quiz";
-  const quizTitle = quiz.title;
-
-  const exportToExcel = useCallback(() => {
-    const headers = ["No.", "Student", "Email", "Score", "Correct", "Filling date"];
-    const rows = results.map((a, i) => [
-      i + 1,
-      a.student.fullName,
-      a.student.email ?? "—",
-      `${a.scorePercent}%`,
-      `${a.correctCount} / ${a.totalQuestions}`,
-      format(new Date(a.completedAt), "MMM d, yyyy · h:mm a"),
-    ]);
-    const data = [headers, ...rows];
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    const safeTitle = quizTitle.replace(/[/\\?*\[\]:]/g, "-").slice(0, 31);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, safeTitle || "Results");
-    XLSX.writeFile(wb, `${safeTitle || "quiz-results"}-results.xlsx`);
-  }, [quizTitle, results]);
+  const quizTitle = quiz?.title || "";
 
   return (
     <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>

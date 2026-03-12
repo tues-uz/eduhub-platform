@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import { eduhubCourses, eduhubLecturer } from "@/api/eduhubClient";
+import { useAuthSession } from "@/features/auth/context";
 import {
   Table,
   TableBody,
@@ -20,6 +22,7 @@ type StudentRow = {
 };
 
 const TeacherStudentsPage = () => {
+  const { user } = useAuthSession();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() =>
     localStorage.getItem("sidebarCollapsed") === "true"
   );
@@ -34,16 +37,36 @@ const TeacherStudentsPage = () => {
   }, []);
 
   useEffect(() => {
-    // TODO: replace with API when available (e.g. enrollments by lecturer or by course)
-    setLoading(true);
-    const mock: StudentRow[] = [
-      { id: "1", name: "Alex Chen", email: "alex.chen@example.com", course: "Introduction to Economics", enrolledDate: "2025-02-15" },
-      { id: "2", name: "Sam Wilson", email: "sam.wilson@example.com", course: "Business Management Fundamentals", enrolledDate: "2025-02-20" },
-      { id: "3", name: "Jordan Lee", email: "jordan.lee@example.com", course: "Introduction to Economics", enrolledDate: "2025-03-01" },
-    ];
-    setStudents(mock);
-    setLoading(false);
-  }, []);
+    async function load() {
+      if (!user.id) return;
+      setLoading(true);
+      try {
+        const coursesRes = await eduhubCourses.getByLecturer(user.id, { page: 0, size: 100 });
+        const allStudents: StudentRow[] = [];
+        for (const course of coursesRes.content || []) {
+          try {
+            const studentsData = await eduhubCourses.getEnrolledStudents(course.id, 0, 100);
+            for (const s of studentsData.content || []) {
+              allStudents.push({
+                id: s.id,
+                name: s.fullName,
+                email: s.email,
+                course: course.title,
+                enrolledDate: course.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+              });
+            }
+          } catch {
+            // Skip courses that fail
+          }
+        }
+        setStudents(allStudents);
+      } catch {
+        setStudents([]);
+      }
+      setLoading(false);
+    }
+    load();
+  }, [user.id]);
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>

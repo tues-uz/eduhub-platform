@@ -21,7 +21,7 @@ import {
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { useAuthSession } from "@/features/auth/context";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
-import { eduhubCourses } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubLecturer } from "@/api/eduhubClient";
 import type { TeacherCourse } from "@/features/teacher/types";
 
 const TeacherDashboard = () => {
@@ -33,6 +33,7 @@ const TeacherDashboard = () => {
   });
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
+  const [stats, setStats] = useState({ totalCourses: 0, totalStudents: 0, pendingGrading: 0 });
 
   useEffect(() => {
     const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
@@ -48,7 +49,10 @@ const TeacherDashboard = () => {
       const local = teacherCoursesStore.getAll();
       if (user.id) {
         try {
-          const res = await eduhubCourses.getByLecturer(user.id);
+          const [res, statsRes] = await Promise.all([
+            eduhubCourses.getByLecturer(user.id),
+            eduhubLecturer.getStats().catch(() => null),
+          ]);
           const apiCourses: TeacherCourse[] = (res.content || []).map((c) => ({
             id: c.id,
             title: c.title,
@@ -58,7 +62,16 @@ const TeacherDashboard = () => {
             createdAt: c.createdAt,
             updatedAt: c.createdAt,
           }));
-          if (!cancelled) setCourses([...apiCourses, ...local]);
+          if (!cancelled) {
+            setCourses([...apiCourses, ...local]);
+            if (statsRes) {
+              setStats({
+                totalCourses: statsRes.totalCourses,
+                totalStudents: statsRes.totalStudents,
+                pendingGrading: statsRes.pendingGrading,
+              });
+            }
+          }
         } catch {
           if (!cancelled) setCourses(local);
         }
@@ -72,10 +85,10 @@ const TeacherDashboard = () => {
   }, [user.id]);
 
   const courseCount = courses.length;
-  const stats = [
-    { icon: BookOpen, label: "Active Courses", value: String(courseCount), change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/courses" },
-    { icon: Users, label: "Total Students", value: "—", change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/students" },
-    { icon: FileText, label: "Pending Grading", value: "—", change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/assignments" },
+  const statsData = [
+    { icon: BookOpen, label: "Active Courses", value: String(stats.totalCourses || courseCount), change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/courses" },
+    { icon: Users, label: "Total Students", value: String(stats.totalStudents || "—"), change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/students" },
+    { icon: FileText, label: "Pending Grading", value: String(stats.pendingGrading || "—"), change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/assignments" },
   ];
 
   const pendingGrading = [
@@ -115,7 +128,7 @@ const TeacherDashboard = () => {
 
           {/* Professional Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {stats.map((stat, i) => {
+            {statsData.map((stat, i) => {
               const Icon = stat.icon;
               const cardContent = (
                 <>
