@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { useLayoutContext } from "@/features/layout/context";
-import { useStudentCoursesQuery, useEnrollMutation } from "@/features/student/hooks/useStudentQueries";
+import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { eduhubCourses } from "@/api/eduhubClient";
 
@@ -23,6 +23,7 @@ type AvailableCourseItem = {
   progress?: number;
   status?: string;
   nextLesson?: string;
+  thumbnailUrl?: string;
 };
 
 function formatPrice(price: number | undefined): string {
@@ -33,7 +34,6 @@ function formatPrice(price: number | undefined): string {
 const StudentAvailableCourses = () => {
   const { isSidebarCollapsed } = useLayoutContext();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
-  const enrollMutation = useEnrollMutation();
   const [searchQuery, setSearchQuery] = useState("");
   const [courses, setCourses] = useState<AvailableCourseItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,10 +65,11 @@ const StudentAvailableCourses = () => {
           progress: enrolledData?.progress,
           status: enrolledData?.status,
           nextLesson: enrolledData?.nextLesson,
+          thumbnailUrl: c.thumbnailUrl,
         };
       });
 
-      const mapApiToItem = (c: { id: string; title: string; lecturerName: string; category?: string }) => {
+      const mapApiToItem = (c: { id: string; title: string; lecturerName: string; category?: string; thumbnailUrl?: string }) => {
         const enrolled = enrolledIds.has(c.id);
         const enrolledData = enrolledByLinkId.get(c.id);
         return {
@@ -84,6 +85,7 @@ const StudentAvailableCourses = () => {
           progress: enrolledData?.progress,
           status: enrolledData?.status,
           nextLesson: enrolledData?.nextLesson,
+          thumbnailUrl: c.thumbnailUrl,
         };
       };
 
@@ -116,12 +118,6 @@ const StudentAvailableCourses = () => {
     load();
     return () => { cancelled = true; };
   }, [enrolledCourses]);
-
-  const handleEnroll = async (courseId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    await enrollMutation.mutateAsync(courseId);
-  };
 
   // Show all courses (API + teacher-created) so students can see and take teacher courses
   const filteredCourses = courses.filter((course) => {
@@ -172,10 +168,25 @@ const StudentAvailableCourses = () => {
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {filteredCourses.map((course) => (
-                  <div
+                  <Link
                     key={course.linkId}
-                    className="flex flex-col rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm backdrop-blur-sm transition-all hover:border-gray-300/50 hover:shadow-md"
+                    to={`/dashboard/courses/${course.linkId}`}
+                    className="flex flex-col overflow-hidden rounded-xl border border-gray-200/50 bg-white/80 shadow-sm backdrop-blur-sm transition-all hover:border-gray-300/50 hover:shadow-md cursor-pointer"
                   >
+                    <div className="relative h-36 w-full shrink-0 overflow-hidden bg-gray-100">
+                      {course.thumbnailUrl ? (
+                        <img
+                          src={course.thumbnailUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-gray-300">
+                          <BookOpen className="h-12 w-12" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col p-6 pt-4">
                     <div className="mb-4 flex items-start gap-4">
                       <div className="min-w-0 flex-1">
                         {course.category && (
@@ -209,39 +220,12 @@ const StudentAvailableCourses = () => {
                       </span>
                     </div>
 
-                    <div className="mb-4 flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-foreground/60" />
                       <span className="font-semibold text-foreground">{formatPrice(course.price)}</span>
                     </div>
-
-                    <div className="mt-auto border-t border-gray-100 pt-4">
-                      {course.enrolled ? (
-                        <Link to={`/dashboard/courses/${course.linkId}`} className="block">
-                          <Button
-                            size="sm"
-                            className="w-full rounded-full"
-                            style={{ backgroundColor: "#3954d0" }}
-                          >
-                            Continue
-                          </Button>
-                        </Link>
-                      ) : (
-                        <Button
-                          size="sm"
-                          className="w-full rounded-full"
-                          style={{ backgroundColor: "#3954d0" }}
-                          onClick={(e) => handleEnroll(course.linkId, e)}
-                          disabled={enrollMutation.isPending}
-                        >
-                          {enrollMutation.isPending ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            "Enroll"
-                          )}
-                        </Button>
-                      )}
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
 

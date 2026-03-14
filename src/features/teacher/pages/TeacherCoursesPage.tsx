@@ -40,9 +40,19 @@ function formatTotalDuration(minutes: number): string {
   return m > 0 ? `${h}h ${m} min` : `${h}h`;
 }
 
+type StatusFilter = "all" | "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "PUBLISHED", label: "Published" },
+  { value: "DRAFT", label: "Draft" },
+  { value: "ARCHIVED", label: "Archived" },
+];
+
 const TeacherCoursesPage = () => {
   const { user } = useAuthSession();
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
@@ -71,6 +81,7 @@ const TeacherCoursesPage = () => {
             title: c.title,
             description: "",
             instructorName: c.lecturerName,
+            thumbnailUrl: c.thumbnailUrl,
             lessons: [],
             createdAt: c.createdAt,
             updatedAt: c.createdAt,
@@ -135,6 +146,11 @@ const TeacherCoursesPage = () => {
     setPublishingId(null);
   };
 
+  const filteredCourses =
+    statusFilter === "all"
+      ? courses
+      : courses.filter((c) => c.status === statusFilter);
+
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
       <DashboardSidebar />
@@ -170,6 +186,32 @@ const TeacherCoursesPage = () => {
             </Button>
           </div>
 
+          {courses.length > 0 && (
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              {STATUS_FILTERS.map(({ value, label }) => {
+                const count = value === "all" ? courses.length : courses.filter((c) => c.status === value).length;
+                const isActive = statusFilter === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setStatusFilter(value)}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-[#1e40af] text-white shadow-sm"
+                        : "bg-gray-100 text-foreground/80 hover:bg-gray-200"
+                    }`}
+                  >
+                    {label}
+                    <span className={`rounded-full px-1.5 py-0.5 text-xs ${isActive ? "bg-white/20" : "bg-gray-200/80"}`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {loading ? (
             <Card className="teacher-course-card border-dashed border-2" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
               <CardContent className="flex flex-col items-center justify-center py-16 text-center">
@@ -192,9 +234,27 @@ const TeacherCoursesPage = () => {
                 </Button>
               </CardContent>
             </Card>
+          ) : filteredCourses.length === 0 ? (
+            <Card className="teacher-course-card border-dashed border-2" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <BookOpen className="h-14 w-14 text-foreground/30 mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-1">No {statusFilter.toLowerCase()} courses</h3>
+                <p className="text-sm text-foreground/60 mb-6 max-w-sm">
+                  No courses match the selected status. Try another filter.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full"
+                  onClick={() => setStatusFilter("all")}
+                >
+                  Show all courses
+                </Button>
+              </CardContent>
+            </Card>
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {courses.map((course) => {
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredCourses.map((course) => {
                 const pdfCount = course.lessons.filter((l) => l.contentType === "pdf" || l.contentType === "pdf_upload").length;
                 const videoCount = course.lessons.filter((l) => l.contentType === "video" || l.contentType === "video_upload").length;
                 const totalMin = course.lessons.reduce((sum, l) => sum + parseDurationMinutes(l.duration), 0);
@@ -209,12 +269,23 @@ const TeacherCoursesPage = () => {
                     className="teacher-course-card group relative flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-gray-50/30 cursor-pointer transition-shadow hover:shadow-md"
                     style={{ fontFamily: "'Geist Sans', sans-serif" }}
                   >
-                    <div className="flex flex-1 flex-col p-5 pt-4">
-                      <div className="mb-3 flex items-start justify-between gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-gray-200/80">
-                          <BookOpen className="h-5 w-5 text-[#1e40af]/80" />
+                    {/* Thumbnail section */}
+                    <div className="relative h-48 w-full shrink-0 overflow-hidden bg-gray-100">
+                      {course.thumbnailUrl ? (
+                        <img
+                          src={course.thumbnailUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-gray-300">
+                          <BookOpen className="h-12 w-12" />
                         </div>
-                        {course.status && (
+                      )}
+                    </div>
+                    <div className="flex flex-1 flex-col p-2">
+                      {course.status ? (
+                        <div className="mb-3 flex items-start justify-start">
                           <span
                             className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                               course.status === "PUBLISHED"
@@ -224,8 +295,8 @@ const TeacherCoursesPage = () => {
                           >
                             {course.status}
                           </span>
-                        )}
-                      </div>
+                        </div>
+                      ) : null}
                       <CardTitle className="text-base font-semibold text-foreground line-clamp-2">
                         {course.title}
                       </CardTitle>
@@ -256,84 +327,81 @@ const TeacherCoursesPage = () => {
                         ) : null}
                       </dl>
 
+                      {/* Actions: separated bar, primary Edit + secondary icon actions */}
                       <div
-                        className="mt-4 flex w-full items-center gap-4"
+                        className="mt-4 rounded-lg border border-gray-100 bg-gray-50/80 p-2"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {isUuid(course.id) && (
-                          <>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            className="h-9 flex-1 rounded-lg font-medium text-white shadow-sm hover:opacity-95"
+                            style={{ backgroundColor: "#1e40af" }}
+                            asChild
+                          >
+                            <Link to={`/dashboard/teacher/courses/${course.id}/edit`} className="inline-flex items-center justify-center gap-2" title="Edit course">
+                              <Pencil className="h-4 w-4 shrink-0" />
+                              Edit course
+                            </Link>
+                          </Button>
+                          <div className="flex items-center gap-1 border-l border-gray-200 pl-2">
+                            {isUuid(course.id) && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 shrink-0 rounded-md text-muted-foreground hover:bg-white hover:text-green-600"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handlePublish(course.id);
+                                  }}
+                                  disabled={publishingId === course.id}
+                                  title={course.status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                                >
+                                  {course.status === "PUBLISHED" ? (
+                                    <Eye className="h-4 w-4 shrink-0" />
+                                  ) : (
+                                    <EyeOff className="h-4 w-4 shrink-0" />
+                                  )}
+                                </Button>
+                                {course.status !== "DRAFT" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 shrink-0 rounded-md text-muted-foreground hover:bg-white hover:text-amber-600"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleArchive(course.id);
+                                    }}
+                                    disabled={publishingId === course.id}
+                                    title={course.status === "ARCHIVED" ? "Unarchive" : "Archive"}
+                                  >
+                                    {course.status === "ARCHIVED" ? (
+                                      <ArchiveRestore className="h-4 w-4 shrink-0" />
+                                    ) : (
+                                      <Archive className="h-4 w-4 shrink-0" />
+                                    )}
+                                  </Button>
+                                )}
+                              </>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
-                              className={`h-8 w-8 shrink-0 rounded-md border border-gray-200 bg-white hover:bg-gray-100 ${
-                                course.status === "PUBLISHED"
-                                  ? "text-green-600 hover:text-green-700"
-                                  : "text-muted-foreground hover:text-foreground"
-                              }`}
+                              className="h-8 w-8 shrink-0 rounded-md text-muted-foreground hover:bg-white hover:text-red-600"
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handlePublish(course.id);
+                                setDeleteId(course.id);
                               }}
-                              disabled={publishingId === course.id}
-                              title={course.status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                              title="Delete course"
                             >
-                              {course.status === "PUBLISHED" ? (
-                                <Eye className="h-3.5 w-3.5 shrink-0" />
-                              ) : (
-                                <EyeOff className="h-3.5 w-3.5 shrink-0" />
-                              )}
+                              <Trash2 className="h-4 w-4 shrink-0" />
                             </Button>
-                            {course.status !== "DRAFT" && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={`h-8 w-8 shrink-0 rounded-md border border-gray-200 bg-white hover:bg-gray-100 ${
-                                  course.status === "ARCHIVED"
-                                    ? "text-amber-600 hover:text-amber-700"
-                                    : "text-orange-600 hover:text-orange-700"
-                                }`}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleArchive(course.id);
-                                }}
-                                disabled={publishingId === course.id}
-                                title={course.status === "ARCHIVED" ? "Unarchive" : "Archive"}
-                              >
-                                {course.status === "ARCHIVED" ? (
-                                  <ArchiveRestore className="h-3.5 w-3.5 shrink-0" />
-                                ) : (
-                                  <Archive className="h-3.5 w-3.5 shrink-0" />
-                                )}
-                              </Button>
-                            )}
-                          </>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0 rounded-md border border-gray-200 bg-white text-muted-foreground hover:bg-gray-100 hover:text-red-600"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setDeleteId(course.id);
-                          }}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 shrink-0" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 flex-1 rounded-md border border-gray-200 bg-white text-muted-foreground hover:bg-gray-100 hover:text-foreground"
-                          asChild
-                        >
-                          <Link to={`/dashboard/teacher/courses/${course.id}/edit`} className="inline-flex items-center justify-center gap-1.5 w-full" title="Edit">
-                            <Pencil className="h-3.5 w-3.5 shrink-0" />
-                            Edit
-                          </Link>
-                        </Button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </Card>

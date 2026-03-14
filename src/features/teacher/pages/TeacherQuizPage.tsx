@@ -26,15 +26,20 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import { useAuthSession } from "@/features/auth/context";
+import { eduhubCourses, eduhubModules, eduhubLessons, eduhubQuizzes } from "@/api/eduhubClient";
+import type { ModuleResponse, LessonResponse } from "@/api/eduhubTypes";
 import { teacherQuizStore } from "../data/teacherQuizStore";
 import { teacherCoursesStore } from "../data/teacherCoursesStore";
 import {
   type Quiz,
   type QuizQuestion,
   type QuizType,
+  type QuestionFormat,
   LETTERS,
   TIME_LIMIT_OPTIONS,
   QUIZ_TYPE_OPTIONS,
+  QUESTION_FORMAT_OPTIONS,
   createEmptyQuestion,
 } from "../quizTypes";
 
@@ -207,7 +212,10 @@ function MediaUploadBox({ questionIndex, image, onImageChange }: MediaUploadBoxP
   );
 }
 
+type CourseOption = { id: string; title: string; fromApi?: boolean };
+
 const TeacherQuizPage = () => {
+  const { user } = useAuthSession();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [screen, setScreen] = useState<"list" | "form">("list");
@@ -218,11 +226,16 @@ const TeacherQuizPage = () => {
   const [releaseTime, setReleaseTime] = useState("");
   const [releaseDatePickerOpen, setReleaseDatePickerOpen] = useState(false);
   const [courseId, setCourseId] = useState("");
+  const [moduleId, setModuleId] = useState("");
+  const [lessonId, setLessonId] = useState("");
+  const [apiModules, setApiModules] = useState<ModuleResponse[]>([]);
+  const [apiLessons, setApiLessons] = useState<LessonResponse[]>([]);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [questionToRemoveIndex, setQuestionToRemoveIndex] = useState<number | null>(null);
   const [collapsedQuestions, setCollapsedQuestions] = useState<Set<number>>(new Set());
+  const [publishedCourses, setPublishedCourses] = useState<CourseOption[]>([]);
 
   useEffect(() => {
     const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
@@ -235,6 +248,79 @@ const TeacherQuizPage = () => {
     setQuizzes(teacherQuizStore.getAll());
   }, [screen]);
 
+  // Load published courses for dropdown: API (when logged in) + local store
+  useEffect(() => {
+    let cancelled = false;
+    const localPublished: CourseOption[] = teacherCoursesStore
+      .getAll()
+      .filter((c) => c.status === "PUBLISHED")
+      .map((c) => ({ id: c.id, title: c.title, fromApi: false }));
+
+    if (user?.id) {
+      eduhubCourses
+        .getByLecturer(user.id, { page: 0, size: 100 })
+        .then((res) => {
+          if (cancelled) return;
+          const apiPublished: CourseOption[] = (res.content ?? [])
+            .filter((c) => c.status === "PUBLISHED")
+            .map((c) => ({ id: c.id, title: c.title, fromApi: true }));
+          const apiIds = new Set(apiPublished.map((c) => c.id));
+          const localOnly = localPublished.filter((c) => !apiIds.has(c.id));
+          setPublishedCourses([...apiPublished, ...localOnly]);
+        })
+        .catch(() => {
+          if (!cancelled) setPublishedCourses(localPublished);
+        });
+    } else {
+      setPublishedCourses(localPublished);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  const selectedCourseFromApi = publishedCourses.find((c) => c.id === courseId)?.fromApi ?? false;
+
+  useEffect(() => {
+    if (!courseId || !selectedCourseFromApi) {
+      setApiModules([]);
+      setApiLessons([]);
+      setModuleId("");
+      setLessonId("");
+      return;
+    }
+    let cancelled = false;
+    eduhubModules.getByCourse(courseId).then((list) => {
+      if (!cancelled) {
+        setApiModules(list);
+        setModuleId("");
+        setLessonId("");
+        setApiLessons([]);
+      }
+    }).catch(() => {
+      if (!cancelled) setApiModules([]);
+    });
+    return () => { cancelled = true; };
+  }, [courseId, selectedCourseFromApi]);
+
+  useEffect(() => {
+    if (!courseId || !moduleId || !selectedCourseFromApi) {
+      setApiLessons([]);
+      setLessonId("");
+      return;
+    }
+    let cancelled = false;
+    eduhubLessons.getByModule(courseId, moduleId).then((list) => {
+      if (!cancelled) {
+        setApiLessons(list);
+        setLessonId("");
+      }
+    }).catch(() => {
+      if (!cancelled) setApiLessons([]);
+    });
+    return () => { cancelled = true; };
+  }, [courseId, moduleId, selectedCourseFromApi]);
+
   const startNew = () => {
     setEditingQuizId(null);
     setTitle("");
@@ -242,6 +328,8 @@ const TeacherQuizPage = () => {
     setReleaseDate("");
     setReleaseTime("");
     setCourseId("");
+    setModuleId("");
+    setLessonId("");
     setQuestions([createEmptyQuestion(randomId())]);
     setError("");
     setScreen("form");
@@ -254,6 +342,8 @@ const TeacherQuizPage = () => {
     setReleaseDate(quiz.releaseDate ?? "");
     setReleaseTime(quiz.releaseTime ? quiz.releaseTime.slice(0, 5) : "");
     setCourseId(quiz.courseId ?? "");
+    setModuleId("");
+    setLessonId("");
     setQuestions(
       quiz.questions.length > 0
         ? quiz.questions.map((q) => ({ ...q, options: q.options.slice(0, 4) }))
@@ -288,7 +378,7 @@ const TeacherQuizPage = () => {
     );
   };
 
-  const saveQuiz = () => {
+  const saveQuiz = async () => {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
       setError("Quiz title is required.");
@@ -300,40 +390,62 @@ const TeacherQuizPage = () => {
       return;
     }
     for (const q of validQuestions) {
-      const hasCorrect = q.options.some((o) => o.correct);
-      const filledOptions = q.options.filter((o) => o.text.trim());
-      if (!hasCorrect || filledOptions.length < 2) {
-        setError("Each question needs at least 2 options and one correct answer.");
-        return;
+      const isMultipleChoice = (q.format ?? "multiple-choice") === "multiple-choice";
+      if (isMultipleChoice) {
+        const hasCorrect = q.options.some((o) => o.correct);
+        const filledOptions = q.options.filter((o) => o.text.trim());
+        if (!hasCorrect || filledOptions.length < 2) {
+          setError("Each multiple-choice question needs at least 2 options and one correct answer.");
+          return;
+        }
       }
     }
     setError("");
+    const payload = {
+      title: trimmedTitle,
+      courseId: courseId.trim() || undefined,
+      quizType,
+      releaseDate: quizType === "placement-test" ? (releaseDate.trim() || undefined) : undefined,
+      releaseTime: quizType === "placement-test" ? (releaseTime.trim() || undefined) : undefined,
+      questions: validQuestions.map((q) => ({
+        ...q,
+        image: q.image?.trim() || undefined,
+        options: q.options.map((o) => ({ ...o, text: o.text.trim() })),
+      })),
+    };
     if (editingQuizId) {
-      teacherQuizStore.update(editingQuizId, {
-        title: trimmedTitle,
-        courseId: courseId.trim() || undefined,
-        quizType,
-        releaseDate: quizType === "placement-test" ? (releaseDate.trim() || undefined) : undefined,
-        releaseTime: quizType === "placement-test" ? (releaseTime.trim() || undefined) : undefined,
-        questions: validQuestions.map((q) => ({
-          ...q,
-          image: q.image?.trim() || undefined,
-          options: q.options.map((o) => ({ ...o, text: o.text.trim() })),
-        })),
-      });
+      teacherQuizStore.update(editingQuizId, payload);
     } else {
-      teacherQuizStore.create({
-        title: trimmedTitle,
-        courseId: courseId.trim() || undefined,
-        quizType,
-        releaseDate: quizType === "placement-test" ? (releaseDate.trim() || undefined) : undefined,
-        releaseTime: quizType === "placement-test" ? (releaseTime.trim() || undefined) : undefined,
-        questions: validQuestions.map((q) => ({
-          ...q,
-          image: q.image?.trim() || undefined,
-          options: q.options.map((o) => ({ ...o, text: o.text.trim() })),
-        })),
-      });
+      teacherQuizStore.create(payload);
+    }
+
+    const publishToApi = selectedCourseFromApi && courseId && moduleId && lessonId;
+    if (publishToApi) {
+      try {
+        const body = {
+          title: trimmedTitle,
+          description: undefined,
+          timeLimitMinutes: 30,
+          passingScore: 60,
+          shuffleQuestions: true,
+          showCorrectAnswers: false,
+          questions: validQuestions.map((q, i) => {
+            const opts = q.options.filter((o) => o.text.trim());
+            return {
+              question: q.question.trim(),
+              imageUrl: q.image?.trim() || undefined,
+              orderIndex: i,
+              points: 1,
+              options: opts.map((o) => ({ letter: o.letter, text: o.text.trim(), isCorrect: o.correct })),
+            };
+          }),
+        };
+        await eduhubQuizzes.create(courseId, moduleId, lessonId, body);
+        await eduhubQuizzes.publish(courseId, moduleId, lessonId);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not publish quiz to course. Saved locally.");
+        return;
+      }
     }
     setScreen("list");
   };
@@ -506,7 +618,7 @@ const TeacherQuizPage = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">No course</SelectItem>
-                            {teacherCoursesStore.getAll().map((course) => (
+                            {publishedCourses.map((course) => (
                               <SelectItem key={course.id} value={course.id}>
                                 {course.title}
                               </SelectItem>
@@ -514,10 +626,51 @@ const TeacherQuizPage = () => {
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground">
-                          Link to one of your courses from My Courses.
+                          Only published courses from My Courses are listed. Publish a course first to link it here.
                         </p>
                       </div>
                     </div>
+                    {selectedCourseFromApi && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Module</Label>
+                          <Select value={moduleId || "none"} onValueChange={(v) => setModuleId(v === "none" ? "" : v)}>
+                            <SelectTrigger className="rounded-lg w-full">
+                              <SelectValue placeholder="Select module" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Select module</SelectItem>
+                              {apiModules.map((m) => (
+                                <SelectItem key={m.id} value={m.id}>
+                                  {m.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Lesson</Label>
+                          <Select value={lessonId || "none"} onValueChange={(v) => setLessonId(v === "none" ? "" : v)}>
+                            <SelectTrigger className="rounded-lg w-full">
+                              <SelectValue placeholder="Select lesson" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Select lesson</SelectItem>
+                              {apiLessons.map((l) => (
+                                <SelectItem key={l.id} value={l.id}>
+                                  {l.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                    {selectedCourseFromApi && (
+                      <p className="text-xs text-muted-foreground">
+                        Save with a module and lesson selected to publish this quiz to the course so students can see it in Quiz.
+                      </p>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="quiz-title">{quizType === "placement-test" ? "Placement test title *" : "Quiz title *"}</Label>
                       <Input
@@ -647,11 +800,36 @@ const TeacherQuizPage = () => {
                         {!isCollapsed && (
                         <>
                         <div className="space-y-2">
+                          <Label>Answer format</Label>
+                          <Select
+                            value={q.format ?? "multiple-choice"}
+                            onValueChange={(v) => updateQuestion(qIndex, { format: v as QuestionFormat })}
+                          >
+                            <SelectTrigger className="rounded-lg w-full max-w-xs">
+                              <SelectValue placeholder="Select format" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {QUESTION_FORMAT_OPTIONS.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value} className="rounded-md">
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground">
+                            Multiple choice: students pick one answer. Essay: students write a free-text response.
+                          </p>
+                        </div>
+                        <div className="space-y-2">
                           <Label>Question text *</Label>
                           <Input
                             value={q.question}
                             onChange={(e) => updateQuestion(qIndex, { question: e.target.value })}
-                            placeholder="e.g. What is the main focus of microeconomics?"
+                            placeholder={
+                              (q.format ?? "multiple-choice") === "essay"
+                                ? "e.g. Explain the main focus of microeconomics in your own words."
+                                : "e.g. What is the main focus of microeconomics?"
+                            }
                             className="rounded-lg"
                           />
                         </div>
@@ -663,6 +841,7 @@ const TeacherQuizPage = () => {
                             onImageChange={(url) => updateQuestion(qIndex, { image: url })}
                           />
                         </div>
+                        {(q.format ?? "multiple-choice") === "multiple-choice" && (
                         <div className="space-y-2">
                           <Label>Time limit</Label>
                           <Select
@@ -681,6 +860,8 @@ const TeacherQuizPage = () => {
                             </SelectContent>
                           </Select>
                         </div>
+                        )}
+                        {(q.format ?? "multiple-choice") === "multiple-choice" && (
                         <div className="space-y-2">
                           <Label>Options (check the correct answer)</Label>
                           <div className="grid gap-2 sm:grid-cols-2">
@@ -715,6 +896,7 @@ const TeacherQuizPage = () => {
                             })}
                           </div>
                         </div>
+                        )}
                         </>
                         )}
                       </div>

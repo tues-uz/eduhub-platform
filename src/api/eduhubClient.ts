@@ -266,51 +266,184 @@ export const eduhubLessonProgress = {
     ),
 };
 
-/** Quiz - tied to lessons */
+/** Quiz - tied to lessons (Swagger: Quizzes tag) */
 export const eduhubQuizzes = {
+  /** Get full quiz for lecturer (includes correct answers). */
   get: (courseId: string, moduleId: string, lessonId: string) =>
     request<QuizResponse>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz`),
 
+  /** Get quiz for student (no correct answers). */
+  getForStudent: (courseId: string, moduleId: string, lessonId: string) =>
+    request<QuizResponseForStudent>(
+      `/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/student`
+    ),
+
+  create: (courseId: string, moduleId: string, lessonId: string, body: QuizRequest) =>
+    request<QuizResponse>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  update: (courseId: string, moduleId: string, lessonId: string, body: QuizRequest) =>
+    request<QuizResponse>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
+  delete: (courseId: string, moduleId: string, lessonId: string) =>
+    request<void>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz`, { method: "DELETE" }),
+
+  publish: (courseId: string, moduleId: string, lessonId: string) =>
+    request<QuizResponse>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/publish`, {
+      method: "PATCH",
+    }),
+
+  unpublish: (courseId: string, moduleId: string, lessonId: string) =>
+    request<QuizResponse>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/unpublish`, {
+      method: "PATCH",
+    }),
+
+  /** Submit student answers; returns result with score and per-question feedback. */
+  submit: (courseId: string, moduleId: string, lessonId: string, body: QuizSubmissionRequest) =>
+    request<QuizResultResponse>(
+      `/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/submit`,
+      { method: "POST", body: JSON.stringify(body) }
+    ),
+
+  /** All attempts for this quiz (lecturer). */
   getResults: (courseId: string, moduleId: string, lessonId: string) =>
     request<QuizResultResponse[]>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/results`),
 
-  publish: (courseId: string, moduleId: string, lessonId: string) =>
-    request<QuizResponse>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/publish`, { method: "PATCH" }),
+  /** Current student's attempts for this quiz. */
+  getMyResults: (courseId: string, moduleId: string, lessonId: string) =>
+    request<QuizResultResponse[]>(
+      `/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/my-results`
+    ),
 };
 
-/** Quiz types */
-export interface QuizResponse {
-  id: string;
-  title: string;
-  description?: string;
-  timeLimitMinutes: number;
-  passingScore: number;
-  isPublished: boolean;
-  questions: QuizQuestionResponse[];
-}
-
-export interface QuizQuestionResponse {
-  id: string;
-  question: string;
-  imageUrl?: string;
-  timeLimitSeconds?: number;
-  points: number;
-  options: QuizOptionResponse[];
-}
-
-export interface QuizOptionResponse {
+/** Quiz types (aligned with Swagger) */
+export interface QuizOptionRequest {
   letter: string;
   text: string;
   isCorrect: boolean;
 }
 
+export interface QuizQuestionRequest {
+  question: string;
+  explanation?: string;
+  imageUrl?: string;
+  orderIndex?: number;
+  points?: number;
+  options: QuizOptionRequest[];
+}
+
+export interface QuizRequest {
+  title: string;
+  description?: string;
+  timeLimitMinutes?: number;
+  passingScore?: number;
+  shuffleQuestions?: boolean;
+  showCorrectAnswers?: boolean;
+  questions: QuizQuestionRequest[];
+}
+
+export interface QuizResponse {
+  id: string;
+  lessonId?: string;
+  title: string;
+  description?: string;
+  timeLimitMinutes: number;
+  passingScore: number;
+  shuffleQuestions?: boolean;
+  showCorrectAnswers?: boolean;
+  isPublished: boolean;
+  questionCount?: number;
+  questions: QuizQuestionResponse[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface QuizQuestionResponse {
+  id: string;
+  question: string;
+  explanation?: string;
+  imageUrl?: string;
+  orderIndex?: number;
+  points: number;
+  options: QuizOptionResponse[];
+}
+
+export interface QuizOptionResponse {
+  id?: string;
+  letter: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+/** Student view: options have no isCorrect. */
+export interface QuizResponseForStudent {
+  id: string;
+  lessonId: string;
+  title: string;
+  description?: string;
+  timeLimitMinutes: number;
+  shuffleQuestions?: boolean;
+  questionCount?: number;
+  questions: QuizQuestionForStudent[];
+}
+
+export interface QuizQuestionForStudent {
+  id: string;
+  question: string;
+  imageUrl?: string;
+  orderIndex?: number;
+  options: QuizOptionForStudent[];
+}
+
+export interface QuizOptionForStudent {
+  id: string;
+  letter: string;
+  text: string;
+}
+
+export interface AnswerSubmission {
+  questionId: string;
+  selectedOptionId: string;
+}
+
+export interface QuizSubmissionRequest {
+  answers: AnswerSubmission[];
+  timeSpentSeconds: number;
+}
+
+/** Per-question result in QuizResultResponse. */
+export interface AnswerResult {
+  questionId: string;
+  question: string;
+  selectedOptionId?: string;
+  selectedOptionLetter?: string;
+  selectedOptionText?: string;
+  isCorrect: boolean;
+  correctOptionLetter?: string;
+  correctOptionText?: string;
+  explanation?: string;
+}
+
 export interface QuizResultResponse {
   id: string;
-  student: { id: string; fullName: string; email: string };
-  scorePercent: number;
-  correctCount: number;
+  quizId?: string;
+  studentId?: string;
+  student?: { id: string; fullName: string; email: string };
   totalQuestions: number;
+  correctAnswers: number;
+  correctCount?: number;
+  score: number;
+  scorePercent?: number;
+  passed: boolean;
+  startedAt?: string;
   completedAt: string;
+  timeSpentSeconds?: number;
+  answers?: AnswerResult[];
 }
 
 /** Enrollments */

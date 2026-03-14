@@ -15,7 +15,12 @@ interface LocalQuiz {
 }
 
 export default function TeacherQuizResultsPage() {
-  const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
+  const { quizId, courseId, moduleId, lessonId } = useParams<{
+    quizId?: string;
+    courseId?: string;
+    moduleId?: string;
+    lessonId?: string;
+  }>();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     () => localStorage.getItem("sidebarCollapsed") === "true"
   );
@@ -28,12 +33,16 @@ export default function TeacherQuizResultsPage() {
   const exportToExcel = useCallback(() => {
     const quizTitle = quiz?.title || "quiz";
     const headers = ["No.", "Student", "Email", "Score", "Correct", "Filling date"];
+    const scorePct = (a: QuizResultResponse) => a.scorePercent ?? a.score ?? 0;
+    const correct = (a: QuizResultResponse) => a.correctCount ?? a.correctAnswers ?? 0;
+    const studentName = (a: QuizResultResponse) => a.student?.fullName ?? "—";
+    const studentEmail = (a: QuizResultResponse) => a.student?.email ?? "—";
     const rows = results.map((a, i) => [
       i + 1,
-      a.student.fullName,
-      a.student.email ?? "—",
-      `${a.scorePercent}%`,
-      `${a.correctCount} / ${a.totalQuestions}`,
+      studentName(a),
+      studentEmail(a),
+      `${scorePct(a)}%`,
+      `${correct(a)} / ${a.totalQuestions}`,
       format(new Date(a.completedAt), "MMM d, yyyy · h:mm a"),
     ]);
     const data = [headers, ...rows];
@@ -51,8 +60,41 @@ export default function TeacherQuizResultsPage() {
     return () => clearInterval(id);
   }, []);
 
+  // Route 1: /placement-test/:quizId/results (local quiz by id)
+  // Route 2: /placement-test/:courseId/:moduleId/:lessonId/results (API)
+  const isLocalQuizRoute = !!quizId && !lessonId;
+  const isApiRoute = !!courseId && !!moduleId && !!lessonId;
+
   useEffect(() => {
-    if (!courseId || !moduleId || !lessonId) {
+    if (isLocalQuizRoute && quizId) {
+      (async () => {
+        setLoading(true);
+        setError(null);
+        const localQuiz = teacherQuizStore.getById(quizId) as LocalQuiz | undefined;
+        if (localQuiz) {
+          const { quizAttemptStore } = await import("../data/quizAttemptStore");
+          const localAttempts = quizAttemptStore.getByQuizId(quizId);
+          setQuiz(localQuiz);
+          setResults(
+            localAttempts.map((a) => ({
+              id: a.id,
+              student: { id: a.studentId || "", fullName: a.studentName, email: a.studentEmail || "" },
+              scorePercent: a.scorePercent,
+              correctCount: a.correctCount,
+              totalQuestions: a.totalQuestions,
+              completedAt: a.completedAt,
+            }))
+          );
+          setUseLocalStorage(true);
+        } else {
+          setError("Quiz not found.");
+        }
+        setLoading(false);
+      })();
+      return;
+    }
+
+    if (!isApiRoute) {
       setLoading(false);
       return;
     }
@@ -63,17 +105,17 @@ export default function TeacherQuizResultsPage() {
 
       try {
         const [quizData, resultsData] = await Promise.all([
-          eduhubQuizzes.get(courseId, moduleId, lessonId),
-          eduhubQuizzes.getResults(courseId, moduleId, lessonId),
+          eduhubQuizzes.get(courseId!, moduleId!, lessonId!),
+          eduhubQuizzes.getResults(courseId!, moduleId!, lessonId!),
         ]);
         setQuiz(quizData);
         setResults(resultsData);
         setUseLocalStorage(false);
       } catch (err) {
-        const localQuiz = teacherQuizStore.getById(lessonId) as LocalQuiz | undefined;
+        const localQuiz = teacherQuizStore.getById(lessonId!) as LocalQuiz | undefined;
         if (localQuiz) {
           const { quizAttemptStore } = await import("../data/quizAttemptStore");
-          const localAttempts = quizAttemptStore.getByQuizId(lessonId);
+          const localAttempts = quizAttemptStore.getByQuizId(lessonId!);
           setQuiz(localQuiz);
           setResults(
             localAttempts.map((a) => ({
@@ -95,9 +137,9 @@ export default function TeacherQuizResultsPage() {
     }
 
     fetchData();
-  }, [courseId, moduleId, lessonId]);
+  }, [quizId, courseId, moduleId, lessonId]);
 
-  if (!courseId || !moduleId || !lessonId) {
+  if (!isLocalQuizRoute && !isApiRoute) {
     return <Navigate to="/dashboard/teacher/placement-test" replace />;
   }
 
@@ -143,7 +185,7 @@ export default function TeacherQuizResultsPage() {
     );
   }
 
-  const typeLabel = "quiz";
+  const typeLabel = (quiz && "quizType" in quiz && quiz.quizType === "placement-test") ? "Placement test" : "Quiz";
   const quizTitle = quiz?.title || "";
 
   return (
@@ -214,11 +256,11 @@ export default function TeacherQuizResultsPage() {
                 results.map((a, index) => (
                   <tr key={a.id} className="border-b border-gray-100 last:border-0 bg-white hover:bg-gray-50/50">
                     <td className="py-3 px-4 text-muted-foreground tabular-nums">{index + 1}</td>
-                    <td className="py-3 px-4">{a.student.fullName}</td>
-                    <td className="py-3 px-4 text-muted-foreground">{a.student.email ?? "—"}</td>
-                    <td className="py-3 px-4 font-medium">{a.scorePercent}%</td>
+                    <td className="py-3 px-4">{a.student?.fullName ?? "—"}</td>
+                    <td className="py-3 px-4 text-muted-foreground">{a.student?.email ?? "—"}</td>
+                    <td className="py-3 px-4 font-medium">{a.scorePercent ?? a.score ?? 0}%</td>
                     <td className="py-3 px-4 text-muted-foreground">
-                      {a.correctCount} / {a.totalQuestions}
+                      {a.correctCount ?? a.correctAnswers ?? 0} / {a.totalQuestions}
                     </td>
                     <td className="py-3 px-4 text-muted-foreground" title="When the student finished the quiz">
                       {format(new Date(a.completedAt), "MMM d, yyyy · h:mm a")}

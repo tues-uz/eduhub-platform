@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, GripVertical, FileText, Video, Loader2, Upload, X, ChevronDown, ChevronRight } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, GripVertical, FileText, Video, Loader2, Upload, X, ChevronDown, ChevronRight, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -280,6 +280,18 @@ async function fetchVideoDurationFromUrl(url: string): Promise<string | null> {
   return null;
 }
 
+const COURSE_CATEGORIES = [
+  "General",
+  "Language",
+  "Economics",
+  "Business",
+  "Science",
+  "Technology",
+  "Mathematics",
+  "Arts",
+  "Other",
+] as const;
+
 const TeacherCourseFormPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
@@ -288,6 +300,10 @@ const TeacherCourseFormPage = () => {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState<string>("General");
+  const [aboutClass, setAboutClass] = useState("");
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
   const [price, setPrice] = useState<string>("");
   const [lessons, setLessons] = useState<TeacherLesson[]>([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -338,6 +354,9 @@ const TeacherCourseFormPage = () => {
         eduhubCourses.getById(courseId).then((course) => {
           setTitle(course.title);
           setDescription(course.description ?? "");
+          setCategory(course.category ?? "General");
+          setAboutClass((course as { aboutClass?: string }).aboutClass ?? "");
+          setThumbnailUrl(course.thumbnailUrl ?? "");
           return eduhubModules.getByCourse(courseId);
         }).then((modules) => {
           if (modules.length === 0) {
@@ -365,6 +384,9 @@ const TeacherCourseFormPage = () => {
         if (course) {
           setTitle(course.title);
           setDescription(course.description ?? "");
+          setCategory(course.category ?? "General");
+          setAboutClass(course.aboutClass ?? "");
+          setThumbnailUrl(course.thumbnailUrl ?? "");
           setPrice(course.price != null && course.price > 0 ? String(course.price) : "");
           setLessons(
             course.lessons.length > 0
@@ -423,6 +445,27 @@ const TeacherCourseFormPage = () => {
     }
   };
 
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowed.includes(file.type)) {
+      toast.error("Please choose a JPEG, PNG, WebP or GIF image.");
+      return;
+    }
+    setThumbnailUploading(true);
+    try {
+      const { url } = await eduhubUploadFile(file, "thumbnails");
+      setThumbnailUrl(url);
+      toast.success("Thumbnail uploaded.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setThumbnailUploading(false);
+      e.target.value = "";
+    }
+  };
+
   const handleGetDurationFromUrl = async (index: number) => {
     const lesson = lessons[index];
     if (lesson.contentType !== "video" || !lesson.contentUrl?.trim()) return;
@@ -463,6 +506,28 @@ const TeacherCourseFormPage = () => {
       setError("Course title is required.");
       return;
     }
+    if (!description.trim()) {
+      setError("Short description is required.");
+      return;
+    }
+    if (!aboutClass.trim()) {
+      setError("About this class is required.");
+      return;
+    }
+    if (!thumbnailUrl.trim()) {
+      setError("Cover image (thumbnail) is required.");
+      return;
+    }
+    const priceTrimmed = price.trim();
+    if (priceTrimmed === "") {
+      setError("Price is required. Use 0 for free.");
+      return;
+    }
+    const priceNum = parseFloat(priceTrimmed);
+    if (Number.isNaN(priceNum) || priceNum < 0) {
+      setError("Price must be 0 or a positive number. Use 0 for free.");
+      return;
+    }
     const validLessons = lessons
       .map((l, i) => ({ ...l, title: l.title.trim(), order: i }))
       .filter((l) => l.title || l.contentUrl);
@@ -474,13 +539,15 @@ const TeacherCourseFormPage = () => {
     setSaving(true);
     try {
       const instructorName = user.name?.trim() || "Teacher";
+      const coursePrice = priceNum;
 
       if (user.id && !isEdit) {
         const course = await eduhubCourses.create({
           title: trimmedTitle,
           description: description.trim() || "—",
-          category: "General",
+          category: category.trim() || "General",
           status: "DRAFT",
+          ...(thumbnailUrl.trim() && { thumbnailUrl: thumbnailUrl.trim() }),
         });
         const module = await eduhubModules.create(course.id, { title: "Main", orderIndex: 0 });
         for (let i = 0; i < validLessons.length; i++) {
@@ -501,8 +568,9 @@ const TeacherCourseFormPage = () => {
         await eduhubCourses.update(courseId, {
           title: trimmedTitle,
           description: description.trim() || "—",
-          category: "General",
+          category: category.trim() || "General",
           status: "DRAFT",
+          ...(thumbnailUrl.trim() && { thumbnailUrl: thumbnailUrl.trim() }),
         });
         const modules = await eduhubModules.getByCourse(courseId);
         if (modules.length > 0) {
@@ -528,14 +596,14 @@ const TeacherCourseFormPage = () => {
         return;
       }
 
-      const priceNum = price.trim() ? parseFloat(price.trim()) : undefined;
-      const coursePrice = priceNum != null && !Number.isNaN(priceNum) && priceNum >= 0 ? priceNum : undefined;
-
       if (isEdit && courseId) {
         teacherCoursesStore.update(courseId, {
           title: trimmedTitle,
           description: description.trim(),
+          aboutClass: aboutClass.trim() || undefined,
+          category: category.trim() || "General",
           instructorName,
+          thumbnailUrl: thumbnailUrl.trim() || undefined,
           price: coursePrice,
           lessons: validLessons,
         });
@@ -543,7 +611,10 @@ const TeacherCourseFormPage = () => {
         teacherCoursesStore.create({
           title: trimmedTitle,
           description: description.trim(),
+          aboutClass: aboutClass.trim() || undefined,
+          category: category.trim() || "General",
           instructorName,
+          thumbnailUrl: thumbnailUrl.trim() || undefined,
           price: coursePrice,
           lessons: validLessons,
         });
@@ -589,51 +660,175 @@ const TeacherCourseFormPage = () => {
               <CardHeader>
                 <CardTitle className="text-lg">Course details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Course title *</Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Introduction to Economics"
-                    className="rounded-lg"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description (optional)</Label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Brief description of the course"
-                    rows={3}
-                    className="rounded-lg"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="instructor">Instructor</Label>
-                  <Input
-                    id="instructor"
-                    value={user.name || "Teacher"}
-                    readOnly
-                    className="rounded-lg bg-muted/50 cursor-not-allowed border-muted"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price (optional)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="e.g. 49.99 (leave empty for free)"
-                    className="rounded-lg"
-                  />
-                  <p className="text-xs text-muted-foreground">Students will see this on the Available Courses page. Use 0 or leave empty for free.</p>
-                </div>
+              <CardContent className="space-y-8">
+                {/* 1. Basic information */}
+                <section className="space-y-4">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Basic information
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="title">Course title <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="e.g. Introduction to Economics"
+                        className="rounded-lg"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Category <span className="text-red-500">*</span></Label>
+                      <Select value={category} onValueChange={setCategory}>
+                        <SelectTrigger id="category" className="rounded-lg">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COURSE_CATEGORIES.map((cat) => (
+                            <SelectItem key={cat} value={cat} className="rounded-md">
+                              {cat}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="instructor">Instructor <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="instructor"
+                        value={user.name || "Teacher"}
+                        readOnly
+                        className="rounded-lg bg-muted/50 cursor-not-allowed border-muted"
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {/* 2. Description */}
+                <section className="space-y-4 border-t border-gray-100 pt-6">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Description
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Short description <span className="text-red-500">*</span></Label>
+                      <Textarea
+                        id="description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Brief summary for course cards and listings"
+                        rows={2}
+                        className="rounded-lg"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="aboutClass">About this class <span className="text-red-500">*</span></Label>
+                      <p className="text-xs text-muted-foreground">
+                        What students will learn, who it's for, and how the class works. Shown on the course page.
+                      </p>
+                      <Textarea
+                        id="aboutClass"
+                        value={aboutClass}
+                        onChange={(e) => setAboutClass(e.target.value)}
+                        placeholder="e.g. In this course you will learn… This class is for… We'll cover…"
+                        rows={4}
+                        className="rounded-lg"
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {/* 3. Cover image */}
+                <section className="space-y-4 border-t border-gray-100 pt-6">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Cover image
+                  </h3>
+                  <div className="space-y-2">
+                    <Label>Thumbnail (cover image) <span className="text-red-500">*</span></Label>
+                    <p className="text-xs text-muted-foreground">
+                      Shown on the Available Courses page. Recommended: 16:9 or square, max 2MB.
+                    </p>
+                    {thumbnailUrl ? (
+                      <div className="flex items-start gap-3">
+                        <img
+                          src={thumbnailUrl}
+                          alt="Course thumbnail"
+                          className="h-24 w-40 rounded-lg border border-gray-200 object-cover bg-gray-100"
+                        />
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg"
+                            onClick={() => setThumbnailUrl("")}
+                          >
+                            Remove
+                          </Button>
+                          <label className="cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,image/gif"
+                              className="sr-only"
+                              disabled={thumbnailUploading}
+                              onChange={handleThumbnailUpload}
+                            />
+                            <span className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent">
+                              {thumbnailUploading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <ImageIcon className="h-4 w-4" />
+                              )}
+                              Replace
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 p-6 cursor-pointer hover:bg-gray-50 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          className="sr-only"
+                          disabled={thumbnailUploading}
+                          onChange={handleThumbnailUpload}
+                        />
+                        {thumbnailUploading ? (
+                          <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
+                        ) : (
+                          <Upload className="h-8 w-8 text-muted-foreground" />
+                        )}
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {thumbnailUploading ? "Uploading…" : "Upload thumbnail"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">JPEG, PNG, WebP or GIF</span>
+                      </label>
+                    )}
+                  </div>
+                </section>
+
+                {/* 4. Pricing */}
+                <section className="space-y-4 border-t border-gray-100 pt-6">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Pricing
+                  </h3>
+                  <div className="space-y-2 max-w-xs">
+                    <Label htmlFor="price">Price <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="e.g. 49.99 (use 0 for free)"
+                      className="rounded-lg"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Shown on Available Courses. Use 0 for free courses.
+                    </p>
+                  </div>
+                </section>
               </CardContent>
             </Card>
 

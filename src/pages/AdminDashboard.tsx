@@ -11,6 +11,7 @@ import {
   Activity,
   MoreHorizontal,
   ArrowRight,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +52,14 @@ const AdminDashboard = () => {
                 </p>
               </div>
               <div className="flex items-center gap-3">
+                <a
+                  href="/PROGRESS-REPORT.xlsx"
+                  download="EduHub-Progress-Report.xlsx"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Download progress report
+                </a>
                 <span className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md uppercase tracking-wide">
                   Admin
                 </span>

@@ -152,7 +152,7 @@ type LessonRow = { id: string; title: string; duration: string; completed: boole
 const StudentCourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
-  const [apiCourse, setApiCourse] = useState<{ id: string; title: string; instructor: string; category: string; duration: string; modules: number; enrolledDate: string } | null>(null);
+  const [apiCourse, setApiCourse] = useState<{ id: string; title: string; instructor: string; category: string; duration: string; modules: number; enrolledDate: string; thumbnailUrl?: string } | null>(null);
   const [apiLessons, setApiLessons] = useState<LessonRow[]>([]);
   const [apiLoading, setApiLoading] = useState(false);
 
@@ -179,6 +179,7 @@ const StudentCourseDetail = () => {
           duration: "—",
           modules: 0,
           enrolledDate: c.createdAt.slice(0, 10),
+          thumbnailUrl: c.thumbnailUrl,
         });
         return eduhubModules.getByCourse(courseId!);
       }).then((modules) => {
@@ -252,6 +253,8 @@ const StudentCourseDetail = () => {
           duration: `${teacherCourse.lessons.length} lessons`,
           modules: teacherCourse.lessons.length,
           enrolledDate: teacherCourse.createdAt.slice(0, 10),
+          thumbnailUrl: teacherCourse.thumbnailUrl,
+          aboutClass: teacherCourse.aboutClass,
         }
       : id
         ? {
@@ -308,7 +311,17 @@ const StudentCourseDetail = () => {
             Back to My Courses
           </Link>
 
-          <div className="mb-8 rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm">
+          <div className="mb-8 overflow-hidden rounded-xl border border-gray-200/50 bg-white/80 shadow-sm">
+            {course.thumbnailUrl ? (
+              <div className="relative h-44 w-full shrink-0 overflow-hidden bg-gray-100">
+                <img
+                  src={course.thumbnailUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            ) : null}
+            <div className="p-6 pt-4">
             <div className="flex flex-wrap items-start gap-4">
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-800">
                 <BookOpen className="h-6 w-6 text-white" />
@@ -369,7 +382,19 @@ const StudentCourseDetail = () => {
                 </span>
               )}
             </div>
+            </div>
           </div>
+
+          {"aboutClass" in course && course.aboutClass?.trim() ? (
+            <div className="mb-8 rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm">
+              <h2 className="mb-3 font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                About this class
+              </h2>
+              <div className="text-sm text-foreground/80 whitespace-pre-wrap" style={{ fontFamily: "'Comfortaa', cursive" }}>
+                {course.aboutClass}
+              </div>
+            </div>
+          ) : null}
 
           {isEnrolled && (
             <div className="mb-4 flex items-center justify-between">
@@ -455,27 +480,29 @@ const StudentCourseDetail = () => {
           </div>
           )}
 
-          <div className="mt-8 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 p-6 text-center">
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-violet-100">
-                <ClipboardList className="h-6 w-6 text-violet-600" />
+          {isEnrolled && (
+            <div className="mt-8 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 p-6 text-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-violet-100">
+                  <ClipboardList className="h-6 w-6 text-violet-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                    Placement test / Quiz
+                  </h3>
+                  <p className="mt-1 text-sm text-foreground/60 max-w-md mx-auto">
+                    After finishing the course content, take the quiz to test your knowledge and see your score.
+                  </p>
+                </div>
+                <Link to="/dashboard/quiz">
+                  <Button className="rounded-full mt-2" style={{ backgroundColor: "#3954d0" }}>
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                    Go to Quiz
+                  </Button>
+                </Link>
               </div>
-              <div>
-                <h3 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
-                  Placement test / Quiz
-                </h3>
-                <p className="mt-1 text-sm text-foreground/60 max-w-md mx-auto">
-                  After finishing the course content, take the quiz to test your knowledge and see your score.
-                </p>
-              </div>
-              <Link to="/dashboard/quiz">
-                <Button className="rounded-full mt-2" style={{ backgroundColor: "#3954d0" }}>
-                  <ClipboardList className="mr-2 h-4 w-4" />
-                  Go to Quiz
-                </Button>
-              </Link>
             </div>
-          </div>
+          )}
         </div>
       </main>
     </div>
