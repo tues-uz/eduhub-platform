@@ -13,9 +13,9 @@ import type {
   EnrollmentRequest,
   EnrollmentResponse,
   Pageable,
-  PageResponse,
   LessonProgressRequest,
   LessonProgressResponse,
+  ApiResponse,
 } from "./eduhubTypes";
 
 const BASE = EDUHUB_API_BASE_URL + EDUHUB_API_PREFIX;
@@ -50,6 +50,17 @@ function isTokenExpiringSoon(): boolean {
   const expiresAt = localStorage.getItem(AUTH_EXPIRES_AT_KEY);
   if (!expiresAt) return false;
   return Date.now() + TOKEN_REFRESH_BUFFER_MS > parseInt(expiresAt, 10);
+}
+
+function toCamel(o: any): any {
+  if (o === null || typeof o !== "object") return o;
+  if (Array.isArray(o)) return o.map(toCamel);
+  const newObj: any = {};
+  for (const key in o) {
+    const newKey = key.replace(/(_\w)/g, (m) => m[1].toUpperCase());
+    newObj[newKey] = toCamel(o[key]);
+  }
+  return newObj;
 }
 
 /** Auth API shape. Staging Swagger: https://eduhub-platform-api-staging.kubeletto.app/swagger-ui/index.html */
@@ -98,18 +109,31 @@ async function request<T>(
   }
 
   if (res.status === 204) return undefined as T;
+
+  let json: any;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    // Not JSON
+  }
+
   if (!res.ok) {
     let message = res.statusText;
-    try {
-      const json = JSON.parse(text);
-      message = json.message ?? json.error ?? message;
-    } catch {
-      if (text) message = text;
+    if (json && !json.success && json.errors && json.errors.length > 0) {
+      message = json.errors[0].message;
+    } else if (json && json.message) {
+      message = json.message;
+    } else if (text) {
+      message = text;
     }
     throw new Error(message);
   }
-  if (!text) return undefined as T;
-  return JSON.parse(text) as T;
+
+  if (!json) return undefined as T;
+
+  // New contract: json is ApiResponse<T>
+  const response = toCamel(json) as ApiResponse<T>;
+  return response.data;
 }
 
 /** Refresh tokens. Call this or rely on request() 401 retry. Returns true if new tokens were set. */
@@ -154,7 +178,7 @@ export const eduhubCourses = {
     sp.set("size", String(params?.size ?? 50));
     if (params?.category) sp.set("category", params.category);
     if (params?.search) sp.set("search", params.search);
-    return request<PageResponse<CourseSummaryResponse>>(`/courses?${sp}`);
+    return request<CourseSummaryResponse[]>(`/courses?${sp}`);
   },
 
   getById: (id: string) => request<CourseResponse>(`/courses/${id}`),
@@ -179,21 +203,21 @@ export const eduhubCourses = {
     sp.set("size", String(params?.size ?? 50));
     if (params?.category) sp.set("category", params.category);
     if (params?.search) sp.set("search", params.search);
-    return request<PageResponse<CourseSummaryResponse>>(`/courses/available?${sp}`);
+    return request<CourseSummaryResponse[]>(`/courses/available?${sp}`);
   },
 
   getByLecturer: (lecturerId: string, params?: Pageable) => {
     const sp = new URLSearchParams();
     sp.set("page", String(params?.page ?? 0));
     sp.set("size", String(params?.size ?? 50));
-    return request<PageResponse<CourseSummaryResponse>>(`/courses/lecturer/${lecturerId}?${sp}`);
+    return request<CourseSummaryResponse[]>(`/courses/lecturer/${lecturerId}?${sp}`);
   },
 
   getEnrolledStudents: (courseId: string, page = 0, size = 20) => {
     const sp = new URLSearchParams();
     sp.set("page", String(page));
     sp.set("size", String(size));
-    return request<PageResponse<{ id: string; fullName: string; email: string; avatarUrl?: string }>>(
+    return request<{ id: string; fullName: string; email: string; avatarUrl?: string }[]>(
       `/courses/${courseId}/students?${sp}`
     );
   },
@@ -460,7 +484,7 @@ export const eduhubLecturer = {
   }>("/lecturers/me/stats"),
 
   getEnrolledStudents: (courseId: string, page = 0, size = 20) =>
-    request<PageResponse<{ id: string; fullName: string; email: string; avatarUrl?: string }>>(
+    request<{ id: string; fullName: string; email: string; avatarUrl?: string }[]>(
       `/courses/${courseId}/students?page=${page}&size=${size}`
     ),
 };
@@ -476,7 +500,7 @@ export const eduhubAssignments = {
     const sp = new URLSearchParams();
     sp.set("page", String(page));
     sp.set("size", String(size));
-    return request<PageResponse<AssignmentResponse>>(`/courses/${courseId}/assignments?${sp}`);
+    return request<AssignmentResponse[]>(`/courses/${courseId}/assignments?${sp}`);
   },
 
   create: (courseId: string, body: AssignmentRequest) =>
@@ -491,7 +515,7 @@ export const eduhubAssignments = {
     const sp = new URLSearchParams();
     sp.set("page", String(page));
     sp.set("size", String(size));
-    return request<PageResponse<SubmissionResponse>>(`/assignments/${assignmentId}/submissions?${sp}`);
+    return request<SubmissionResponse[]>(`/assignments/${assignmentId}/submissions?${sp}`);
   },
 
   gradeSubmission: (submissionId: string, body: GradeRequest) =>
@@ -502,7 +526,7 @@ export const eduhubAssignments = {
     sp.set("page", String(page));
     sp.set("size", String(size));
     if (priority) sp.set("priority", priority);
-    return request<PageResponse<SubmissionResponse>>(`/lecturers/${lecturerId}/submissions/pending?${sp}`);
+    return request<SubmissionResponse[]>(`/lecturers/${lecturerId}/submissions/pending?${sp}`);
   },
 
   submit: (assignmentId: string, body: SubmissionRequest) =>

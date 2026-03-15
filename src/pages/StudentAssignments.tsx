@@ -45,7 +45,7 @@ const StudentAssignments = () => {
         try {
           const res = await eduhubAssignments.getByCourse(cid);
           // Only show published assignments
-          const published = res.content.filter(a => a.status === "PUBLISHED");
+          const published = res.filter(a => a.status === "PUBLISHED");
           allAssignments = [...allAssignments, ...published];
         } catch (e) {
           console.warn(`Failed to fetch assignments for course ${cid}`, e);

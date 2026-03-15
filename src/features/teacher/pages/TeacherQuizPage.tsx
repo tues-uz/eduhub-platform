@@ -234,7 +234,7 @@ const TeacherQuizPage = () => {
   // Load courses for the dropdown
   useEffect(() => {
     eduhubCourses.getAll().then((res) => {
-      setCourses(res.content.map((c) => ({ id: c.id, title: c.title })));
+      setCourses(res.map((c) => ({ id: c.id, title: c.title })));
     }).catch(() => {
       setCourses([]);
     });

@@ -52,10 +52,10 @@ const TeacherAssignmentsPage = () => {
     try {
       const coursesRes = await eduhubCourses.getByLecturer(user.id, { page: 0, size: 100 });
       const allAssignments: AssignmentResponse[] = [];
-      for (const course of coursesRes.content || []) {
+      for (const course of coursesRes || []) {
         try {
           const assignmentsData = await eduhubAssignments.getByCourse(course.id, 0, 100);
-          allAssignments.push(...(assignmentsData.content || []));
+          allAssignments.push(...(assignmentsData || []));
         } catch {
           // Skip courses that fail
         }
@@ -72,7 +72,7 @@ const TeacherAssignmentsPage = () => {
     setLoading(true);
     try {
       const submissionsRes = await eduhubAssignments.getPending(user.id, undefined, 0, 100);
-      setPendingSubmissions(submissionsRes.content || []);
+      setPendingSubmissions(submissionsRes || []);
     } catch {
       setPendingSubmissions([]);
     }

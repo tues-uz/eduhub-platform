@@ -131,13 +131,32 @@ export interface Pageable {
   sort?: string[];
 }
 
-export interface PageResponse<T> {
-  content: T[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-  last: boolean;
+export interface ApiError {
+  code: string;
+  message: string;
+  field?: string;
+  trace_id: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  errors?: ApiError[];
+  meta: {
+    requestId: string;
+    timestamp: string;
+    pagination?: {
+      total: number;
+      page: number;
+      perPage: number;
+      totalPages: number;
+    };
+  };
+  links?: {
+    next: string | null;
+    prev: string | null;
+    self: string;
+  };
 }
 
 export interface LessonProgressRequest {

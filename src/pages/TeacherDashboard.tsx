@@ -53,7 +53,7 @@ const TeacherDashboard = () => {
             eduhubCourses.getByLecturer(user.id),
             eduhubLecturer.getStats().catch(() => null),
           ]);
-          const apiCourses: TeacherCourse[] = (res.content || []).map((c) => ({
+          const apiCourses: TeacherCourse[] = (res || []).map((c) => ({
             id: c.id,
             title: c.title,
             description: "",

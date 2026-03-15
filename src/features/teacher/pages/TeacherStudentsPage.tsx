@@ -43,10 +43,10 @@ const TeacherStudentsPage = () => {
       try {
         const coursesRes = await eduhubCourses.getByLecturer(user.id, { page: 0, size: 100 });
         const allStudents: StudentRow[] = [];
-        for (const course of coursesRes.content || []) {
+        for (const course of coursesRes || []) {
           try {
             const studentsData = await eduhubCourses.getEnrolledStudents(course.id, 0, 100);
-            for (const s of studentsData.content || []) {
+            for (const s of studentsData || []) {
               allStudents.push({
                 id: s.id,
                 name: s.fullName,

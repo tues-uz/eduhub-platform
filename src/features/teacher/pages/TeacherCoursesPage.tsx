@@ -66,7 +66,7 @@ const TeacherCoursesPage = () => {
       if (user.id) {
         try {
           const res = await eduhubCourses.getByLecturer(user.id);
-          const apiCourses: TeacherCourse[] = (res.content || []).map((c) => ({
+          const apiCourses: TeacherCourse[] = (res || []).map((c) => ({
             id: c.id,
             title: c.title,
             description: "",

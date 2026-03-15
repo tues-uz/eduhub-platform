@@ -94,7 +94,7 @@ const StudentAvailableCourses = () => {
         // 1) GET /courses = getAllPublishedCourses (Swagger): lecturer-created courses that are PUBLISHED. Students explore these.
         try {
           const pubRes = await eduhubCourses.getAll({ page: 0, size: 100 });
-          (pubRes.content ?? []).forEach((c) => {
+          pubRes.forEach((c) => {
             if (!seenIds.has(c.id)) {
               seenIds.add(c.id);
               apiItems.push(mapApiToItem(c));
