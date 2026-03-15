@@ -548,7 +548,7 @@ const TeacherQuizPage = () => {
                           asChild
                         >
                           <Link
-                            to={`/dashboard/teacher/placement-test/${quiz.id}/results`}
+                            to={`/dashboard/teacher/placement-test/${quiz.courseId}/${quiz.id}/results`}
                             title="View results"
                           >
                             <BarChart2 className="h-4 w-4 mr-1" />

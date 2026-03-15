@@ -5,7 +5,7 @@ import * as XLSX from "xlsx";
 import { ArrowLeft, BarChart2, FileSpreadsheet, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/DashboardSidebar";
-import { eduhubQuizzes, type QuizResultResponse, type QuizResponse } from "@/api/eduhubClient";
+import { eduhubQuizzes, eduhubCourseQuizzes, type QuizResultResponse, type QuizResponse } from "@/api/eduhubClient";
 import { teacherQuizStore } from "../data/teacherQuizStore";
 
 interface LocalQuiz {
@@ -15,7 +15,7 @@ interface LocalQuiz {
 }
 
 export default function TeacherQuizResultsPage() {
-  const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
+  const { courseId, moduleId, lessonId, quizId } = useParams<{ courseId: string; moduleId: string; lessonId: string; quizId: string }>();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     () => localStorage.getItem("sidebarCollapsed") === "true"
   );
@@ -32,8 +32,8 @@ export default function TeacherQuizResultsPage() {
       i + 1,
       a.student.fullName,
       a.student.email ?? "—",
-      `${a.scorePercent}%`,
-      `${a.correctCount} / ${a.totalQuestions}`,
+      `${a.score}%`,
+      `${a.correctAnswers} / ${a.totalQuestions}`,
       format(new Date(a.completedAt), "MMM d, yyyy · h:mm a"),
     ]);
     const data = [headers, ...rows];
@@ -52,7 +52,7 @@ export default function TeacherQuizResultsPage() {
   }, []);
 
   useEffect(() => {
-    if (!courseId || !moduleId || !lessonId) {
+    if (!courseId || (!quizId && (!moduleId || !lessonId))) {
       setLoading(false);
       return;
     }
@@ -62,18 +62,32 @@ export default function TeacherQuizResultsPage() {
       setError(null);
 
       try {
-        const [quizData, resultsData] = await Promise.all([
-          eduhubQuizzes.get(courseId, moduleId, lessonId),
-          eduhubQuizzes.getResults(courseId, moduleId, lessonId),
-        ]);
+        let quizPromise;
+        let resultsPromise;
+
+        if (quizId) {
+          quizPromise = eduhubCourseQuizzes.get(courseId!, quizId);
+          resultsPromise = eduhubCourseQuizzes.getResults(courseId!, quizId);
+        } else {
+          quizPromise = eduhubQuizzes.get(courseId!, moduleId!, lessonId!);
+          resultsPromise = eduhubQuizzes.getResults(courseId!, moduleId!, lessonId!);
+        }
+
+        const [quizData, resultsData] = await Promise.all([quizPromise, resultsPromise]);
         setQuiz(quizData);
         setResults(resultsData);
         setUseLocalStorage(false);
       } catch (err) {
-        const localQuiz = teacherQuizStore.getById(lessonId) as LocalQuiz | undefined;
+        const fallbackId = quizId || lessonId;
+        if (!fallbackId) {
+           setError(err instanceof Error ? err.message : "Failed to load quiz results");
+           setLoading(false);
+           return;
+        }
+        const localQuiz = teacherQuizStore.getById(fallbackId) as LocalQuiz | undefined;
         if (localQuiz) {
           const { quizAttemptStore } = await import("../data/quizAttemptStore");
-          const localAttempts = quizAttemptStore.getByQuizId(lessonId);
+          const localAttempts = quizAttemptStore.getByQuizId(fallbackId);
           setQuiz(localQuiz);
           setResults(
             localAttempts.map((a) => ({
@@ -98,9 +112,9 @@ export default function TeacherQuizResultsPage() {
     }
 
     fetchData();
-  }, [courseId, moduleId, lessonId]);
+  }, [courseId, moduleId, lessonId, quizId]);
 
-  if (!courseId || !moduleId || !lessonId) {
+  if (!courseId || (!quizId && (!moduleId || !lessonId))) {
     return <Navigate to="/dashboard/teacher/placement-test" replace />;
   }
 

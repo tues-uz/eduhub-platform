@@ -63,6 +63,17 @@ function toCamel(o: any): any {
   return newObj;
 }
 
+function toSnake(o: any): any {
+  if (o === null || typeof o !== "object") return o;
+  if (Array.isArray(o)) return o.map(toSnake);
+  const newObj: any = {};
+  for (const key in o) {
+    const newKey = key.replace(/([A-Z])/g, "_$1").toLowerCase().replace(/^_/, "");
+    newObj[newKey] = toSnake(o[key]);
+  }
+  return newObj;
+}
+
 /** Auth API shape. Staging Swagger: https://eduhub-platform-api-staging.kubeletto.app/swagger-ui/index.html */
 async function request<T>(
   path: string,
@@ -75,6 +86,16 @@ async function request<T>(
   if (!skipAuth) {
     const token = getAccessToken();
     if (token) headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  // Automatically convert body to snake_case if it's a JSON request
+  if (init.body && typeof init.body === "string" && headers.get("Content-Type") === "application/json") {
+    try {
+      const parsed = JSON.parse(init.body);
+      init.body = JSON.stringify(toSnake(parsed));
+    } catch (e) {
+      // Not valid JSON or already a string we shouldn't touch
+    }
   }
 
   // Proactive token refresh before expiry
@@ -140,16 +161,18 @@ async function request<T>(
 export async function refreshAuth(): Promise<boolean> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return false;
-  const res = await fetch(BASE + "/auth/refresh", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
-  });
-  if (!res.ok) return false;
-  const data = (await res.json()) as AuthResponse;
-  if (data.accessToken) {
-    setAuthTokens(data.accessToken, data.refreshToken ?? refreshToken, data.expiresIn);
-    return true;
+  try {
+    const data = await request<AuthResponse>("/auth/refresh", {
+      method: "POST",
+      body: JSON.stringify({ refreshToken }),
+      skipAuth: true,
+    });
+    if (data.accessToken) {
+      setAuthTokens(data.accessToken, data.refreshToken ?? refreshToken, data.expiresIn);
+      return true;
+    }
+  } catch (e) {
+    console.error("Token refresh failed", e);
   }
   return false;
 }
@@ -339,6 +362,9 @@ export const eduhubCourseQuizzes = {
 
   getPlacementTests: () =>
     request<QuizResponseForStudent[]>("/placement-tests"),
+
+  getAllMyResults: () =>
+    request<QuizResultResponse[]>("/quizzes/my-results"),
 };
 
 /** Quiz - tied to lessons (legacy) */
@@ -445,6 +471,7 @@ export interface QuizSubmissionRequest {
 
 export interface QuizResultResponse {
   id: string;
+  quizId?: string;
   student: { id: string; fullName: string; email: string };
   score: number;
   scorePercent: number;

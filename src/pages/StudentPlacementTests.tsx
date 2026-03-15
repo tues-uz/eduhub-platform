@@ -36,19 +36,11 @@ export default function StudentPlacementTests() {
       const allQuizzes = await eduhubCourseQuizzes.getPlacementTests();
       setQuizzes(allQuizzes);
 
-      // Check completions
-      const completedList = new Set<string>();
-      for (const q of allQuizzes) {
-        if (!q.courseId) continue;
-        try {
-          const results = await eduhubCourseQuizzes.getMyResults(q.courseId, q.id);
-          if (results && results.length > 0) {
-            completedList.add(q.id);
-          }
-        } catch (e) {
-          // ignore error
-        }
-      }
+      setQuizzes(allQuizzes);
+
+      // Check completions using batch results endpoint
+      const allResults = await eduhubCourseQuizzes.getAllMyResults();
+      const completedList = new Set(allResults.map(r => r.quizId || "unknown"));
       setCompletedQuizIds(completedList);
 
     } catch (e) {

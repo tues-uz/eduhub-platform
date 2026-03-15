@@ -49,19 +49,11 @@ export default function StudentQuiz() {
       }
       setQuizzes(allQuizzes);
 
-      // 3. Check which quizzes have been completed by the student
-      const completedList = new Set<string>();
-      for (const q of allQuizzes) {
-        if (!q.courseId) continue;
-        try {
-          const results = await eduhubCourseQuizzes.getMyResults(q.courseId, q.id);
-          if (results && results.length > 0) {
-            completedList.add(q.id);
-          }
-        } catch (e) {
-          // ignore error if no results endpoint handles 404 well
-        }
-      }
+      setQuizzes(allQuizzes);
+      
+      // 3. Check which quizzes have been completed by the student using the new batch endpoint
+      const allResults = await eduhubCourseQuizzes.getAllMyResults();
+      const completedList = new Set(allResults.map(r => r.quizId || "unknown"));
       setCompletedQuizIds(completedList);
 
     } catch (e) {
