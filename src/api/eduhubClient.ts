@@ -266,7 +266,40 @@ export const eduhubLessonProgress = {
     ),
 };
 
-/** Quiz - tied to lessons */
+/** Quiz - course-level standalone (placement tests / quizzes not tied to a lesson) */
+export const eduhubCourseQuizzes = {
+  list: (courseId: string) =>
+    request<QuizResponse[]>(`/courses/${courseId}/quizzes`),
+
+  get: (courseId: string, quizId: string) =>
+    request<QuizResponse>(`/courses/${courseId}/quizzes/${quizId}`),
+
+  create: (courseId: string, body: QuizCreateRequest) =>
+    request<QuizResponse>(`/courses/${courseId}/quizzes`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  update: (courseId: string, quizId: string, body: QuizCreateRequest) =>
+    request<QuizResponse>(`/courses/${courseId}/quizzes/${quizId}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
+  delete: (courseId: string, quizId: string) =>
+    request<void>(`/courses/${courseId}/quizzes/${quizId}`, { method: "DELETE" }),
+
+  publish: (courseId: string, quizId: string) =>
+    request<QuizResponse>(`/courses/${courseId}/quizzes/${quizId}/publish`, { method: "PATCH" }),
+
+  unpublish: (courseId: string, quizId: string) =>
+    request<QuizResponse>(`/courses/${courseId}/quizzes/${quizId}/unpublish`, { method: "PATCH" }),
+
+  getResults: (courseId: string, quizId: string) =>
+    request<QuizResultResponse[]>(`/courses/${courseId}/quizzes/${quizId}/results`),
+};
+
+/** Quiz - tied to lessons (legacy) */
 export const eduhubQuizzes = {
   get: (courseId: string, moduleId: string, lessonId: string) =>
     request<QuizResponse>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz`),
@@ -278,14 +311,46 @@ export const eduhubQuizzes = {
     request<QuizResponse>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/publish`, { method: "PATCH" }),
 };
 
+/** Quiz request type */
+export interface QuizCreateRequest {
+  title: string;
+  description?: string;
+  quizType?: "QUIZ" | "PLACEMENT_TEST";
+  releaseDate?: string;
+  releaseTime?: string;
+  timeLimitMinutes?: number;
+  passingScore?: number;
+  shuffleQuestions?: boolean;
+  showCorrectAnswers?: boolean;
+  questions: {
+    question: string;
+    explanation?: string;
+    imageUrl?: string;
+    orderIndex?: number;
+    points?: number;
+    options: {
+      letter: string;
+      text: string;
+      isCorrect?: boolean;
+    }[];
+  }[];
+}
+
 /** Quiz types */
 export interface QuizResponse {
   id: string;
+  courseId?: string;
+  lessonId?: string;
   title: string;
   description?: string;
+  quizType?: "QUIZ" | "PLACEMENT_TEST";
+  releaseDate?: string;
+  releaseTime?: string;
   timeLimitMinutes: number;
   passingScore: number;
   isPublished: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   questions: QuizQuestionResponse[];
 }
 

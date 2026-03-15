@@ -26,10 +26,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import DashboardSidebar from "@/components/DashboardSidebar";
-import { teacherQuizStore } from "../data/teacherQuizStore";
-import { teacherCoursesStore } from "../data/teacherCoursesStore";
+import { eduhubCourseQuizzes, eduhubCourses, type QuizResponse } from "@/api/eduhubClient";
 import {
-  type Quiz,
   type QuizQuestion,
   type QuizType,
   LETTERS,
@@ -166,11 +164,10 @@ function MediaUploadBox({ questionIndex, image, onImageChange }: MediaUploadBoxP
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
-      className={`rounded-lg border-2 border-dashed p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors min-h-[140px] ${
-        isDragging
-          ? "border-[#1e40af] bg-[#1e40af]/5"
-          : "border-gray-300 bg-gray-50/50 hover:border-gray-400 hover:bg-gray-100/50"
-      }`}
+      className={`rounded-lg border-2 border-dashed p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors min-h-[140px] ${isDragging
+        ? "border-[#1e40af] bg-[#1e40af]/5"
+        : "border-gray-300 bg-gray-50/50 hover:border-gray-400 hover:bg-gray-100/50"
+        }`}
     >
       <input
         ref={inputRef}
@@ -209,7 +206,9 @@ function MediaUploadBox({ questionIndex, image, onImageChange }: MediaUploadBoxP
 
 const TeacherQuizPage = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [quizzes, setQuizzes] = useState<QuizResponse[]>([]);
+  const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
+  const [loading, setLoading] = useState(false);
   const [screen, setScreen] = useState<"list" | "form">("list");
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -231,9 +230,50 @@ const TeacherQuizPage = () => {
     return () => clearInterval(id);
   }, []);
 
+  // Load courses for the dropdown
   useEffect(() => {
-    setQuizzes(teacherQuizStore.getAll());
-  }, [screen]);
+    eduhubCourses.getAll().then((res) => {
+      setCourses(res.content.map((c) => ({ id: c.id, title: c.title })));
+    }).catch(() => {
+      setCourses([]);
+    });
+  }, []);
+
+  // Load quizzes: if courseId selected, load from backend; otherwise show all from all courses
+  const loadQuizzes = useCallback(async (forCourseId?: string) => {
+    try {
+      setLoading(true);
+      if (forCourseId) {
+        const data = await eduhubCourseQuizzes.list(forCourseId);
+        setQuizzes(data);
+      } else {
+        if (courses.length === 0) {
+          setQuizzes([]);
+          return;
+        }
+        const allQuizzesGroups = await Promise.all(
+          courses.map((c) => eduhubCourseQuizzes.list(c.id).catch(() => []))
+        );
+        const allQuizzes = allQuizzesGroups.flat();
+        // Sort by newest first
+        allQuizzes.sort((a, b) => {
+          const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return tB - tA;
+        });
+        setQuizzes(allQuizzes);
+      }
+    } catch {
+      setQuizzes([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [courses]);
+
+  useEffect(() => {
+    // Load quizzes for selected course
+    loadQuizzes(courseId || undefined);
+  }, [courseId, loadQuizzes]);
 
   const startNew = () => {
     setEditingQuizId(null);
@@ -241,22 +281,28 @@ const TeacherQuizPage = () => {
     setQuizType("quiz");
     setReleaseDate("");
     setReleaseTime("");
-    setCourseId("");
     setQuestions([createEmptyQuestion(randomId())]);
     setError("");
     setScreen("form");
   };
 
-  const startEdit = (quiz: Quiz) => {
+  const startEdit = (quiz: QuizResponse) => {
     setEditingQuizId(quiz.id);
     setTitle(quiz.title);
-    setQuizType(quiz.quizType ?? "quiz");
+    const qt = quiz.quizType === "PLACEMENT_TEST" ? "placement-test" : "quiz";
+    setQuizType(qt as QuizType);
     setReleaseDate(quiz.releaseDate ?? "");
     setReleaseTime(quiz.releaseTime ? quiz.releaseTime.slice(0, 5) : "");
     setCourseId(quiz.courseId ?? "");
     setQuestions(
       quiz.questions.length > 0
-        ? quiz.questions.map((q) => ({ ...q, options: q.options.slice(0, 4) }))
+        ? quiz.questions.map((q) => ({
+          id: q.id,
+          question: q.question,
+          image: q.imageUrl,
+          timeLimitSeconds: q.timeLimitSeconds ?? 30,
+          options: q.options.map((o) => ({ letter: o.letter as "A" | "B" | "C" | "D", text: o.text, correct: o.isCorrect })),
+        }))
         : [createEmptyQuestion(randomId())]
     );
     setError("");
@@ -280,15 +326,15 @@ const TeacherQuizPage = () => {
       prev.map((q, i) =>
         i === questionIndex
           ? {
-              ...q,
-              options: q.options.map((opt) => ({ ...opt, correct: opt.letter === letter })),
-            }
+            ...q,
+            options: q.options.map((opt) => ({ ...opt, correct: opt.letter === letter })),
+          }
           : q
       )
     );
   };
 
-  const saveQuiz = () => {
+  const saveQuiz = async () => {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
       setError("Quiz title is required.");
@@ -308,39 +354,56 @@ const TeacherQuizPage = () => {
       }
     }
     setError("");
-    if (editingQuizId) {
-      teacherQuizStore.update(editingQuizId, {
-        title: trimmedTitle,
-        courseId: courseId.trim() || undefined,
-        quizType,
-        releaseDate: quizType === "placement-test" ? (releaseDate.trim() || undefined) : undefined,
-        releaseTime: quizType === "placement-test" ? (releaseTime.trim() || undefined) : undefined,
-        questions: validQuestions.map((q) => ({
-          ...q,
-          image: q.image?.trim() || undefined,
-          options: q.options.map((o) => ({ ...o, text: o.text.trim() })),
-        })),
-      });
-    } else {
-      teacherQuizStore.create({
-        title: trimmedTitle,
-        courseId: courseId.trim() || undefined,
-        quizType,
-        releaseDate: quizType === "placement-test" ? (releaseDate.trim() || undefined) : undefined,
-        releaseTime: quizType === "placement-test" ? (releaseTime.trim() || undefined) : undefined,
-        questions: validQuestions.map((q) => ({
-          ...q,
-          image: q.image?.trim() || undefined,
-          options: q.options.map((o) => ({ ...o, text: o.text.trim() })),
-        })),
-      });
+
+    const apiQuizType = quizType === "placement-test" ? "PLACEMENT_TEST" : "QUIZ";
+    const payload = {
+      title: trimmedTitle,
+      quizType: apiQuizType as "QUIZ" | "PLACEMENT_TEST",
+      releaseDate: quizType === "placement-test" ? (releaseDate.trim() || undefined) : undefined,
+      releaseTime: quizType === "placement-test" ? (releaseTime.trim() || undefined) : undefined,
+      questions: validQuestions.map((q, idx) => ({
+        question: q.question.trim(),
+        imageUrl: q.image?.trim() || undefined,
+        orderIndex: idx,
+        points: 1,
+        options: q.options
+          .filter((o) => o.text.trim())
+          .map((o) => ({ letter: o.letter, text: o.text.trim(), isCorrect: o.correct })),
+      })),
+    };
+
+    if (!courseId.trim()) {
+      setError("Please select a course to associate this quiz with.");
+      return;
     }
-    setScreen("list");
+
+    try {
+      setLoading(true);
+      if (editingQuizId) {
+        await eduhubCourseQuizzes.update(courseId, editingQuizId, payload);
+      } else {
+        await eduhubCourseQuizzes.create(courseId, payload);
+      }
+      setCourseId("");
+      await loadQuizzes();
+      setScreen("list");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to save quiz.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    teacherQuizStore.delete(id);
-    setQuizzes((prev) => prev.filter((q) => q.id !== id));
+  const handleDelete = async (id: string) => {
+    const quiz = quizzes.find((q) => q.id === id);
+    const qCourseId = quiz?.courseId ?? courseId;
+    if (!qCourseId) return;
+    try {
+      await eduhubCourseQuizzes.delete(qCourseId, id);
+      setQuizzes((prev) => prev.filter((q) => q.id !== id));
+    } catch {
+      // ignore
+    }
     setDeleteId(null);
   };
 
@@ -406,12 +469,11 @@ const TeacherQuizPage = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <CardTitle className="text-base font-semibold truncate">{quiz.title}</CardTitle>
-                          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            (quiz.quizType ?? "quiz") === "placement-test"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}>
-                            {(quiz.quizType ?? "quiz") === "placement-test" ? "Placement test" : "Quiz"}
+                          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${(quiz.quizType ?? "QUIZ") === "PLACEMENT_TEST"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-blue-100 text-blue-800"
+                            }`}>
+                            {(quiz.quizType ?? "QUIZ") === "PLACEMENT_TEST" ? "Placement test" : "Quiz"}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">{quiz.questions.length} questions</p>
@@ -506,7 +568,7 @@ const TeacherQuizPage = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">No course</SelectItem>
-                            {teacherCoursesStore.getAll().map((course) => (
+                            {courses.map((course) => (
                               <SelectItem key={course.id} value={course.id}>
                                 {course.title}
                               </SelectItem>
@@ -599,132 +661,132 @@ const TeacherQuizPage = () => {
                     {questions.map((q, qIndex) => {
                       const isCollapsed = collapsedQuestions.has(qIndex);
                       return (
-                      <div
-                        key={q.id}
-                        className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 space-y-3"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 shrink-0 text-foreground/60 hover:text-foreground"
-                            onClick={() => {
-                              setCollapsedQuestions((prev) => {
-                                const next = new Set(prev);
-                                if (next.has(qIndex)) next.delete(qIndex);
-                                else next.add(qIndex);
-                                return next;
-                              });
-                            }}
-                            title={isCollapsed ? "Expand" : "Minimize"}
-                            aria-expanded={!isCollapsed}
-                          >
-                            {isCollapsed ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <GripVertical className="h-4 w-4 text-foreground/40 shrink-0" />
-                          <span className="text-sm font-medium text-foreground/70 flex-1 min-w-0">Question {qIndex + 1}</span>
-                          <span className="text-xs font-medium text-foreground/50 shrink-0 rounded bg-gray-200/80 px-2 py-0.5">
-                            {questions.length > 0 ? Math.round(100 / questions.length) : 0} pts
-                          </span>
-                          {questions.length > 1 && (
+                        <div
+                          key={q.id}
+                          className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 space-y-3"
+                        >
+                          <div className="flex items-center gap-2">
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 shrink-0 text-red-600 hover:bg-red-50"
-                              onClick={() => setQuestionToRemoveIndex(qIndex)}
-                              title="Remove question"
+                              className="h-8 w-8 shrink-0 text-foreground/60 hover:text-foreground"
+                              onClick={() => {
+                                setCollapsedQuestions((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(qIndex)) next.delete(qIndex);
+                                  else next.add(qIndex);
+                                  return next;
+                                });
+                              }}
+                              title={isCollapsed ? "Expand" : "Minimize"}
+                              aria-expanded={!isCollapsed}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              {isCollapsed ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
                             </Button>
+                            <GripVertical className="h-4 w-4 text-foreground/40 shrink-0" />
+                            <span className="text-sm font-medium text-foreground/70 flex-1 min-w-0">Question {qIndex + 1}</span>
+                            <span className="text-xs font-medium text-foreground/50 shrink-0 rounded bg-gray-200/80 px-2 py-0.5">
+                              {questions.length > 0 ? Math.round(100 / questions.length) : 0} pts
+                            </span>
+                            {questions.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0 text-red-600 hover:bg-red-50"
+                                onClick={() => setQuestionToRemoveIndex(qIndex)}
+                                title="Remove question"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                          {!isCollapsed && (
+                            <>
+                              <div className="space-y-2">
+                                <Label>Question text *</Label>
+                                <Input
+                                  value={q.question}
+                                  onChange={(e) => updateQuestion(qIndex, { question: e.target.value })}
+                                  placeholder="e.g. What is the main focus of microeconomics?"
+                                  className="rounded-lg"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Image for this question</Label>
+                                <MediaUploadBox
+                                  questionIndex={qIndex}
+                                  image={q.image}
+                                  onImageChange={(url) => updateQuestion(qIndex, { image: url })}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Time limit</Label>
+                                <Select
+                                  value={String(q.timeLimitSeconds ?? 30)}
+                                  onValueChange={(v) => updateQuestion(qIndex, { timeLimitSeconds: parseInt(v, 10) })}
+                                >
+                                  <SelectTrigger className="rounded-lg w-full max-w-xs">
+                                    <SelectValue placeholder="Choose…" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {TIME_LIMIT_OPTIONS.map((sec) => (
+                                      <SelectItem key={sec} value={String(sec)}>
+                                        {sec} s
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Options (check the correct answer)</Label>
+                                <div className="grid gap-2 sm:grid-cols-2">
+                                  {LETTERS.map((letter) => {
+                                    const opt = q.options.find((o) => o.letter === letter) ?? {
+                                      letter,
+                                      text: "",
+                                      correct: false,
+                                    };
+                                    return (
+                                      <div key={letter} className="flex items-center gap-2">
+                                        <input
+                                          type="radio"
+                                          name={`correct-${q.id}`}
+                                          checked={opt.correct}
+                                          onChange={() => setOptionCorrect(qIndex, letter)}
+                                          className="h-4 w-4 rounded-full border-gray-300 text-[#1e40af] focus:ring-[#1e40af]"
+                                        />
+                                        <Input
+                                          value={opt.text}
+                                          onChange={(e) => {
+                                            const newOptions = q.options.map((o) =>
+                                              o.letter === letter ? { ...o, text: e.target.value } : o
+                                            );
+                                            updateQuestion(qIndex, { options: newOptions });
+                                          }}
+                                          placeholder={`Option ${letter}`}
+                                          className="rounded-lg flex-1"
+                                        />
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </>
                           )}
                         </div>
-                        {!isCollapsed && (
-                        <>
-                        <div className="space-y-2">
-                          <Label>Question text *</Label>
-                          <Input
-                            value={q.question}
-                            onChange={(e) => updateQuestion(qIndex, { question: e.target.value })}
-                            placeholder="e.g. What is the main focus of microeconomics?"
-                            className="rounded-lg"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Image for this question</Label>
-                          <MediaUploadBox
-                            questionIndex={qIndex}
-                            image={q.image}
-                            onImageChange={(url) => updateQuestion(qIndex, { image: url })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Time limit</Label>
-                          <Select
-                            value={String(q.timeLimitSeconds ?? 30)}
-                            onValueChange={(v) => updateQuestion(qIndex, { timeLimitSeconds: parseInt(v, 10) })}
-                          >
-                            <SelectTrigger className="rounded-lg w-full max-w-xs">
-                              <SelectValue placeholder="Choose…" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {TIME_LIMIT_OPTIONS.map((sec) => (
-                                <SelectItem key={sec} value={String(sec)}>
-                                  {sec} s
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Options (check the correct answer)</Label>
-                          <div className="grid gap-2 sm:grid-cols-2">
-                            {LETTERS.map((letter) => {
-                              const opt = q.options.find((o) => o.letter === letter) ?? {
-                                letter,
-                                text: "",
-                                correct: false,
-                              };
-                              return (
-                                <div key={letter} className="flex items-center gap-2">
-                                  <input
-                                    type="radio"
-                                    name={`correct-${q.id}`}
-                                    checked={opt.correct}
-                                    onChange={() => setOptionCorrect(qIndex, letter)}
-                                    className="h-4 w-4 rounded-full border-gray-300 text-[#1e40af] focus:ring-[#1e40af]"
-                                  />
-                                  <Input
-                                    value={opt.text}
-                                    onChange={(e) => {
-                                      const newOptions = q.options.map((o) =>
-                                        o.letter === letter ? { ...o, text: e.target.value } : o
-                                      );
-                                      updateQuestion(qIndex, { options: newOptions });
-                                    }}
-                                    placeholder={`Option ${letter}`}
-                                    className="rounded-lg flex-1"
-                                  />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                        </>
-                        )}
-                      </div>
-                    );
+                      );
                     })}
                   </CardContent>
                 </Card>
 
                 <div className="flex flex-wrap gap-3">
-                  <Button type="submit" className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
+                  <Button type="submit" disabled={loading} className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
                     {editingQuizId ? "Save changes" : "Create quiz"}
                   </Button>
                   <Button type="button" variant="outline" className="rounded-full" onClick={() => setScreen("list")}>
