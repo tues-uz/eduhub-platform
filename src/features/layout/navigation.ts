@@ -32,7 +32,7 @@ export const studentMenuItems: FlatMenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: BookOpen, label: "My Courses", path: "/dashboard/courses" },
   { icon: Library, label: "Available Courses", path: "/dashboard/available-courses" },
-  { icon: ListChecks, label: "Placement Test", path: "/dashboard/assignments" },
+  { icon: ListChecks, label: "Placement Test", path: "/dashboard/placement-tests" },
   { icon: ClipboardList, label: "Quiz", path: "/dashboard/quiz" },
   { icon: Award, label: "Certificates", path: "/dashboard/certificates" },
   { icon: Bell, label: "Notifications", path: "/dashboard/notifications" },

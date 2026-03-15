@@ -15,6 +15,7 @@ import StudentSchedule from "@/pages/StudentSchedule";
 import StudentSettings from "@/pages/StudentSettings";
 import StudentNotifications from "@/pages/StudentNotifications";
 import StudentQuiz from "@/pages/StudentQuiz";
+import StudentPlacementTests from "@/pages/StudentPlacementTests";
 import AdminDashboardPage from "@/features/admin/pages/AdminDashboardPage";
 import AdminPlaceholder from "@/pages/AdminPlaceholder";
 import TeacherDashboard from "@/pages/TeacherDashboard";
@@ -73,6 +74,7 @@ export function AppRoutes() {
       <Route path="/dashboard/settings" element={<StudentSettings />} />
       <Route path="/dashboard/notifications" element={<StudentNotifications />} />
       <Route path="/dashboard/quiz" element={<StudentQuiz />} />
+      <Route path="/dashboard/placement-tests" element={<StudentPlacementTests />} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

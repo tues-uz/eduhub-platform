@@ -312,6 +312,9 @@ export const eduhubCourseQuizzes = {
 
   getMyResults: (courseId: string, quizId: string) =>
     request<QuizResultResponse[]>(`/courses/${courseId}/quizzes/${quizId}/my-results`),
+
+  getPlacementTests: () =>
+    request<QuizResponseForStudent[]>("/placement-tests"),
 };
 
 /** Quiz - tied to lessons (legacy) */
@@ -337,6 +340,7 @@ export interface QuizCreateRequest {
   passingScore?: number;
   shuffleQuestions?: boolean;
   showCorrectAnswers?: boolean;
+  courseId?: string;
   questions: {
     question: string;
     explanation?: string;

@@ -79,9 +79,12 @@ export default function TeacherQuizResultsPage() {
             localAttempts.map((a) => ({
               id: a.id,
               student: { id: a.studentId || "", fullName: a.studentName, email: a.studentEmail || "" },
+              score: a.scorePercent,
               scorePercent: a.scorePercent,
+              correctAnswers: a.correctCount,
               correctCount: a.correctCount,
               totalQuestions: a.totalQuestions,
+              passed: a.scorePercent >= 70,
               completedAt: a.completedAt,
             }))
           );

@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import DashboardSidebar from "@/components/DashboardSidebar";
-import { eduhubCourseQuizzes, eduhubCourses, type QuizResponse } from "@/api/eduhubClient";
+import { eduhubCourseQuizzes, eduhubCourses, type QuizResponse, type QuizCreateRequest } from "@/api/eduhubClient";
 import {
   type QuizQuestion,
   type QuizType,
@@ -357,7 +357,20 @@ const TeacherQuizPage = () => {
     setError("");
 
     const apiQuizType = quizType === "placement-test" ? "PLACEMENT_TEST" : "QUIZ";
-    const payload = {
+    const editingQuiz = editingQuizId ? quizzes.find((q) => q.id === editingQuizId) : null;
+    const quizCourseId = editingQuiz?.courseId || courseId;
+    
+    if (!courseId.trim()) {
+      setError("Please select a course to associate this quiz with.");
+      return;
+    }
+
+    if (!quizCourseId) {
+      setError("Quiz is not associated with any course. Please contact support.");
+      return;
+    }
+
+    const payload: QuizCreateRequest = {
       title: trimmedTitle,
       quizType: apiQuizType as "QUIZ" | "PLACEMENT_TEST",
       releaseDate: quizType === "placement-test" ? (releaseDate.trim() || undefined) : undefined,
@@ -373,16 +386,8 @@ const TeacherQuizPage = () => {
       })),
     };
 
-    if (!courseId.trim()) {
-      setError("Please select a course to associate this quiz with.");
-      return;
-    }
-
-    const editingQuiz = editingQuizId ? quizzes.find((q) => q.id === editingQuizId) : null;
-    const quizCourseId = editingQuiz?.courseId || courseId;
-    if (!quizCourseId) {
-      setError("Quiz is not associated with any course. Please contact support.");
-      return;
+    if (editingQuizId && courseId !== quizCourseId) {
+      payload.courseId = courseId;
     }
 
     try {
@@ -398,7 +403,9 @@ const TeacherQuizPage = () => {
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : "Failed to save quiz.";
       if (errorMessage.includes("does not belong to the specified course")) {
-        setError("This quiz is associated with a different course. Please refresh the page and try again.");
+        setError("Unable to move quiz to selected course. Please ensure you have permission for that course.");
+      } else if (errorMessage.includes("permission")) {
+        setError(errorMessage);
       } else {
         setError(errorMessage);
       }
