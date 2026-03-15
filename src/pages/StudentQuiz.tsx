@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ClipboardList, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -10,6 +10,8 @@ const LETTER_COLORS = ["bg-blue-500", "bg-red-500", "bg-amber-500", "bg-green-50
 
 export default function StudentQuiz() {
   const { user } = useAuthSession();
+  const [searchParams] = useSearchParams();
+  const filterCourseId = searchParams.get("courseId");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   
   const [quizzes, setQuizzes] = useState<QuizResponseForStudent[]>([]);
@@ -35,7 +37,9 @@ export default function StudentQuiz() {
 
       // 2. Fetch quizzes for each enrolled course
       let allQuizzes: QuizResponseForStudent[] = [];
-      for (const cid of courseIds) {
+      const targetCourseIds = filterCourseId ? [filterCourseId] : courseIds;
+      
+      for (const cid of targetCourseIds) {
         try {
           const courseQuizzes = await eduhubCourseQuizzes.listForStudent(cid);
           allQuizzes = [...allQuizzes, ...courseQuizzes];

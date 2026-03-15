@@ -468,7 +468,7 @@ const StudentCourseDetail = () => {
                   After finishing the course content, take the quiz to test your knowledge and see your score.
                 </p>
               </div>
-              <Link to="/dashboard/quiz">
+              <Link to={`/dashboard/quiz?courseId=${course.id}`}>
                 <Button className="rounded-full mt-2" style={{ backgroundColor: "#3954d0" }}>
                   <ClipboardList className="mr-2 h-4 w-4" />
                   Go to Quiz
