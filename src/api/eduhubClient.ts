@@ -297,6 +297,21 @@ export const eduhubCourseQuizzes = {
 
   getResults: (courseId: string, quizId: string) =>
     request<QuizResultResponse[]>(`/courses/${courseId}/quizzes/${quizId}/results`),
+
+  getForStudent: (courseId: string, quizId: string) =>
+    request<QuizResponseForStudent>(`/courses/${courseId}/quizzes/${quizId}/student`),
+
+  listForStudent: (courseId: string) =>
+    request<QuizResponseForStudent[]>(`/courses/${courseId}/quizzes/student`),
+
+  submit: (courseId: string, quizId: string, body: QuizSubmissionRequest) =>
+    request<QuizResultResponse>(`/courses/${courseId}/quizzes/${quizId}/submit`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  getMyResults: (courseId: string, quizId: string) =>
+    request<QuizResultResponse[]>(`/courses/${courseId}/quizzes/${quizId}/my-results`),
 };
 
 /** Quiz - tied to lessons (legacy) */
@@ -369,12 +384,46 @@ export interface QuizOptionResponse {
   isCorrect: boolean;
 }
 
+export interface QuizResponseForStudent {
+  id: string;
+  courseId?: string;
+  lessonId?: string;
+  title: string;
+  description?: string;
+  quizType?: "QUIZ" | "PLACEMENT_TEST";
+  timeLimitMinutes: number;
+  passingScore: number;
+  questions: {
+    id: string;
+    question: string;
+    imageUrl?: string;
+    timeLimitSeconds?: number;
+    points: number;
+    options: {
+      id: string;
+      letter: string;
+      text: string;
+    }[];
+  }[];
+}
+
+export interface QuizSubmissionRequest {
+  answers: {
+    questionId: string;
+    selectedOptionId: string;
+  }[];
+  timeSpentSeconds: number;
+}
+
 export interface QuizResultResponse {
   id: string;
   student: { id: string; fullName: string; email: string };
+  score: number;
   scorePercent: number;
+  correctAnswers: number;
   correctCount: number;
   totalQuestions: number;
+  passed: boolean;
   completedAt: string;
 }
 
