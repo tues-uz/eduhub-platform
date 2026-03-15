@@ -318,6 +318,9 @@ export const eduhubCourseQuizzes = {
   list: (courseId: string) =>
     request<QuizResponse[]>(`/courses/${courseId}/quizzes`),
 
+  listAll: () =>
+    request<QuizResponse[]>("/lecturer/quizzes"),
+
   get: (courseId: string, quizId: string) =>
     request<QuizResponse>(`/courses/${courseId}/quizzes/${quizId}`),
 

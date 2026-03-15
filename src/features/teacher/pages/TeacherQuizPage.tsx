@@ -248,14 +248,7 @@ const TeacherQuizPage = () => {
         const data = await eduhubCourseQuizzes.list(forCourseId);
         setQuizzes(data);
       } else {
-        if (courses.length === 0) {
-          setQuizzes([]);
-          return;
-        }
-        const allQuizzesGroups = await Promise.all(
-          courses.map((c) => eduhubCourseQuizzes.list(c.id).catch(() => []))
-        );
-        const allQuizzes = allQuizzesGroups.flat();
+        const allQuizzes = await eduhubCourseQuizzes.listAll();
         // Sort by newest first
         allQuizzes.sort((a, b) => {
           const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
