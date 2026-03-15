@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { format, startOfDay } from "date-fns";
-import { ArrowLeft, Plus, Trash2, ClipboardList, GripVertical, ChevronDown, ChevronUp, CalendarClock, BarChart2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ClipboardList, GripVertical, ChevronDown, ChevronUp, CalendarClock, BarChart2, Rocket, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -222,6 +222,7 @@ const TeacherQuizPage = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [questionToRemoveIndex, setQuestionToRemoveIndex] = useState<number | null>(null);
   const [collapsedQuestions, setCollapsedQuestions] = useState<Set<number>>(new Set());
+  const [publishingId, setPublishingId] = useState<string | null>(null);
 
   useEffect(() => {
     const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
@@ -377,10 +378,17 @@ const TeacherQuizPage = () => {
       return;
     }
 
+    const editingQuiz = editingQuizId ? quizzes.find((q) => q.id === editingQuizId) : null;
+    const quizCourseId = editingQuiz?.courseId || courseId;
+    if (!quizCourseId) {
+      setError("Quiz is not associated with any course. Please contact support.");
+      return;
+    }
+
     try {
       setLoading(true);
       if (editingQuizId) {
-        await eduhubCourseQuizzes.update(courseId, editingQuizId, payload);
+        await eduhubCourseQuizzes.update(quizCourseId, editingQuizId, payload);
       } else {
         await eduhubCourseQuizzes.create(courseId, payload);
       }
@@ -388,7 +396,12 @@ const TeacherQuizPage = () => {
       await loadQuizzes();
       setScreen("list");
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to save quiz.");
+      const errorMessage = e instanceof Error ? e.message : "Failed to save quiz.";
+      if (errorMessage.includes("does not belong to the specified course")) {
+        setError("This quiz is associated with a different course. Please refresh the page and try again.");
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -405,6 +418,20 @@ const TeacherQuizPage = () => {
       // ignore
     }
     setDeleteId(null);
+  };
+
+  const handlePublish = async (courseId: string, quizId: string) => {
+    try {
+      setPublishingId(quizId);
+      await eduhubCourseQuizzes.publish(courseId, quizId);
+      setQuizzes((prev) =>
+        prev.map((q) => (q.id === quizId ? { ...q, isPublished: true } : q))
+      );
+    } catch {
+      // ignore
+    } finally {
+      setPublishingId(null);
+    }
   };
 
   return (
@@ -475,10 +502,38 @@ const TeacherQuizPage = () => {
                             }`}>
                             {(quiz.quizType ?? "QUIZ") === "PLACEMENT_TEST" ? "Placement test" : "Quiz"}
                           </span>
+                          {quiz.isPublished ? (
+                            <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                              <Check className="h-3 w-3" />
+                              Published
+                            </span>
+                          ) : (
+                            <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                              Draft
+                            </span>
+                          )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">{quiz.questions.length} questions</p>
+                        <p className="text-xs text-muted-foreground mt-1">{quiz.questions.length} questions • {quiz.courseId ? "Linked to course" : "No course"}</p>
                       </div>
                       <div className="flex items-center gap-2">
+                        {!quiz.isPublished && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
+                            onClick={() => handlePublish(quiz.courseId!, quiz.id)}
+                            disabled={!!publishingId}
+                          >
+                            {publishingId === quiz.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Rocket className="h-4 w-4 mr-1" />
+                                Publish
+                              </>
+                            )}
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"

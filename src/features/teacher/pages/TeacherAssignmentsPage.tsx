@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { ArrowLeft, FileText, Trash2, Eye, Clock, AlertCircle } from "lucide-react";
+import { ArrowLeft, FileText, Trash2, Eye, Clock, AlertCircle, Rocket, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -37,6 +37,7 @@ const TeacherAssignmentsPage = () => {
   const [pendingSubmissions, setPendingSubmissions] = useState<SubmissionResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
 
   useEffect(() => {
     const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
@@ -94,6 +95,20 @@ const TeacherAssignmentsPage = () => {
       // Handle error
     }
     setDeleteId(null);
+  };
+
+  const handlePublish = async (id: string) => {
+    try {
+      setPublishingId(id);
+      await eduhubAssignments.update(id, { status: "PUBLISHED" } as any);
+      setAssignments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: "PUBLISHED" } : a))
+      );
+    } catch {
+      // ignore
+    } finally {
+      setPublishingId(null);
+    }
   };
 
   const getPriorityColor = (priority: string) => {
@@ -216,6 +231,24 @@ const TeacherAssignmentsPage = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
+                              {assignment.status !== "PUBLISHED" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 rounded-lg border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
+                                  onClick={() => handlePublish(assignment.id)}
+                                  disabled={!!publishingId}
+                                >
+                                  {publishingId === assignment.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <Rocket className="h-3 w-3 mr-1" />
+                                      Publish
+                                    </>
+                                  )}
+                                </Button>
+                              )}
                               <Button variant="outline" size="sm" className="h-8 rounded-lg">
                                 <Eye className="h-3 w-3 mr-1" />
                                 View

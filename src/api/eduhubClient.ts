@@ -500,6 +500,12 @@ export const eduhubAssignments = {
     if (priority) sp.set("priority", priority);
     return request<PageResponse<SubmissionResponse>>(`/lecturers/${lecturerId}/submissions/pending?${sp}`);
   },
+
+  submit: (assignmentId: string, body: SubmissionRequest) =>
+    request<SubmissionResponse>(`/assignments/${assignmentId}/submissions`, { method: "POST", body: JSON.stringify(body) }),
+
+  getMySubmission: (assignmentId: string) =>
+    request<SubmissionResponse | null>(`/assignments/${assignmentId}/my-submission`),
 };
 
 export interface AssignmentRequest {
@@ -543,6 +549,11 @@ export interface SubmissionResponse {
 export interface GradeRequest {
   score: number;
   feedback?: string;
+}
+
+export interface SubmissionRequest {
+  content: string;
+  attachments?: string[];
 }
 
 /** Storage: file upload (returns URL). Use multipart/form-data; do not set Content-Type. */
