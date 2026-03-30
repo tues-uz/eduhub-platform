@@ -288,7 +288,6 @@ const TeacherCourseFormPage = () => {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [price, setPrice] = useState<string>("");
   const [lessons, setLessons] = useState<TeacherLesson[]>([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebarCollapsed");
@@ -365,7 +364,6 @@ const TeacherCourseFormPage = () => {
         if (course) {
           setTitle(course.title);
           setDescription(course.description ?? "");
-          setPrice(course.price != null && course.price > 0 ? String(course.price) : "");
           setLessons(
             course.lessons.length > 0
               ? [...course.lessons].sort((a, b) => a.order - b.order)
@@ -528,15 +526,11 @@ const TeacherCourseFormPage = () => {
         return;
       }
 
-      const priceNum = price.trim() ? parseFloat(price.trim()) : undefined;
-      const coursePrice = priceNum != null && !Number.isNaN(priceNum) && priceNum >= 0 ? priceNum : undefined;
-
       if (isEdit && courseId) {
         teacherCoursesStore.update(courseId, {
           title: trimmedTitle,
           description: description.trim(),
           instructorName,
-          price: coursePrice,
           lessons: validLessons,
         });
       } else {
@@ -544,7 +538,6 @@ const TeacherCourseFormPage = () => {
           title: trimmedTitle,
           description: description.trim(),
           instructorName,
-          price: coursePrice,
           lessons: validLessons,
         });
       }
@@ -620,19 +613,13 @@ const TeacherCourseFormPage = () => {
                     className="rounded-lg bg-muted/50 cursor-not-allowed border-muted"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price (optional)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="e.g. 49.99 (leave empty for free)"
-                    className="rounded-lg"
-                  />
-                  <p className="text-xs text-muted-foreground">Students will see this on the Available Courses page. Use 0 or leave empty for free.</p>
+                <div className="rounded-lg border border-amber-200/80 bg-amber-50/80 px-3 py-2.5 text-sm text-amber-950">
+                  <p className="font-medium text-amber-950/95">Pricing is set by an admin</p>
+                  <p className="text-xs text-amber-900/85 mt-1 leading-relaxed">
+                    You cannot add a course price here. After you save, an admin reviews the course, sets the catalog
+                    price, and may add a referral code and discount—then they <strong>publish</strong> it so students
+                    can see it.
+                  </p>
                 </div>
               </CardContent>
             </Card>

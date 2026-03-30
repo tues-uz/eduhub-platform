@@ -17,7 +17,24 @@ import StudentNotifications from "@/pages/StudentNotifications";
 import StudentQuiz from "@/pages/StudentQuiz";
 import StudentPlacementTests from "@/pages/StudentPlacementTests";
 import AdminDashboardPage from "@/features/admin/pages/AdminDashboardPage";
-import AdminPlaceholder from "@/pages/AdminPlaceholder";
+import AdminStudentsPage from "@/features/admin/pages/AdminStudentsPage";
+import AdminEnrollmentsPage from "@/features/admin/pages/AdminEnrollmentsPage";
+import AdminClassesPage from "@/features/admin/pages/AdminClassesPage";
+import AdminAttendancePage from "@/features/admin/pages/AdminAttendancePage";
+import AdminPaymentsPage from "@/features/admin/pages/AdminPaymentsPage";
+import AdminPlacementTestsPage from "@/features/admin/pages/AdminPlacementTestsPage";
+import AdminCertificationsPage from "@/features/admin/pages/AdminCertificationsPage";
+import AdminCalendarPage from "@/features/admin/pages/AdminCalendarPage";
+import AdminSupportSessionsPage from "@/features/admin/pages/AdminSupportSessionsPage";
+import AdminIntegrationsPage from "@/features/admin/pages/AdminIntegrationsPage";
+import AdminCoursesListPage from "@/features/admin/pages/AdminCoursesListPage";
+import AdminTeachersPage from "@/features/admin/pages/AdminTeachersPage";
+import AdminStaffPage from "@/features/admin/pages/AdminStaffPage";
+import AdminUsersPage from "@/features/admin/pages/AdminUsersPage";
+import AdminAddUserRolePage from "@/features/admin/pages/AdminAddUserRolePage";
+import AdminTransactionsPage from "@/features/admin/pages/AdminTransactionsPage";
+import AdminReportsPage from "@/features/admin/pages/AdminReportsPage";
+import AdminSettingsPage from "@/features/admin/pages/AdminSettingsPage";
 import TeacherDashboard from "@/pages/TeacherDashboard";
 import TeacherPlaceholder from "@/pages/TeacherPlaceholder";
 import TeacherCoursesPage from "@/features/teacher/pages/TeacherCoursesPage";
@@ -41,16 +58,24 @@ export function AppRoutes() {
       <Route path={appRoutes.dashboard} element={<DashboardRedirect />} />
 
       <Route path={appRoutes.dashboardAdmin} element={<AdminDashboardPage />} />
-      <Route path="/dashboard/admin/students" element={<AdminPlaceholder />} />
-      <Route path="/dashboard/admin/teachers" element={<AdminPlaceholder />} />
-      <Route path="/dashboard/admin/staff" element={<AdminPlaceholder />} />
-      <Route path="/dashboard/admin/courses" element={<AdminPlaceholder />} />
-      <Route path="/dashboard/admin/add-user-role" element={<AdminPlaceholder />} />
-      <Route path="/dashboard/admin/transactions" element={<AdminPlaceholder />} />
-      <Route path="/dashboard/admin/reports" element={<AdminPlaceholder />} />
-      <Route path="/dashboard/admin/users" element={<AdminPlaceholder />} />
-      <Route path="/dashboard/admin/analytics" element={<AdminPlaceholder />} />
-      <Route path="/dashboard/admin/settings" element={<AdminPlaceholder />} />
+      <Route path="/dashboard/admin/students" element={<AdminStudentsPage />} />
+      <Route path="/dashboard/admin/enrollments" element={<AdminEnrollmentsPage />} />
+      <Route path="/dashboard/admin/classes" element={<AdminClassesPage />} />
+      <Route path="/dashboard/admin/attendance" element={<AdminAttendancePage />} />
+      <Route path="/dashboard/admin/payments" element={<AdminPaymentsPage />} />
+      <Route path="/dashboard/admin/placement-tests" element={<AdminPlacementTestsPage />} />
+      <Route path="/dashboard/admin/certifications" element={<AdminCertificationsPage />} />
+      <Route path="/dashboard/admin/calendar" element={<AdminCalendarPage />} />
+      <Route path="/dashboard/admin/support-sessions" element={<AdminSupportSessionsPage />} />
+      <Route path="/dashboard/admin/integrations" element={<AdminIntegrationsPage />} />
+      <Route path="/dashboard/admin/teachers" element={<AdminTeachersPage />} />
+      <Route path="/dashboard/admin/staff" element={<AdminStaffPage />} />
+      <Route path="/dashboard/admin/courses" element={<AdminCoursesListPage />} />
+      <Route path="/dashboard/admin/add-user-role" element={<AdminAddUserRolePage />} />
+      <Route path="/dashboard/admin/transactions" element={<AdminTransactionsPage />} />
+      <Route path="/dashboard/admin/reports" element={<AdminReportsPage />} />
+      <Route path="/dashboard/admin/users" element={<AdminUsersPage />} />
+      <Route path="/dashboard/admin/settings" element={<AdminSettingsPage />} />
 
       <Route path={appRoutes.dashboardTeacher} element={<TeacherDashboard />} />
       <Route path="/dashboard/teacher/courses" element={<TeacherCoursesPage />} />

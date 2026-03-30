@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Users,
@@ -10,9 +11,19 @@ import {
   GraduationCap,
   Activity,
   MoreHorizontal,
-  ArrowRight,
+  ClipboardList,
+  Receipt,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,8 +42,32 @@ const AdminDashboard = () => {
   const userName = user.name;
 
   const stats = data?.stats ?? [];
-  const recentUsers = data?.recentUsers ?? [];
+  type RecentUser = { id: number | string; name: string; email: string; role: string; status: string };
+  const recentUsers = (data?.recentUsers ?? []) as RecentUser[];
   const systemActivity = data?.systemActivity ?? [];
+
+  const [userSearch, setUserSearch] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState("all");
+  const [userStatusFilter, setUserStatusFilter] = useState("all");
+
+  const recentUserRoleOptions = useMemo(() => {
+    const roles = new Set(recentUsers.map((u) => u.role));
+    return Array.from(roles).sort((a, b) => a.localeCompare(b));
+  }, [recentUsers]);
+
+  const filteredRecentUsers = useMemo(() => {
+    const q = userSearch.trim().toLowerCase();
+    return recentUsers.filter((u) => {
+      if (userRoleFilter !== "all" && u.role !== userRoleFilter) return false;
+      if (userStatusFilter === "active" && u.status !== "Active") return false;
+      if (userStatusFilter === "inactive" && u.status !== "Inactive") return false;
+      if (!q) return true;
+      return [u.name, u.email, u.role, u.status].join(" ").toLowerCase().includes(q);
+    });
+  }, [recentUsers, userSearch, userRoleFilter, userStatusFilter]);
+
+  const recentUsersHasFilters =
+    userSearch.trim() !== "" || userRoleFilter !== "all" || userStatusFilter !== "all";
 
   return (
     <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
@@ -97,6 +132,54 @@ const AdminDashboard = () => {
                   Add User
                 </Button>
               </div>
+              {recentUsers.length > 0 ? (
+                <div className="px-6 pb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center border-b border-slate-200">
+                  <Input
+                    placeholder="Search name, email, role…"
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="max-w-md bg-white"
+                  />
+                  <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
+                    <SelectTrigger className="w-full sm:w-[160px] bg-white">
+                      <SelectValue placeholder="Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All roles</SelectItem>
+                      {recentUserRoleOptions.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {r}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={userStatusFilter} onValueChange={setUserStatusFilter}>
+                    <SelectTrigger className="w-full sm:w-[160px] bg-white">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {recentUsersHasFilters ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-slate-600"
+                      onClick={() => {
+                        setUserSearch("");
+                        setUserRoleFilter("all");
+                        setUserStatusFilter("all");
+                      }}
+                    >
+                      Clear filters
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-slate-50 border-b border-slate-200">
@@ -109,7 +192,14 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {recentUsers.map((u) => (
+                    {filteredRecentUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center text-sm text-slate-500">
+                          No users match your search or filters.
+                        </td>
+                      </tr>
+                    ) : (
+                    filteredRecentUsers.map((u) => (
                       <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4">
                           <span className="text-sm font-medium text-slate-900">{u.name}</span>
@@ -138,7 +228,8 @@ const AdminDashboard = () => {
                           </DropdownMenu>
                         </td>
                       </tr>
-                    ))}
+                    ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -176,28 +267,52 @@ const AdminDashboard = () => {
                   </h2>
                 </div>
                 <div className="p-4 space-y-2">
-                  <Link to="/dashboard/admin/users">
+                  <Link to="/dashboard/admin/students">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
-                      <Users className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">Manage Users</span>
+                      <GraduationCap className="h-4 w-4 mr-2.5" />
+                      <span className="text-sm font-medium">Students & registrations</span>
+                    </Button>
+                  </Link>
+                  <Link to="/dashboard/admin/enrollments">
+                    <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
+                      <ClipboardList className="h-4 w-4 mr-2.5" />
+                      <span className="text-sm font-medium">Enrollments & waitlist</span>
+                    </Button>
+                  </Link>
+                  <Link to="/dashboard/admin/payments">
+                    <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
+                      <Receipt className="h-4 w-4 mr-2.5" />
+                      <span className="text-sm font-medium">Payments & reminders</span>
                     </Button>
                   </Link>
                   <Link to="/dashboard/admin/courses">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
                       <BookOpen className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">Manage Courses</span>
+                      <span className="text-sm font-medium">All courses</span>
                     </Button>
                   </Link>
-                  <Link to="/dashboard/admin/analytics">
+                  <Link to="/dashboard/admin/calendar">
+                    <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
+                      <Calendar className="h-4 w-4 mr-2.5" />
+                      <span className="text-sm font-medium">Calendar</span>
+                    </Button>
+                  </Link>
+                  <Link to="/dashboard/admin/users">
+                    <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
+                      <Users className="h-4 w-4 mr-2.5" />
+                      <span className="text-sm font-medium">Users</span>
+                    </Button>
+                  </Link>
+                  <Link to="/dashboard/admin/reports">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
                       <BarChart3 className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">Analytics</span>
+                      <span className="text-sm font-medium">Reports</span>
                     </Button>
                   </Link>
                   <Link to="/dashboard/admin/settings">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
                       <Settings className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">System Settings</span>
+                      <span className="text-sm font-medium">Settings</span>
                     </Button>
                   </Link>
                 </div>

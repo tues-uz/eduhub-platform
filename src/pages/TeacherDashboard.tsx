@@ -47,41 +47,46 @@ const TeacherDashboard = () => {
     async function load() {
       setCoursesLoading(true);
       const local = teacherCoursesStore.getAll();
-      if (user.id) {
-        try {
-          const [res, statsRes] = await Promise.all([
-            eduhubCourses.getByLecturer(user.id),
-            eduhubLecturer.getStats().catch(() => null),
-          ]);
-          const apiCourses: TeacherCourse[] = (res || []).map((c) => ({
-            id: c.id,
-            title: c.title,
-            description: "",
-            instructorName: c.lecturerName,
-            lessons: [],
-            createdAt: c.createdAt,
-            updatedAt: c.createdAt,
-          }));
-          if (!cancelled) {
-            setCourses([...apiCourses, ...local]);
-            if (statsRes) {
-              setStats({
-                totalCourses: statsRes.totalCourses,
-                totalStudents: statsRes.totalStudents,
-                pendingGrading: statsRes.pendingGrading,
-              });
+      try {
+        if (user.id) {
+          try {
+            const [res, statsRes] = await Promise.all([
+              eduhubCourses.getByLecturer(user.id),
+              eduhubLecturer.getStats().catch(() => null),
+            ]);
+            const apiCourses: TeacherCourse[] = (res || []).map((c) => ({
+              id: c.id,
+              title: c.title,
+              description: "",
+              instructorName: c.lecturerName,
+              lessons: [],
+              createdAt: c.createdAt,
+              updatedAt: c.createdAt,
+            }));
+            if (!cancelled) {
+              setCourses([...apiCourses, ...local]);
+              if (statsRes) {
+                setStats({
+                  totalCourses: statsRes.totalCourses,
+                  totalStudents: statsRes.totalStudents,
+                  pendingGrading: statsRes.pendingGrading,
+                });
+              }
             }
+          } catch {
+            if (!cancelled) setCourses(local);
           }
-        } catch {
-          if (!cancelled) setCourses(local);
+        } else if (!cancelled) {
+          setCourses(local);
         }
-      } else {
-        if (!cancelled) setCourses(local);
+      } finally {
+        if (!cancelled) setCoursesLoading(false);
       }
-      if (!cancelled) setCoursesLoading(false);
     }
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user.id]);
 
   const courseCount = courses.length;

@@ -15,7 +15,7 @@ export type TeacherCourse = {
   title: string;
   description: string;
   instructorName: string;
-  /** Price in currency units (e.g. 49.99 for $49.99). Optional; undefined or 0 = free. */
+  /** @deprecated Local-only legacy field; pricing is admin-set for API courses. */
   price?: number;
   lessons: TeacherLesson[];
   createdAt: string;

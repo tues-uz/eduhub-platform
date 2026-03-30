@@ -20,6 +20,16 @@ import type {
 
 const BASE = EDUHUB_API_BASE_URL + EDUHUB_API_PREFIX;
 
+const DEFAULT_REQUEST_TIMEOUT_MS = 45_000;
+
+function getRequestTimeoutMs(): number {
+  if (typeof import.meta !== "undefined" && import.meta.env?.VITE_EDUHUB_REQUEST_TIMEOUT_MS) {
+    const n = Number(import.meta.env.VITE_EDUHUB_REQUEST_TIMEOUT_MS);
+    if (Number.isFinite(n) && n >= 1000) return n;
+  }
+  return DEFAULT_REQUEST_TIMEOUT_MS;
+}
+
 const AUTH_ACCESS_TOKEN_KEY = "eduhub_accessToken";
 const AUTH_REFRESH_TOKEN_KEY = "eduhub_refreshToken";
 const AUTH_EXPIRES_AT_KEY = "eduhub_expiresAt";
@@ -109,7 +119,27 @@ async function request<T>(
     }
   }
 
-  const res = await fetch(url, { ...init, headers });
+  const timeoutMs = getRequestTimeoutMs();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(url, { ...init, headers, signal: controller.signal });
+  } catch (e: unknown) {
+    const aborted =
+      (typeof DOMException !== "undefined" && e instanceof DOMException && e.name === "AbortError") ||
+      (e !== null && typeof e === "object" && (e as { name?: string }).name === "AbortError");
+    if (aborted) {
+      throw new Error(
+        `Request timed out after ${Math.round(timeoutMs / 1000)}s. The API may be down or unreachable.`,
+      );
+    }
+    throw e;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
   const text = await res.text();
 
   if (res.status === 401 && !skipAuth && !_retrying && getRefreshToken()) {
@@ -195,12 +225,20 @@ export const eduhubAuth = {
 
 /** Courses */
 export const eduhubCourses = {
-  getAll: (params?: { page?: number; size?: number; category?: string; search?: string }) => {
+  getAll: (params?: {
+    page?: number;
+    size?: number;
+    category?: string;
+    search?: string;
+    /** When supported by API (e.g. admin catalog), filter by course lifecycle status. */
+    status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  }) => {
     const sp = new URLSearchParams();
     sp.set("page", String(params?.page ?? 0));
     sp.set("size", String(params?.size ?? 50));
     if (params?.category) sp.set("category", params.category);
     if (params?.search) sp.set("search", params.search);
+    if (params?.status) sp.set("status", params.status);
     return request<CourseSummaryResponse[]>(`/courses?${sp}`);
   },
 
@@ -622,7 +660,23 @@ export async function eduhubUploadFile(file: File, folder = "materials"): Promis
   if (token) headers.set("Authorization", `Bearer ${token}`);
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch(url, { method: "POST", headers, body: formData });
+  const uploadTimeoutMs = 120_000;
+  const uploadController = new AbortController();
+  const uploadTimer = setTimeout(() => uploadController.abort(), uploadTimeoutMs);
+  let res: Response;
+  try {
+    res = await fetch(url, { method: "POST", headers, body: formData, signal: uploadController.signal });
+  } catch (e: unknown) {
+    const aborted =
+      (typeof DOMException !== "undefined" && e instanceof DOMException && e.name === "AbortError") ||
+      (e !== null && typeof e === "object" && (e as { name?: string }).name === "AbortError");
+    if (aborted) {
+      throw new Error(`Upload timed out after ${uploadTimeoutMs / 1000}s. Try a smaller file.`);
+    }
+    throw e;
+  } finally {
+    clearTimeout(uploadTimer);
+  }
   const text = await res.text();
   if (!res.ok) {
     let message = res.statusText;
