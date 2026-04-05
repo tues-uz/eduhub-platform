@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ const SignUp = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
+    phoneNumber: "",
     password: "",
     confirmPassword: "",
   });
@@ -38,6 +39,7 @@ const SignUp = () => {
       await eduhubAuth.register({
         fullName: formData.fullName,
         email: formData.email,
+        phoneNumber: formData.phoneNumber,
         password: formData.password,
         role: "STUDENT"
       });
@@ -137,6 +139,26 @@ const SignUp = () => {
                           type="email"
                           placeholder="Enter your email"
                           value={formData.email}
+                          onChange={handleChange}
+                          className="pl-10 h-12 rounded-lg border-gray-200 focus:border-primary focus:ring-primary"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Phone Number Field */}
+                    <div className="space-y-2">
+                      <Label htmlFor="phoneNumber" className="text-sm font-medium text-foreground">
+                        Phone Number
+                      </Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
+                        <Input
+                          id="phoneNumber"
+                          name="phoneNumber"
+                          type="tel"
+                          placeholder="Enter your phone number"
+                          value={formData.phoneNumber}
                           onChange={handleChange}
                           className="pl-10 h-12 rounded-lg border-gray-200 focus:border-primary focus:ring-primary"
                           required

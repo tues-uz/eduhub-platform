@@ -38,7 +38,8 @@ const DashboardSidebar = () => {
   const userEmail = user.email;
   const userRole = user.role;
 
-  const flatMenuItems = userRole === "admin" ? adminMenuItems : studentMenuItems;
+  const nestedMenuItems =
+    userRole === "teacher" ? teacherMenuItems : userRole === "admin" ? adminMenuItems : null;
 
   const dashboardHome = dashboardHomeByRole(userRole);
 
@@ -160,8 +161,8 @@ const DashboardSidebar = () => {
           {/* Navigation Menu */}
           <nav className="flex-1 overflow-y-auto p-4">
             <div className="space-y-1">
-              {userRole === "teacher"
-                ? teacherMenuItems.map((item) => {
+              {nestedMenuItems
+                ? nestedMenuItems.map((item) => {
                     const Icon = item.icon;
                     if ("path" in item) {
                       const active = isActive(item.path);
@@ -222,7 +223,7 @@ const DashboardSidebar = () => {
                       </Collapsible>
                     );
                   })
-                : flatMenuItems.map((item) => {
+                : studentMenuItems.map((item) => {
                     const Icon = item.icon;
                     const active = isActive(item.path);
                     return (

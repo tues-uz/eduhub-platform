@@ -116,7 +116,11 @@ const EduHubHeader = () => {
             {/* CTA Buttons */}
             <div className="hidden md:flex items-center gap-2">
               <Link to="/signin">
-                <Button variant="ghost" className="text-sm font-semibold text-white border-0 rounded-full h-10 px-6 hover:opacity-90 transition-opacity" style={{ backgroundColor: '#3954d0' }}>
+                <Button
+                  variant="ghost"
+                  className="text-sm font-semibold text-white border-0 rounded-full h-10 px-6 hover:bg-[#3954d0] hover:text-white hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: "#3954d0" }}
+                >
                   Sign In
                 </Button>
               </Link>

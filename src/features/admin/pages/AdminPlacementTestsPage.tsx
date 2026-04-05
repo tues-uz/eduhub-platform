@@ -1,0 +1,182 @@
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { AdminLayout } from "@/features/admin/components/AdminLayout";
+import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import { mockAdminPlacementResults } from "@/features/admin/data/adminOperationalMock";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+export default function AdminPlacementTestsPage() {
+  const [search, setSearch] = useState("");
+  const [resultFilter, setResultFilter] = useState<string>("all");
+  const [courseFilter, setCourseFilter] = useState<string>("all");
+  const [lecturerFilter, setLecturerFilter] = useState<string>("all");
+
+  const courseOptions = useMemo(() => {
+    const names = new Set(mockAdminPlacementResults.map((r) => r.course));
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, []);
+
+  const lecturerOptions = useMemo(() => {
+    const names = new Set(mockAdminPlacementResults.map((r) => r.lecturerName));
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, []);
+
+  const filteredResults = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return mockAdminPlacementResults.filter((r) => {
+      if (resultFilter === "passed" && !r.passed) return false;
+      if (resultFilter === "failed" && r.passed) return false;
+      if (courseFilter !== "all" && r.course !== courseFilter) return false;
+      if (lecturerFilter !== "all" && r.lecturerName !== lecturerFilter) return false;
+      if (!q) return true;
+      const haystack = [r.studentName, r.course, r.lecturerName, r.quizTitle, String(r.scorePercent), r.completedAt]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [search, resultFilter, courseFilter, lecturerFilter]);
+
+  const hasActiveFilters =
+    search.trim() !== "" ||
+    resultFilter !== "all" ||
+    courseFilter !== "all" ||
+    lecturerFilter !== "all";
+
+  return (
+    <AdminLayout>
+      <div className="container mx-auto px-6">
+        <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
+          <ArrowLeft className="h-4 w-4" />
+          Back to dashboard
+        </Link>
+
+        <AdminPageHeader
+          title="Placement tests"
+          description="Monitor placement results and tie outcomes to enrollments and class placement."
+        />
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
+          <Input
+            placeholder="Search student, course, lecturer, assessment…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-md bg-white"
+          />
+          <Select value={resultFilter} onValueChange={setResultFilter}>
+            <SelectTrigger className="w-full sm:w-[160px] bg-white">
+              <SelectValue placeholder="Result" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All results</SelectItem>
+              <SelectItem value="passed">Passed</SelectItem>
+              <SelectItem value="failed">Below threshold</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={courseFilter} onValueChange={setCourseFilter}>
+            <SelectTrigger className="w-full sm:w-[200px] bg-white">
+              <SelectValue placeholder="Course" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All courses</SelectItem>
+              {courseOptions.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={lecturerFilter} onValueChange={setLecturerFilter}>
+            <SelectTrigger className="w-full sm:w-[180px] bg-white">
+              <SelectValue placeholder="Lecturer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All lecturers</SelectItem>
+              {lecturerOptions.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {hasActiveFilters ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-slate-600"
+              onClick={() => {
+                setSearch("");
+                setResultFilter("all");
+                setCourseFilter("all");
+                setLecturerFilter("all");
+              }}
+            >
+              Clear filters
+            </Button>
+          ) : null}
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50">
+                <TableHead>Student</TableHead>
+                <TableHead>Course</TableHead>
+                <TableHead>Lecturer</TableHead>
+                <TableHead>Assessment</TableHead>
+                <TableHead>Score</TableHead>
+                <TableHead>Result</TableHead>
+                <TableHead>Completed</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredResults.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center text-slate-500">
+                    No rows match your search or filters.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredResults.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium text-slate-900">{r.studentName}</TableCell>
+                    <TableCell>{r.course}</TableCell>
+                    <TableCell className="text-slate-700">{r.lecturerName}</TableCell>
+                    <TableCell className="text-slate-700 max-w-[200px]">{r.quizTitle}</TableCell>
+                    <TableCell>{r.scorePercent}%</TableCell>
+                    <TableCell>
+                      {r.passed ? (
+                        <Badge className="bg-emerald-600">Passed</Badge>
+                      ) : (
+                        <Badge variant="secondary">Below threshold</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-slate-600">{r.completedAt}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </AdminLayout>
+  );
+}

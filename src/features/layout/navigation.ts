@@ -9,10 +9,9 @@ import {
   ClipboardList,
   ListChecks,
   GraduationCap,
-  UserPlus,
-  Receipt,
-  Briefcase,
   Library,
+  Users,
+  Link2,
 } from "lucide-react";
 
 type MenuItemBase = {
@@ -39,15 +38,44 @@ export const studentMenuItems: FlatMenuItem[] = [
   { icon: Settings, label: "Settings", path: "/dashboard/settings" },
 ];
 
-export const adminMenuItems: FlatMenuItem[] = [
+/** Admin: nested groups for LMS + booking + payments operations */
+export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard/admin" },
-  { icon: GraduationCap, label: "All Student", path: "/dashboard/admin/students" },
-  { icon: GraduationCap, label: "All Teacher", path: "/dashboard/admin/teachers" },
-  { icon: Briefcase, label: "All Staff", path: "/dashboard/admin/staff" },
-  { icon: BookOpen, label: "All Course", path: "/dashboard/admin/courses" },
-  { icon: UserPlus, label: "Add User Role", path: "/dashboard/admin/add-user-role" },
-  { icon: Receipt, label: "Transaction", path: "/dashboard/admin/transactions" },
-  { icon: BarChart3, label: "Report", path: "/dashboard/admin/reports" },
+  {
+    icon: Users,
+    label: "People",
+    children: [
+      { label: "Students & registrations", path: "/dashboard/admin/students" },
+      { label: "Teachers", path: "/dashboard/admin/teachers" },
+      { label: "Staff", path: "/dashboard/admin/staff" },
+      { label: "Users", path: "/dashboard/admin/users" },
+      { label: "Add user role", path: "/dashboard/admin/add-user-role" },
+    ],
+  },
+  {
+    icon: BookOpen,
+    label: "Courses & classes",
+    children: [
+      { label: "All courses", path: "/dashboard/admin/courses" },
+      { label: "Enrollments & waitlist", path: "/dashboard/admin/enrollments" },
+      { label: "Classes & rosters", path: "/dashboard/admin/classes" },
+    ],
+  },
+  {
+    icon: ClipboardList,
+    label: "Operations",
+    children: [
+      { label: "Payments & reminders", path: "/dashboard/admin/payments" },
+      { label: "Transactions", path: "/dashboard/admin/transactions" },
+      { label: "Attendance & progress", path: "/dashboard/admin/attendance" },
+      { label: "Placement tests", path: "/dashboard/admin/placement-tests" },
+      { label: "Certifications", path: "/dashboard/admin/certifications" },
+      { label: "Calendar", path: "/dashboard/admin/calendar" },
+      { label: "Support sessions", path: "/dashboard/admin/support-sessions" },
+    ],
+  },
+  { icon: Link2, label: "Integrations", path: "/dashboard/admin/integrations" },
+  { icon: BarChart3, label: "Reports", path: "/dashboard/admin/reports" },
   { icon: Settings, label: "Settings", path: "/dashboard/admin/settings" },
 ];
 

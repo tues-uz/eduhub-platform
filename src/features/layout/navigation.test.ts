@@ -11,7 +11,9 @@ describe("navigation config", () => {
 
   it("includes core dashboard entries for each role", () => {
     expect(studentMenuItems.some((item) => item.path === appRoutes.dashboard)).toBe(true);
-    expect(adminMenuItems.some((item) => item.path === appRoutes.dashboardAdmin)).toBe(true);
+    expect(
+      adminMenuItems.some((item) => "path" in item && item.path === appRoutes.dashboardAdmin),
+    ).toBe(true);
     expect(teacherMenuItems.some((item) => "path" in item && item.path === appRoutes.dashboardTeacher)).toBe(true);
   });
 });

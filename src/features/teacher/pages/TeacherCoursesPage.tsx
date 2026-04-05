@@ -159,7 +159,8 @@ const TeacherCoursesPage = () => {
                 My Courses
               </h1>
               <p className="text-foreground/60 text-sm mt-1">
-                Manage your courses and add lessons with PDF or video content.
+                New courses stay in draft until an admin sets a price and publishes them. Add lessons with PDF or video
+                content, then wait for approval.
               </p>
             </div>
             <Button asChild className="rounded-full shrink-0" style={{ backgroundColor: "#1e40af" }}>
@@ -262,51 +263,60 @@ const TeacherCoursesPage = () => {
                       >
                         {isUuid(course.id) && (
                           <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className={`h-8 w-8 shrink-0 rounded-md border border-gray-200 bg-white hover:bg-gray-100 ${
-                                course.status === "PUBLISHED"
-                                  ? "text-green-600 hover:text-green-700"
-                                  : "text-muted-foreground hover:text-foreground"
-                              }`}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handlePublish(course.id);
-                              }}
-                              disabled={publishingId === course.id}
-                              title={course.status === "PUBLISHED" ? "Unpublish" : "Publish"}
-                            >
-                              {course.status === "PUBLISHED" ? (
-                                <Eye className="h-3.5 w-3.5 shrink-0" />
-                              ) : (
-                                <EyeOff className="h-3.5 w-3.5 shrink-0" />
-                              )}
-                            </Button>
-                            {course.status !== "DRAFT" && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={`h-8 w-8 shrink-0 rounded-md border border-gray-200 bg-white hover:bg-gray-100 ${
-                                  course.status === "ARCHIVED"
-                                    ? "text-amber-600 hover:text-amber-700"
-                                    : "text-orange-600 hover:text-orange-700"
-                                }`}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleArchive(course.id);
-                                }}
-                                disabled={publishingId === course.id}
-                                title={course.status === "ARCHIVED" ? "Unarchive" : "Archive"}
+                            {course.status === "DRAFT" ? (
+                              <span
+                                className="text-xs text-amber-900 font-medium px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200/90 shrink-0 max-w-[140px] leading-tight text-center"
+                                title="An admin will set the price and publish this course."
                               >
-                                {course.status === "ARCHIVED" ? (
-                                  <ArchiveRestore className="h-3.5 w-3.5 shrink-0" />
-                                ) : (
-                                  <Archive className="h-3.5 w-3.5 shrink-0" />
-                                )}
-                              </Button>
+                                Awaiting admin approval
+                              </span>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={`h-8 w-8 shrink-0 rounded-md border border-gray-200 bg-white hover:bg-gray-100 ${
+                                    course.status === "PUBLISHED"
+                                      ? "text-green-600 hover:text-green-700"
+                                      : "text-muted-foreground hover:text-foreground"
+                                  }`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handlePublish(course.id);
+                                  }}
+                                  disabled={publishingId === course.id}
+                                  title={course.status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                                >
+                                  {course.status === "PUBLISHED" ? (
+                                    <Eye className="h-3.5 w-3.5 shrink-0" />
+                                  ) : (
+                                    <EyeOff className="h-3.5 w-3.5 shrink-0" />
+                                  )}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={`h-8 w-8 shrink-0 rounded-md border border-gray-200 bg-white hover:bg-gray-100 ${
+                                    course.status === "ARCHIVED"
+                                      ? "text-amber-600 hover:text-amber-700"
+                                      : "text-orange-600 hover:text-orange-700"
+                                  }`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleArchive(course.id);
+                                  }}
+                                  disabled={publishingId === course.id}
+                                  title={course.status === "ARCHIVED" ? "Unarchive" : "Archive"}
+                                >
+                                  {course.status === "ARCHIVED" ? (
+                                    <ArchiveRestore className="h-3.5 w-3.5 shrink-0" />
+                                  ) : (
+                                    <Archive className="h-3.5 w-3.5 shrink-0" />
+                                  )}
+                                </Button>
+                              </>
                             )}
                           </>
                         )}

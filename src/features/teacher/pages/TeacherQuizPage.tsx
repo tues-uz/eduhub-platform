@@ -1,7 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { format, startOfDay } from "date-fns";
-import { ArrowLeft, Plus, Trash2, ClipboardList, GripVertical, ChevronDown, ChevronUp, CalendarClock, BarChart2, Rocket, Check, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  ClipboardList,
+  GripVertical,
+  ChevronDown,
+  ChevronUp,
+  CalendarClock,
+  BarChart2,
+  Rocket,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -208,6 +220,8 @@ const TeacherQuizPage = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   const [quizzes, setQuizzes] = useState<QuizResponse[]>([]);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
+  const [listLoading, setListLoading] = useState(true);
+  const [listError, setListError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [screen, setScreen] = useState<"list" | "form">("list");
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
@@ -243,7 +257,8 @@ const TeacherQuizPage = () => {
   // Load quizzes: if courseId selected, load from backend; otherwise show all from all courses
   const loadQuizzes = useCallback(async (forCourseId?: string) => {
     try {
-      setLoading(true);
+      setListLoading(true);
+      setListError(null);
       if (forCourseId) {
         const data = await eduhubCourseQuizzes.list(forCourseId);
         setQuizzes(data);
@@ -257,12 +272,13 @@ const TeacherQuizPage = () => {
         });
         setQuizzes(allQuizzes);
       }
-    } catch {
+    } catch (e) {
       setQuizzes([]);
+      setListError(e instanceof Error ? e.message : "Could not load quizzes.");
     } finally {
-      setLoading(false);
+      setListLoading(false);
     }
-  }, [courses]);
+  }, []);
 
   useEffect(() => {
     // Load quizzes for selected course
@@ -469,7 +485,32 @@ const TeacherQuizPage = () => {
                 </Button>
               </div>
 
-              {quizzes.length === 0 ? (
+              {listLoading ? (
+                <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-gray-200 bg-gray-50/40 py-20">
+                  <Loader2 className="h-9 w-9 animate-spin text-[#1e40af]/70" aria-hidden />
+                  <p className="text-sm text-muted-foreground">Loading quizzes…</p>
+                </div>
+              ) : listError ? (
+                <Card className="border-red-200 bg-red-50/40">
+                  <CardContent className="flex flex-col items-center justify-center gap-4 py-12 text-center sm:flex-row sm:text-left">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <p className="text-sm font-semibold text-red-900">Could not load quizzes</p>
+                      <p className="text-sm text-red-800/90 break-words">{listError}</p>
+                      <p className="text-xs text-red-800/70">
+                        This is usually a network issue, a slow API, or the backend being unavailable—not necessarily a bug in this page.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="shrink-0 border-red-200 bg-white"
+                      onClick={() => loadQuizzes(courseId || undefined)}
+                    >
+                      Try again
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : quizzes.length === 0 ? (
                 <Card className="border-dashed border-2">
                   <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                     <ClipboardList className="h-14 w-14 text-foreground/30 mb-4" />
@@ -484,85 +525,114 @@ const TeacherQuizPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-4">
-                  {quizzes.map((quiz) => (
-                    <Card
-                      key={quiz.id}
-                      className="flex flex-row items-center gap-4 rounded-xl border border-gray-100 bg-gray-50/30 p-4"
-                    >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-gray-200/80">
-                        <ClipboardList className="h-5 w-5 text-[#1e40af]/80" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <CardTitle className="text-base font-semibold truncate">{quiz.title}</CardTitle>
-                          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${(quiz.quizType ?? "QUIZ") === "PLACEMENT_TEST"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-blue-100 text-blue-800"
-                            }`}>
-                            {(quiz.quizType ?? "QUIZ") === "PLACEMENT_TEST" ? "Placement test" : "Quiz"}
-                          </span>
-                          {quiz.isPublished ? (
-                            <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                              <Check className="h-3 w-3" />
-                              Published
-                            </span>
-                          ) : (
-                            <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-                              Draft
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">{quiz.questions.length} questions • {quiz.courseId ? "Linked to course" : "No course"}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {!quiz.isPublished && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="rounded-lg border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
-                            onClick={() => handlePublish(quiz.courseId!, quiz.id)}
-                            disabled={!!publishingId}
-                          >
-                            {publishingId === quiz.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Rocket className="h-4 w-4 mr-1" />
-                                Publish
-                              </>
+                <div className="space-y-3">
+                  {quizzes.map((quiz) => {
+                    const isPlacement = (quiz.quizType ?? "QUIZ") === "PLACEMENT_TEST";
+                    const metaLine = [
+                      isPlacement ? "Placement test" : "Quiz",
+                      quiz.isPublished ? "Published" : "Draft",
+                      `${quiz.questions.length} question${quiz.questions.length === 1 ? "" : "s"}`,
+                      quiz.courseId ? "Linked to course" : "No course",
+                    ].join(" · ");
+
+                    return (
+                      <Card
+                        key={quiz.id}
+                        className="overflow-hidden rounded-2xl border border-gray-200/60 bg-white shadow-sm ring-1 ring-gray-950/[0.03] transition-[box-shadow,transform] duration-200 hover:shadow-md hover:ring-gray-950/[0.05] sm:hover:-translate-y-[1px]"
+                      >
+                        <div className="flex flex-col lg:flex-row lg:items-stretch">
+                          {/* Main block */}
+                          <div className="flex min-w-0 flex-1 gap-4 p-5 sm:gap-5 sm:p-6">
+                            <div
+                              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200/80 bg-gray-50 text-gray-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                              aria-hidden
+                            >
+                              <ClipboardList className="h-6 w-6" strokeWidth={1.5} />
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-3">
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <CardTitle className="text-[1.05rem] font-semibold leading-snug tracking-tight text-gray-900 sm:text-lg">
+                                  {quiz.title}
+                                </CardTitle>
+                                <div className="flex shrink-0 items-center gap-2">
+                                  <span
+                                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${isPlacement
+                                      ? "bg-amber-50 text-amber-800 ring-1 ring-amber-200/50"
+                                      : "bg-sky-50 text-sky-800 ring-1 ring-sky-200/50"
+                                      }`}
+                                  >
+                                    {isPlacement ? "Placement" : "Quiz"}
+                                  </span>
+                                  <span
+                                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${quiz.isPublished
+                                      ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/50"
+                                      : "bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200/70"
+                                      }`}
+                                  >
+                                    {quiz.isPublished ? "Published" : "Draft"}
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-sm leading-relaxed text-gray-500">{metaLine}</p>
+                            </div>
+                          </div>
+
+                          {/* Action rail: horizontal below lg breakpoint; vertical sidebar on large screens */}
+                          <div className="flex flex-col gap-2 border-t border-gray-100 bg-gradient-to-b from-gray-50/80 to-gray-50/30 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2 lg:w-[252px] lg:shrink-0 lg:flex-col lg:items-stretch lg:justify-center lg:gap-2 lg:border-l lg:border-t-0 lg:px-4 lg:py-5">
+                            {!quiz.isPublished && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9 w-full justify-center rounded-xl border-emerald-200/90 bg-white px-4 text-emerald-800 shadow-sm hover:bg-emerald-50 sm:w-auto"
+                                onClick={() => handlePublish(quiz.courseId!, quiz.id)}
+                                disabled={!!publishingId}
+                              >
+                                {publishingId === quiz.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Rocket className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                                    Publish
+                                  </>
+                                )}
+                              </Button>
                             )}
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-lg"
-                          asChild
-                        >
-                          <Link
-                            to={`/dashboard/teacher/placement-test/${quiz.courseId}/${quiz.id}/results`}
-                            title="View results"
-                          >
-                            <BarChart2 className="h-4 w-4 mr-1" />
-                            Results
-                          </Link>
-                        </Button>
-                        <Button variant="outline" size="sm" className="rounded-lg" onClick={() => startEdit(quiz)}>
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-600 hover:bg-red-50"
-                          onClick={() => setDeleteId(quiz.id)}
-                          title="Delete quiz"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-9 w-full justify-center rounded-xl border-gray-200/90 bg-white px-4 shadow-sm sm:w-auto"
+                              asChild
+                            >
+                              <Link
+                                to={`/dashboard/teacher/placement-test/${quiz.courseId}/${quiz.id}/results`}
+                                title="View results"
+                              >
+                                <BarChart2 className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                                Results
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-9 w-full justify-center rounded-xl border-gray-200/90 bg-white px-4 shadow-sm sm:w-auto"
+                              onClick={() => startEdit(quiz)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-9 w-full justify-center rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 sm:w-auto"
+                              onClick={() => setDeleteId(quiz.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1.5 shrink-0" />
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
 
