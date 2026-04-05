@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
@@ -13,8 +14,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { eduhubAdmin } from "@/api/eduhubClient";
+import { User } from "lucide-react";
 
 export default function AdminAddUserRolePage() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+    role: "",
+  });
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.fullName || !formData.email || !formData.phoneNumber || !formData.role) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await eduhubAdmin.createUser(formData);
+      toast.success(`${formData.role} account created successfully`);
+      navigate("/dashboard/admin");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create user");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   return (
     <AdminLayout>
       <div className="container mx-auto px-6 max-w-lg">
@@ -25,35 +60,83 @@ export default function AdminAddUserRolePage() {
 
         <AdminPageHeader
           title="Add user role"
-          description="Invite or assign a role to an existing account. Wire to admin API when available."
+          description="Create a new user account with assigned role. Default password will be 'pleasechangeme123!'"
         />
 
         <form
           className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            toast.success("Request submitted (demo)");
-          }}
+          onSubmit={handleSubmit}
         >
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" required placeholder="user@school.com" className="bg-white" />
+            <Label htmlFor="fullName">Full Name</Label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                id="fullName"
+                name="fullName"
+                type="text"
+                required
+                placeholder="Enter full name"
+                value={formData.fullName}
+                onChange={handleChange}
+                className="pl-10 bg-white"
+              />
+            </div>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              required
+              placeholder="user@school.com"
+              value={formData.email}
+              onChange={handleChange}
+              className="bg-white"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                id="phoneNumber"
+                name="phoneNumber"
+                type="tel"
+                required
+                placeholder="+6281234567890"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                className="pl-10 bg-white"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Role</Label>
-            <Select required>
+            <Select
+              required
+              value={formData.role}
+              onValueChange={(value) => setFormData({ ...formData, role: value })}
+            >
               <SelectTrigger className="bg-white">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="student">Student</SelectItem>
-                <SelectItem value="teacher">Teacher</SelectItem>
-                <SelectItem value="staff">Staff</SelectItem>
+                <SelectItem value="LECTURER">Teacher</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <Button type="submit" className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800">
-            Submit
+
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800"
+          >
+            {isLoading ? "Creating..." : "Create User"}
           </Button>
         </form>
       </div>

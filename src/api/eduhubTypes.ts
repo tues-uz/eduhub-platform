@@ -17,10 +17,11 @@ export interface AuthResponse {
   tokenType: string;
   expiresIn: number;
   user: UserResponse;
+  mustChangePassword: boolean;
 }
 
 export interface LoginRequest {
-  email: string;
+  identifier: string;
   password: string;
 }
 

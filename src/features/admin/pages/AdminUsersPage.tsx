@@ -1,9 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { mockAdminUsers } from "@/features/admin/data/adminOperationalMock";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,27 +21,62 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { eduhubAdmin } from "@/api/eduhubClient";
+import { useToast } from "@/hooks/use-toast";
+
+interface UserItem {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+}
 
 export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      setIsLoading(true);
+      try {
+        const res = await eduhubAdmin.listUsers({ size: 100 });
+        const mapped: UserItem[] = (res.content || []).map((u: any) => ({
+          id: u.id,
+          name: u.fullName,
+          email: u.email,
+          role: u.role,
+          status: u.enabled ? "Active" : "Inactive",
+        }));
+        setUsers(mapped);
+      } catch (err: any) {
+        toast({ title: "Error", description: err.message || "Failed to load users", variant: "destructive" });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadUsers();
+  }, []);
 
   const roleOptions = useMemo(() => {
-    const roles = new Set(mockAdminUsers.map((u) => u.role));
+    const roles = new Set(users.map((u) => u.role));
     return Array.from(roles).sort((a, b) => a.localeCompare(b));
-  }, []);
+  }, [users]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return mockAdminUsers.filter((u) => {
+    return users.filter((u) => {
       if (roleFilter !== "all" && u.role !== roleFilter) return false;
       if (statusFilter === "active" && u.status !== "Active") return false;
       if (statusFilter === "inactive" && u.status !== "Inactive") return false;
       if (!q) return true;
       return [u.name, u.email, u.role, u.status].join(" ").toLowerCase().includes(q);
     });
-  }, [search, roleFilter, statusFilter]);
+  }, [users, search, roleFilter, statusFilter]);
 
   const hasActiveFilters =
     search.trim() !== "" || roleFilter !== "all" || statusFilter !== "all";
@@ -55,7 +89,7 @@ export default function AdminUsersPage() {
           Back to dashboard
         </Link>
 
-        <AdminPageHeader title="Users" description="Cross-role user list (demo data)." />
+        <AdminPageHeader title="Users" description="Cross-role user list." />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
@@ -115,7 +149,13 @@ export default function AdminUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center text-slate-500">
+                    Loading...
+                  </TableCell>
+                </TableRow>
+              ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center text-slate-500">
                     No users match your search or filters.

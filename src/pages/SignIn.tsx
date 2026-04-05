@@ -39,7 +39,7 @@ const SignIn = () => {
     setIsLoading(true);
 
     try {
-      const res = await eduhubAuth.login({ email: email.trim(), password });
+      const res = await eduhubAuth.login({ identifier: email.trim(), password });
       setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);
       const role = mapApiRoleToApp(res.user.role);
       setSessionUser({
@@ -49,6 +49,13 @@ const SignIn = () => {
         role,
       });
       refreshUser();
+      
+      if (res.mustChangePassword) {
+        toast({ title: "Password change required", description: "You must change your password before continuing." });
+        navigate("/change-password");
+        return;
+      }
+      
       toast({ title: "Welcome back!", description: `Signed in as ${res.user.fullName}` });
       const redirect = role === "admin" ? "/dashboard/admin" : role === "teacher" ? "/dashboard/teacher" : "/dashboard";
       navigate(redirect);
@@ -99,15 +106,15 @@ const SignIn = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Email Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium text-foreground">
-                    Email Address
+                  <Label htmlFor="identifier" className="text-sm font-medium text-foreground">
+                    Email or Phone Number
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
+                      id="identifier"
+                      type="text"
+                      placeholder="Enter your email or phone number"
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);

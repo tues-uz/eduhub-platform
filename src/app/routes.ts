@@ -4,6 +4,7 @@ export const appRoutes = {
   home: "/",
   signIn: "/signin",
   register: "/register",
+  changePassword: "/change-password",
   /** Use this path in email verification links so the SPA route matches. */
   verifyEmail: "/verify-email",
   dashboard: "/dashboard",

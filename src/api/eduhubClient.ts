@@ -221,6 +221,9 @@ export const eduhubAuth = {
   me: () => request<{ id: string; fullName: string; email: string; role: string }>("/auth/me"),
 
   refresh: refreshAuth,
+
+  changePassword: (body: { currentPassword: string; newPassword: string }) =>
+    request<AuthResponse>("/auth/change-password", { method: "POST", body: JSON.stringify(body) }),
 };
 
 /** Courses */
@@ -560,6 +563,22 @@ export const eduhubLecturer = {
 /** Admin */
 export const eduhubAdmin = {
   getOverview: () => request<any>("/admin/overview"),
+
+  createUser: (body: { fullName: string; email: string; phoneNumber: string; role: string }) =>
+    request<UserResponse>("/admin/users", { method: "POST", body: JSON.stringify(body) }),
+
+  listUsers: (params?: { role?: string; enabled?: boolean; search?: string; page?: number; size?: number }) => {
+    const sp = new URLSearchParams();
+    if (params?.role) sp.set("role", params.role);
+    if (params?.enabled !== undefined) sp.set("enabled", String(params.enabled));
+    if (params?.search) sp.set("search", params.search);
+    if (params?.page !== undefined) sp.set("page", String(params.page));
+    if (params?.size !== undefined) sp.set("size", String(params.size));
+    return request<{ content: UserResponse[]; totalElements: number; totalPages: number; number: number; size: number }>(`/admin/users?${sp}`);
+  },
+
+  setUserStatus: (id: string, enabled: boolean) =>
+    request<UserResponse>(`/admin/users/${id}/status`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
 };
 
 /** Assignments */

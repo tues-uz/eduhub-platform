@@ -3,6 +3,7 @@ import EduHub from "@/pages/EduHub";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
 import VerifyEmail from "@/pages/VerifyEmail";
+import ChangePassword from "@/pages/ChangePassword";
 import DashboardRedirect from "@/pages/DashboardRedirect";
 import StudentCoursesPage from "@/features/student/pages/StudentCoursesPage";
 import StudentAvailableCourses from "@/pages/StudentAvailableCourses";
@@ -52,6 +53,7 @@ export function AppRoutes() {
       <Route path={appRoutes.home} element={<EduHub />} />
       <Route path={appRoutes.signIn} element={<SignIn />} />
       <Route path={appRoutes.register} element={<SignUp />} />
+      <Route path={appRoutes.changePassword} element={<ChangePassword />} />
       <Route path={appRoutes.verifyEmail} element={<VerifyEmail />} />
       <Route path="/verifyemail" element={<VerifyEmail />} />
 
