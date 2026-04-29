@@ -30,7 +30,15 @@ export interface CourseRequest {
   description: string;
   thumbnailUrl?: string;
   category: string;
-  status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  status?: "DRAFT" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
+}
+
+export interface CoursePricingResponse {
+  amount: number;
+  currency: string;
+  referralCode?: string;
+  discountPercent: number;
+  discountedAmount: number;
 }
 
 export interface CourseResponse {
@@ -38,10 +46,13 @@ export interface CourseResponse {
   title: string;
   description: string;
   thumbnailUrl?: string;
-  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  status: "DRAFT" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
   category: string;
   lecturer: UserResponse;
   enrollmentCount?: number;
+  pricing?: CoursePricingResponse;
+  rejectionReason?: string;
+  reviewedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -50,11 +61,12 @@ export interface CourseSummaryResponse {
   id: string;
   title: string;
   thumbnailUrl?: string;
-  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  status: "DRAFT" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
   category: string;
   lecturerName: string;
   enrollmentCount?: number;
   createdAt: string;
+  pricing?: CoursePricingResponse;
 }
 
 export interface ModuleRequest {

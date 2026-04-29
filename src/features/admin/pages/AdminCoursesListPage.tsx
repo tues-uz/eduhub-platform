@@ -7,7 +7,6 @@ import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { AdminCourseReviewDialog } from "@/features/admin/components/AdminCourseReviewDialog";
 import { eduhubCourses } from "@/api/eduhubClient";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
-import { computeDiscountedPrice, readAdminCourseCatalog } from "@/features/admin/utils/adminCourseCatalog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +52,6 @@ export default function AdminCoursesListPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [reviewCourseId, setReviewCourseId] = useState<string | null>(null);
   const [reviewCourseTitle, setReviewCourseTitle] = useState("");
-  const [priceVersion, setPriceVersion] = useState(0);
 
   const highlightCourseId = searchParams.get("courseId");
 
@@ -66,11 +64,6 @@ export default function AdminCoursesListPage() {
     queryKey: ["admin", "courses", "list"],
     queryFn: fetchMergedAdminCourses,
   });
-
-  const adminCatalog = useMemo(() => {
-    void priceVersion;
-    return readAdminCourseCatalog();
-  }, [data, priceVersion]);
 
   const categories = useMemo(() => {
     if (!data?.length) return [] as string[];
@@ -88,15 +81,14 @@ export default function AdminCoursesListPage() {
       if (statusFilter !== "all" && c.status !== statusFilter) return false;
       if (categoryFilter !== "all" && (c.category ?? "") !== categoryFilter) return false;
       if (!q) return true;
-      const meta = adminCatalog[c.id];
-      const ref = meta?.referralCode ?? "";
-      const disc = meta?.discountPercent != null ? `${meta.discountPercent}%` : "";
+      const ref = c.pricing?.referralCode ?? "";
+      const disc = c.pricing?.discountPercent != null ? `${c.pricing.discountPercent}%` : "";
       const hay = [c.title, c.category ?? "", c.lecturerName ?? "", c.status ?? "", ref, disc]
         .join(" ")
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [data, search, statusFilter, categoryFilter, adminCatalog]);
+  }, [data, search, statusFilter, categoryFilter]);
 
   const hasActiveFilters =
     search.trim() !== "" || statusFilter !== "all" || categoryFilter !== "all";
@@ -133,6 +125,7 @@ export default function AdminCoursesListPage() {
                 <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="DRAFT">Draft (pending review)</SelectItem>
                 <SelectItem value="PUBLISHED">Published</SelectItem>
+                <SelectItem value="REJECTED">Rejected</SelectItem>
                 <SelectItem value="ARCHIVED">Archived</SelectItem>
               </SelectContent>
             </Select>
@@ -202,7 +195,7 @@ export default function AdminCoursesListPage() {
                   </TableRow>
                 ) : (
                   filteredCourses.map((c) => {
-                    const meta = adminCatalog[c.id];
+                    const meta = c.pricing;
                     return (
                       <TableRow
                         key={c.id}
@@ -229,11 +222,11 @@ export default function AdminCoursesListPage() {
                         </TableCell>
                         <TableCell className="text-slate-800 tabular-nums text-sm font-medium">
                           {meta && meta.discountPercent > 0
-                            ? formatMoney(computeDiscountedPrice(meta.amount, meta.discountPercent), meta.currency)
+                            ? formatMoney(meta.discountedAmount, meta.currency)
                             : "—"}
                         </TableCell>
                         <TableCell className="text-right">
-                          {c.status === "DRAFT" ? (
+                          {c.status === "DRAFT" || c.status === "REJECTED" ? (
                             <Button
                               type="button"
                               size="sm"
@@ -244,7 +237,7 @@ export default function AdminCoursesListPage() {
                                 setReviewCourseTitle(c.title);
                               }}
                             >
-                              Review &amp; publish
+                              Review
                             </Button>
                           ) : (
                             <Button
@@ -277,7 +270,6 @@ export default function AdminCoursesListPage() {
             if (!open) {
               setReviewCourseId(null);
               setReviewCourseTitle("");
-              setPriceVersion((v) => v + 1);
             }
           }}
         />

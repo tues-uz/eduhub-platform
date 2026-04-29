@@ -1,6 +1,7 @@
 import { EDUHUB_API_BASE_URL, EDUHUB_API_PREFIX } from "./config";
 import type {
   AuthResponse,
+  UserResponse,
   LoginRequest,
   CourseRequest,
   CourseResponse,
@@ -43,7 +44,8 @@ export function getAccessToken(): string | null {
 export function setAuthTokens(accessToken: string, refreshToken: string, expiresIn: number = 3600): void {
   localStorage.setItem(AUTH_ACCESS_TOKEN_KEY, accessToken);
   localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refreshToken);
-  localStorage.setItem(AUTH_EXPIRES_AT_KEY, String(Date.now() + expiresIn * 1000));
+  const expiresMs = expiresIn > 86_400 ? expiresIn : expiresIn * 1000;
+  localStorage.setItem(AUTH_EXPIRES_AT_KEY, String(Date.now() + expiresMs));
 }
 
 export function clearAuthTokens(): void {
@@ -171,7 +173,8 @@ async function request<T>(
   if (!res.ok) {
     let message = res.statusText;
     if (json && !json.success && json.errors && json.errors.length > 0) {
-      message = json.errors[0].message;
+      const firstError = json.errors[0];
+      message = typeof firstError === "string" ? firstError : firstError.message;
     } else if (json && json.message) {
       message = json.message;
     } else if (text) {
@@ -234,7 +237,7 @@ export const eduhubCourses = {
     category?: string;
     search?: string;
     /** When supported by API (e.g. admin catalog), filter by course lifecycle status. */
-    status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+    status?: "DRAFT" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
   }) => {
     const sp = new URLSearchParams();
     sp.set("page", String(params?.page ?? 0));
@@ -563,6 +566,15 @@ export const eduhubLecturer = {
 /** Admin */
 export const eduhubAdmin = {
   getOverview: () => request<any>("/admin/overview"),
+
+  reviewCourse: (id: string, body: {
+    decision: "APPROVE" | "REJECT";
+    priceAmount?: number;
+    currency?: string;
+    referralCode?: string;
+    discountPercent?: number;
+    rejectionReason?: string;
+  }) => request<CourseResponse>(`/admin/courses/${id}/review`, { method: "PATCH", body: JSON.stringify(body) }),
 
   createUser: (body: { fullName: string; email: string; phoneNumber: string; role: string }) =>
     request<UserResponse>("/admin/users", { method: "POST", body: JSON.stringify(body) }),
