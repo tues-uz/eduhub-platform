@@ -74,7 +74,7 @@ const TeacherCoursesPage = () => {
             lessons: [],
             createdAt: c.createdAt,
             updatedAt: c.createdAt,
-            status: c.status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
+            status: c.status,
           }));
           if (!cancelled) setCourses([...apiCourses, ...local]);
         } catch {

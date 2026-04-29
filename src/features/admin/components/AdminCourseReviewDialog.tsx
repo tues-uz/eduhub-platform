@@ -1,13 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { eduhubCourses } from "@/api/eduhubClient";
+import { eduhubAdmin, eduhubCourses } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
-import {
-  computeDiscountedPrice,
-  readAdminCourseCatalog,
-  writeAdminCourseCatalog,
-} from "@/features/admin/utils/adminCourseCatalog";
+import { computeDiscountedPrice } from "@/features/admin/utils/adminCourseCatalog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 
 type Props = {
   courseId: string | null;
@@ -39,6 +36,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
   const [priceInput, setPriceInput] = useState("");
   const [referralInput, setReferralInput] = useState("");
   const [discountInput, setDiscountInput] = useState("");
+  const [rejectionInput, setRejectionInput] = useState("");
 
   const enabled = !!courseId && isUuid(courseId) && open;
   const { data: detail, isLoading } = useQuery({
@@ -47,7 +45,8 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
     enabled,
   });
 
-  const isDraft = detail?.status === "DRAFT";
+  const canReject = detail?.status === "DRAFT" || detail?.status === "REJECTED";
+  const isReviewable = detail?.status === "DRAFT" || detail?.status === "REJECTED";
 
   const pricePreview = useMemo(() => {
     const rawP = priceInput.replace(/\s/g, "");
@@ -69,8 +68,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
 
   useEffect(() => {
     if (!courseId || !open) return;
-    const catalog = readAdminCourseCatalog();
-    const existing = catalog[courseId];
+    const existing = detail?.pricing;
     if (existing) {
       setPriceInput(String(existing.amount));
       setReferralInput(existing.referralCode ?? "");
@@ -80,11 +78,18 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
       setReferralInput("");
       setDiscountInput("0");
     }
-  }, [courseId, open]);
+    setRejectionInput(detail?.rejectionReason ?? "");
+  }, [courseId, detail, open]);
 
-  const publishMutation = useMutation({
-    mutationFn: async () => {
+  const reviewMutation = useMutation({
+    mutationFn: async (decision: "APPROVE" | "REJECT") => {
       if (!courseId || !isUuid(courseId)) throw new Error("Invalid course");
+      if (decision === "REJECT") {
+        const rejectionReason = rejectionInput.trim();
+        if (!rejectionReason) throw new Error("Enter a reason before rejecting this course.");
+        return eduhubAdmin.reviewCourse(courseId, { decision, rejectionReason });
+      }
+
       const n = Number(priceInput.replace(/\s/g, ""));
       if (!Number.isFinite(n) || n < 0) {
         throw new Error("Enter a valid catalog price (0 or greater).");
@@ -94,19 +99,21 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
         throw new Error("Discount must be between 0 and 100%.");
       }
       const discountPercent = Math.round(dp);
-      if (isDraft) {
-        await eduhubCourses.publish(courseId);
-      }
-      writeAdminCourseCatalog(courseId, {
-        amount: Math.round(n),
+      return eduhubAdmin.reviewCourse(courseId, {
+        decision,
+        priceAmount: Math.round(n),
         currency: DEFAULT_CURRENCY,
         referralCode: referralInput.trim().slice(0, 64),
         discountPercent,
       });
     },
-    onSuccess: () => {
-      if (isDraft) {
-        toast.success("Course published", {
+    onSuccess: (_data, decision) => {
+      if (decision === "REJECT") {
+        toast.success("Course rejected", {
+          description: courseTitle ? `${courseTitle} was sent back to the lecturer.` : "The lecturer can revise and resubmit.",
+        });
+      } else if (isReviewable) {
+        toast.success("Course approved and published", {
           description: courseTitle ? `${courseTitle} is live for students.` : "The course is now published.",
         });
       } else {
@@ -118,7 +125,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
       onOpenChange(false);
     },
     onError: (e: Error) => {
-      toast.error(isDraft ? "Could not publish" : "Could not save", {
+      toast.error("Course review failed", {
         description: e.message || "Try again or check API permissions.",
       });
     },
@@ -129,15 +136,15 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isDraft ? "Review & publish course" : "Catalog: price, referral & discount"}
+            {isReviewable ? "Review course" : "Catalog: price, referral & discount"}
           </DialogTitle>
           <DialogDescription asChild>
             <div className="space-y-3 text-sm text-muted-foreground">
-              {isDraft ? (
+              {isReviewable ? (
                 <>
                   <p>
                     Teachers create courses as <strong className="text-foreground">drafts</strong> and cannot set
-                    prices. You approve the course and control monetization.
+                    prices. You approve or reject the course and control monetization.
                   </p>
                   <ol className="list-decimal list-inside space-y-1.5 text-left border border-slate-200 rounded-md bg-slate-50/80 px-3 py-2.5">
                     <li>Check title, lecturer, and description.</li>
@@ -150,7 +157,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
                       Click <strong className="text-foreground">Publish course</strong> to make it visible in the catalog.
                     </li>
                   </ol>
-                  <p className="text-xs">Catalog price and referral fields are also stored in-browser until the API supports them.</p>
+                  <p className="text-xs">Catalog price, referral code, discount, and review decision are persisted on the API.</p>
                 </>
               ) : (
                 <p>
@@ -179,6 +186,12 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
                 <span className="text-slate-500">Status</span>
                 <span className="text-slate-800 text-right font-medium">{detail.status}</span>
               </div>
+              {detail.rejectionReason ? (
+                <div className="flex justify-between gap-4 items-start">
+                  <span className="text-slate-500 shrink-0">Last rejection</span>
+                  <span className="text-slate-800 text-right line-clamp-6">{detail.rejectionReason}</span>
+                </div>
+              ) : null}
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Category</span>
                 <span className="text-slate-800 text-right">{detail.category}</span>
@@ -274,6 +287,24 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
                 <span className="text-slate-500"> (no discount — full catalog price)</span>
               </div>
             ) : null}
+
+            {canReject ? (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <Label htmlFor="admin-course-rejection">Rejection reason</Label>
+                  <Textarea
+                    id="admin-course-rejection"
+                    value={rejectionInput}
+                    onChange={(e) => setRejectionInput(e.target.value)}
+                    placeholder="Explain what the lecturer needs to fix before approval."
+                    rows={3}
+                    className="bg-white"
+                  />
+                  <p className="text-xs text-slate-500">Required only when rejecting the course.</p>
+                </div>
+              </>
+            ) : null}
           </div>
         ) : (
           <p className="text-sm text-slate-600">Could not load course details.</p>
@@ -283,18 +314,28 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
+          {canReject ? (
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={!detail || reviewMutation.isPending}
+              onClick={() => reviewMutation.mutate("REJECT")}
+            >
+              {reviewMutation.isPending ? "Submitting…" : "Reject course"}
+            </Button>
+          ) : null}
           <Button
             type="button"
-            className={isDraft ? "bg-emerald-700 hover:bg-emerald-800" : "bg-slate-900 hover:bg-slate-800"}
-            disabled={!detail || publishMutation.isPending}
-            onClick={() => publishMutation.mutate()}
+            className={isReviewable ? "bg-emerald-700 hover:bg-emerald-800" : "bg-slate-900 hover:bg-slate-800"}
+            disabled={!detail || reviewMutation.isPending}
+            onClick={() => reviewMutation.mutate("APPROVE")}
           >
-            {publishMutation.isPending
-              ? isDraft
+            {reviewMutation.isPending
+              ? isReviewable
                 ? "Publishing…"
                 : "Saving…"
-              : isDraft
-                ? "Publish course"
+              : isReviewable
+                ? "Approve & publish"
                 : "Save catalog"}
           </Button>
         </DialogFooter>

@@ -19,15 +19,16 @@ type AvailableCourseItem = {
   duration: string;
   modules: number;
   price: number | undefined;
+  currency?: string;
   enrolled: boolean;
   progress?: number;
   status?: string;
   nextLesson?: string;
 };
 
-function formatPrice(price: number | undefined): string {
+function formatPrice(price: number | undefined, currency = "USD"): string {
   if (price == null || price <= 0) return "Free";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(price);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
 }
 
 const StudentAvailableCourses = () => {
@@ -68,9 +69,10 @@ const StudentAvailableCourses = () => {
         };
       });
 
-      const mapApiToItem = (c: { id: string; title: string; lecturerName: string; category?: string }) => {
+      const mapApiToItem = (c: { id: string; title: string; lecturerName: string; category?: string; pricing?: { amount: number; discountedAmount?: number; currency: string } }) => {
         const enrolled = enrolledIds.has(c.id);
         const enrolledData = enrolledByLinkId.get(c.id);
+        const price = c.pricing?.discountedAmount ?? c.pricing?.amount;
         return {
           id: c.id,
           linkId: c.id,
@@ -79,7 +81,8 @@ const StudentAvailableCourses = () => {
           category: c.category ?? "Course",
           duration: "—",
           modules: 0,
-          price: undefined as number | undefined,
+          price: price as number | undefined,
+          currency: c.pricing?.currency,
           enrolled,
           progress: enrolledData?.progress,
           status: enrolledData?.status,
@@ -211,7 +214,7 @@ const StudentAvailableCourses = () => {
 
                     <div className="mb-4 flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-foreground/60" />
-                      <span className="font-semibold text-foreground">{formatPrice(course.price)}</span>
+                      <span className="font-semibold text-foreground">{formatPrice(course.price, course.currency)}</span>
                     </div>
 
                     <div className="mt-auto border-t border-gray-100 pt-4">
