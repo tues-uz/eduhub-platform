@@ -87,7 +87,7 @@ export default function AdminAttendancePage() {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search student, course, lecturer, class…"
+            placeholder="Search student, class, lecturer…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
@@ -137,7 +137,7 @@ export default function AdminAttendancePage() {
             <TableHeader>
               <TableRow className="bg-slate-50">
                 <TableHead>Student</TableHead>
-                <TableHead>Course</TableHead>
+                <TableHead>Class</TableHead>
                 <TableHead>Lecturer</TableHead>
                 <TableHead>Attendance</TableHead>
                 <TableHead>Progress</TableHead>
@@ -228,7 +228,7 @@ export default function AdminAttendancePage() {
                       </div>
                       <div>
                         <div className="flex justify-between text-xs text-slate-600 mb-1">
-                          <span>Course progress</span>
+                          <span>Class progress</span>
                           <span>{detailRow.progressPct}%</span>
                         </div>
                         <Progress value={detailRow.progressPct} className="h-2" />

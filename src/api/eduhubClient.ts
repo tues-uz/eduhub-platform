@@ -221,7 +221,8 @@ export const eduhubAuth = {
   verifyEmail: (token: string) =>
     request<void>(`/auth/verify-email?token=${token}`, { method: "POST", skipAuth: true }),
 
-  me: () => request<{ id: string; fullName: string; email: string; role: string }>("/auth/me"),
+  me: () =>
+    request<{ id: string; fullName: string; email: string; role: string; avatarUrl?: string }>("/auth/me"),
 
   refresh: refreshAuth,
 

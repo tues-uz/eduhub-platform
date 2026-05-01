@@ -102,7 +102,7 @@ export default function StudentQuiz() {
       // Submit the quiz
       try {
         setSubmitting(true);
-        if (!currentQuiz.courseId) throw new Error("Course ID missing on quiz");
+        if (!currentQuiz.courseId) throw new Error("Class ID missing on quiz");
         const timeSpentSeconds = quizStartTime ? Math.round((Date.now() - quizStartTime) / 1000) : 0;
         const result = await eduhubCourseQuizzes.submit(currentQuiz.courseId, currentQuiz.id, { answers: newAnswers, timeSpentSeconds });
         setQuizResult(result);
@@ -130,7 +130,7 @@ export default function StudentQuiz() {
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
       <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6 max-w-3xl">
           <Link
             to="/dashboard"

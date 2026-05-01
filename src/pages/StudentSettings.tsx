@@ -11,7 +11,7 @@ const StudentSettings = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [courseReminders, setCourseReminders] = useState(true);
+  const [classReminders, setClassReminders] = useState(true);
 
   useEffect(() => {
     const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
@@ -33,7 +33,7 @@ const StudentSettings = () => {
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
       <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6 max-w-2xl">
           <div className="mb-8">
             <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
@@ -86,10 +86,10 @@ const StudentSettings = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-foreground">Course reminders</p>
+                    <p className="font-medium text-foreground">Class reminders</p>
                     <p className="text-sm text-foreground/60">Reminders for assignments and live sessions.</p>
                   </div>
-                  <Switch checked={courseReminders} onCheckedChange={setCourseReminders} />
+                  <Switch checked={classReminders} onCheckedChange={setClassReminders} />
                 </div>
               </div>
             </div>

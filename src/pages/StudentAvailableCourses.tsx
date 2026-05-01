@@ -58,7 +58,7 @@ const StudentAvailableCourses = () => {
           linkId,
           title: c.title,
           instructor: c.instructorName,
-          category: "Course",
+          category: "Class",
           duration,
           modules: moduleCount,
           price: c.price,
@@ -78,7 +78,7 @@ const StudentAvailableCourses = () => {
           linkId: c.id,
           title: c.title,
           instructor: c.lecturerName,
-          category: c.category ?? "Course",
+          category: c.category ?? "Class",
           duration: "—",
           modules: 0,
           price: price as number | undefined,
@@ -137,23 +137,27 @@ const StudentAvailableCourses = () => {
   });
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
+    <div className="min-h-dvh bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
       <DashboardSidebar />
 
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main
+        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${
+          isSidebarCollapsed ? "lg:ml-20 lg:w-[calc(100%-5rem)]" : "lg:ml-64 lg:w-[calc(100%-16rem)]"
+        }`}
+      >
         <div className="container mx-auto px-6">
           <div className="mb-8">
             <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
-              Available Courses
+              Available Classes
             </h1>
             <p className="text-foreground/70 text-sm mb-4">
-              Browse and enroll in courses offered on EduHub. Prices shown where set by instructors.
+              Browse and enroll in classes offered on EduHub. Prices shown where set by instructors.
             </p>
             <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
               <Input
                 type="search"
-                placeholder="Search by course name, instructor, or category..."
+                placeholder="Search by class name, instructor, or category..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-11 rounded-lg border-gray-200 pl-10"
@@ -169,7 +173,7 @@ const StudentAvailableCourses = () => {
             <>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-foreground/60">
-                  {filteredCourses.length} course{filteredCourses.length !== 1 ? "s" : ""} found
+                  {filteredCourses.length} class{filteredCourses.length !== 1 ? "es" : ""} found
                 </p>
               </div>
 
@@ -253,17 +257,17 @@ const StudentAvailableCourses = () => {
                   <BookOpen className="mx-auto mb-4 h-12 w-12 text-foreground/30" />
                   <p className="font-medium text-foreground/70">
                     {courses.length === 0
-                      ? "No courses available yet. Teachers can create courses from their dashboard."
-                      : "No courses match your search."}
+                      ? "No classes available yet. Teachers can create classes from their dashboard."
+                      : "No classes match your search."}
                   </p>
                   <p className="mt-1 text-sm text-foreground/50">
-                    {courses.length === 0 ? "Check back later or ask your teacher to publish a course." : "Try a different search."}
+                    {courses.length === 0 ? "Check back later or ask your teacher to publish a class." : "Try a different search."}
                   </p>
                   <div className="mt-4 flex flex-wrap justify-center gap-3">
                     {courses.length === 0 && (
                       <Link to="/dashboard/courses">
                         <Button className="rounded-full" style={{ backgroundColor: "#3954d0" }}>
-                          My Courses
+                          My Class
                         </Button>
                       </Link>
                     )}

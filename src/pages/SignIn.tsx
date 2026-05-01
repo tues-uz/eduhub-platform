@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,11 @@ function mapApiRoleToApp(apiRole: string): UserRole {
   if (apiRole === "LECTURER") return "teacher";
   if (apiRole === "ADMIN") return "admin";
   return "student";
+}
+
+function safeInternalPath(p: string | null): string | null {
+  if (!p || !p.startsWith("/") || p.startsWith("//")) return null;
+  return p;
 }
 
 // Fallback dummy accounts when API is unavailable or for demo
@@ -30,8 +35,13 @@ const SignIn = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { refreshUser } = useAuthSession();
+  const nextPath = useMemo(
+    () => safeInternalPath(searchParams.get("redirect") ?? searchParams.get("next")),
+    [searchParams],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +57,7 @@ const SignIn = () => {
         name: res.user.fullName,
         email: res.user.email,
         role,
+        avatarUrl: res.user.avatarUrl,
       });
       refreshUser();
       
@@ -57,8 +68,9 @@ const SignIn = () => {
       }
       
       toast({ title: "Welcome back!", description: `Signed in as ${res.user.fullName}` });
-      const redirect = role === "admin" ? "/dashboard/admin" : role === "teacher" ? "/dashboard/teacher" : "/dashboard";
-      navigate(redirect);
+      const fallback =
+        role === "admin" ? "/dashboard/admin" : role === "teacher" ? "/dashboard/teacher" : "/dashboard";
+      navigate(role === "student" && nextPath ? nextPath : fallback);
     } catch {
       // Fallback to dummy accounts
       const account = DUMMY_ACCOUNTS.find(
@@ -68,8 +80,13 @@ const SignIn = () => {
         setSessionUser({ name: account.name, email: account.email, role: account.role });
         refreshUser();
         toast({ title: "Welcome back!", description: `Signed in as ${account.name} (demo)` });
-        const redirect = account.role === "admin" ? "/dashboard/admin" : account.role === "teacher" ? "/dashboard/teacher" : "/dashboard";
-        navigate(redirect);
+        const fallback =
+          account.role === "admin"
+            ? "/dashboard/admin"
+            : account.role === "teacher"
+              ? "/dashboard/teacher"
+              : "/dashboard";
+        navigate(account.role === "student" && nextPath ? nextPath : fallback);
       } else {
         setError("Invalid email or password. Please try again.");
         toast({ title: "Sign in failed", description: "Invalid email or password.", variant: "destructive" });
@@ -81,7 +98,7 @@ const SignIn = () => {
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Nunito', sans-serif" }}>
-      <main className="pt-16 pb-20 min-h-screen">
+      <main className="min-h-dvh pt-16 pb-20">
         <div className="container mx-auto px-6">
           {/* Sign In Card */}
           <div className="max-w-md mx-auto">

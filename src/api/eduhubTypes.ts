@@ -31,6 +31,8 @@ export interface CourseRequest {
   thumbnailUrl?: string;
   category: string;
   status?: "DRAFT" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
+  /** How many in-person/live class sessions meet within a 6‑month period (lecturer-provided). */
+  classMeetingsInSixMonths?: number;
 }
 
 export interface CoursePricingResponse {
@@ -55,6 +57,8 @@ export interface CourseResponse {
   reviewedAt?: string;
   createdAt: string;
   updatedAt: string;
+  /** When returned by API, mirrors lecturer input from course create/update. */
+  classMeetingsInSixMonths?: number;
 }
 
 export interface CourseSummaryResponse {
@@ -65,6 +69,7 @@ export interface CourseSummaryResponse {
   category: string;
   lecturerName: string;
   enrollmentCount?: number;
+  /** When the lecturer created the course (first submitted as draft). */
   createdAt: string;
   pricing?: CoursePricingResponse;
 }

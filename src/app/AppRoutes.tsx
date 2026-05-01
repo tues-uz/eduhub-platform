@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import EduHub from "@/pages/EduHub";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
@@ -39,12 +39,17 @@ import AdminSettingsPage from "@/features/admin/pages/AdminSettingsPage";
 import TeacherDashboard from "@/pages/TeacherDashboard";
 import TeacherPlaceholder from "@/pages/TeacherPlaceholder";
 import TeacherCoursesPage from "@/features/teacher/pages/TeacherCoursesPage";
-import TeacherCourseFormPage from "@/features/teacher/pages/TeacherCourseFormPage";
+import TeacherCourseFormLayout from "@/features/teacher/pages/TeacherCourseFormLayout";
+import TeacherCourseFormDetailsPage from "@/features/teacher/pages/TeacherCourseFormDetailsPage";
+import TeacherCourseFormLessonsPage from "@/features/teacher/pages/TeacherCourseFormLessonsPage";
+import TeacherCourseRosterPage from "@/features/teacher/pages/TeacherCourseRosterPage";
 import TeacherQuizPage from "@/features/teacher/pages/TeacherQuizPage";
 import TeacherQuizResultsPage from "@/features/teacher/pages/TeacherQuizResultsPage";
 import TeacherStudentsPage from "@/features/teacher/pages/TeacherStudentsPage";
 import TeacherAssignmentsPage from "@/features/teacher/pages/TeacherAssignmentsPage";
+import TeacherAttendanceQrPage from "@/features/teacher/pages/TeacherAttendanceQrPage";
 import NotFound from "@/pages/NotFound";
+import StudentAttendanceJoin from "@/pages/StudentAttendanceJoin";
 import { appRoutes } from "@/app/routes";
 
 export function AppRoutes() {
@@ -81,15 +86,27 @@ export function AppRoutes() {
 
       <Route path={appRoutes.dashboardTeacher} element={<TeacherDashboard />} />
       <Route path="/dashboard/teacher/courses" element={<TeacherCoursesPage />} />
-      <Route path="/dashboard/teacher/courses/new" element={<TeacherCourseFormPage />} />
-      <Route path="/dashboard/teacher/courses/:courseId/edit" element={<TeacherCourseFormPage />} />
+      <Route path="/dashboard/teacher/courses/new" element={<TeacherCourseFormLayout />}>
+        <Route index element={<Navigate to="details" replace />} />
+        <Route path="details" element={<TeacherCourseFormDetailsPage />} />
+        <Route path="lessons" element={<TeacherCourseFormLessonsPage />} />
+      </Route>
+      <Route path="/dashboard/teacher/courses/:courseId/edit" element={<TeacherCourseFormLayout />}>
+        <Route index element={<Navigate to="details" replace />} />
+        <Route path="details" element={<TeacherCourseFormDetailsPage />} />
+        <Route path="lessons" element={<TeacherCourseFormLessonsPage />} />
+      </Route>
+      <Route path="/dashboard/teacher/courses/:courseId" element={<TeacherCourseRosterPage />} />
       <Route path="/dashboard/teacher/placement-test" element={<TeacherQuizPage />} />
       <Route path="/dashboard/teacher/placement-test/:courseId/:quizId/results" element={<TeacherQuizResultsPage />} />
       <Route path="/dashboard/teacher/placement-test/:courseId/:moduleId/:lessonId/results" element={<TeacherQuizResultsPage />} />
       <Route path="/dashboard/teacher/assignments" element={<TeacherAssignmentsPage />} />
       <Route path="/dashboard/teacher/students" element={<TeacherStudentsPage />} />
+      <Route path="/dashboard/teacher/attendance" element={<TeacherAttendanceQrPage />} />
       <Route path="/dashboard/teacher/schedule" element={<TeacherPlaceholder />} />
       <Route path="/dashboard/teacher/settings" element={<TeacherPlaceholder />} />
+
+      <Route path="/dashboard/attendance/join" element={<StudentAttendanceJoin />} />
 
       <Route path="/dashboard/courses" element={<StudentCoursesPage />} />
       <Route path="/dashboard/available-courses" element={<StudentAvailableCourses />} />

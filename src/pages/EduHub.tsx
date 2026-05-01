@@ -10,8 +10,8 @@ gsap.registerPlugin(ScrollTrigger);
 
 const features = [
   {
-    title: "Online Courses",
-    description: "Access comprehensive courses from anywhere, anytime",
+    title: "Online Classes",
+    description: "Access comprehensive classes from anywhere, anytime",
     image: "https://picsum.photos/seed/online-learning/600/450",
     imageAlt: "Online learning",
   },
@@ -23,7 +23,7 @@ const features = [
   },
   {
     title: "Certifications",
-    description: "Earn recognized certificates upon course completion",
+    description: "Earn recognized certificates upon class completion",
     image: "https://picsum.photos/seed/certification/600/450",
     imageAlt: "Certificate",
   },
@@ -49,7 +49,7 @@ const features = [
 
 const stats = [
   { icon: GraduationCap, value: "50,000+", label: "Students", color: "text-blue-500", bento: "wide" as const },
-  { icon: BookOpen, value: "500+", label: "Courses", color: "text-purple-500", bento: "normal" as const },
+  { icon: BookOpen, value: "500+", label: "Classes", color: "text-purple-500", bento: "normal" as const },
   { icon: Users, value: "200+", label: "Teachers", color: "text-green-500", bento: "normal" as const },
   { icon: Award, value: "95%", label: "Completion Rate", color: "text-orange-500", bento: "accent" as const },
   { icon: Target, value: "10+", label: "Years of Excellence", color: "text-amber-600", bento: "normal" as const },
@@ -396,7 +396,7 @@ const EduHub = () => {
                   </h3>
                 </div>
               </div>
-              {/* Card 2 - 500+ Courses (Framer-style: title + pills for movement animation) */}
+              {/* Card 2 - 500+ Classes (Framer-style: title + pills for movement animation) */}
               <div
                 className="stats-card rounded-[16px] min-h-[200px] lg:min-h-[260px] flex flex-col transition-all duration-300 overflow-visible"
                 style={{ backgroundColor: "rgb(242, 241, 241)" }}
@@ -406,7 +406,7 @@ const EduHub = () => {
                     className="text-center text-[32px] font-bold mb-3 flex-shrink-0 px-5 lg:px-6 pt-5 lg:pt-6"
                     style={{ color: "rgb(38, 41, 46)", fontFamily: "'Geist Sans', sans-serif" }}
                   >
-                    500+ Courses
+                    500+ Classes
                   </h4>
                   <div className="flex flex-col gap-2 flex-1 justify-center min-h-0 overflow-hidden">
                     {/* Row 1 - marquee right-to-left, looped */}
@@ -737,7 +737,7 @@ const EduHub = () => {
                 {visionTab === "mission" && (
                   <>
                     <p className="text-base leading-relaxed" style={{ color: "rgb(75, 85, 84)" }}>
-                      EduHub is built around a clear direction and a set of fun, learner‑centered commitments that guide every course, activity, and experiment.
+                      EduHub is built around a clear direction and a set of fun, learner‑centered commitments that guide every class, activity, and experiment.
                     </p>
                     <ul className="space-y-3">
                       {[
@@ -786,7 +786,7 @@ const EduHub = () => {
                     <ul className="space-y-3">
                       {[
                         "Relevant skills and knowledge of national and international quality.",
-                        "Learner‑centered commitments in every course and activity.",
+                        "Learner‑centered commitments in every class and activity.",
                         "Inclusivity, creativity, and adaptability for future challenges.",
                       ].map((text, i) => (
                         <li key={i} className="flex items-start gap-3">

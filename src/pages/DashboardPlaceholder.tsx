@@ -34,7 +34,7 @@ const DashboardPlaceholder = () => {
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
       <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6">
           <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">

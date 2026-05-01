@@ -70,11 +70,11 @@ export default function AdminTeachersPage() {
           Back to dashboard
         </Link>
 
-        <AdminPageHeader title="Teachers" description="Lecturer accounts and course load (demo data until admin user API exists)." />
+        <AdminPageHeader title="Teachers" description="Lecturer accounts and class load (demo data until admin user API exists)." />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search name, email, courses, students…"
+            placeholder="Search name, email, classes, students…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
@@ -91,12 +91,12 @@ export default function AdminTeachersPage() {
           </Select>
           <Select value={loadFilter} onValueChange={setLoadFilter}>
             <SelectTrigger className="w-full sm:w-[190px] bg-white">
-              <SelectValue placeholder="Course load" />
+              <SelectValue placeholder="Class load" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Any course load</SelectItem>
-              <SelectItem value="with_courses">With assigned courses</SelectItem>
-              <SelectItem value="no_courses">No courses (0)</SelectItem>
+              <SelectItem value="with_courses">With assigned classes</SelectItem>
+              <SelectItem value="no_courses">No classes (0)</SelectItem>
             </SelectContent>
           </Select>
           {hasActiveFilters ? (
@@ -122,7 +122,7 @@ export default function AdminTeachersPage() {
               <TableRow className="bg-slate-50">
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Courses</TableHead>
+                <TableHead>Classes</TableHead>
                 <TableHead className="text-right tabular-nums">Total students</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right w-[140px]">Actions</TableHead>
@@ -203,10 +203,10 @@ export default function AdminTeachersPage() {
                 </div>
 
                 <div>
-                  <p className="text-xs font-medium text-slate-700 uppercase tracking-wide mb-2">Courses taught</p>
+                  <p className="text-xs font-medium text-slate-700 uppercase tracking-wide mb-2">Classes taught</p>
                   {profileTeacher.coursesTaught.length === 0 ? (
                     <p className="text-sm text-slate-500 rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-3 py-2">
-                      No courses assigned.
+                      No classes assigned.
                     </p>
                   ) : (
                     <ul className="rounded-md border border-slate-200 divide-y divide-slate-200 max-h-56 overflow-y-auto">

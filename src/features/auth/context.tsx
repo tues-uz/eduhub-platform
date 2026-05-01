@@ -4,6 +4,7 @@ import { getAccessToken } from "@/api/eduhubClient";
 import { eduhubAuth } from "@/api/eduhubClient";
 
 const USER_ID_KEY = "userId";
+const USER_AVATAR_URL_KEY = "userAvatarUrl";
 
 function mapApiRoleToApp(apiRole: string): UserRole {
   if (apiRole === "LECTURER") return "teacher";
@@ -16,7 +17,8 @@ function readSessionUser(): SessionUser {
   const name = localStorage.getItem("userName") || (role === "admin" ? "Admin" : "Demo User");
   const email = localStorage.getItem("userEmail") || "demo@eduhub.com";
   const id = localStorage.getItem(USER_ID_KEY) || undefined;
-  return { id, name, email, role };
+  const avatarUrl = localStorage.getItem(USER_AVATAR_URL_KEY) || undefined;
+  return { id, name, email, role, avatarUrl };
 }
 
 export function setSessionUser(user: SessionUser): void {
@@ -24,6 +26,8 @@ export function setSessionUser(user: SessionUser): void {
   localStorage.setItem("userName", user.name);
   localStorage.setItem("userEmail", user.email);
   localStorage.setItem("userRole", user.role);
+  if (user.avatarUrl) localStorage.setItem(USER_AVATAR_URL_KEY, user.avatarUrl);
+  else localStorage.removeItem(USER_AVATAR_URL_KEY);
 }
 
 export function clearSessionUser(): void {
@@ -54,11 +58,13 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
       .me()
       .then((me) => {
         const role = mapApiRoleToApp(me.role);
+        const prev = readSessionUser();
         setSessionUser({
           id: me.id,
           name: me.fullName,
           email: me.email,
           role,
+          avatarUrl: me.avatarUrl ?? prev.avatarUrl,
         });
         setUser(readSessionUser());
       })

@@ -63,7 +63,7 @@ const SignUp = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50" style={{ fontFamily: "'Nunito', sans-serif" }}>
       <EduHubHeader />
 
-      <main className="pt-24 pb-20">
+      <main className="min-h-dvh pt-24 pb-20">
         <div className="container mx-auto px-6">
           {/* Sign Up Card */}
           <div className="max-w-md mx-auto">

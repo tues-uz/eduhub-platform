@@ -58,12 +58,12 @@ export default function AdminCertificationsPage() {
 
         <AdminPageHeader
           title="Certifications"
-          description="Eligibility requires survey completion and course completion. Issue actions call the API when available."
+          description="Eligibility requires survey completion and class completion. Issue actions call the API when available."
         />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search student, course…"
+            placeholder="Search student, class…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
@@ -80,10 +80,10 @@ export default function AdminCertificationsPage() {
           </Select>
           <Select value={courseFilter} onValueChange={setCourseFilter}>
             <SelectTrigger className="w-full sm:w-[220px] bg-white">
-              <SelectValue placeholder="Course" />
+              <SelectValue placeholder="Class" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All courses</SelectItem>
+              <SelectItem value="all">All classes</SelectItem>
               {courseOptions.map((name) => (
                 <SelectItem key={name} value={name}>
                   {name}
@@ -113,9 +113,9 @@ export default function AdminCertificationsPage() {
             <TableHeader>
               <TableRow className="bg-slate-50">
                 <TableHead>Student</TableHead>
-                <TableHead>Course</TableHead>
+                <TableHead>Class</TableHead>
                 <TableHead>Survey</TableHead>
-                <TableHead>Course complete</TableHead>
+                <TableHead>Class complete</TableHead>
                 <TableHead>Eligible</TableHead>
                 <TableHead className="text-right">Issue</TableHead>
               </TableRow>
@@ -145,7 +145,7 @@ export default function AdminCertificationsPage() {
                       <Button
                         size="sm"
                         disabled={!c.eligible}
-                        title={!c.eligible ? "Complete survey and course first" : undefined}
+                        title={!c.eligible ? "Complete survey and class first" : undefined}
                         onClick={() => toast.success("Certificate issued (demo)", { description: `${c.studentName} — ${c.course}` })}
                       >
                         Issue certificate

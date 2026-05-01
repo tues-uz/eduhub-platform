@@ -24,13 +24,13 @@ const StudentCertificates = () => {
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
       <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6">
           <div className="mb-8">
             <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
               Certificates
             </h1>
-            <p className="text-foreground/70 text-sm">Certificates you have earned from completed courses.</p>
+            <p className="text-foreground/70 text-sm">Certificates you have earned from completed classes.</p>
             <div className="mt-4">
               <span className="rounded-full bg-green-50 px-4 py-2 text-green-700 font-medium text-sm">{CERTIFICATES.length} certificates earned</span>
             </div>

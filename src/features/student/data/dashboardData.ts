@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 
 export const studentStats = [
-  { icon: BookOpen, label: "Courses Enrolled", value: "12", color: "text-blue-500", bgColor: "bg-blue-50" },
+  { icon: BookOpen, label: "Classes enrolled", value: "12", color: "text-blue-500", bgColor: "bg-blue-50" },
   { icon: FileText, label: "Assignments", value: "8", color: "text-purple-500", bgColor: "bg-purple-50" },
   { icon: Award, label: "Certificates", value: "5", color: "text-orange-500", bgColor: "bg-orange-50" },
   { icon: TrendingUp, label: "Progress", value: "78%", color: "text-green-500", bgColor: "bg-green-50" },
@@ -97,8 +97,8 @@ export const studentNotifications = [
   },
   {
     id: 2,
-    type: "course",
-    title: "Course Update",
+    type: "class",
+    title: "Class update",
     message: "New lesson available: Market Structures",
     time: "5 hours ago",
     unread: true,
@@ -123,7 +123,7 @@ export const studentNotifications = [
 
 export const notificationTypeIcons = {
   assignment: FileText,
-  course: BookOpen,
+  class: BookOpen,
   certificate: Award,
   announcement: AlertCircle,
 } as const;

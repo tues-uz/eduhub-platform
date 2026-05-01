@@ -94,13 +94,13 @@ const StudentAssignments = () => {
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
       <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6">
           <div className="mb-8">
             <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
               Assignments
             </h1>
-            <p className="text-foreground/70 text-sm">View and complete your course assignments.</p>
+            <p className="text-foreground/70 text-sm">View and complete your class assignments.</p>
             <div className="mt-4 flex flex-wrap gap-3 text-sm">
               <span className="rounded-full bg-amber-50 px-4 py-2 text-amber-700 font-medium">{activeCount} pending</span>
               <span className="rounded-full bg-green-50 px-4 py-2 text-green-700 font-medium">{completedCount} completed</span>
@@ -121,7 +121,7 @@ const StudentAssignments = () => {
           ) : enrichments.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-200 p-20 text-center">
               <FileText className="mx-auto h-12 w-12 text-foreground/20 mb-4" />
-              <p className="text-foreground/40 font-medium">No assignments found in your enrolled courses.</p>
+              <p className="text-foreground/40 font-medium">No assignments found in your enrolled classes.</p>
             </div>
           ) : (
             <div className="space-y-4">

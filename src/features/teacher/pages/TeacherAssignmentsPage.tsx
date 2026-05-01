@@ -138,10 +138,10 @@ const TeacherAssignmentsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+    <div className="min-h-dvh bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
       <DashboardSidebar />
       <main
-        className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${
+        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${
           isSidebarCollapsed ? "lg:pl-6 lg:ml-20" : "lg:pl-6 lg:ml-64"
         }`}
       >
@@ -180,7 +180,7 @@ const TeacherAssignmentsPage = () => {
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-1">No assignments yet</h3>
                   <p className="text-sm text-muted-foreground">
-                    Assignments will appear here once you create them for your courses.
+                    Assignments will appear here once you create them for your classes.
                   </p>
                 </div>
               ) : (
@@ -189,7 +189,7 @@ const TeacherAssignmentsPage = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Title</TableHead>
-                        <TableHead>Course</TableHead>
+                        <TableHead>Class</TableHead>
                         <TableHead>Due Date</TableHead>
                         <TableHead>Priority</TableHead>
                         <TableHead>Status</TableHead>
@@ -289,7 +289,7 @@ const TeacherAssignmentsPage = () => {
                       <TableRow>
                         <TableHead>Student</TableHead>
                         <TableHead>Assignment</TableHead>
-                        <TableHead>Course</TableHead>
+                        <TableHead>Class</TableHead>
                         <TableHead>Submitted</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>

@@ -9,6 +9,7 @@ import {
   MoreHorizontal,
   TrendingUp,
   ArrowRight,
+  QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -59,9 +60,12 @@ const TeacherDashboard = () => {
               title: c.title,
               description: "",
               instructorName: c.lecturerName,
+              thumbnailUrl: c.thumbnailUrl,
+              enrollmentCount: c.enrollmentCount,
               lessons: [],
               createdAt: c.createdAt,
               updatedAt: c.createdAt,
+              status: c.status,
             }));
             if (!cancelled) {
               setCourses([...apiCourses, ...local]);
@@ -91,7 +95,7 @@ const TeacherDashboard = () => {
 
   const courseCount = courses.length;
   const statsData = [
-    { icon: BookOpen, label: "Active Courses", value: String(stats.totalCourses || courseCount), change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/courses" },
+    { icon: BookOpen, label: "Active Classes", value: String(stats.totalCourses || courseCount), change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/courses" },
     { icon: Users, label: "Total Students", value: String(stats.totalStudents || "—"), change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/students" },
     { icon: FileText, label: "Pending Grading", value: String(stats.pendingGrading || "—"), change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/assignments" },
   ];
@@ -110,7 +114,7 @@ const TeacherDashboard = () => {
   return (
     <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
       <DashboardSidebar />
-      <main className={`pt-16 lg:pt-8 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6">
           {/* Professional Header */}
           <div className="mb-8 pb-6 border-b border-slate-200">
@@ -167,6 +171,22 @@ const TeacherDashboard = () => {
             })}
           </div>
 
+          <Link
+            to="/dashboard/teacher/attendance"
+            className="flex items-center gap-4 mb-8 rounded-xl border border-[#1e40af]/20 bg-[#1e40af]/5 p-5 hover:bg-[#1e40af]/10 transition-colors"
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-[#1e40af]/15">
+              <QrCode className="h-6 w-6 text-[#1e40af]" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-semibold text-slate-900">Attendance QR (projector)</p>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Generate a session QR code to show on the whiteboard—students scan to check in on their phones.
+              </p>
+            </div>
+            <ArrowRight className="h-5 w-5 text-[#1e40af] shrink-0" />
+          </Link>
+
           <div className="grid grid-cols-1 gap-6">
             {/* Main Content - Professional Table Layout */}
             <div className="space-y-6">
@@ -202,11 +222,11 @@ const TeacherDashboard = () => {
                 </div>
               </div>
 
-              {/* Courses Table */}
+              {/* Classes table */}
               <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
                 <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-slate-900">
-                    Teaching Courses
+                    Teaching classes
                   </h2>
                   <Link to="/dashboard/teacher/courses">
                     <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 h-8">
@@ -218,7 +238,7 @@ const TeacherDashboard = () => {
                   <table className="w-full">
                     <thead className="bg-slate-50 border-b border-slate-200">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Course</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Class</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Students</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Progress</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Completion</th>
@@ -228,14 +248,14 @@ const TeacherDashboard = () => {
                     <tbody className="divide-y divide-slate-200">
                       {coursesLoading ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">
-                            Loading courses…
+                          <td colSpan={5} className="px-6 py-8 text-center text-xs text-slate-500">
+                            Loading classes…
                           </td>
                         </tr>
                       ) : courses.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">
-                            No courses yet. <Link to="/dashboard/teacher/courses/new" className="text-slate-900 font-medium underline">Create your first course</Link>
+                          <td colSpan={5} className="px-6 py-8 text-center text-xs text-slate-500">
+                            No classes yet. <Link to="/dashboard/teacher/courses/new" className="text-slate-900 font-medium underline">Create your first class</Link>
                           </td>
                         </tr>
                       ) : (
@@ -247,19 +267,19 @@ const TeacherDashboard = () => {
                                   <BookOpen className="h-5 w-5 text-slate-600" />
                                 </div>
                                 <div>
-                                  <p className="font-semibold text-slate-900 text-sm">{course.title}</p>
+                                  <p className="font-semibold text-slate-900 text-xs">{course.title}</p>
                                   <p className="text-xs text-slate-500 mt-0.5">{course.lessons.length} lessons</p>
                                 </div>
                               </Link>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="text-sm text-slate-500">—</span>
+                              <span className="text-xs text-slate-500">—</span>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="text-sm text-slate-500">—</span>
+                              <span className="text-xs text-slate-500">—</span>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="text-sm text-slate-500">—</span>
+                              <span className="text-xs text-slate-500">—</span>
                             </td>
                             <td className="px-6 py-4 text-right">
                               <DropdownMenu>
@@ -270,7 +290,7 @@ const TeacherDashboard = () => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem asChild>
-                                    <Link to={`/dashboard/teacher/courses/${course.id}/edit`}>Edit Course</Link>
+                                    <Link to={`/dashboard/teacher/courses/${course.id}/edit`}>Edit class</Link>
                                   </DropdownMenuItem>
                                   <DropdownMenuItem asChild>
                                     <Link to="/dashboard/teacher/students">Manage Students</Link>

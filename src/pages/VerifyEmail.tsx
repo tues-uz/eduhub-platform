@@ -39,7 +39,7 @@ const VerifyEmail = () => {
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50" style={{ fontFamily: "'Nunito', sans-serif" }}>
             <EduHubHeader />
 
-            <main className="pt-32 pb-20">
+            <main className="min-h-dvh pt-32 pb-20">
                 <div className="container mx-auto px-6">
                     <div className="max-w-md mx-auto bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8 text-center">
 

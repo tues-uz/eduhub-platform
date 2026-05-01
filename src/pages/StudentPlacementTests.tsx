@@ -89,7 +89,7 @@ export default function StudentPlacementTests() {
     } else {
       try {
         setSubmitting(true);
-        if (!currentQuiz.courseId) throw new Error("Course ID missing on quiz");
+        if (!currentQuiz.courseId) throw new Error("Class ID missing on quiz");
         const timeSpentSeconds = quizStartTime ? Math.round((Date.now() - quizStartTime) / 1000) : 0;
         const result = await eduhubCourseQuizzes.submit(currentQuiz.courseId, currentQuiz.id, { answers: newAnswers, timeSpentSeconds });
         setQuizResult(result);
@@ -117,7 +117,7 @@ export default function StudentPlacementTests() {
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
       <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6 max-w-3xl">
           <Link
             to="/dashboard"
@@ -133,7 +133,7 @@ export default function StudentPlacementTests() {
                 <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
                   Placement Test
                 </h1>
-                <p className="text-foreground/70 text-sm">Assess your level before starting a course.</p>
+                <p className="text-foreground/70 text-sm">Assess your level before starting a class.</p>
               </div>
 
               {loading ? (
@@ -298,7 +298,7 @@ export default function StudentPlacementTests() {
                     style={{ backgroundColor: "#3954d0" }}
                     onClick={resetQuiz}
                   >
-                    Explore My Courses
+                    Explore My Class
                   </Button>
                 </div>
               </div>

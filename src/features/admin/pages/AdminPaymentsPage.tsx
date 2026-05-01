@@ -127,7 +127,7 @@ export default function AdminPaymentsPage() {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search student, course, lecturer, invoice…"
+            placeholder="Search student, class, lecturer, invoice…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
@@ -201,7 +201,7 @@ export default function AdminPaymentsPage() {
                   />
                 </TableHead>
                 <TableHead>Student</TableHead>
-                <TableHead>Course</TableHead>
+                <TableHead>Class</TableHead>
                 <TableHead>Lecturer</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
@@ -329,7 +329,7 @@ export default function AdminPaymentsPage() {
                     <span className="text-slate-800 text-right break-all">{detailsPayment.studentEmail}</span>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <span className="text-slate-500">Course</span>
+                    <span className="text-slate-500">Class</span>
                     <span className="text-slate-800 text-right">{detailsPayment.course}</span>
                   </div>
                   <div className="flex justify-between gap-4">

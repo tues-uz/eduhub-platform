@@ -211,7 +211,7 @@ const StudentLessonPage = () => {
           <Link to="/dashboard/courses">
             <Button variant="outline" className="rounded-full">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to My Courses
+              Back to My Class
             </Button>
           </Link>
         </div>
@@ -228,7 +228,7 @@ const StudentLessonPage = () => {
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
       <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6 max-w-4xl">
           <Link
             to={backToCourseUrl}
@@ -388,7 +388,7 @@ const StudentLessonPage = () => {
                 <Link to={backToCourseUrl}>
                   <Button variant="outline" size="sm" className="rounded-full">
                     <ArrowLeft className="mr-1.5 h-4 w-4" />
-                    Back to course
+                    Back to class
                   </Button>
                 </Link>
               )}
@@ -403,7 +403,7 @@ const StudentLessonPage = () => {
                 <Link to={backToCourseUrl}>
                   <Button size="sm" className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
                     <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                    Finish course
+                    Finish class
                   </Button>
                 </Link>
               )}

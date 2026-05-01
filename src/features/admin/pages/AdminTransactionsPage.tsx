@@ -147,7 +147,7 @@ export default function AdminTransactionsPage() {
                     <TableCell>{t.type}</TableCell>
                     <TableCell>{formatMoney(t.amount, t.currency)}</TableCell>
                     <TableCell>{t.method}</TableCell>
-                    <TableCell className="text-slate-600 text-sm">{t.recordedAt}</TableCell>
+                    <TableCell className="text-slate-600">{t.recordedAt}</TableCell>
                   </TableRow>
                 ))
               )}

@@ -57,7 +57,7 @@ const StudentDashboard = () => {
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
       <DashboardSidebar />
       
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6">
           {/* Dashboard Header */}
           <div className="mb-8">
@@ -66,7 +66,7 @@ const StudentDashboard = () => {
                 <h1 className="font-bold text-foreground mb-2" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.5px', fontSize: '32px' }}>
                   Hi {userName}, Welcome Back
                 </h1>
-                <p className="text-foreground/70" style={{ fontSize: '14px' }}>Here's what's happening with your courses today</p>
+                <p className="text-foreground/70" style={{ fontSize: '14px' }}>Here's what's happening with your classes today</p>
               </div>
               
               {/* Notification Menu */}
@@ -106,12 +106,12 @@ const StudentDashboard = () => {
                           <div className="flex items-start gap-3">
                             <div className={`mt-0.5 flex-shrink-0 ${
                               notification.type === "assignment" ? "text-purple-500" :
-                              notification.type === "course" ? "text-blue-500" :
+                              notification.type === "class" ? "text-blue-500" :
                               notification.type === "certificate" ? "text-orange-500" :
                               "text-gray-500"
                             }`}>
                               {notification.type === "assignment" && <FileText className="h-4 w-4" />}
-                              {notification.type === "course" && <BookOpen className="h-4 w-4" />}
+                              {notification.type === "class" && <BookOpen className="h-4 w-4" />}
                               {notification.type === "certificate" && <Award className="h-4 w-4" />}
                               {notification.type === "announcement" && <AlertCircle className="h-4 w-4" />}
                             </div>
@@ -178,12 +178,12 @@ const StudentDashboard = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* My Courses Section */}
+            {/* My Class section */}
             <div className="lg:col-span-2 space-y-6">
-              {/* My Courses */}
+              {/* My Class */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.5px' }}>My Courses</h2>
+                  <h2 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.5px' }}>My Class</h2>
                   <Link to="/eduhub">
 <Button variant="outline" className="text-sm hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200">
                     View All
@@ -303,7 +303,7 @@ const StudentDashboard = () => {
                 <div className="space-y-2">
                   <Button className="w-full justify-start rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                     <BookOpen className="h-4 w-4 mr-2" />
-                    Browse Courses
+                    Browse classes
                   </Button>
                   <Button className="w-full justify-start rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                     <FileText className="h-4 w-4 mr-2" />
@@ -356,7 +356,7 @@ const StudentDashboard = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <div>
-                    <p className="text-sm opacity-90">Courses Completed</p>
+                    <p className="text-sm opacity-90">Classes completed</p>
                     <p className="text-2xl font-bold">9/12</p>
                   </div>
                   <div>

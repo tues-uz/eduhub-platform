@@ -21,8 +21,8 @@ const NOTIFICATIONS = [
   },
   {
     id: 2,
-    type: "course",
-    title: "Course Update",
+    type: "class",
+    title: "Class update",
     message: "New lesson available: Market Structures",
     time: "5 hours ago",
     unread: true,
@@ -67,7 +67,7 @@ const StudentNotifications = () => {
     switch (type) {
       case "assignment":
         return <FileText className="h-5 w-5 text-purple-500" />;
-      case "course":
+      case "class":
         return <BookOpen className="h-5 w-5 text-blue-500" />;
       case "certificate":
         return <Award className="h-5 w-5 text-orange-500" />;
@@ -81,7 +81,7 @@ const StudentNotifications = () => {
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
       <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6 max-w-3xl">
           <div className="mb-8">
             <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>

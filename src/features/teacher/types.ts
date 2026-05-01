@@ -15,10 +15,16 @@ export type TeacherCourse = {
   title: string;
   description: string;
   instructorName: string;
+  /** Shown on teacher class cards and catalog when supported by API. */
+  thumbnailUrl?: string;
+  /** How many class sessions meet within a 6‑month period. */
+  classMeetingsInSixMonths?: number;
   /** @deprecated Local-only legacy field; pricing is admin-set for API courses. */
   price?: number;
   lessons: TeacherLesson[];
   createdAt: string;
   updatedAt: string;
   status?: "DRAFT" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
+  /** From API / roster — enrolled students for this class. */
+  enrollmentCount?: number;
 };

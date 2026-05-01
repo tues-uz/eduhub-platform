@@ -26,13 +26,13 @@ const StudentProgress = () => {
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
       <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6">
           <div className="mb-8">
             <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
               Progress
             </h1>
-            <p className="text-foreground/70 text-sm">Track your learning progress across all courses.</p>
+            <p className="text-foreground/70 text-sm">Track your learning progress across all classes.</p>
           </div>
           {/* Summary stats row */}
           <div className="mb-8 grid gap-4 sm:grid-cols-3">
@@ -47,7 +47,7 @@ const StudentProgress = () => {
             <div className="rounded-xl border border-gray-200/50 bg-white/80 p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <BookOpen className="h-5 w-5 text-foreground/60" />
-                <span className="text-sm font-medium text-foreground/70">Courses completed</span>
+                <span className="text-sm font-medium text-foreground/70">Classes completed</span>
               </div>
               <p className="text-3xl font-bold text-foreground">
                 {completedCount} <span className="text-lg font-normal text-foreground/60">/ {COURSE_PROGRESS.length}</span>
@@ -66,7 +66,7 @@ const StudentProgress = () => {
           <div className="rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm">
             <h2 className="mb-6 font-semibold text-foreground flex items-center gap-2" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
               <BarChart3 className="h-5 w-5" />
-              By course
+              By class
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {COURSE_PROGRESS.map((c) => (
