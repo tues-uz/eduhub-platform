@@ -141,12 +141,12 @@ Use this as a lookup table.
 
 ### Add user role (`/dashboard/admin/add-user-role`)
 
-**What it is:** A small form to assign a role to someone by email.
+**What it is:** A form to **create a new account** with full name, email, phone, and role (student, teacher, staff).
 
 **Typical flow:**
 
-1. Enter **email** and choose **role** (student, teacher, staff).
-2. Click **Submit** — **demo** success message (no API call).
+1. Fill **full name**, **email**, **phone**, and **role**.
+2. Click **Submit** — calls **`eduhubAdmin.createUser`**; on success, toast and redirect to the admin dashboard. Errors surface from the API. (Default password policy is described in the page header copy — align with backend.)
 
 ---
 
@@ -292,7 +292,7 @@ Use this as a lookup table.
 
 ## 5. “Demo” vs “live data” (simple)
 
-- **Live or mixed:** Dashboard stats (when API responds), **All courses** list and **publish** action from API.
+- **Live or mixed:** Dashboard stats (when API responds), **All courses** list and **publish** action from API, **Add user role** (`eduhubAdmin.createUser`).
 - **Browser-only until backend exists:** **Catalog price**, **referral code**, and **referral discount %** on the admin courses screen (`sessionStorage` via `adminCourseCatalog`).
 - **Demo / mock:** Almost all other admin tables, toasts, reminders, promotions, roster, certificates, support approval, settings save.
 - **Mark paid:** Updates only **until you refresh** the page (in-memory), unless you later connect a real payments API.

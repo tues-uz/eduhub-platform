@@ -24,11 +24,11 @@ export function useEnrollMutation() {
     mutationFn: (courseId: string) => eduhubEnrollments.enroll({ courseId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: studentKeys.courses() });
-      toast.success("Successfully enrolled!", { description: "You can now access the course." });
+      toast.success("Successfully enrolled!", { description: "You can now access the class." });
     },
     onError: (error: Error) => {
       const message = error.message.includes("already enrolled") 
-        ? "You are already enrolled in this course" 
+        ? "You are already enrolled in this class" 
         : error.message || "Failed to enroll";
       toast.error("Enrollment failed", { description: message });
     },

@@ -12,6 +12,8 @@ import {
   Library,
   Users,
   Link2,
+  QrCode,
+  CreditCard,
 } from "lucide-react";
 
 type MenuItemBase = {
@@ -29,8 +31,9 @@ export type NestedMenuItem = MenuItemBase & {
 
 export const studentMenuItems: FlatMenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: BookOpen, label: "My Courses", path: "/dashboard/courses" },
-  { icon: Library, label: "Available Courses", path: "/dashboard/available-courses" },
+  { icon: BookOpen, label: "My Class", path: "/dashboard/courses" },
+  { icon: Library, label: "Available Classes", path: "/dashboard/available-courses" },
+  { icon: CreditCard, label: "Payment history", path: "/dashboard/payment" },
   { icon: ListChecks, label: "Placement Test", path: "/dashboard/placement-tests" },
   { icon: ClipboardList, label: "Quiz", path: "/dashboard/quiz" },
   { icon: Award, label: "Certificates", path: "/dashboard/certificates" },
@@ -54,10 +57,11 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
   },
   {
     icon: BookOpen,
-    label: "Courses & classes",
+    label: "Classes",
     children: [
-      { label: "All courses", path: "/dashboard/admin/courses" },
+      { label: "All classes & schedules", path: "/dashboard/admin/courses" },
       { label: "Enrollments & waitlist", path: "/dashboard/admin/enrollments" },
+      { label: "Enrollment applications", path: "/dashboard/admin/enrollment-applications" },
       { label: "Classes & rosters", path: "/dashboard/admin/classes" },
     ],
   },
@@ -66,6 +70,8 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
     label: "Operations",
     children: [
       { label: "Payments & reminders", path: "/dashboard/admin/payments" },
+      { label: "Payroll", path: "/dashboard/admin/payroll" },
+      { label: "Payroll submission log", path: "/dashboard/admin/payroll/submissions" },
       { label: "Transactions", path: "/dashboard/admin/transactions" },
       { label: "Attendance & progress", path: "/dashboard/admin/attendance" },
       { label: "Placement tests", path: "/dashboard/admin/placement-tests" },
@@ -82,15 +88,25 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
 export const teacherMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard/teacher" },
   { icon: GraduationCap, label: "All Student", path: "/dashboard/teacher/students" },
+  { icon: QrCode, label: "Attendance QR", path: "/dashboard/teacher/attendance" },
   {
     icon: BookOpen,
-    label: "Course",
+    label: "Class",
     children: [
-      { label: "My courses", path: "/dashboard/teacher/courses" },
-      { label: "Add new course", path: "/dashboard/teacher/courses/new" },
+      { label: "My Class", path: "/dashboard/teacher/courses" },
+      { label: "Add New Class", path: "/dashboard/teacher/courses/new" },
       { label: "Placement Test/Quiz", path: "/dashboard/teacher/placement-test" },
     ],
   },
-  { icon: Calendar, label: "Schedule", path: "/dashboard/teacher/schedule" },
+  { icon: Calendar, label: "Schedule approvals", path: "/dashboard/teacher/schedule" },
+  { icon: Bell, label: "Notifications", path: "/dashboard/teacher/notifications" },
+  {
+    icon: CreditCard,
+    label: "Payroll",
+    children: [
+      { label: "Overview", path: "/dashboard/teacher/payroll" },
+      { label: "Submissions", path: "/dashboard/teacher/payroll/submissions" },
+    ],
+  },
   { icon: Settings, label: "Settings", path: "/dashboard/teacher/settings" },
 ];

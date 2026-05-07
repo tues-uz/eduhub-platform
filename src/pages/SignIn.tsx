@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,11 @@ function mapApiRoleToApp(apiRole: string): UserRole {
   if (apiRole === "LECTURER") return "teacher";
   if (apiRole === "ADMIN") return "admin";
   return "student";
+}
+
+function safeInternalPath(p: string | null): string | null {
+  if (!p || !p.startsWith("/") || p.startsWith("//")) return null;
+  return p;
 }
 
 // Fallback dummy accounts when API is unavailable or for demo
@@ -30,8 +35,13 @@ const SignIn = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { refreshUser } = useAuthSession();
+  const nextPath = useMemo(
+    () => safeInternalPath(searchParams.get("redirect") ?? searchParams.get("next")),
+    [searchParams],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,11 +52,15 @@ const SignIn = () => {
       const res = await eduhubAuth.login({ identifier: email.trim(), password });
       setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);
       const role = mapApiRoleToApp(res.user.role);
+      const emailLower = res.user.email.trim().toLowerCase();
+      const fromRegistration = localStorage.getItem(`eduhub_registration_phone_${emailLower}`);
       setSessionUser({
         id: res.user.id,
         name: res.user.fullName,
         email: res.user.email,
         role,
+        avatarUrl: res.user.avatarUrl,
+        phoneNumber: res.user.phoneNumber ?? fromRegistration ?? localStorage.getItem("userPhone") ?? undefined,
       });
       refreshUser();
       
@@ -57,19 +71,31 @@ const SignIn = () => {
       }
       
       toast({ title: "Welcome back!", description: `Signed in as ${res.user.fullName}` });
-      const redirect = role === "admin" ? "/dashboard/admin" : role === "teacher" ? "/dashboard/teacher" : "/dashboard";
-      navigate(redirect);
+      const fallback =
+        role === "admin" ? "/dashboard/admin" : role === "teacher" ? "/dashboard/teacher" : "/dashboard";
+      navigate(role === "student" && nextPath ? nextPath : fallback);
     } catch {
       // Fallback to dummy accounts
       const account = DUMMY_ACCOUNTS.find(
         (acc) => acc.email.toLowerCase().trim() === email.toLowerCase().trim() && acc.password === password
       );
       if (account) {
-        setSessionUser({ name: account.name, email: account.email, role: account.role });
+        const regPhone = localStorage.getItem(`eduhub_registration_phone_${account.email.toLowerCase()}`);
+        setSessionUser({
+          name: account.name,
+          email: account.email,
+          role: account.role,
+          phoneNumber: regPhone ?? undefined,
+        });
         refreshUser();
         toast({ title: "Welcome back!", description: `Signed in as ${account.name} (demo)` });
-        const redirect = account.role === "admin" ? "/dashboard/admin" : account.role === "teacher" ? "/dashboard/teacher" : "/dashboard";
-        navigate(redirect);
+        const fallback =
+          account.role === "admin"
+            ? "/dashboard/admin"
+            : account.role === "teacher"
+              ? "/dashboard/teacher"
+              : "/dashboard";
+        navigate(account.role === "student" && nextPath ? nextPath : fallback);
       } else {
         setError("Invalid email or password. Please try again.");
         toast({ title: "Sign in failed", description: "Invalid email or password.", variant: "destructive" });
@@ -80,15 +106,15 @@ const SignIn = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Nunito', sans-serif" }}>
-      <main className="pt-16 pb-20 min-h-screen">
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <main className="min-h-dvh pt-16 pb-20">
         <div className="container mx-auto px-6">
           {/* Sign In Card */}
           <div className="max-w-md mx-auto">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border-2 border-gray-200 p-8">
               {/* Header */}
               <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold text-foreground mb-2" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.5px' }}>Welcome Back</h1>
+                <h1 className="text-3xl font-bold text-foreground mb-2" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>Welcome Back</h1>
                 <p className="text-foreground/70 text-sm">
                   Sign in to your account to continue learning
                 </p>

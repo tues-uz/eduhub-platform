@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { BookOpen, Search, User, Clock, Layers, DollarSign, Loader2, CheckCircle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { BookOpen, Search, User, Clock, Layers, DollarSign, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import DashboardSidebar from "@/components/DashboardSidebar";
-import { useLayoutContext } from "@/features/layout/context";
-import { useStudentCoursesQuery, useEnrollMutation } from "@/features/student/hooks/useStudentQueries";
+import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { eduhubCourses } from "@/api/eduhubClient";
+import type { CourseSummaryResponse } from "@/api/eduhubTypes";
+import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 
 type AvailableCourseItem = {
   id: string;
@@ -24,6 +24,8 @@ type AvailableCourseItem = {
   progress?: number;
   status?: string;
   nextLesson?: string;
+  /** Cover image from API or teacher form upload */
+  thumbnailUrl?: string;
 };
 
 function formatPrice(price: number | undefined, currency = "USD"): string {
@@ -32,15 +34,28 @@ function formatPrice(price: number | undefined, currency = "USD"): string {
 }
 
 const StudentAvailableCourses = () => {
-  const { isSidebarCollapsed } = useLayoutContext();
+  const navigate = useNavigate();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
-  const enrollMutation = useEnrollMutation();
   const [searchQuery, setSearchQuery] = useState("");
   const [courses, setCourses] = useState<AvailableCourseItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enrollmentStoreTick, setEnrollmentStoreTick] = useState(0);
+
+  useEffect(() => {
+    const bump = () => setEnrollmentStoreTick((n) => n + 1);
+    window.addEventListener("eduhub-enrollment-applications-changed", bump);
+    window.addEventListener("storage", bump);
+    return () => {
+      window.removeEventListener("eduhub-enrollment-applications-changed", bump);
+      window.removeEventListener("storage", bump);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
+    const emailNorm = (localStorage.getItem("userEmail") ?? "").trim().toLowerCase();
+    const isApprovedLocally = (courseId: string) =>
+      emailNorm ? enrollmentApplicationStore.isApprovedForCourse(courseId, emailNorm) : false;
     const enrolledIds = new Set(enrolledCourses.map((c) => String(c.id)));
     const enrolledByLinkId = new Map(enrolledCourses.map((c) => [String(c.id), c]));
 
@@ -49,7 +64,7 @@ const StudentAvailableCourses = () => {
       const localTeacher = teacherCoursesStore.getAll();
       const localItems: AvailableCourseItem[] = localTeacher.map((c) => {
         const linkId = `teacher_${c.id}`;
-        const enrolled = enrolledIds.has(linkId);
+        const enrolled = enrolledIds.has(linkId) || isApprovedLocally(linkId);
         const enrolledData = enrolledByLinkId.get(linkId);
         const moduleCount = c.lessons?.length ?? 0;
         const duration = moduleCount ? `${moduleCount} lessons` : "—";
@@ -58,10 +73,11 @@ const StudentAvailableCourses = () => {
           linkId,
           title: c.title,
           instructor: c.instructorName,
-          category: "Course",
+          category: "Class",
           duration,
           modules: moduleCount,
           price: c.price,
+          thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
           enrolled,
           progress: enrolledData?.progress,
           status: enrolledData?.status,
@@ -69,8 +85,8 @@ const StudentAvailableCourses = () => {
         };
       });
 
-      const mapApiToItem = (c: { id: string; title: string; lecturerName: string; category?: string; pricing?: { amount: number; discountedAmount?: number; currency: string } }) => {
-        const enrolled = enrolledIds.has(c.id);
+      const mapApiToItem = (c: CourseSummaryResponse) => {
+        const enrolled = enrolledIds.has(c.id) || isApprovedLocally(c.id);
         const enrolledData = enrolledByLinkId.get(c.id);
         const price = c.pricing?.discountedAmount ?? c.pricing?.amount;
         return {
@@ -78,11 +94,12 @@ const StudentAvailableCourses = () => {
           linkId: c.id,
           title: c.title,
           instructor: c.lecturerName,
-          category: c.category ?? "Course",
+          category: c.category ?? "Class",
           duration: "—",
           modules: 0,
           price: price as number | undefined,
           currency: c.pricing?.currency,
+          thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
           enrolled,
           progress: enrolledData?.progress,
           status: enrolledData?.status,
@@ -118,13 +135,7 @@ const StudentAvailableCourses = () => {
     }
     load();
     return () => { cancelled = true; };
-  }, [enrolledCourses]);
-
-  const handleEnroll = async (courseId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    await enrollMutation.mutateAsync(courseId);
-  };
+  }, [enrolledCourses, enrollmentStoreTick]);
 
   // Show all courses (API + teacher-created) so students can see and take teacher courses
   const filteredCourses = courses.filter((course) => {
@@ -137,23 +148,22 @@ const StudentAvailableCourses = () => {
   });
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
-      <DashboardSidebar />
-
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6">
+    <div className="container mx-auto px-0 pt-4">
           <div className="mb-8">
-            <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
-              Available Courses
+            <h1
+              className="mb-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+              style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.02em" }}
+            >
+              Available Classes
             </h1>
-            <p className="text-foreground/70 text-sm mb-4">
-              Browse and enroll in courses offered on EduHub. Prices shown where set by instructors.
+            <p className="mb-4 text-sm text-foreground/70">
+              Browse and enroll in classes offered on EduHub. Prices shown where set by instructors.
             </p>
             <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
               <Input
                 type="search"
-                placeholder="Search by course name, instructor, or category..."
+                placeholder="Search by class name, instructor, or category..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-11 rounded-lg border-gray-200 pl-10"
@@ -169,16 +179,53 @@ const StudentAvailableCourses = () => {
             <>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-foreground/60">
-                  {filteredCourses.length} course{filteredCourses.length !== 1 ? "s" : ""} found
+                  {filteredCourses.length} class{filteredCourses.length !== 1 ? "es" : ""} found
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {filteredCourses.map((course) => (
                   <div
                     key={course.linkId}
-                    className="flex flex-col rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm backdrop-blur-sm transition-all hover:border-gray-300/50 hover:shadow-md"
+                    role="link"
+                    tabIndex={0}
+                    onClick={() =>
+                      navigate(`/dashboard/available-courses/class/${encodeURIComponent(course.linkId)}`)
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigate(`/dashboard/available-courses/class/${encodeURIComponent(course.linkId)}`);
+                      }
+                    }}
+                    className="flex cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200/50 bg-white/80 shadow-sm backdrop-blur-sm transition-all hover:border-gray-300/50 hover:shadow-md"
                   >
+                    <div className="relative h-40 w-full shrink-0 bg-gray-200 sm:h-44">
+                      {course.thumbnailUrl ? (
+                        <img
+                          src={course.thumbnailUrl}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center" aria-hidden>
+                          <BookOpen className="h-10 w-10 text-gray-400/90" />
+                        </div>
+                      )}
+                      <div
+                        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent"
+                        aria-hidden
+                      />
+                      {course.enrolled ? (
+                        <span className="absolute right-2 top-2 rounded-full bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 shadow-sm">
+                          Enrolled
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="flex flex-1 flex-col p-4">
                     <div className="mb-4 flex items-start gap-4">
                       <div className="min-w-0 flex-1">
                         {course.category && (
@@ -186,7 +233,10 @@ const StudentAvailableCourses = () => {
                             {course.category}
                           </span>
                         )}
-                        <h3 className="mt-0.5 mb-1 font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.3px" }}>
+                        <h3
+                          className="mt-0.5 mb-1 font-bold text-foreground"
+                          style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.3px" }}
+                        >
                           {course.title}
                         </h3>
                         <div className="flex items-center gap-1.5 text-sm text-foreground/60">
@@ -194,11 +244,6 @@ const StudentAvailableCourses = () => {
                           <span>{course.instructor}</span>
                         </div>
                       </div>
-                      {course.enrolled && (
-                        <span className="flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium bg-blue-100 text-blue-700">
-                          Enrolled
-                        </span>
-                      )}
                     </div>
 
                     <div className="mb-4 flex flex-wrap gap-3 text-xs text-foreground/60">
@@ -219,7 +264,11 @@ const StudentAvailableCourses = () => {
 
                     <div className="mt-auto border-t border-gray-100 pt-4">
                       {course.enrolled ? (
-                        <Link to={`/dashboard/courses/${course.linkId}`} className="block">
+                        <Link
+                          to={`/dashboard/courses/${course.linkId}`}
+                          className="block"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Button
                             size="sm"
                             className="w-full rounded-full"
@@ -229,20 +278,21 @@ const StudentAvailableCourses = () => {
                           </Button>
                         </Link>
                       ) : (
-                        <Button
-                          size="sm"
-                          className="w-full rounded-full"
-                          style={{ backgroundColor: "#3954d0" }}
-                          onClick={(e) => handleEnroll(course.linkId, e)}
-                          disabled={enrollMutation.isPending}
+                        <Link
+                          to={`/dashboard/available-courses/enroll/${encodeURIComponent(course.linkId)}`}
+                          className="block"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          {enrollMutation.isPending ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            "Enroll"
-                          )}
-                        </Button>
+                          <Button
+                            size="sm"
+                            className="w-full rounded-full"
+                            style={{ backgroundColor: "#3954d0" }}
+                          >
+                            Join Class
+                          </Button>
+                        </Link>
                       )}
+                    </div>
                     </div>
                   </div>
                 ))}
@@ -253,17 +303,17 @@ const StudentAvailableCourses = () => {
                   <BookOpen className="mx-auto mb-4 h-12 w-12 text-foreground/30" />
                   <p className="font-medium text-foreground/70">
                     {courses.length === 0
-                      ? "No courses available yet. Teachers can create courses from their dashboard."
-                      : "No courses match your search."}
+                      ? "No classes available yet. Teachers can create classes from their dashboard."
+                      : "No classes match your search."}
                   </p>
                   <p className="mt-1 text-sm text-foreground/50">
-                    {courses.length === 0 ? "Check back later or ask your teacher to publish a course." : "Try a different search."}
+                    {courses.length === 0 ? "Check back later or ask your teacher to publish a class." : "Try a different search."}
                   </p>
                   <div className="mt-4 flex flex-wrap justify-center gap-3">
                     {courses.length === 0 && (
                       <Link to="/dashboard/courses">
                         <Button className="rounded-full" style={{ backgroundColor: "#3954d0" }}>
-                          My Courses
+                          My Class
                         </Button>
                       </Link>
                     )}
@@ -277,8 +327,6 @@ const StudentAvailableCourses = () => {
               )}
             </>
           )}
-        </div>
-      </main>
     </div>
   );
 };

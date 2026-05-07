@@ -1,6 +1,38 @@
 import { Badge } from "@/components/ui/badge";
 import type { ClassStatus, PaymentStatus, StudentStatus } from "@/features/admin/data/adminOperationalMock";
 
+/** API publish workflow for lecturer classes — used in admin class list & review. */
+const courseStatusClass: Record<string, string> = {
+  PUBLISHED: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  DRAFT: "border-amber-200 bg-amber-50 text-amber-800",
+  REJECTED: "border-red-200 bg-red-50 text-red-800",
+  ARCHIVED: "border-slate-300 bg-slate-100 text-slate-700",
+};
+
+const courseStatusLabel: Record<string, string> = {
+  PUBLISHED: "Published",
+  DRAFT: "Draft",
+  REJECTED: "Rejected",
+  ARCHIVED: "Archived",
+};
+
+export function CourseStatusBadge({ status }: { status?: string | null }) {
+  if (status == null || status === "") {
+    return (
+      <Badge variant="outline" className="font-medium border-slate-200 bg-slate-50 text-slate-500">
+        —
+      </Badge>
+    );
+  }
+  const tone = courseStatusClass[status] ?? "border-slate-200 bg-slate-50 text-slate-700";
+  const label = courseStatusLabel[status] ?? status;
+  return (
+    <Badge variant="outline" className={`font-medium ${tone}`}>
+      {label}
+    </Badge>
+  );
+}
+
 const paymentVariant: Record<PaymentStatus, "default" | "secondary" | "destructive" | "outline"> = {
   paid: "default",
   pending: "secondary",

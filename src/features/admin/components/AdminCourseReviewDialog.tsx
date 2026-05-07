@@ -3,7 +3,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { eduhubAdmin, eduhubCourses } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
+import type { CourseResponse } from "@/api/eduhubTypes";
 import { computeDiscountedPrice } from "@/features/admin/utils/adminCourseCatalog";
+import {
+  mergeScheduleDisplayForAdminReview,
+  useAdminCourseLocalDataVersion,
+} from "@/features/admin/utils/adminCourseScheduleDisplay";
+import { CourseStatusBadge } from "@/features/admin/components/AdminStatusBadges";
+import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,7 +38,15 @@ function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
 }
 
+function formatClassDate(iso?: string): string {
+  if (!iso?.trim()) return "—";
+  const d = new Date(iso.trim());
+  if (Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(d);
+}
+
 export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenChange }: Props) {
+  const adminLocalDataVersion = useAdminCourseLocalDataVersion();
   const queryClient = useQueryClient();
   const [priceInput, setPriceInput] = useState("");
   const [referralInput, setReferralInput] = useState("");
@@ -47,6 +62,29 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
 
   const canReject = detail?.status === "DRAFT" || detail?.status === "REJECTED";
   const isReviewable = detail?.status === "DRAFT" || detail?.status === "REJECTED";
+
+  const scheduleWorkflow = useMemo(
+    () => (courseId && isUuid(courseId) ? courseScheduleWorkflowStore.get(courseId) : null),
+    [courseId, adminLocalDataVersion],
+  );
+
+  /** After admin sends a schedule, publishing requires instructor approval first. */
+  const scheduleApprovalBlocksPublish =
+    isReviewable &&
+    !!scheduleWorkflow &&
+    (scheduleWorkflow.status === "pending_instructor" || scheduleWorkflow.status === "instructor_rejected");
+
+  const scheduleApprovalMessage =
+    scheduleWorkflow?.status === "pending_instructor"
+      ? "The proposed class schedule is waiting for the instructor to approve it. You can publish only after they approve (or reject the class entirely)."
+      : scheduleWorkflow?.status === "instructor_rejected"
+        ? "The instructor requested schedule changes. Update the schedule, send it again, and wait for their approval before publishing."
+        : null;
+
+  const scheduleDisplay = useMemo(() => {
+    if (!detail || !courseId || !isUuid(courseId)) return null;
+    return mergeScheduleDisplayForAdminReview(courseId, detail);
+  }, [detail, courseId, adminLocalDataVersion]);
 
   const pricePreview = useMemo(() => {
     const rawP = priceInput.replace(/\s/g, "");
@@ -83,11 +121,24 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
 
   const reviewMutation = useMutation({
     mutationFn: async (decision: "APPROVE" | "REJECT") => {
-      if (!courseId || !isUuid(courseId)) throw new Error("Invalid course");
+      if (!courseId || !isUuid(courseId)) throw new Error("Invalid class");
       if (decision === "REJECT") {
         const rejectionReason = rejectionInput.trim();
-        if (!rejectionReason) throw new Error("Enter a reason before rejecting this course.");
+        if (!rejectionReason) throw new Error("Enter a reason before rejecting this class.");
         return eduhubAdmin.reviewCourse(courseId, { decision, rejectionReason });
+      }
+
+      const wf = courseScheduleWorkflowStore.get(courseId);
+      const blocked =
+        (detail?.status === "DRAFT" || detail?.status === "REJECTED") &&
+        wf &&
+        (wf.status === "pending_instructor" || wf.status === "instructor_rejected");
+      if (blocked) {
+        throw new Error(
+          wf.status === "pending_instructor"
+            ? "Wait for the instructor to approve the class schedule before publishing."
+            : "The instructor requested schedule changes. Resolve the schedule and get their approval before publishing.",
+        );
       }
 
       const n = Number(priceInput.replace(/\s/g, ""));
@@ -109,12 +160,12 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
     },
     onSuccess: (_data, decision) => {
       if (decision === "REJECT") {
-        toast.success("Course rejected", {
+        toast.success("Class rejected", {
           description: courseTitle ? `${courseTitle} was sent back to the lecturer.` : "The lecturer can revise and resubmit.",
         });
       } else if (isReviewable) {
-        toast.success("Course approved and published", {
-          description: courseTitle ? `${courseTitle} is live for students.` : "The course is now published.",
+        toast.success("Class approved and published", {
+          description: courseTitle ? `${courseTitle} is live for students.` : "The class is now published.",
         });
       } else {
         toast.success("Catalog saved", {
@@ -125,7 +176,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
       onOpenChange(false);
     },
     onError: (e: Error) => {
-      toast.error("Course review failed", {
+      toast.error("Class review failed", {
         description: e.message || "Try again or check API permissions.",
       });
     },
@@ -136,15 +187,15 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isReviewable ? "Review course" : "Catalog: price, referral & discount"}
+            {isReviewable ? "Review class" : "Catalog: price, referral & discount"}
           </DialogTitle>
           <DialogDescription asChild>
             <div className="space-y-3 text-sm text-muted-foreground">
               {isReviewable ? (
                 <>
                   <p>
-                    Teachers create courses as <strong className="text-foreground">drafts</strong> and cannot set
-                    prices. You approve or reject the course and control monetization.
+                    Teachers create classes as <strong className="text-foreground">drafts</strong> and cannot set
+                    prices. You approve or reject the class and control monetization.
                   </p>
                   <ol className="list-decimal list-inside space-y-1.5 text-left border border-slate-200 rounded-md bg-slate-50/80 px-3 py-2.5">
                     <li>Check title, lecturer, and description.</li>
@@ -154,14 +205,18 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
                       <strong className="text-foreground">discount %</strong> for enrollments.
                     </li>
                     <li>
-                      Click <strong className="text-foreground">Publish course</strong> to make it visible in the catalog.
+                      If you <strong className="text-foreground">sent a class schedule</strong> to the instructor, they must{" "}
+                      <strong className="text-foreground">approve it</strong> before you can publish.
+                    </li>
+                    <li>
+                      Click <strong className="text-foreground">Publish class</strong> to make it visible in the catalog.
                     </li>
                   </ol>
                   <p className="text-xs">Catalog price, referral code, discount, and review decision are persisted on the API.</p>
                 </>
               ) : (
                 <p>
-                  This course is already <strong className="text-foreground">published</strong>. Update catalog price,
+                  This class is already <strong className="text-foreground">published</strong>. Update catalog price,
                   referral code, or discount here, then save. Teachers cannot edit pricing.
                 </p>
               )}
@@ -170,7 +225,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
         </DialogHeader>
 
         {isLoading ? (
-          <p className="text-sm text-slate-600">Loading course…</p>
+          <p className="text-sm text-slate-600">Loading class…</p>
         ) : detail ? (
           <div className="space-y-4 text-sm">
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3 space-y-2">
@@ -182,9 +237,9 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
                 <span className="text-slate-500">Lecturer</span>
                 <span className="text-slate-800 text-right">{detail.lecturer?.fullName ?? "—"}</span>
               </div>
-              <div className="flex justify-between gap-4">
+              <div className="flex justify-between gap-4 items-center">
                 <span className="text-slate-500">Status</span>
-                <span className="text-slate-800 text-right font-medium">{detail.status}</span>
+                <CourseStatusBadge status={detail.status} />
               </div>
               {detail.rejectionReason ? (
                 <div className="flex justify-between gap-4 items-start">
@@ -195,6 +250,24 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
               <div className="flex justify-between gap-4">
                 <span className="text-slate-500">Category</span>
                 <span className="text-slate-800 text-right">{detail.category}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-slate-500">Total sessions (6 mo.)</span>
+                <span className="text-slate-800 text-right tabular-nums font-medium">
+                  {scheduleDisplay?.sessionsSixMo != null ? scheduleDisplay.sessionsSixMo : "—"}
+                </span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-slate-500">Class start</span>
+                <span className="text-slate-800 text-right tabular-nums">
+                  {formatClassDate(scheduleDisplay?.classStartDate)}
+                </span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-slate-500">Class end</span>
+                <span className="text-slate-800 text-right tabular-nums">
+                  {formatClassDate(scheduleDisplay?.classEndDate)}
+                </span>
               </div>
               <div className="flex justify-between gap-4 items-start">
                 <span className="text-slate-500 shrink-0">Description</span>
@@ -216,7 +289,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
                 className="bg-white font-mono tabular-nums"
               />
               <p className="text-xs text-slate-500">
-                Teachers do not set this. Persisted in-browser until the billing API stores course fees.
+                Teachers do not set this. Persisted in-browser until the billing API stores class fees.
               </p>
             </div>
 
@@ -301,13 +374,26 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
                     rows={3}
                     className="bg-white"
                   />
-                  <p className="text-xs text-slate-500">Required only when rejecting the course.</p>
+                  <p className="text-xs text-slate-500">Required only when rejecting the class.</p>
                 </div>
               </>
             ) : null}
+
+            {isReviewable && scheduleApprovalMessage ? (
+              <div
+                className={`rounded-md border px-3 py-2.5 text-sm ${
+                  scheduleWorkflow?.status === "instructor_rejected"
+                    ? "border-red-200 bg-red-50 text-red-900"
+                    : "border-amber-200 bg-amber-50 text-amber-950"
+                }`}
+                role="status"
+              >
+                {scheduleApprovalMessage}
+              </div>
+            ) : null}
           </div>
         ) : (
-          <p className="text-sm text-slate-600">Could not load course details.</p>
+          <p className="text-sm text-slate-600">Could not load class details.</p>
         )}
 
         <DialogFooter className="gap-2 sm:gap-0 flex-col sm:flex-row">
@@ -321,13 +407,18 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
               disabled={!detail || reviewMutation.isPending}
               onClick={() => reviewMutation.mutate("REJECT")}
             >
-              {reviewMutation.isPending ? "Submitting…" : "Reject course"}
+              {reviewMutation.isPending ? "Submitting…" : "Reject class"}
             </Button>
           ) : null}
           <Button
             type="button"
             className={isReviewable ? "bg-emerald-700 hover:bg-emerald-800" : "bg-slate-900 hover:bg-slate-800"}
-            disabled={!detail || reviewMutation.isPending}
+            disabled={!detail || reviewMutation.isPending || scheduleApprovalBlocksPublish}
+            title={
+              scheduleApprovalBlocksPublish
+                ? "Publishing is blocked until the instructor approves the proposed schedule."
+                : undefined
+            }
             onClick={() => reviewMutation.mutate("APPROVE")}
           >
             {reviewMutation.isPending

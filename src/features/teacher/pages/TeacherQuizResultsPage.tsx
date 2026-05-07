@@ -120,10 +120,10 @@ export default function TeacherQuizResultsPage() {
 
   if (loading) {
     return (
-      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         <DashboardSidebar />
         <main
-          className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
+          className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
         >
           <div className="container mx-auto px-6 max-w-3xl">
             <div className="flex items-center justify-center py-20">
@@ -138,10 +138,10 @@ export default function TeacherQuizResultsPage() {
 
   if (error || !quiz) {
     return (
-      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         <DashboardSidebar />
         <main
-          className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
+          className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
         >
           <div className="container mx-auto px-6 max-w-3xl">
             <Link
@@ -164,10 +164,10 @@ export default function TeacherQuizResultsPage() {
   const quizTitle = quiz?.title || "";
 
   return (
-    <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+    <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardSidebar />
       <main
-        className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
+        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
       >
         <div className="container mx-auto px-6 max-w-3xl">
           <Link
@@ -184,7 +184,7 @@ export default function TeacherQuizResultsPage() {
                 <BarChart2 className="h-6 w-6 text-[#1e40af]/80" />
                 <h1
                   className="text-2xl font-bold text-foreground"
-                  style={{ fontFamily: "'Geist Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
+                  style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
                 >
                   {typeLabel} results — {quizTitle}
                 </h1>
@@ -206,7 +206,7 @@ export default function TeacherQuizResultsPage() {
             </Button>
           </div>
 
-          <table className="w-full text-sm rounded-xl border border-gray-100 overflow-hidden bg-gray-50/30">
+          <table className="w-full text-xs rounded-xl border border-gray-100 overflow-hidden bg-gray-50/30">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-100/50 text-left text-muted-foreground">
                 <th className="py-3 px-4 font-medium w-12">No.</th>

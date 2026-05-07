@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ClipboardList, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ClipboardList, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import { useAuthSession } from "@/features/auth/context";
 import { eduhubCourseQuizzes, eduhubEnrollments, QuizResponseForStudent, QuizResultResponse } from "@/api/eduhubClient";
 
@@ -12,8 +11,6 @@ export default function StudentQuiz() {
   const { user } = useAuthSession();
   const [searchParams] = useSearchParams();
   const filterCourseId = searchParams.get("courseId");
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
-  
   const [quizzes, setQuizzes] = useState<QuizResponseForStudent[]>([]);
   const [completedQuizIds, setCompletedQuizIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -67,12 +64,6 @@ export default function StudentQuiz() {
     fetchQuizzes();
   }, [fetchQuizzes]);
 
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
-
   const startQuiz = (quiz: QuizResponseForStudent) => {
     setCurrentQuiz(quiz);
     setCurrentIndex(0);
@@ -102,7 +93,7 @@ export default function StudentQuiz() {
       // Submit the quiz
       try {
         setSubmitting(true);
-        if (!currentQuiz.courseId) throw new Error("Course ID missing on quiz");
+        if (!currentQuiz.courseId) throw new Error("Class ID missing on quiz");
         const timeSpentSeconds = quizStartTime ? Math.round((Date.now() - quizStartTime) / 1000) : 0;
         const result = await eduhubCourseQuizzes.submit(currentQuiz.courseId, currentQuiz.id, { answers: newAnswers, timeSpentSeconds });
         setQuizResult(result);
@@ -128,24 +119,10 @@ export default function StudentQuiz() {
   };
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
-      <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6 max-w-3xl">
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Link>
-
+    <div className="container mx-auto max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           {screen === "list" && (
             <>
               <div className="mb-8">
-                <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
-                  Quiz
-                </h1>
                 <p className="text-foreground/70 text-sm">Choose a quiz and answer multiple choice questions (A, B, C, D).</p>
               </div>
 
@@ -171,7 +148,7 @@ export default function StudentQuiz() {
                           </div>
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h2 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                              <h2 className="font-semibold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                                 {quiz.title}
                               </h2>
                               {completed && (
@@ -219,7 +196,7 @@ export default function StudentQuiz() {
                     />
                   </div>
                 )}
-                <h2 className="mb-6 text-lg font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                <h2 className="mb-6 text-lg font-semibold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                   {question.question}
                 </h2>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -272,13 +249,13 @@ export default function StudentQuiz() {
                 <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
                   <CheckCircle2 className="h-8 w-8 text-green-600" />
                 </div>
-                <h2 className="mb-2 text-2xl font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                <h2 className="mb-2 text-2xl font-bold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                   Quiz complete!
                 </h2>
                 <p className="mb-2 text-foreground/70">
                   Your score
                 </p>
-                <p className="mb-6 text-4xl font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                <p className="mb-6 text-4xl font-bold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                   {score} <span className="text-2xl font-semibold text-foreground/60">/ {maxPoints}</span>
                 </p>
                 <p className="mb-6 text-sm text-foreground/60">
@@ -292,8 +269,6 @@ export default function StudentQuiz() {
               </div>
             );
           })()}
-        </div>
-      </main>
     </div>
   );
 }

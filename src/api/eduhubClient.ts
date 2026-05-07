@@ -190,24 +190,34 @@ async function request<T>(
   return response.data;
 }
 
+/** Single in-flight refresh so concurrent 401s / proactive refresh don't race the same refresh token. */
+let refreshAuthInFlight: Promise<boolean> | null = null;
+
 /** Refresh tokens. Call this or rely on request() 401 retry. Returns true if new tokens were set. */
 export async function refreshAuth(): Promise<boolean> {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) return false;
-  try {
-    const data = await request<AuthResponse>("/auth/refresh", {
-      method: "POST",
-      body: JSON.stringify({ refreshToken }),
-      skipAuth: true,
+  if (!refreshAuthInFlight) {
+    refreshAuthInFlight = (async (): Promise<boolean> => {
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) return false;
+      try {
+        const data = await request<AuthResponse>("/auth/refresh", {
+          method: "POST",
+          body: JSON.stringify({ refreshToken }),
+          skipAuth: true,
+        });
+        if (data?.accessToken) {
+          setAuthTokens(data.accessToken, data.refreshToken ?? refreshToken, data.expiresIn);
+          return true;
+        }
+      } catch (e) {
+        console.error("Token refresh failed", e);
+      }
+      return false;
+    })().finally(() => {
+      refreshAuthInFlight = null;
     });
-    if (data.accessToken) {
-      setAuthTokens(data.accessToken, data.refreshToken ?? refreshToken, data.expiresIn);
-      return true;
-    }
-  } catch (e) {
-    console.error("Token refresh failed", e);
   }
-  return false;
+  return refreshAuthInFlight;
 }
 
 /** Auth — login, me, refresh. Align with staging Swagger auth section. */
@@ -221,7 +231,8 @@ export const eduhubAuth = {
   verifyEmail: (token: string) =>
     request<void>(`/auth/verify-email?token=${token}`, { method: "POST", skipAuth: true }),
 
-  me: () => request<{ id: string; fullName: string; email: string; role: string }>("/auth/me"),
+  me: () =>
+    request<{ id: string; fullName: string; email: string; role: string; avatarUrl?: string }>("/auth/me"),
 
   refresh: refreshAuth,
 

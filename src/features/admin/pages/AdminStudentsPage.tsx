@@ -112,7 +112,7 @@ export default function AdminStudentsPage() {
                 <TableHead>Student</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Trial used</TableHead>
-                <TableHead>Courses</TableHead>
+                <TableHead>Classes</TableHead>
                 <TableHead>Registered</TableHead>
                 <TableHead>Flags</TableHead>
                 <TableHead className="text-right">Actions</TableHead>

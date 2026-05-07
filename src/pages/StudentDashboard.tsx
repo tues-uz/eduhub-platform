@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen,
@@ -23,15 +24,41 @@ import {
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { useAuthSession } from "@/features/auth/context";
 import { useLayoutContext } from "@/features/layout/context";
-import { useStudentOverviewQuery } from "@/features/student/hooks/useStudentQueries";
+import { studentStats } from "@/features/student/data/dashboardData";
+import { useStudentCoursesQuery, useStudentOverviewQuery } from "@/features/student/hooks/useStudentQueries";
 
 const StudentDashboard = () => {
   const { user } = useAuthSession();
   const { isSidebarCollapsed } = useLayoutContext();
   const { data } = useStudentOverviewQuery();
+  const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const userName = user.name;
 
-  const stats = data?.stats ?? [];
+  const statCards = useMemo(() => {
+    const base = (data?.stats ?? [...studentStats]).map((s) => ({ ...s }));
+    const assignmentCount = data?.assignments?.length ?? 0;
+    const courseCount = enrolledCourses.length;
+    const avgProgress =
+      courseCount > 0
+        ? Math.round(
+            enrolledCourses.reduce((sum, c) => sum + (typeof c.progress === "number" ? c.progress : 0), 0) /
+              courseCount,
+          )
+        : null;
+
+    return base.map((stat) => {
+      if (stat.label === "Classes enrolled") {
+        return { ...stat, value: String(courseCount) };
+      }
+      if (stat.label === "Assignments") {
+        return { ...stat, value: String(assignmentCount) };
+      }
+      if (stat.label === "Progress" && avgProgress != null) {
+        return { ...stat, value: `${avgProgress}%` };
+      }
+      return stat;
+    });
+  }, [data?.stats, data?.assignments?.length, enrolledCourses]);
   const courses = data?.courses ?? [];
   const assignments = data?.assignments ?? [];
   const recentActivity = data?.recentActivity ?? [];
@@ -54,19 +81,19 @@ const StudentDashboard = () => {
   const unreadCount = notifications.filter((n) => n.unread).length;
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardSidebar />
       
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6">
           {/* Dashboard Header */}
           <div className="mb-8">
             <div className="mb-6 flex items-start justify-between">
               <div>
-                <h1 className="font-bold text-foreground mb-2" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.5px', fontSize: '32px' }}>
+                <h1 className="font-bold text-foreground mb-2" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px', fontSize: '32px' }}>
                   Hi {userName}, Welcome Back
                 </h1>
-                <p className="text-foreground/70" style={{ fontSize: '14px' }}>Here's what's happening with your courses today</p>
+                <p className="text-foreground/70" style={{ fontSize: '14px' }}>Here's what's happening with your classes today</p>
               </div>
               
               {/* Notification Menu */}
@@ -88,7 +115,7 @@ const StudentDashboard = () => {
                 <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto rounded-2xl p-4">
                   <div className="p-0">
                     <div className="flex items-center justify-between mb-3 px-0">
-                      <h3 className="font-semibold text-sm" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.5px' }}>Notifications</h3>
+                      <h3 className="font-semibold text-sm" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>Notifications</h3>
                       {unreadCount > 0 && (
                         <Button variant="ghost" size="sm" className="text-xs h-6 px-0">
                           Mark all as read
@@ -106,12 +133,12 @@ const StudentDashboard = () => {
                           <div className="flex items-start gap-3">
                             <div className={`mt-0.5 flex-shrink-0 ${
                               notification.type === "assignment" ? "text-purple-500" :
-                              notification.type === "course" ? "text-blue-500" :
+                              notification.type === "class" ? "text-blue-500" :
                               notification.type === "certificate" ? "text-orange-500" :
                               "text-gray-500"
                             }`}>
                               {notification.type === "assignment" && <FileText className="h-4 w-4" />}
-                              {notification.type === "course" && <BookOpen className="h-4 w-4" />}
+                              {notification.type === "class" && <BookOpen className="h-4 w-4" />}
                               {notification.type === "certificate" && <Award className="h-4 w-4" />}
                               {notification.type === "announcement" && <AlertCircle className="h-4 w-4" />}
                             </div>
@@ -154,16 +181,18 @@ const StudentDashboard = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {stats.map((stat, index) => {
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {statCards.map((stat) => {
                 const Icon = stat.icon;
+                const href = "href" in stat && typeof stat.href === "string" ? stat.href : "/dashboard";
                 return (
-                  <div
-                    key={index}
-                    className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-200/50 hover:shadow-md transition-shadow"
+                  <Link
+                    key={stat.label}
+                    to={href}
+                    className="group bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-200/50 transition-all hover:shadow-md hover:border-[#3954d0]/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3954d0] focus-visible:ring-offset-2"
                   >
                     <div className="flex items-center justify-between mb-4">
-                      <div className={`${stat.bgColor} p-3 rounded-full`}>
+                      <div className={`${stat.bgColor} p-3 rounded-full transition-colors group-hover:opacity-90`}>
                         <Icon className={`h-6 w-6 ${stat.color}`} />
                       </div>
                     </div>
@@ -171,19 +200,19 @@ const StudentDashboard = () => {
                       <p className="text-2xl font-bold text-foreground mb-1">{stat.value}</p>
                       <p className="text-sm text-foreground/70">{stat.label}</p>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* My Courses Section */}
+            {/* My Class section */}
             <div className="lg:col-span-2 space-y-6">
-              {/* My Courses */}
+              {/* My Class */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.5px' }}>My Courses</h2>
+                  <h2 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>My Class</h2>
                   <Link to="/eduhub">
 <Button variant="outline" className="text-sm hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200">
                     View All
@@ -203,7 +232,7 @@ const StudentDashboard = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between mb-2">
                             <div>
-                              <h3 className="font-semibold text-foreground mb-1" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.3px' }}>{course.title}</h3>
+                              <h3 className="font-semibold text-foreground mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.3px' }}>{course.title}</h3>
                               <p className="text-sm text-foreground/60">{course.instructor}</p>
                             </div>
                             <span className="py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full" style={{ paddingLeft: '12px', paddingRight: '12px' }}>
@@ -240,7 +269,7 @@ const StudentDashboard = () => {
               {/* Upcoming Assignments */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.5px' }}>Upcoming Assignments</h2>
+                  <h2 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>Upcoming Assignments</h2>
                   <Button variant="outline" className="text-sm">
                     View Calendar
                   </Button>
@@ -258,7 +287,7 @@ const StudentDashboard = () => {
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-foreground mb-1" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.3px' }}>{assignment.title}</h3>
+                            <h3 className="font-semibold text-foreground mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.3px' }}>{assignment.title}</h3>
                             <p className="text-sm text-foreground/60">{assignment.course}</p>
                           </div>
                           <span
@@ -299,11 +328,11 @@ const StudentDashboard = () => {
             <div className="space-y-6">
               {/* Quick Actions */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
-                <h2 className="text-xl font-bold text-foreground mb-4" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.5px' }}>Quick Actions</h2>
+                <h2 className="text-xl font-bold text-foreground mb-4" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>Quick Actions</h2>
                 <div className="space-y-2">
                   <Button className="w-full justify-start rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                     <BookOpen className="h-4 w-4 mr-2" />
-                    Browse Courses
+                    Browse classes
                   </Button>
                   <Button className="w-full justify-start rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                     <FileText className="h-4 w-4 mr-2" />
@@ -322,7 +351,7 @@ const StudentDashboard = () => {
 
               {/* Recent Activity */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
-                <h2 className="text-xl font-bold text-foreground mb-4" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.5px' }}>Recent Activity</h2>
+                <h2 className="text-xl font-bold text-foreground mb-4" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>Recent Activity</h2>
                 <div className="space-y-4">
                   {recentActivity.map((activity, index) => (
                     <div key={index} className="flex items-start gap-3">
@@ -345,7 +374,7 @@ const StudentDashboard = () => {
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
                 <div className="flex items-center gap-3 mb-4">
                   <Target className="h-6 w-6" />
-                  <h2 className="text-xl font-bold" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.5px' }}>Overall Progress</h2>
+                  <h2 className="text-xl font-bold" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>Overall Progress</h2>
                 </div>
                 <div className="mb-4">
                   <div className="flex items-center justify-between text-sm mb-2">
@@ -356,7 +385,7 @@ const StudentDashboard = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <div>
-                    <p className="text-sm opacity-90">Courses Completed</p>
+                    <p className="text-sm opacity-90">Classes completed</p>
                     <p className="text-2xl font-bold">9/12</p>
                   </div>
                   <div>

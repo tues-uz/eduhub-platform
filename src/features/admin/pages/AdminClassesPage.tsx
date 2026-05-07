@@ -63,7 +63,7 @@ export default function AdminClassesPage() {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search class, course, schedule…"
+            placeholder="Search class, schedule…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
@@ -81,10 +81,10 @@ export default function AdminClassesPage() {
           </Select>
           <Select value={courseFilter} onValueChange={setCourseFilter}>
             <SelectTrigger className="w-full sm:w-[220px] bg-white">
-              <SelectValue placeholder="Course" />
+              <SelectValue placeholder="Class" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All courses</SelectItem>
+              <SelectItem value="all">All classes</SelectItem>
               {courseOptions.map((name) => (
                 <SelectItem key={name} value={name}>
                   {name}
@@ -114,7 +114,7 @@ export default function AdminClassesPage() {
             <TableHeader>
               <TableRow className="bg-slate-50">
                 <TableHead>Class</TableHead>
-                <TableHead>Course</TableHead>
+                <TableHead>Class</TableHead>
                 <TableHead>Schedule</TableHead>
                 <TableHead>Capacity</TableHead>
                 <TableHead>Status</TableHead>

@@ -68,7 +68,7 @@ const ChangePassword = () => {
             <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
               <Lock className="w-8 h-8 text-orange-600" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+            <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
               Change Password
             </h1>
             <p className="text-foreground/70 text-sm mt-2">

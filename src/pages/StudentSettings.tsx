@@ -4,20 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import DashboardSidebar from "@/components/DashboardSidebar";
 
 const StudentSettings = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [courseReminders, setCourseReminders] = useState(true);
-
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
+  const [classReminders, setClassReminders] = useState(true);
 
   useEffect(() => {
     setName(localStorage.getItem("userName") || "");
@@ -31,19 +23,13 @@ const StudentSettings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
-      <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6 max-w-2xl">
+    <div className="container mx-auto max-w-2xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           <div className="mb-8">
-            <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
-              Settings
-            </h1>
             <p className="text-foreground/70 text-sm">Manage your account and preferences.</p>
           </div>
           <form onSubmit={handleSave} className="space-y-8">
             <div className="rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm">
-              <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+              <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                 <User className="h-5 w-5" />
                 Profile
               </h2>
@@ -72,7 +58,7 @@ const StudentSettings = () => {
               </div>
             </div>
             <div className="rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm">
-              <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+              <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                 <Bell className="h-5 w-5" />
                 Notifications
               </h2>
@@ -86,10 +72,10 @@ const StudentSettings = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-foreground">Course reminders</p>
+                    <p className="font-medium text-foreground">Class reminders</p>
                     <p className="text-sm text-foreground/60">Reminders for assignments and live sessions.</p>
                   </div>
-                  <Switch checked={courseReminders} onCheckedChange={setCourseReminders} />
+                  <Switch checked={classReminders} onCheckedChange={setClassReminders} />
                 </div>
               </div>
             </div>
@@ -100,8 +86,6 @@ const StudentSettings = () => {
               </Button>
             </div>
           </form>
-        </div>
-      </main>
     </div>
   );
 };

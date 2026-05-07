@@ -22,7 +22,7 @@ const EduHubHeader = () => {
   return (
     <header
       className="fixed top-0 left-0 right-0 z-50 w-full backdrop-blur-[5px]"
-      style={{ fontFamily: "'Geist Sans', sans-serif", backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
+      style={{ fontFamily: "'DM Sans', sans-serif", backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
     >
       <nav className="px-6 lg:px-20">
         <div className="flex items-center justify-between h-[80px] relative">

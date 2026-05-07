@@ -11,8 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import DashboardSidebar from "@/components/DashboardSidebar";
-import { useLayoutContext } from "@/features/layout/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 
 const formatDate = (dateString: string) => {
@@ -33,7 +31,6 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
 ];
 
 const StudentCourses = () => {
-  const { isSidebarCollapsed } = useLayoutContext();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -51,26 +48,18 @@ const StudentCourses = () => {
   const completedCount = enrolledCourses.filter((c) => c.status === "Completed").length;
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
-      <DashboardSidebar />
-
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6">
-          {/* Page Header */}
+    <div className="container mx-auto min-h-0 px-0">
           <div className="mb-8">
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
-                  My Courses
-                </h1>
-                <p className="text-foreground/70" style={{ fontSize: "14px" }}>
-                  Information about the courses you are enrolled in. Continue learning or review completed courses.
+                <p className="text-foreground/70 text-sm">
+                  Information about the classes you are enrolled in. Continue learning or review completed classes.
                 </p>
               </div>
               <Link to="/eduhub">
                 <Button className="rounded-full" style={{ backgroundColor: "#3954d0" }}>
                   <BookOpen className="mr-2 h-4 w-4" />
-                  Browse More Courses
+                  Browse More Classes
                 </Button>
               </Link>
             </div>
@@ -93,7 +82,7 @@ const StudentCourses = () => {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
               <Input
                 type="search"
-                placeholder="Search by course name, instructor, or category..."
+                placeholder="Search by class name, instructor, or category..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-11 rounded-lg border-gray-200 pl-10"
@@ -118,7 +107,7 @@ const StudentCourses = () => {
               ))}
             </div>
             <p className="text-sm text-foreground/60">
-              {filteredCourses.length} course{filteredCourses.length !== 1 ? "s" : ""} found
+              {filteredCourses.length} class{filteredCourses.length !== 1 ? "es" : ""} found
             </p>
           </div>
 
@@ -135,7 +124,7 @@ const StudentCourses = () => {
                         {course.category}
                       </span>
                     )}
-                    <h3 className="mt-0.5 mb-1 font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.3px" }}>
+                    <h3 className="mt-0.5 mb-1 font-semibold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.3px" }}>
                       {course.title}
                     </h3>
                     <div className="flex items-center gap-1.5 text-sm text-foreground/60">
@@ -156,7 +145,7 @@ const StudentCourses = () => {
                   </span>
                 </div>
 
-                {/* Course info */}
+                {/* Class info */}
                 <div className="mb-4 flex flex-wrap gap-3 text-xs text-foreground/60">
                   <span className="flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
@@ -199,7 +188,7 @@ const StudentCourses = () => {
           {filteredCourses.length === 0 && (
             <div className="rounded-xl border border-gray-200/50 bg-white/50 py-16 text-center">
               <BookOpen className="mx-auto mb-4 h-12 w-12 text-foreground/30" />
-              <p className="font-medium text-foreground/70">No courses match your filters.</p>
+              <p className="font-medium text-foreground/70">No classes match your filters.</p>
               <p className="mt-1 text-sm text-foreground/50">Try a different search or status filter.</p>
               <Button
                 variant="outline"
@@ -213,8 +202,6 @@ const StudentCourses = () => {
               </Button>
             </div>
           )}
-        </div>
-      </main>
     </div>
   );
 };

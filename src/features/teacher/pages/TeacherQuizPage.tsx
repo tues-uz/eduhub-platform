@@ -370,12 +370,12 @@ const TeacherQuizPage = () => {
     const quizCourseId = editingQuiz?.courseId || courseId;
     
     if (!courseId.trim()) {
-      setError("Please select a course to associate this quiz with.");
+      setError("Please select a class to associate this quiz with.");
       return;
     }
 
     if (!quizCourseId) {
-      setError("Quiz is not associated with any course. Please contact support.");
+      setError("Quiz is not associated with any class. Please contact support.");
       return;
     }
 
@@ -412,7 +412,7 @@ const TeacherQuizPage = () => {
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : "Failed to save quiz.";
       if (errorMessage.includes("does not belong to the specified course")) {
-        setError("Unable to move quiz to selected course. Please ensure you have permission for that course.");
+        setError("Unable to move quiz to the selected class. Please ensure you have permission for that class.");
       } else if (errorMessage.includes("permission")) {
         setError(errorMessage);
       } else {
@@ -451,10 +451,10 @@ const TeacherQuizPage = () => {
   };
 
   return (
-    <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+    <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardSidebar />
       <main
-        className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
+        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
       >
         <div className="container mx-auto px-6 max-w-3xl">
           <Link
@@ -471,7 +471,7 @@ const TeacherQuizPage = () => {
                 <div>
                   <h1
                     className="text-2xl font-bold text-foreground"
-                    style={{ fontFamily: "'Geist Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
+                    style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
                   >
                     Placement test / Quiz
                   </h1>
@@ -532,7 +532,7 @@ const TeacherQuizPage = () => {
                       isPlacement ? "Placement test" : "Quiz",
                       quiz.isPublished ? "Published" : "Draft",
                       `${quiz.questions.length} question${quiz.questions.length === 1 ? "" : "s"}`,
-                      quiz.courseId ? "Linked to course" : "No course",
+                      quiz.courseId ? "Linked to class" : "No class",
                     ].join(" · ");
 
                     return (
@@ -643,7 +643,7 @@ const TeacherQuizPage = () => {
             <>
               <h1
                 className="text-2xl font-bold text-foreground mb-6"
-                style={{ fontFamily: "'Geist Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
+                style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
               >
                 {editingQuizId ? "Edit quiz" : "Create quiz"}
               </h1>
@@ -686,13 +686,13 @@ const TeacherQuizPage = () => {
                         </p>
                       </div>
                       <div className="space-y-2">
-                        <Label>Course</Label>
+                        <Label>Class</Label>
                         <Select value={courseId || "none"} onValueChange={(v) => setCourseId(v === "none" ? "" : v)}>
                           <SelectTrigger className="rounded-lg w-full">
-                            <SelectValue placeholder="Select course" />
+                            <SelectValue placeholder="Select class" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">No course</SelectItem>
+                            <SelectItem value="none">No class</SelectItem>
                             {courses.map((course) => (
                               <SelectItem key={course.id} value={course.id}>
                                 {course.title}
@@ -701,7 +701,7 @@ const TeacherQuizPage = () => {
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground">
-                          Link to one of your courses from My Courses.
+                          Link to one of your classes from My Class.
                         </p>
                       </div>
                     </div>

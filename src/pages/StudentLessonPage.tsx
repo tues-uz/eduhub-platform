@@ -13,11 +13,12 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
 import { eduhubCourses, eduhubLessons, eduhubModules } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
+import { useAuthSession } from "@/features/auth/context";
+import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 
 const TEACHER_PREFIX = "teacher_";
 
@@ -76,6 +77,7 @@ function toEmbedUrl(url: string): string {
 
 const StudentLessonPage = () => {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
+  const { user } = useAuthSession();
   const [searchParams] = useSearchParams();
   const moduleIdParam = searchParams.get("moduleId");
 
@@ -184,20 +186,14 @@ const StudentLessonPage = () => {
   const prevLesson = lessonIndex > 0 ? lessons[lessonIndex - 1] : null;
   const nextLesson = lessonIndex >= 0 && lessonIndex < lessons.length - 1 ? lessons[lessonIndex + 1] : null;
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   const [markedComplete, setMarkedComplete] = useState(false);
   useEffect(() => {
     if (courseId && lessonId) setMarkedComplete(lessonProgressStore.isComplete(courseId, lessonId));
   }, [courseId, lessonId]);
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
 
   if (apiLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center" style={{ fontFamily: "'Comfortaa', cursive" }}>
+      <div className="flex items-center justify-center py-24" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         <p className="text-foreground/60">Loading lesson…</p>
       </div>
     );
@@ -205,15 +201,48 @@ const StudentLessonPage = () => {
 
   if (!course || !lesson) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center" style={{ fontFamily: "'Comfortaa', cursive" }}>
-        <div className="text-center">
-          <p className="text-foreground/70 mb-4">Lesson not found.</p>
-          <Link to="/dashboard/courses">
-            <Button variant="outline" className="rounded-full">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to My Courses
-            </Button>
-          </Link>
+      <div className="py-16 text-center" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <p className="mb-4 text-foreground/70">Lesson not found.</p>
+        <Link to="/dashboard/courses">
+          <Button variant="outline" className="rounded-full">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to My Class
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const teacherEnrollmentAccess =
+    isTeacherCourse && courseId
+      ? enrollmentApplicationStore.getTeacherCourseAccess(courseId, user.email.trim().toLowerCase())
+      : "approved";
+
+  if (isTeacherCourse && teacherEnrollmentAccess !== "approved") {
+    return (
+      <div className="mx-auto max-w-lg px-6 py-16 text-center" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <BookOpen className="mx-auto mb-4 h-12 w-12 text-foreground/25" />
+        <h1 className="text-xl font-semibold text-foreground">
+          {teacherEnrollmentAccess === "pending"
+            ? "Enrollment pending review"
+            : teacherEnrollmentAccess === "rejected"
+              ? "Enrollment not approved"
+              : "Enrollment required"}
+        </h1>
+        <p className="mt-2 text-sm text-foreground/70">
+          {teacherEnrollmentAccess === "pending"
+            ? "An administrator is reviewing your application. Lesson content unlocks after approval."
+            : teacherEnrollmentAccess === "rejected"
+              ? "You can’t access lessons for this class. Check Notifications for details."
+              : "Request access from Available Classes first."}
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Button asChild variant="outline" className="rounded-full">
+            <Link to="/dashboard/available-courses">Browse classes</Link>
+          </Button>
+          <Button asChild variant="outline" className="rounded-full">
+            <Link to="/dashboard/notifications">Notifications</Link>
+          </Button>
         </div>
       </div>
     );
@@ -226,24 +255,13 @@ const StudentLessonPage = () => {
   const lessonUrl = (lid: string, mid?: string) => `/dashboard/courses/${courseId}/lessons/${lid}${mid ? `?moduleId=${mid}` : ""}`;
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
-      <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6 max-w-4xl">
-          <Link
-            to={backToCourseUrl}
-            className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to {course.title}
-          </Link>
-
+    <div className="container mx-auto max-w-4xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           <div className="mb-4 flex items-center gap-2 text-xs text-foreground/60">
             <BookOpen className="h-3.5 w-3.5" />
             <span>{course.title}</span>
           </div>
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <h1 className="font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "26px" }}>
+            <h1 className="font-bold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px", fontSize: "26px" }}>
               {lesson.title}
             </h1>
             {markedComplete && (
@@ -367,7 +385,7 @@ const StudentLessonPage = () => {
                 </div>
               </div>
               <div className="rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm mb-8">
-                <h2 className="font-semibold text-foreground mb-3" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                <h2 className="font-semibold text-foreground mb-3" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                   About this lesson
                 </h2>
                 <p className="text-sm text-foreground/80 leading-relaxed">{DUMMY_DESCRIPTION}</p>
@@ -388,7 +406,7 @@ const StudentLessonPage = () => {
                 <Link to={backToCourseUrl}>
                   <Button variant="outline" size="sm" className="rounded-full">
                     <ArrowLeft className="mr-1.5 h-4 w-4" />
-                    Back to course
+                    Back to class
                   </Button>
                 </Link>
               )}
@@ -403,7 +421,7 @@ const StudentLessonPage = () => {
                 <Link to={backToCourseUrl}>
                   <Button size="sm" className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
                     <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                    Finish course
+                    Finish class
                   </Button>
                 </Link>
               )}
@@ -433,8 +451,6 @@ const StudentLessonPage = () => {
               )}
             </Button>
           </div>
-        </div>
-      </main>
     </div>
   );
 };

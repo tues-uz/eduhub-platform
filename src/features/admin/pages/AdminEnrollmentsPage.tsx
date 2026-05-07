@@ -69,7 +69,7 @@ export default function AdminEnrollmentsPage() {
 
         <AdminPageHeader
           title="Enrollments & waitlist"
-          description="Course enrollment, class assignment, and waitlist promotion. Server validates capacity and payment rules."
+          description="Class enrollment, roster assignment, and waitlist promotion. Server validates capacity and payment rules."
           actions={
             <Button
               size="sm"
@@ -83,7 +83,7 @@ export default function AdminEnrollmentsPage() {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search student, course, class…"
+            placeholder="Search student, class…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
@@ -160,7 +160,7 @@ export default function AdminEnrollmentsPage() {
                   />
                 </TableHead>
                 <TableHead>Student</TableHead>
-                <TableHead>Course</TableHead>
+                <TableHead>Class</TableHead>
                 <TableHead>Class</TableHead>
                 <TableHead>Waitlist #</TableHead>
                 <TableHead>Enrollment</TableHead>

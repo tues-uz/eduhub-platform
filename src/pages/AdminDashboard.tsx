@@ -38,7 +38,7 @@ import { useAdminOverviewQuery } from "@/features/admin/hooks/useAdminQueries";
 const AdminDashboard = () => {
   const { user } = useAuthSession();
   const { isSidebarCollapsed } = useLayoutContext();
-  const { data } = useAdminOverviewQuery();
+  const { data, isPending, isError, error } = useAdminOverviewQuery();
   const userName = user.name;
 
   const stats = data?.stats ?? [];
@@ -70,9 +70,9 @@ const AdminDashboard = () => {
     userSearch.trim() !== "" || userRoleFilter !== "all" || userStatusFilter !== "all";
 
   return (
-    <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+    <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardSidebar />
-      <main className={`pt-16 lg:pt-8 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6">
           {/* Professional Header */}
           <div className="mb-8 pb-6 border-b border-slate-200">
@@ -127,9 +127,11 @@ const AdminDashboard = () => {
                 <h2 className="text-lg font-semibold text-slate-900">
                   Recent Users
                 </h2>
-                <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white h-8">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Add User
+                <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white h-8" asChild>
+                  <Link to="/dashboard/admin/add-user-role" className="inline-flex items-center">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Add User
+                  </Link>
                 </Button>
               </div>
               {recentUsers.length > 0 ? (
@@ -192,26 +194,40 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {filteredRecentUsers.length === 0 ? (
+                    {isError ? (
                       <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-sm text-slate-500">
-                          No users match your search or filters.
+                        <td colSpan={5} className="px-6 py-12 text-center text-xs text-red-600">
+                          {error instanceof Error ? error.message : "Could not load users."}
+                        </td>
+                      </tr>
+                    ) : isPending ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center text-xs text-slate-500">
+                          Loading users…
+                        </td>
+                      </tr>
+                    ) : filteredRecentUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center text-xs text-slate-500">
+                          {recentUsers.length === 0
+                            ? "No users yet."
+                            : "No users match your search or filters."}
                         </td>
                       </tr>
                     ) : (
                     filteredRecentUsers.map((u) => (
                       <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4">
-                          <span className="text-sm font-medium text-slate-900">{u.name}</span>
+                          <span className="text-xs font-medium text-slate-900">{u.name}</span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-sm text-slate-600">{u.email}</span>
+                          <span className="text-xs text-slate-600">{u.email}</span>
                         </td>
                         <td className="px-6 py-4">
                           <span className="px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-700">{u.role}</span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`text-sm font-medium ${u.status === "Active" ? "text-emerald-600" : "text-slate-500"}`}>{u.status}</span>
+                          <span className={`text-xs font-medium ${u.status === "Active" ? "text-emerald-600" : "text-slate-500"}`}>{u.status}</span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <DropdownMenu>
@@ -288,7 +304,7 @@ const AdminDashboard = () => {
                   <Link to="/dashboard/admin/courses">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
                       <BookOpen className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">All courses</span>
+                      <span className="text-sm font-medium">All classes</span>
                     </Button>
                   </Link>
                   <Link to="/dashboard/admin/calendar">
@@ -327,7 +343,7 @@ const AdminDashboard = () => {
                   </h2>
                 </div>
                 <p className="text-sm text-slate-300 mb-4">
-                  You have full access to users, courses, and platform configuration.
+                  You have full access to users, classes, and platform configuration.
                 </p>
                 <p className="text-xs text-slate-400">Logged in as {userName}</p>
               </div>

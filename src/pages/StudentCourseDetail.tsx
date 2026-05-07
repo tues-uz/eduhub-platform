@@ -1,25 +1,68 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   BookOpen,
   PlayCircle,
-  User,
   Clock,
-  Layers,
   ArrowLeft,
   CheckCircle2,
   ClipboardList,
-  Loader2,
+  Camera,
+  X,
+  CalendarDays,
+  CalendarRange,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import { CircularProgress } from "@/components/ui/circular-progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { loadStoredMeetings } from "@/features/teacher/attendance/attendanceMeetingsStorage";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
+import type { TeacherCourse } from "@/features/teacher/types";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
 import { eduhubCourses, eduhubModules, eduhubLessons } from "@/api/eduhubClient";
+import type { CourseResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
-import { useEnrollMutation } from "@/features/student/hooks/useStudentQueries";
+import {
+  boundsFromMeetingSlots,
+  mergeScheduleDisplayForAdminReview,
+  useAdminCourseLocalDataVersion,
+} from "@/features/admin/utils/adminCourseScheduleDisplay";
+import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
+import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
+import { cn } from "@/lib/utils";
+import { useAuthSession } from "@/features/auth/context";
+import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
+
+function nameInitials(name: string, max = 2): string {
+  const t = name.trim();
+  if (!t) return "—";
+  return t
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((p) => p[0])
+    .join("")
+    .slice(0, max)
+    .toUpperCase();
+}
+
+function formatPrice(price: number | undefined, currency = "USD"): string {
+  if (price == null || price <= 0) return "Free";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(price);
+}
 
 const ENROLLED_COURSES: Record<
   number,
@@ -145,20 +188,173 @@ const LESSONS_BY_COURSE: Record<number, { id: number; title: string; duration: s
 const formatDate = (dateString: string) =>
   new Date(dateString).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
+function formatClassDateLabel(iso: string | undefined): string | null {
+  if (!iso?.trim()) return null;
+  const d = new Date(iso.trim());
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+type SessionSlotLike = { title?: string; sessionDate?: string; sessionTime?: string };
+
+/** Student-friendly label: numeric titles become "Session N". */
+function sessionSlotStudentLabel(slot: SessionSlotLike, indexZeroBased: number): string {
+  const t = slot.title?.trim();
+  if (!t) return `Session ${indexZeroBased + 1}`;
+  if (/^\d+$/.test(t)) return `Session ${t}`;
+  return t;
+}
+
+function StudentSessionScheduleCard({
+  slot,
+  indexZeroBased,
+}: {
+  slot: SessionSlotLike;
+  indexZeroBased: number;
+}) {
+  const rawDate = slot.sessionDate?.trim();
+  const timeRaw = slot.sessionTime?.trim();
+  const label = sessionSlotStudentLabel(slot, indexZeroBased);
+
+  let weekdayLong: string | null = null;
+  let dateValue: string | null = null;
+  const timeValue = timeRaw ? timeRaw.trim() : null;
+
+  if (rawDate) {
+    const d = new Date(rawDate);
+    if (!Number.isNaN(d.getTime())) {
+      weekdayLong = d.toLocaleDateString(undefined, { weekday: "long" });
+      dateValue = d.toLocaleDateString(undefined, {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    } else {
+      dateValue = formatClassDateLabel(rawDate) ?? rawDate;
+    }
+  }
+
+  const hasAnyWhen = Boolean(dateValue || timeValue);
+
+  return (
+    <div className="rounded-xl border border-zinc-100/90 bg-zinc-50/80 px-3 py-2.5">
+      <p className="text-sm font-semibold leading-snug text-zinc-900">{label}</p>
+
+      {hasAnyWhen ? (
+        <div className="mt-2.5 space-y-2 border-t border-zinc-200/70 pt-2.5">
+          {weekdayLong ? (
+            <p className="text-xs font-medium capitalize leading-snug text-zinc-500">{weekdayLong}</p>
+          ) : null}
+          <dl className="space-y-2.5">
+            <div className="flex items-start justify-between gap-4">
+              <dt className="shrink-0 pt-0.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-zinc-400">
+                Date
+              </dt>
+              <dd className="min-w-0 max-w-[70%] text-right text-sm font-medium leading-snug text-zinc-900">
+                {dateValue ?? <span className="font-normal text-zinc-400">Not set</span>}
+              </dd>
+            </div>
+            <div className="flex items-start justify-between gap-4">
+              <dt className="shrink-0 pt-0.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-zinc-400">
+                Time
+              </dt>
+              <dd className="text-right text-[0.9375rem] font-semibold tabular-nums leading-snug text-zinc-950">
+                {timeValue ?? <span className="text-sm font-normal text-zinc-400">Not set</span>}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      ) : (
+        <p className="mt-2 text-sm leading-relaxed text-zinc-400">Date and time to be announced</p>
+      )}
+    </div>
+  );
+}
+
+function resolveStudentSessionSlots(
+  courseId: string | undefined,
+  apiDetail: CourseResponse | null,
+  isApiCourse: boolean,
+  tc: TeacherCourse | null,
+): SessionSlotLike[] {
+  if (isApiCourse && courseId && apiDetail) {
+    const wf = courseScheduleWorkflowStore.get(courseId);
+    const useProposal = wf?.status === "approved";
+    if (useProposal) {
+      const p = courseScheduleProposalStore.get(courseId);
+      if (p?.classMeetingSlots?.length) return p.classMeetingSlots;
+    }
+    if (apiDetail.classMeetingSlots?.length) return apiDetail.classMeetingSlots;
+    return [];
+  }
+  if (tc?.classMeetingSlots?.length) return tc.classMeetingSlots;
+  return [];
+}
+
+function sessionDateMs(iso: string | undefined): number {
+  if (!iso?.trim()) return NaN;
+  const t = new Date(iso.trim()).getTime();
+  return Number.isNaN(t) ? NaN : t;
+}
+
+function parseSessionIdFromAttendanceKey(key: string, courseIdStr: string): string | null {
+  const prefix = `attendance-checkin:${courseIdStr}:`;
+  if (!key.startsWith(prefix)) return null;
+  const sessionId = key.slice(prefix.length);
+  return sessionId.length > 0 ? sessionId : null;
+}
+
+/** Instructor-named meetings live in localStorage when this browser also created the QR (same device). */
+function meetingNameForSession(courseIdStr: string, sessionId: string): string {
+  const meetings = loadStoredMeetings(courseIdStr);
+  const m = meetings.find((x) => x.sessionId === sessionId);
+  if (m?.name?.trim()) return m.name.trim();
+  return "Class meeting";
+}
+
 const TEACHER_PREFIX = "teacher_";
 
 type LessonRow = { id: string; title: string; duration: string; completed: boolean; moduleId?: string };
+type QrBarcode = { rawValue?: string };
+type BarcodeDetectorLike = {
+  detect: (source: ImageBitmapSource) => Promise<QrBarcode[]>;
+};
+type BarcodeDetectorCtor = new (options?: { formats?: string[] }) => BarcodeDetectorLike;
 
 const StudentCourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
-  const [apiCourse, setApiCourse] = useState<{ id: string; title: string; instructor: string; category: string; duration: string; modules: number; enrolledDate: string } | null>(null);
+  const { user } = useAuthSession();
+  const [apiCourse, setApiCourse] = useState<{
+    id: string;
+    title: string;
+    instructor: string;
+    category: string;
+    duration: string;
+    modules: number;
+    enrolledDate: string;
+    instructorAvatarUrl?: string;
+    thumbnailUrl?: string;
+    price?: number;
+    currency?: string;
+    enrollmentCount?: number;
+    classMeetingsInSixMonths?: number;
+    classStartDate?: string;
+    classEndDate?: string;
+  } | null>(null);
   const [apiLessons, setApiLessons] = useState<LessonRow[]>([]);
+  /** Full GET /courses/{id} payload — used to merge admin-approved schedule + proposal like admin UI. */
+  const [apiCourseDetail, setApiCourseDetail] = useState<CourseResponse | null>(null);
   const [apiLoading, setApiLoading] = useState(false);
+  const scheduleLocalTick = useAdminCourseLocalDataVersion();
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannerError, setScannerError] = useState<string | null>(null);
+  const [scannerStatus, setScannerStatus] = useState("Point the camera at attendance QR");
+  const scannerVideoRef = useRef<HTMLVideoElement | null>(null);
+  const scannerStreamRef = useRef<MediaStream | null>(null);
+  const scannerRafRef = useRef<number | null>(null);
 
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
-  const enrollMutation = useEnrollMutation();
-
   const isTeacherCourse = courseId?.startsWith(TEACHER_PREFIX);
   const teacherCourseId = isTeacherCourse ? courseId!.slice(TEACHER_PREFIX.length) : null;
   const teacherCourse = teacherCourseId ? teacherCoursesStore.getById(teacherCourseId) : null;
@@ -170,15 +366,26 @@ const StudentCourseDetail = () => {
   useEffect(() => {
     if (courseId && isUuid(courseId) && !isTeacherCourse) {
       setApiLoading(true);
+      setApiCourseDetail(null);
       eduhubCourses.getById(courseId).then((c) => {
+        setApiCourseDetail(c);
+        const amount = c.pricing?.discountedAmount ?? c.pricing?.amount;
         setApiCourse({
           id: c.id,
           title: c.title,
           instructor: c.lecturer?.fullName ?? "—",
-          category: c.category ?? "Course",
+          category: c.category ?? "Class",
           duration: "—",
           modules: 0,
           enrolledDate: c.createdAt.slice(0, 10),
+          instructorAvatarUrl: c.lecturer?.avatarUrl,
+          thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
+          price: amount,
+          currency: c.pricing?.currency,
+          enrollmentCount: c.enrollmentCount,
+          classMeetingsInSixMonths: c.classMeetingsInSixMonths,
+          classStartDate: c.classStartDate,
+          classEndDate: c.classEndDate,
         });
         return eduhubModules.getByCourse(courseId!);
       }).then((modules) => {
@@ -199,15 +406,59 @@ const StudentCourseDetail = () => {
         const flat = arrays.flat();
         setApiLessons(flat);
         setApiCourse((prev) => prev ? { ...prev, modules: flat.length } : null);
-      }).catch(() => setApiCourse(null)).finally(() => setApiLoading(false));
+      }).catch(() => {
+        setApiCourse(null);
+        setApiCourseDetail(null);
+      }).finally(() => setApiLoading(false));
+    } else {
+      setApiCourseDetail(null);
     }
   }, [courseId, isTeacherCourse]);
 
-  const handleEnroll = async () => {
-    if (!courseId || isTeacherCourse) return;
-    await enrollMutation.mutateAsync(courseId);
-    navigate(`/dashboard/courses/${courseId}`);
-  };
+  const resolvedSchedule = useMemo(() => {
+    void scheduleLocalTick;
+    if (!courseId) return null;
+    if (apiCourseDetail && isUuid(courseId) && !isTeacherCourse) {
+      const wf = courseScheduleWorkflowStore.get(courseId);
+      const useProposal = wf?.status === "approved";
+      return mergeScheduleDisplayForAdminReview(courseId, apiCourseDetail, {
+        useLocalProposalSnapshot: useProposal,
+      });
+    }
+    if (teacherCourse) {
+      const slots = teacherCourse.classMeetingSlots;
+      const bounds = boundsFromMeetingSlots(slots);
+      let sessionsSixMo = teacherCourse.classMeetingsInSixMonths;
+      if (sessionsSixMo == null && slots?.length) sessionsSixMo = slots.length;
+      const titlesLen = teacherCourse.classMeetingTitles?.length ?? 0;
+      if (sessionsSixMo == null && titlesLen > 0) sessionsSixMo = titlesLen;
+      return {
+        sessionsSixMo,
+        classStartDate: teacherCourse.classStartDate?.trim() || bounds.start,
+        classEndDate: teacherCourse.classEndDate?.trim() || bounds.end,
+      };
+    }
+    return null;
+  }, [courseId, apiCourseDetail, isTeacherCourse, teacherCourse, scheduleLocalTick]);
+
+  const sessionSlotsForSidebar = useMemo(() => {
+    void scheduleLocalTick;
+    const isApi =
+      Boolean(apiCourseDetail && courseId && isUuid(courseId) && !isTeacherCourse);
+    const raw = resolveStudentSessionSlots(courseId, apiCourseDetail, isApi, teacherCourse);
+    const now = Date.now();
+    const decorated = raw.map((slot, i) => ({ slot, i, ms: sessionDateMs(slot.sessionDate) }));
+    decorated.sort((a, b) => {
+      const na = Number.isNaN(a.ms) ? Infinity : a.ms;
+      const nb = Number.isNaN(b.ms) ? Infinity : b.ms;
+      if (na !== nb) return na - nb;
+      return a.i - b.i;
+    });
+    const upcoming = decorated.filter(
+      (x) => Number.isNaN(x.ms) || x.ms >= now - 86400000,
+    );
+    return upcoming.slice(0, 8).map((x) => x.slot);
+  }, [courseId, apiCourseDetail, isTeacherCourse, teacherCourse, scheduleLocalTick]);
 
   const lessonsFromApi = apiLessons.map((l) => ({
     ...l,
@@ -239,7 +490,13 @@ const StudentCourseDetail = () => {
     progressPercent >= 100 ? "Completed" : progressPercent >= 75 ? "Almost Complete" : "In Progress";
 
   const course = apiCourse
-    ? { id: courseId!, ...apiCourse, progress: progressPercent, status: statusFromProgress, nextLesson: lessons.find((l) => !l.completed)?.title ?? apiLessons[0]?.title ?? "—" }
+    ? {
+        id: courseId!,
+        ...apiCourse,
+        progress: progressPercent,
+        status: statusFromProgress,
+        nextLesson: lessons.find((l) => !l.completed)?.title ?? apiLessons[0]?.title ?? "—",
+      }
     : teacherCourse
       ? {
           id: courseId!,
@@ -247,11 +504,21 @@ const StudentCourseDetail = () => {
           instructor: teacherCourse.instructorName,
           progress: progressPercent,
           status: statusFromProgress,
-          nextLesson: lessons.find((l) => !l.completed)?.title ?? teacherCourse.lessons.sort((a, b) => a.order - b.order)[0]?.title ?? "—",
-          category: "Course",
+          nextLesson:
+            lessons.find((l) => !l.completed)?.title ??
+            teacherCourse.lessons.sort((a, b) => a.order - b.order)[0]?.title ??
+            "—",
+          category: "Class",
           duration: `${teacherCourse.lessons.length} lessons`,
           modules: teacherCourse.lessons.length,
           enrolledDate: teacherCourse.createdAt.slice(0, 10),
+          instructorAvatarUrl: teacherCourse.instructorAvatarUrl,
+          price: teacherCourse.price,
+          currency: "USD",
+          enrollmentCount: teacherCourse.enrollmentCount,
+          classMeetingsInSixMonths: teacherCourse.classMeetingsInSixMonths,
+          classStartDate: teacherCourse.classStartDate,
+          classEndDate: teacherCourse.classEndDate,
         }
       : id
         ? {
@@ -259,226 +526,752 @@ const StudentCourseDetail = () => {
             progress: progressPercent,
             status: statusFromProgress,
             nextLesson: lessons.find((l) => !l.completed)?.title ?? ENROLLED_COURSES[id].nextLesson ?? "—",
+            instructorAvatarUrl: undefined,
+            price: undefined,
+            currency: undefined,
+            enrollmentCount: undefined,
+            classMeetingsInSixMonths: undefined,
+            classStartDate: undefined,
+            classEndDate: undefined,
           }
         : undefined;
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
+  const stopScanner = () => {
+    if (scannerRafRef.current != null) {
+      cancelAnimationFrame(scannerRafRef.current);
+      scannerRafRef.current = null;
+    }
+    if (scannerStreamRef.current) {
+      scannerStreamRef.current.getTracks().forEach((t) => t.stop());
+      scannerStreamRef.current = null;
+    }
+    if (scannerVideoRef.current) {
+      scannerVideoRef.current.srcObject = null;
+    }
+  };
+
+  const onScanResult = (raw: string) => {
+    try {
+      const url = new URL(raw, window.location.origin);
+      if (url.pathname !== "/dashboard/attendance/join") {
+        setScannerError("This QR is not an attendance check-in link.");
+        setScannerStatus("Try scanning the class attendance QR.");
+        return;
+      }
+      setScannerStatus("Attendance QR detected. Opening check-in…");
+      setScannerOpen(false);
+      stopScanner();
+      navigate(`${url.pathname}${url.search}`);
+    } catch {
+      setScannerError("Could not read this QR link.");
+      setScannerStatus("Try again with a clearer QR image.");
+    }
+  };
+
   useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    const idInterval = setInterval(check, 100);
-    return () => clearInterval(idInterval);
-  }, []);
+    if (!scannerOpen) {
+      stopScanner();
+      return;
+    }
+
+    let cancelled = false;
+    const start = async () => {
+      setScannerError(null);
+      setScannerStatus("Requesting camera permission…");
+      const media = navigator.mediaDevices;
+      if (!media?.getUserMedia) {
+        setScannerError("Camera is not supported on this browser.");
+        return;
+      }
+
+      try {
+        const stream = await media.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
+        });
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        scannerStreamRef.current = stream;
+        if (scannerVideoRef.current) {
+          scannerVideoRef.current.srcObject = stream;
+          await scannerVideoRef.current.play();
+        }
+        setScannerStatus("Point the camera at attendance QR");
+
+        const Detector = (
+          window as Window & { BarcodeDetector?: BarcodeDetectorCtor }
+        ).BarcodeDetector;
+
+        if (!Detector) {
+          setScannerError("QR detection is unsupported on this browser. Use Chrome/Edge on mobile or open attendance link manually.");
+          return;
+        }
+
+        const detector = new Detector({ formats: ["qr_code"] });
+        const scanLoop = async () => {
+          if (cancelled || !scannerVideoRef.current) return;
+          try {
+            const barcodes = await detector.detect(scannerVideoRef.current);
+            const value = barcodes[0]?.rawValue?.trim();
+            if (value) {
+              onScanResult(value);
+              return;
+            }
+          } catch {
+            // ignore transient frame decode errors
+          }
+          scannerRafRef.current = requestAnimationFrame(scanLoop);
+        };
+        scannerRafRef.current = requestAnimationFrame(scanLoop);
+      } catch {
+        setScannerError("Camera permission denied or unavailable. Allow camera access in browser settings.");
+        setScannerStatus("Unable to start camera");
+      }
+    };
+
+    start();
+    return () => {
+      cancelled = true;
+      stopScanner();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scannerOpen]);
 
   if (apiLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center" style={{ fontFamily: "'Comfortaa', cursive" }}>
-        <p className="text-foreground/60">Loading course…</p>
+      <div className="flex items-center justify-center py-24" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <p className="text-foreground/60">Loading class…</p>
       </div>
     );
   }
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center" style={{ fontFamily: "'Comfortaa', cursive" }}>
-        <div className="text-center">
-          <p className="text-foreground/70 mb-4">Course not found.</p>
-          <Link to="/dashboard/courses">
-            <Button variant="outline" className="rounded-full">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to My Courses
-            </Button>
-          </Link>
+      <div className="py-16 text-center" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <p className="mb-4 text-foreground/70">Class not found.</p>
+        <Link to="/dashboard/courses">
+          <Button variant="outline" className="rounded-full">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to My Class
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const teacherEnrollmentAccess =
+    isTeacherCourse && courseId
+      ? enrollmentApplicationStore.getTeacherCourseAccess(courseId, user.email.trim().toLowerCase())
+      : "approved";
+
+  if (isTeacherCourse && teacherEnrollmentAccess !== "approved") {
+    return (
+      <div className="mx-auto max-w-lg px-6 py-16 text-center" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <BookOpen className="mx-auto mb-4 h-12 w-12 text-foreground/25" />
+        <h1 className="text-xl font-semibold text-foreground">
+          {teacherEnrollmentAccess === "pending"
+            ? "Enrollment pending review"
+            : teacherEnrollmentAccess === "rejected"
+              ? "Enrollment not approved"
+              : "Enrollment required"}
+        </h1>
+        <p className="mt-2 text-sm text-foreground/70">
+          {teacherEnrollmentAccess === "pending"
+            ? "An administrator is reviewing your application. You’ll be able to open this class after approval."
+            : teacherEnrollmentAccess === "rejected"
+              ? "You can’t access this class with your current application. Check Notifications for details, or browse Available Classes if you may submit again."
+              : "Request access from Available Classes and wait for an administrator to approve your enrollment."}
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Button asChild variant="outline" className="rounded-full">
+            <Link to="/dashboard/available-courses">Browse classes</Link>
+          </Button>
+          <Button asChild variant="outline" className="rounded-full">
+            <Link to="/dashboard/notifications">Notifications</Link>
+          </Button>
         </div>
       </div>
     );
   }
 
   const nextLesson = lessons.find((l) => !l.completed) ?? lessons[0];
+  const courseIdStr = String(course.id);
+  const attendanceEntries =
+    typeof window !== "undefined"
+      ? Object.entries(sessionStorage)
+          .filter(([k]) => k.startsWith("attendance-checkin:"))
+          .map(([k, raw]) => {
+            let checkedAt = raw;
+            let storedMeetingName: string | undefined;
+            try {
+              const p = JSON.parse(raw) as { checkedAt?: string; meetingName?: string };
+              if (p && typeof p.checkedAt === "string") {
+                checkedAt = p.checkedAt;
+                if (typeof p.meetingName === "string" && p.meetingName.trim()) {
+                  storedMeetingName = p.meetingName.trim();
+                }
+              }
+            } catch {
+              /* legacy: plain ISO timestamp string */
+            }
+            return { key: k, checkedAt, storedMeetingName };
+          })
+          .filter(({ key }) => key.includes(`:${courseIdStr}:`))
+          .sort((a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime())
+      : [];
+  const attendanceTableRows = attendanceEntries.map((entry) => {
+    const sessionId = parseSessionIdFromAttendanceKey(entry.key, courseIdStr);
+    const resolved =
+      entry.storedMeetingName ??
+      (sessionId ? meetingNameForSession(courseIdStr, sessionId) : null);
+    return {
+      ...entry,
+      meetingName: resolved ?? "Class meeting",
+    };
+  });
+
+  const classStartLabel = formatClassDateLabel(
+    resolvedSchedule?.classStartDate ?? course.classStartDate,
+  );
+  const classEndLabel = formatClassDateLabel(resolvedSchedule?.classEndDate ?? course.classEndDate);
+  const hasClassDateRange = Boolean(classStartLabel || classEndLabel);
+  const meetings = resolvedSchedule?.sessionsSixMo ?? course.classMeetingsInSixMonths;
+  const hasScheduleSummary =
+    hasClassDateRange ||
+    (meetings != null && meetings > 0) ||
+    sessionSlotsForSidebar.length > 0;
+
+  const coverThumbnailUrl =
+    apiCourse?.thumbnailUrl?.trim() || teacherCourse?.thumbnailUrl?.trim() || undefined;
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
-      <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6 max-w-4xl">
-          <Link
-            to="/dashboard/courses"
-            className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to My Courses
-          </Link>
-
-          <div className="mb-8 rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm">
-            <div className="flex flex-wrap items-start gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-800">
-                <BookOpen className="h-6 w-6 text-white" />
+    <>
+      <div className="w-full min-w-0" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+          <header className="mb-10">
+            <div className="-mx-6 box-border min-w-0 w-[calc(100%+3rem)] max-w-[calc(100%+3rem)]">
+              <div className="overflow-hidden rounded-none border-0 bg-white shadow-none">
+                <div className="relative h-52 w-full bg-gray-200 sm:h-64">
+                  {coverThumbnailUrl ? (
+                    <img
+                      src={coverThumbnailUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center" aria-hidden>
+                      <BookOpen className="h-14 w-14 text-gray-400/90" />
+                    </div>
+                  )}
+                  <div
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"
+                    aria-hidden
+                  />
+                  {isEnrolled ? (
+                    <span className="absolute right-3 top-3 rounded-full bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 shadow-sm">
+                      Enrolled
+                    </span>
+                  ) : null}
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-medium uppercase tracking-wide text-foreground/60">{course.category}</span>
-                  <h1 className="font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "28px" }}>
+              <div className="rounded-none border-0 bg-white shadow-none">
+                <div className="grid gap-6 px-6 py-4 sm:px-8 sm:py-5 lg:grid-cols-12 lg:items-start">
+                  <div className="min-w-0 lg:col-span-8">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="text-xs font-medium capitalize tracking-tight text-zinc-500">
+                    {course.category}
+                  </p>
+                  {isEnrolled ? (
+                    <span
+                      className={cn(
+                        "rounded-md px-2 py-0.5 text-[11px] font-medium tracking-tight",
+                        course.status === "Completed"
+                          ? "bg-emerald-100/90 text-emerald-900"
+                          : course.status === "Almost Complete"
+                            ? "bg-blue-100/90 text-blue-900"
+                            : "bg-amber-100/90 text-amber-950",
+                      )}
+                    >
+                      {course.status}
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="mt-1.5 flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+                  <h1 className="min-w-0 max-w-3xl text-[1.375rem] font-bold leading-snug tracking-tight text-zinc-950 sm:text-[1.75rem] sm:leading-tight">
                     {course.title}
                   </h1>
-                </div>
-                <div className="mt-2 flex items-center gap-2 text-sm text-foreground/60">
-                  <User className="h-4 w-4" />
-                  {course.instructor}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-4 text-xs text-foreground/60">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    {course.duration}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Layers className="h-3.5 w-3.5" />
-                    {course.modules} modules
-                  </span>
-                  {isEnrolled && <span>Enrolled {formatDate(course.enrolledDate)}</span>}
-                </div>
-                {isEnrolled ? (
-                  <div className="mt-4">
-                    <div className="mb-2 flex justify-between text-xs text-foreground/60">
-                      <span>Progress</span>
-                      <span className="font-semibold text-foreground">{course.progress}%</span>
-                    </div>
-                    <Progress value={course.progress} className="h-2 bg-gray-200" />
-                  </div>
-                ) : (
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-full"
-                      style={{ backgroundColor: "#3954d0" }}
-                      onClick={handleEnroll}
-                      disabled={enrollMutation.isPending}
-                    >
-                      {enrollMutation.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isEnrolled ? (
+                    <p className="shrink-0 self-end text-right text-sm leading-snug text-zinc-500 sm:max-w-[13rem]">
+                      Joined {formatDate(course.enrolledDate)}
+                    </p>
+                  ) : course.duration !== "—" || course.modules > 0 ? (
+                    <p className="shrink-0 self-end text-right text-sm leading-snug text-zinc-500 sm:max-w-[13rem]">
+                      {course.duration !== "—" ? <span>{course.duration}</span> : null}
+                      {course.duration !== "—" && course.modules > 0 ? (
+                        <span className="text-zinc-300" aria-hidden>
+                          {" "}
+                          ·{" "}
+                        </span>
                       ) : null}
-                      Enroll Now
-                    </Button>
-                  </div>
-                )}
-              </div>
-              {isEnrolled && (
-                <span
-                  className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                    course.status === "Completed" ? "bg-green-100 text-green-700" : course.status === "Almost Complete" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
-                  }`}
-                >
-                  {course.status}
-                </span>
-              )}
-            </div>
-          </div>
+                      {course.modules > 0 ? <span>{course.modules} modules</span> : null}
+                    </p>
+                  ) : null}
+                </div>
 
-          {isEnrolled && (
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
-                Course content
-              </h2>
-              {nextLesson && (
-                <Link to={`/dashboard/courses/${String(course.id)}/lessons/${nextLesson.id}${nextLesson.moduleId ? `?moduleId=${nextLesson.moduleId}` : ""}`}>
-                  <Button size="sm" className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
-                    <PlayCircle className="mr-2 h-4 w-4" />
-                    Continue: {nextLesson.title}
-                  </Button>
-                </Link>
-              )}
-            </div>
-          )}
-
-          {isEnrolled && (
-            <div className="space-y-2">
-              {lessons.map((lesson, index) => {
-              const isUnlocked = teacherCourse ? true : index === 0 || lessons[index - 1].completed;
-              return (
-                <div
-                  key={lesson.id}
-                  className={`flex items-center gap-4 rounded-xl border p-4 transition-colors ${
-                    lesson.completed ? "border-gray-200/50 bg-gray-50/50" : "border-gray-200/50 bg-white/80 hover:border-gray-300/50"
-                  }`}
-                >
-                  <div
-                    className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
-                      lesson.completed ? "bg-green-100" : "bg-gray-200/80"
-                    }`}
-                  >
-                    {lesson.completed ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <span className="text-sm font-medium text-foreground/60">{index + 1}</span>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1">
-                      <p className={`font-bold ${lesson.completed ? "text-foreground/70" : "text-foreground"}`}>
-                        {lesson.title}
-                      </p>
-                      {lesson.completed && (
-                        <span className="flex-shrink-0 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                          Completed
+                <div className="mt-6 rounded-2xl border border-zinc-200/80 bg-white p-5 ring-1 ring-zinc-100/80">
+                  <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-10">
+                    <div className="flex min-w-0 items-center gap-4">
+                      {course.instructorAvatarUrl ? (
+                        <img
+                          src={course.instructorAvatarUrl}
+                          alt=""
+                          className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-zinc-100"
+                        />
+                      ) : (
+                        <span
+                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-semibold uppercase tracking-wide text-zinc-600 ring-2 ring-zinc-100"
+                          aria-hidden
+                        >
+                          {nameInitials(course.instructor)}
                         </span>
                       )}
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                          Taught by
+                        </p>
+                        <p className="mt-1 truncate text-base font-semibold leading-snug text-zinc-900">
+                          {course.instructor}
+                        </p>
+                      </div>
                     </div>
-                    {lesson.duration !== "—" && (
-                      <p className="text-xs text-foreground/50 mt-0.5">{lesson.duration}</p>
+                    {isEnrolled ? (
+                      <div className="shrink-0 border-t border-zinc-100 pt-5 sm:border-l sm:border-t-0 sm:pl-10 sm:pt-0 sm:text-right">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                          Your progress
+                        </p>
+                        <div className="mt-2 flex justify-end">
+                          <CircularProgress value={course.progress} size={48} strokeWidth={3.5} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="shrink-0 border-t border-zinc-100 pt-5 sm:border-l sm:border-t-0 sm:pl-10 sm:pt-0 sm:text-right">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                          Tuition
+                        </p>
+                        <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-[#3954d0]">
+                          {formatPrice(course.price, course.currency)}
+                        </p>
+                      </div>
                     )}
                   </div>
-                  {lesson.completed ? (
-                    <Link to={`/dashboard/courses/${String(course.id)}/lessons/${lesson.id}${lesson.moduleId ? `?moduleId=${lesson.moduleId}` : ""}`}>
-                      <Button size="sm" variant="outline" className="rounded-full flex-shrink-0 px-5">
-                        View
+
+                  <dl
+                    className={cn(
+                      "mt-6 grid gap-5 border-t border-zinc-100 pt-7 sm:gap-6",
+                      hasClassDateRange ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-2 sm:grid-cols-3",
+                    )}
+                  >
+                  <div className="min-w-0">
+                    <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                      <BookOpen className="size-3.5 shrink-0 text-[#3954d0]/65" aria-hidden />
+                      Lessons
+                    </dt>
+                    <dd className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">{lessons.length}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                      <Users className="size-3.5 shrink-0 text-[#3954d0]/65" aria-hidden />
+                      Students joined
+                    </dt>
+                    <dd className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">
+                      {course.enrollmentCount != null ? (
+                        course.enrollmentCount
+                      ) : (
+                        <span className="font-normal text-zinc-400">—</span>
+                      )}
+                    </dd>
+                  </div>
+                  <div className="col-span-2 min-w-0 sm:col-span-1">
+                    <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                      <CalendarDays className="size-3.5 shrink-0 text-[#3954d0]/65" aria-hidden />
+                      Total sessions
+                    </dt>
+                    <dd className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">
+                      {meetings != null && meetings > 0 ? (
+                        <>
+                          {meetings}
+                          <span className="font-normal text-zinc-500"> / 6 mo</span>
+                        </>
+                      ) : (
+                        <span className="font-normal text-zinc-400">—</span>
+                      )}
+                    </dd>
+                  </div>
+                  {hasClassDateRange ? (
+                    <div className="min-w-0 sm:col-span-2 lg:col-span-1">
+                      <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                        <CalendarRange className="size-3.5 shrink-0 text-[#3954d0]/65" aria-hidden />
+                        Schedule
+                      </dt>
+                      <dd className="mt-1.5 text-sm font-semibold leading-snug text-zinc-900">
+                        {classStartLabel && classEndLabel ? (
+                          <>
+                            {classStartLabel}
+                            <span className="font-normal text-zinc-400"> → </span>
+                            {classEndLabel}
+                          </>
+                        ) : classStartLabel ? (
+                          <>Starts {classStartLabel}</>
+                        ) : classEndLabel ? (
+                          <>Ends {classEndLabel}</>
+                        ) : null}
+                      </dd>
+                    </div>
+                  ) : null}
+                  </dl>
+                </div>
+
+                <div className="mt-8 w-full min-w-0">
+          <Tabs defaultValue="content" className="w-full">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+              <TabsList>
+                <TabsTrigger value="content" className="font-bold">
+                  Class Content
+                </TabsTrigger>
+                <TabsTrigger value="attendance">Attendance</TabsTrigger>
+              </TabsList>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                onClick={() => setScannerOpen(true)}
+                title="Scan attendance QR"
+              >
+                <Camera className="mr-2 h-4 w-4" />
+                Scan QR
+              </Button>
+            </div>
+
+            <TabsContent value="content" className="mt-0">
+              {isEnrolled && (
+                <div className="mb-4 flex items-center justify-between">
+                  <h2
+                    className="font-bold text-foreground"
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  >
+                    Class Content
+                  </h2>
+                  {nextLesson && (
+                    <Link to={`/dashboard/courses/${String(course.id)}/lessons/${nextLesson.id}${nextLesson.moduleId ? `?moduleId=${nextLesson.moduleId}` : ""}`}>
+                      <Button size="sm" className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Continue: {nextLesson.title}
                       </Button>
                     </Link>
-                  ) : isUnlocked ? (
-                    <Link to={`/dashboard/courses/${String(course.id)}/lessons/${lesson.id}${lesson.moduleId ? `?moduleId=${lesson.moduleId}` : ""}`}>
-                      <Button size="sm" className="rounded-full flex-shrink-0" style={{ backgroundColor: "#1e40af" }}>
-                        <PlayCircle className="mr-1.5 h-4 w-4" />
-                        Start
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button
-                      size="sm"
-                      className="rounded-full flex-shrink-0"
-                      style={{ backgroundColor: "#1e40af" }}
-                      disabled
-                      title="Complete the previous lesson first"
-                    >
-                      <PlayCircle className="mr-1.5 h-4 w-4" />
-                      Start
-                    </Button>
                   )}
                 </div>
-              );
-            })}
-          </div>
-          )}
+              )}
 
-          <div className="mt-8 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 p-6 text-center">
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-violet-100">
-                <ClipboardList className="h-6 w-6 text-violet-600" />
+              {isEnrolled && (
+                <div className="space-y-2">
+                  {lessons.map((lesson, index) => {
+                  const isUnlocked = teacherCourse ? true : index === 0 || lessons[index - 1].completed;
+                  return (
+                    <div
+                      key={lesson.id}
+                      className={`flex items-center gap-4 rounded-xl border p-4 transition-colors ${
+                        lesson.completed ? "border-gray-200/50 bg-gray-50/50" : "border-gray-200/50 bg-white/80 hover:border-gray-300/50"
+                      }`}
+                    >
+                      <div
+                        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
+                          lesson.completed ? "bg-green-100" : "bg-gray-200/80"
+                        }`}
+                      >
+                        {lesson.completed ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <span className="text-sm font-medium text-foreground/60">{index + 1}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-1">
+                          <p className={`font-bold ${lesson.completed ? "text-foreground/70" : "text-foreground"}`}>
+                            {lesson.title}
+                          </p>
+                          {lesson.completed && (
+                            <span className="flex-shrink-0 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                              Completed
+                            </span>
+                          )}
+                        </div>
+                        {lesson.duration !== "—" && (
+                          <p className="text-xs text-foreground/50 mt-0.5">{lesson.duration}</p>
+                        )}
+                      </div>
+                      {lesson.completed ? (
+                        <Link to={`/dashboard/courses/${String(course.id)}/lessons/${lesson.id}${lesson.moduleId ? `?moduleId=${lesson.moduleId}` : ""}`}>
+                          <Button size="sm" variant="outline" className="rounded-full flex-shrink-0 px-5">
+                            View
+                          </Button>
+                        </Link>
+                      ) : isUnlocked ? (
+                        <Link to={`/dashboard/courses/${String(course.id)}/lessons/${lesson.id}${lesson.moduleId ? `?moduleId=${lesson.moduleId}` : ""}`}>
+                          <Button size="sm" className="rounded-full flex-shrink-0" style={{ backgroundColor: "#1e40af" }}>
+                            <PlayCircle className="mr-1.5 h-4 w-4" />
+                            Start
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="rounded-full flex-shrink-0"
+                          style={{ backgroundColor: "#1e40af" }}
+                          disabled
+                          title="Complete the previous lesson first"
+                        >
+                          <PlayCircle className="mr-1.5 h-4 w-4" />
+                          Start
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              <div>
-                <h3 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
-                  Placement test / Quiz
-                </h3>
-                <p className="mt-1 text-sm text-foreground/60 max-w-md mx-auto">
-                  After finishing the course content, take the quiz to test your knowledge and see your score.
-                </p>
+              )}
+
+              <div className="mt-8 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 p-6 text-center">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-violet-100">
+                    <ClipboardList className="h-6 w-6 text-violet-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
+                      Placement test / Quiz
+                    </h3>
+                    <p className="mt-1 text-sm text-foreground/60 max-w-md mx-auto">
+                      After finishing the class content, take the quiz to test your knowledge and see your score.
+                    </p>
+                  </div>
+                  <Link to={`/dashboard/quiz?courseId=${course.id}`}>
+                    <Button className="rounded-full mt-2" style={{ backgroundColor: "#3954d0" }}>
+                      <ClipboardList className="mr-2 h-4 w-4" />
+                      Go to Quiz
+                    </Button>
+                  </Link>
+                </div>
               </div>
-              <Link to={`/dashboard/quiz?courseId=${course.id}`}>
-                <Button className="rounded-full mt-2" style={{ backgroundColor: "#3954d0" }}>
-                  <ClipboardList className="mr-2 h-4 w-4" />
-                  Go to Quiz
-                </Button>
-              </Link>
+            </TabsContent>
+
+            <TabsContent value="attendance" className="mt-0">
+              {!isEnrolled ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
+                  Enroll in this class first to access attendance records and session check-ins.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-5">
+                    <h3 className="font-semibold text-blue-900">Attendance check-in</h3>
+                    <p className="mt-1 text-sm text-blue-800/90">
+                      Your instructor shows a QR code in class. Scan it to check in. Meeting titles appear when this device
+                      also has the instructor&apos;s saved meeting names (same browser profile).
+                    </p>
+                  </div>
+
+                  {attendanceTableRows.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-6 text-sm text-foreground/65">
+                      No check-ins recorded on this browser for this class yet.
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-slate-200/90 bg-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06)] ring-1 ring-slate-900/[0.04] overflow-hidden">
+                      <Table className="text-sm">
+                        <TableHeader>
+                          <TableRow className="border-0 bg-gradient-to-r from-slate-50 via-slate-50 to-blue-50/30 hover:from-slate-50 hover:via-slate-50 hover:to-blue-50/30">
+                            <TableHead className="h-12 min-w-[140px] border-0 pl-5 pr-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">
+                              Class
+                            </TableHead>
+                            <TableHead className="h-12 min-w-[120px] border-0 px-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">
+                              Lecturer
+                            </TableHead>
+                            <TableHead className="h-12 border-0 px-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">
+                              Meeting
+                            </TableHead>
+                            <TableHead className="h-12 border-0 pl-3 pr-5 text-right text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500 whitespace-nowrap">
+                              Checked in
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {attendanceTableRows.map((row, idx) => {
+                            const dt = new Date(row.checkedAt);
+                            return (
+                              <TableRow
+                                key={row.key}
+                                className={`border-slate-100 transition-colors hover:bg-slate-50/70 ${idx === attendanceTableRows.length - 1 ? "border-0" : ""}`}
+                              >
+                                <TableCell className="border-0 py-4 pl-5 pr-3 align-top">
+                                  <p className="max-w-[220px] font-medium leading-snug text-slate-800 line-clamp-2">
+                                    {course.title}
+                                  </p>
+                                </TableCell>
+                                <TableCell className="border-0 py-4 px-3 align-top text-slate-700">
+                                  <p className="max-w-[200px] leading-snug line-clamp-2">{course.instructor}</p>
+                                </TableCell>
+                                <TableCell className="border-0 py-4 px-3 align-middle">
+                                  <div className="flex items-start gap-3">
+                                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600/10 to-indigo-600/10 text-[#3954d0] ring-1 ring-blue-900/5">
+                                      <CalendarDays className="h-4 w-4" aria-hidden />
+                                    </span>
+                                    <div className="min-w-0 pt-0.5">
+                                      <p className="font-medium leading-snug text-slate-900">{row.meetingName}</p>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="border-0 py-4 pl-3 pr-5 align-middle text-right">
+                                  <div className="flex flex-col items-end gap-0.5">
+                                    <span className="inline-flex items-center gap-1.5 text-sm font-medium tabular-nums text-slate-800">
+                                      <Clock className="h-3.5 w-3.5 text-slate-400" aria-hidden />
+                                      {dt.toLocaleTimeString(undefined, {
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                      })}
+                                    </span>
+                                    <span className="text-xs tabular-nums text-slate-500">
+                                      {dt.toLocaleDateString(undefined, {
+                                        weekday: "short",
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      })}
+                                    </span>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+                </div>
+
+                  </div>
+
+                  <aside className="min-w-0 lg:col-span-4 lg:sticky lg:top-6 lg:z-10 lg:self-start lg:h-fit">
+                    <div className="rounded-2xl border border-zinc-200/80 bg-white p-4 ring-1 ring-zinc-100/80">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <h2 className="text-base font-semibold tracking-tight text-foreground">Upcoming schedule</h2>
+                        <p className="text-xs text-foreground/55">This class</p>
+                      </div>
+                      <p className="mt-2 text-xs leading-relaxed text-zinc-600">
+                        Key dates and what&apos;s next. Times follow your instructor unless noted.
+                      </p>
+
+                      {hasScheduleSummary ? (
+                        <div className="mt-4 space-y-3">
+                          {hasClassDateRange ? (
+                            <div className="rounded-lg border border-zinc-100 bg-zinc-50/60 px-3 py-2.5">
+                              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Class period</p>
+                              <p className="mt-1 flex items-start gap-1.5 text-xs font-medium leading-snug text-zinc-900">
+                                <CalendarRange className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#3954d0]" aria-hidden />
+                                <span>
+                                  {classStartLabel && classEndLabel
+                                    ? `${classStartLabel} → ${classEndLabel}`
+                                    : classStartLabel
+                                      ? `Starts ${classStartLabel}`
+                                      : classEndLabel
+                                        ? `Ends ${classEndLabel}`
+                                        : ""}
+                                </span>
+                              </p>
+                            </div>
+                          ) : null}
+                          {meetings != null && meetings > 0 ? (
+                            <div className="rounded-lg border border-zinc-100 bg-zinc-50/60 px-3 py-2.5">
+                              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Sessions (6 mo)</p>
+                              <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-zinc-900">
+                                <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#3954d0]" aria-hidden />
+                                {meetings} in the rolling window
+                              </p>
+                            </div>
+                          ) : null}
+                          {sessionSlotsForSidebar.length > 0 ? (
+                            <div className="space-y-3">
+                              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                                Upcoming sessions
+                              </p>
+                              {sessionSlotsForSidebar.map((slot, idx) => (
+                                <StudentSessionScheduleCard
+                                  key={`${slot.sessionDate ?? "d"}-${slot.sessionTime ?? ""}-${idx}`}
+                                  slot={slot}
+                                  indexZeroBased={idx}
+                                />
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {!hasScheduleSummary && (
+                        <p className="mt-4 rounded-lg border border-dashed border-zinc-200 bg-zinc-50/70 px-3 py-2 text-xs text-zinc-600">
+                          No fixed session times here yet.{" "}
+                          <Link className="font-medium text-[#3954d0] underline-offset-2 hover:underline" to="/dashboard/schedule">
+                            Full schedule
+                          </Link>
+                        </p>
+                      )}
+
+                      <Button asChild variant="outline" className="mt-4 w-full rounded-full">
+                        <Link to="/dashboard/schedule">
+                          <CalendarDays className="mr-2 h-4 w-4" aria-hidden />
+                          View full schedule
+                        </Link>
+                      </Button>
+                    </div>
+                  </aside>
+                </div>
+
+              </div>
             </div>
+          </header>
+
+        </div>
+      {scannerOpen ? (
+        <div className="fixed inset-0 z-[120] bg-black/80 p-4 sm:p-6 flex items-center justify-center">
+          <div className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="font-semibold text-foreground">Scan attendance QR</h3>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 rounded-full"
+                onClick={() => setScannerOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-black">
+              <video ref={scannerVideoRef} className="h-72 w-full object-cover" playsInline muted />
+            </div>
+            <p className="mt-3 text-xs text-foreground/65">{scannerStatus}</p>
+            {scannerError ? (
+              <p className="mt-2 text-xs text-red-600">{scannerError}</p>
+            ) : null}
+            <p className="mt-2 text-[11px] text-foreground/50">
+              Use HTTPS on phone browsers so camera access works.
+            </p>
           </div>
         </div>
-      </main>
-    </div>
+      ) : null}
+    </>
   );
 };
 

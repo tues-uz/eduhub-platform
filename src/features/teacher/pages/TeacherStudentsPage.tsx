@@ -69,10 +69,10 @@ const TeacherStudentsPage = () => {
   }, [user.id]);
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardSidebar />
       <main
-        className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-6 lg:ml-20" : "lg:pl-6 lg:ml-64"}`}
+        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-6 lg:ml-20" : "lg:pl-6 lg:ml-64"}`}
       >
         <div className="container mx-auto px-6">
           <Link
@@ -86,12 +86,12 @@ const TeacherStudentsPage = () => {
           <div className="mb-8">
             <h1
               className="text-2xl font-bold text-foreground"
-              style={{ fontFamily: "'Geist Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
+              style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
             >
               Students
             </h1>
             <p className="text-foreground/60 text-sm mt-1">
-              Students registered to your courses.
+              Students registered to your classes.
             </p>
           </div>
 
@@ -104,7 +104,7 @@ const TeacherStudentsPage = () => {
                   <TableRow>
                     <TableHead>Student name</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Course</TableHead>
+                    <TableHead>Class</TableHead>
                     <TableHead>Enrolled date</TableHead>
                   </TableRow>
                 </TableHeader>

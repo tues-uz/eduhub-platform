@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen,
@@ -7,11 +7,11 @@ import {
   Calendar,
   Clock,
   MoreHorizontal,
-  TrendingUp,
   ArrowRight,
+  QrCode,
+  CircleDollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,9 +23,65 @@ import { useAuthSession } from "@/features/auth/context";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { eduhubCourses, eduhubLecturer } from "@/api/eduhubClient";
 import type { TeacherCourse } from "@/features/teacher/types";
+import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
+import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock";
+
+/** Sum of (catalog tuition × enrolled students) per currency for dashboard. */
+/** Seat counts from course rows when lecturer stats API is unavailable. */
+function sumEnrollmentSeats(courses: TeacherCourse[]): number {
+  return courses.reduce((n, c) => n + (c.enrollmentCount ?? 0), 0);
+}
+
+function formatEnrollmentRevenueTotal(courses: TeacherCourse[]): string {
+  const byCurrency = new Map<string, number>();
+  for (const c of courses) {
+    const seats = c.enrollmentCount ?? 0;
+    const unit = c.price;
+    if (seats <= 0 || unit == null || unit <= 0) continue;
+    const cur = (c.priceCurrency ?? "USD").trim() || "USD";
+    byCurrency.set(cur, (byCurrency.get(cur) ?? 0) + unit * seats);
+  }
+  if (byCurrency.size === 0) return "—";
+  return [...byCurrency.entries()]
+    .map(([currency, amount]) =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 0,
+      }).format(amount),
+    )
+    .join(" · ");
+}
+
+function paymentMatchesInstructor(p: AdminPaymentRow, emailNorm: string, nameNorm: string): boolean {
+  const le = (p.lecturerEmail ?? "").trim().toLowerCase();
+  const ln = (p.lecturerName ?? "").trim().toLowerCase();
+  if (emailNorm && le && le === emailNorm) return true;
+  if (nameNorm && ln && ln === nameNorm) return true;
+  return false;
+}
+
+function formatMoney(amount: number, currency: string) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
+}
+
+function formatCollectedPaymentsTotal(payments: AdminPaymentRow[], emailNorm: string, nameNorm: string): string {
+  const byCurrency = new Map<string, number>();
+  for (const p of payments) {
+    if (p.status !== "paid") continue;
+    if (!paymentMatchesInstructor(p, emailNorm, nameNorm)) continue;
+    const cur = (p.currency ?? "USD").trim() || "USD";
+    byCurrency.set(cur, (byCurrency.get(cur) ?? 0) + p.amount);
+  }
+  if (byCurrency.size === 0) return "—";
+  return [...byCurrency.entries()]
+    .map(([currency, amount]) => formatMoney(amount, currency))
+    .join(" · ");
+}
 
 const TeacherDashboard = () => {
   const { user } = useAuthSession();
+  const payments = useAdminPayments();
   const userName = user.name || "Teacher";
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebarCollapsed");
@@ -33,7 +89,12 @@ const TeacherDashboard = () => {
   });
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
-  const [stats, setStats] = useState({ totalCourses: 0, totalStudents: 0, pendingGrading: 0 });
+  /** Null until `/lecturers/me/stats` responds — distinguishes “not loaded” from real zeros. */
+  const [lecturerStats, setLecturerStats] = useState<{
+    totalCourses: number;
+    totalStudents: number;
+    pendingGrading: number;
+  } | null>(null);
 
   useEffect(() => {
     const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
@@ -54,30 +115,45 @@ const TeacherDashboard = () => {
               eduhubCourses.getByLecturer(user.id),
               eduhubLecturer.getStats().catch(() => null),
             ]);
-            const apiCourses: TeacherCourse[] = (res || []).map((c) => ({
-              id: c.id,
-              title: c.title,
-              description: "",
-              instructorName: c.lecturerName,
-              lessons: [],
-              createdAt: c.createdAt,
-              updatedAt: c.createdAt,
-            }));
+            const apiCourses: TeacherCourse[] = (res || []).map((c) => {
+              const unit = c.pricing?.discountedAmount ?? c.pricing?.amount;
+              return {
+                id: c.id,
+                title: c.title,
+                description: "",
+                instructorName: c.lecturerName,
+                thumbnailUrl: c.thumbnailUrl,
+                enrollmentCount: c.enrollmentCount,
+                lessons: [],
+                createdAt: c.createdAt,
+                updatedAt: c.createdAt,
+                status: c.status,
+                ...(unit != null && unit > 0
+                  ? { price: unit, priceCurrency: c.pricing?.currency }
+                  : {}),
+              };
+            });
             if (!cancelled) {
               setCourses([...apiCourses, ...local]);
               if (statsRes) {
-                setStats({
+                setLecturerStats({
                   totalCourses: statsRes.totalCourses,
                   totalStudents: statsRes.totalStudents,
                   pendingGrading: statsRes.pendingGrading,
                 });
+              } else {
+                setLecturerStats(null);
               }
             }
           } catch {
-            if (!cancelled) setCourses(local);
+            if (!cancelled) {
+              setCourses(local);
+              setLecturerStats(null);
+            }
           }
         } else if (!cancelled) {
           setCourses(local);
+          setLecturerStats(null);
         }
       } finally {
         if (!cancelled) setCoursesLoading(false);
@@ -90,11 +166,49 @@ const TeacherDashboard = () => {
   }, [user.id]);
 
   const courseCount = courses.length;
-  const statsData = [
-    { icon: BookOpen, label: "Active Courses", value: String(stats.totalCourses || courseCount), change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/courses" },
-    { icon: Users, label: "Total Students", value: String(stats.totalStudents || "—"), change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/students" },
-    { icon: FileText, label: "Pending Grading", value: String(stats.pendingGrading || "—"), change: "", trend: "up" as const, color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200", href: "/dashboard/teacher/assignments" },
-  ];
+  const collectedPaymentsDisplay = useMemo(
+    () => formatCollectedPaymentsTotal(payments, user.email.trim().toLowerCase(), (user.name ?? "").trim().toLowerCase()),
+    [payments, user.email, user.name],
+  );
+  const seatsFromCourses = useMemo(() => sumEnrollmentSeats(courses), [courses]);
+
+  const totalStudentsDisplay = useMemo(() => {
+    if (lecturerStats != null) return String(lecturerStats.totalStudents);
+    if (seatsFromCourses > 0) return String(seatsFromCourses);
+    return "—";
+  }, [lecturerStats, seatsFromCourses]);
+
+  const statsData = useMemo(
+    () =>
+      [
+        {
+          icon: BookOpen,
+          label: "Active classes",
+          value: String((lecturerStats?.totalCourses ?? 0) || courseCount),
+          href: "/dashboard/teacher/courses",
+        },
+        {
+          icon: Users,
+          label: "Total students",
+          value: totalStudentsDisplay,
+          href: "/dashboard/teacher/students",
+        },
+        {
+          icon: FileText,
+          label: "Pending grading",
+          value: lecturerStats != null ? String(lecturerStats.pendingGrading) : "—",
+          href: "/dashboard/teacher/assignments",
+        },
+        {
+          icon: CircleDollarSign,
+          label: "Collected payments",
+          value: collectedPaymentsDisplay,
+          valueClassName: "text-xl sm:text-2xl break-words leading-snug",
+          href: "/dashboard/teacher/payroll",
+        },
+      ] as const,
+    [lecturerStats, courseCount, collectedPaymentsDisplay, totalStudentsDisplay],
+  );
 
   const pendingGrading = [
     { id: 1, assignment: "Economic Analysis Essay", course: "Introduction to Economics", student: "Sevinch", submitted: "2 hours ago", priority: "high" },
@@ -108,9 +222,9 @@ const TeacherDashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+    <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardSidebar />
-      <main className={`pt-16 lg:pt-8 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6">
           {/* Professional Header */}
           <div className="mb-8 pb-6 border-b border-slate-200">
@@ -131,41 +245,54 @@ const TeacherDashboard = () => {
             </div>
           </div>
 
-          {/* Professional Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          {/* Stats — minimal metric cards */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-8">
             {statsData.map((stat, i) => {
               const Icon = stat.icon;
+              const valClass =
+                "valueClassName" in stat && stat.valueClassName
+                  ? stat.valueClassName
+                  : "text-3xl tabular-nums";
+              const cardClass =
+                "block rounded-xl border border-slate-200/90 bg-white px-4 py-4 transition-colors hover:border-slate-300 hover:bg-slate-50/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400";
               const cardContent = (
                 <>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className={`${stat.bgColor} p-2.5 rounded-md border ${stat.borderColor}`}>
-                      <Icon className={`h-5 w-5 ${stat.color}`} />
-                    </div>
-                    {stat.change ? (
-                      <div className={`flex items-center gap-1 text-xs font-medium ${
-                        stat.trend === "up" ? "text-emerald-600" : "text-red-600"
-                      }`}>
-                        {stat.trend === "up" ? <TrendingUp className="h-3 w-3" /> : <TrendingUp className="h-3 w-3 rotate-180" />}
-                        {stat.change}
-                      </div>
-                    ) : null}
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                    <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-slate-500">
+                      {stat.label}
+                    </span>
                   </div>
-                  <p className="text-3xl font-bold text-slate-900 mb-1">{stat.value}</p>
-                  <p className="text-xs font-medium text-slate-600 uppercase tracking-wide">{stat.label}</p>
+                  <p className={`mt-3 font-semibold tracking-tight text-slate-900 ${valClass}`}>{stat.value}</p>
                 </>
               );
-              const className = "bg-white border border-slate-200 rounded-lg p-5 hover:border-slate-300 hover:shadow-sm transition-all block";
               return stat.href ? (
-                <Link key={i} to={stat.href} className={className}>
+                <Link key={i} to={stat.href} className={cardClass}>
                   {cardContent}
                 </Link>
               ) : (
-                <div key={i} className={className}>
+                <div key={i} className={cardClass}>
                   {cardContent}
                 </div>
               );
             })}
           </div>
+
+          <Link
+            to="/dashboard/teacher/attendance"
+            className="flex items-center gap-4 mb-8 rounded-xl border border-[#1e40af]/20 bg-[#1e40af]/5 p-5 hover:bg-[#1e40af]/10 transition-colors"
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-[#1e40af]/15">
+              <QrCode className="h-6 w-6 text-[#1e40af]" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-semibold text-slate-900">Attendance QR (projector)</p>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Generate a session QR code to show on the whiteboard—students scan to check in on their phones.
+              </p>
+            </div>
+            <ArrowRight className="h-5 w-5 text-[#1e40af] shrink-0" />
+          </Link>
 
           <div className="grid grid-cols-1 gap-6">
             {/* Main Content - Professional Table Layout */}
@@ -202,11 +329,11 @@ const TeacherDashboard = () => {
                 </div>
               </div>
 
-              {/* Courses Table */}
+              {/* Classes table */}
               <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
                 <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-slate-900">
-                    Teaching Courses
+                    Teaching classes
                   </h2>
                   <Link to="/dashboard/teacher/courses">
                     <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 h-8">
@@ -218,7 +345,7 @@ const TeacherDashboard = () => {
                   <table className="w-full">
                     <thead className="bg-slate-50 border-b border-slate-200">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Course</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Class</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Students</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Progress</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Completion</th>
@@ -228,14 +355,14 @@ const TeacherDashboard = () => {
                     <tbody className="divide-y divide-slate-200">
                       {coursesLoading ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">
-                            Loading courses…
+                          <td colSpan={5} className="px-6 py-8 text-center text-xs text-slate-500">
+                            Loading classes…
                           </td>
                         </tr>
                       ) : courses.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">
-                            No courses yet. <Link to="/dashboard/teacher/courses/new" className="text-slate-900 font-medium underline">Create your first course</Link>
+                          <td colSpan={5} className="px-6 py-8 text-center text-xs text-slate-500">
+                            No classes yet. <Link to="/dashboard/teacher/courses/new" className="text-slate-900 font-medium underline">Create your first class</Link>
                           </td>
                         </tr>
                       ) : (
@@ -247,19 +374,19 @@ const TeacherDashboard = () => {
                                   <BookOpen className="h-5 w-5 text-slate-600" />
                                 </div>
                                 <div>
-                                  <p className="font-semibold text-slate-900 text-sm">{course.title}</p>
+                                  <p className="font-semibold text-slate-900 text-xs">{course.title}</p>
                                   <p className="text-xs text-slate-500 mt-0.5">{course.lessons.length} lessons</p>
                                 </div>
                               </Link>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="text-sm text-slate-500">—</span>
+                              <span className="text-xs text-slate-500">—</span>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="text-sm text-slate-500">—</span>
+                              <span className="text-xs text-slate-500">—</span>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="text-sm text-slate-500">—</span>
+                              <span className="text-xs text-slate-500">—</span>
                             </td>
                             <td className="px-6 py-4 text-right">
                               <DropdownMenu>
@@ -270,7 +397,7 @@ const TeacherDashboard = () => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem asChild>
-                                    <Link to={`/dashboard/teacher/courses/${course.id}/edit`}>Edit Course</Link>
+                                    <Link to={`/dashboard/teacher/courses/${course.id}/edit`}>Edit class</Link>
                                   </DropdownMenuItem>
                                   <DropdownMenuItem asChild>
                                     <Link to="/dashboard/teacher/students">Manage Students</Link>

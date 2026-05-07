@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { FileText, Calendar, Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import { eduhubAssignments, eduhubEnrollments, type AssignmentResponse, type SubmissionResponse } from "@/api/eduhubClient";
 
 const formatDate = (dateString?: string) => {
@@ -20,16 +19,9 @@ interface EnrichedAssignment extends AssignmentResponse {
 }
 
 const StudentAssignments = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   const [enrichments, setEnrichments] = useState<EnrichedAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
 
   const fetchAssignments = useCallback(async () => {
     try {
@@ -92,15 +84,9 @@ const StudentAssignments = () => {
   const completedCount = enrichments.filter(e => e.submission).length;
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
-      <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6">
+    <div className="container mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           <div className="mb-8">
-            <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
-              Assignments
-            </h1>
-            <p className="text-foreground/70 text-sm">View and complete your course assignments.</p>
+            <p className="text-foreground/70 text-sm">View and complete your class assignments.</p>
             <div className="mt-4 flex flex-wrap gap-3 text-sm">
               <span className="rounded-full bg-amber-50 px-4 py-2 text-amber-700 font-medium">{activeCount} pending</span>
               <span className="rounded-full bg-green-50 px-4 py-2 text-green-700 font-medium">{completedCount} completed</span>
@@ -121,7 +107,7 @@ const StudentAssignments = () => {
           ) : enrichments.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-200 p-20 text-center">
               <FileText className="mx-auto h-12 w-12 text-foreground/20 mb-4" />
-              <p className="text-foreground/40 font-medium">No assignments found in your enrolled courses.</p>
+              <p className="text-foreground/40 font-medium">No assignments found in your enrolled classes.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -150,7 +136,7 @@ const StudentAssignments = () => {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                            <h3 className="font-semibold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                               {a.title}
                             </h3>
                             {a.submission && (
@@ -200,8 +186,6 @@ const StudentAssignments = () => {
               })}
             </div>
           )}
-        </div>
-      </main>
     </div>
   );
 };

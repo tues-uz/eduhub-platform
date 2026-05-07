@@ -43,6 +43,10 @@ const SignUp = () => {
         password: formData.password,
         role: "STUDENT"
       });
+      localStorage.setItem(
+        `eduhub_registration_phone_${formData.email.trim().toLowerCase()}`,
+        formData.phoneNumber.trim(),
+      );
       setIsSuccess(true);
       toast({ title: "Registration successful", description: "Please check your email to verify your account." });
     } catch (err: any) {
@@ -60,10 +64,10 @@ const SignUp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50" style={{ fontFamily: "'Nunito', sans-serif" }}>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <EduHubHeader />
 
-      <main className="pt-24 pb-20">
+      <main className="min-h-dvh pt-24 pb-20">
         <div className="container mx-auto px-6">
           {/* Sign Up Card */}
           <div className="max-w-md mx-auto">
@@ -91,7 +95,7 @@ const SignUp = () => {
                 <>
                   {/* Header */}
                   <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-foreground mb-2" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.5px' }}>Create Account</h1>
+                    <h1 className="text-3xl font-bold text-foreground mb-2" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>Create Account</h1>
                     <p className="text-foreground/70 text-sm">
                       Join us and start your learning journey today
                     </p>

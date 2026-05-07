@@ -16,6 +16,16 @@ import {
 } from "@/components/ui/select";
 import { eduhubAdmin } from "@/api/eduhubClient";
 import { User } from "lucide-react";
+import { adminTeachersStore } from "@/features/admin/data/adminTeachersStore";
+
+/** Values are sent to `POST /admin/users`. Align with your API’s role enum (e.g. Spring `Role` names). */
+const ADD_USER_ROLE_OPTIONS: { value: string; label: string }[] = [
+  { value: "LECTURER", label: "Teacher" },
+  { value: "ADMIN_FINANCE", label: "Admin Finance" },
+  { value: "ADMIN_CONTENT", label: "Admin Content" },
+  { value: "ADMIN_SUPPORT", label: "Admin Support" },
+  { value: "ADMIN_ANALYTIC", label: "Admin Analytic" },
+];
 
 export default function AdminAddUserRolePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +47,15 @@ export default function AdminAddUserRolePage() {
     setIsLoading(true);
     try {
       await eduhubAdmin.createUser(formData);
+      if (formData.role === "LECTURER") {
+        adminTeachersStore.upsertByEmail({
+          name: formData.fullName.trim(),
+          email: formData.email.trim(),
+          coursesTaught: [],
+          totalStudents: 0,
+          status: "Active",
+        });
+      }
       toast.success(`${formData.role} account created successfully`);
       navigate("/dashboard/admin");
     } catch (err: any) {
@@ -60,7 +79,7 @@ export default function AdminAddUserRolePage() {
 
         <AdminPageHeader
           title="Add user role"
-          description="Create a new user account with assigned role. Default password will be 'pleasechangeme123!'"
+          description="Create a new user account with assigned role. Default password will be 'pleasechangeme123!' If the API rejects a role, confirm the backend supports that role value (e.g. ADMIN_FINANCE)."
         />
 
         <form
@@ -126,7 +145,11 @@ export default function AdminAddUserRolePage() {
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="LECTURER">Teacher</SelectItem>
+                {ADD_USER_ROLE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

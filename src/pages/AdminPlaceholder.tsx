@@ -6,7 +6,7 @@ import DashboardSidebar from "@/components/DashboardSidebar";
 
 const SECTION_TITLES: Record<string, string> = {
   users: "Users",
-  courses: "Courses",
+  courses: "Classes",
   analytics: "Analytics",
   settings: "Settings",
 };
@@ -29,16 +29,16 @@ const AdminPlaceholder = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardSidebar />
-      <main className={`pt-16 lg:pt-6 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <div className="container mx-auto px-6">
           <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6">
             <ArrowLeft className="h-4 w-4" />
             Back to Admin Dashboard
           </Link>
           <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-2" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px" }}>
+            <h1 className="text-2xl font-bold text-foreground mb-2" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}>
               {title}
             </h1>
             <p className="text-foreground/60 mb-6">This section is coming soon.</p>
