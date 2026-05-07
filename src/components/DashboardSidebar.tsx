@@ -1,15 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  LogOut,
-  Menu,
-  X,
-  User,
-  Bell,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { LogOut, Menu, X, User, Bell, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -27,6 +18,7 @@ import {
   teacherMenuItems,
 } from "@/features/layout/navigation";
 import { dashboardHomeByRole } from "@/app/routes";
+import { SIDEBAR_COLLAPSE_ENABLED } from "@/features/layout/hooks/useSidebarState";
 
 const DashboardSidebar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -56,7 +48,7 @@ const DashboardSidebar = () => {
     const p = location.pathname;
     if (path === "/dashboard/teacher/courses") {
       if (p === path) return true;
-      // "Add new class" lives under …/courses/new — must not highlight "My Class"
+      // "Add New Class" lives under …/courses/new — must not highlight "My Class"
       if (p.startsWith(`${path}/new`)) return false;
       return p.startsWith(`${path}/`);
     }
@@ -67,16 +59,14 @@ const DashboardSidebar = () => {
   const isProfessionalRole = userRole === "teacher" || userRole === "admin";
   const sidebarBg = isProfessionalRole ? "bg-slate-900" : "bg-white/95 backdrop-blur-md";
   const sidebarBorder = isProfessionalRole ? "border-slate-800" : "border-gray-200";
-  const logoFont = userRole === "teacher" ? "'Geist Sans', sans-serif" : isProfessionalRole ? "'Inter', 'Segoe UI', system-ui, sans-serif" : "'Comfortaa', cursive";
-  const logoTextFont = userRole === "teacher" ? "'Geist Sans', sans-serif" : isProfessionalRole ? "'Inter', 'Segoe UI', system-ui, sans-serif" : "'Fredoka One', cursive";
+  const logoFont = userRole === "teacher" ? "'DM Sans', sans-serif" : isProfessionalRole ? "'DM Sans', sans-serif" : "'DM Sans', sans-serif";
+  const logoTextFont = userRole === "teacher" ? "'DM Sans', sans-serif" : isProfessionalRole ? "'DM Sans', sans-serif" : "'DM Sans', sans-serif";
   const userCardBg = isProfessionalRole ? "bg-slate-800 border border-slate-700" : "bg-gradient-to-br from-blue-50 to-blue-100";
   const userAvatarBg = isProfessionalRole ? "bg-slate-700" : "bg-gradient-to-br from-blue-500 to-blue-600";
   const activeBg = isProfessionalRole ? "bg-slate-800 text-white" : "bg-blue-50 text-blue-600";
   const inactiveText = isProfessionalRole ? "text-slate-300" : "text-foreground/70";
   const inactiveHover = isProfessionalRole ? "hover:bg-slate-800 hover:text-white" : "hover:bg-gray-100 hover:text-foreground";
   const logoutHover = isProfessionalRole ? "hover:text-red-400 hover:bg-slate-800" : "hover:text-red-600 hover:bg-red-50";
-  const toggleButtonBg = isProfessionalRole ? "bg-slate-900 hover:bg-slate-800 border-slate-800" : "bg-white hover:bg-gray-100 border-black/32";
-
   return (
     <div style={{ fontFamily: logoFont }}>
       {/* Mobile Header */}
@@ -140,14 +130,18 @@ const DashboardSidebar = () => {
                 )}
               </Link>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className={`hidden lg:flex h-8 w-8 rounded-full ${toggleButtonBg} absolute top-1/2 -right-4 z-10 -translate-y-1/2 border ${isProfessionalRole ? "text-slate-300 hover:text-white" : ""}`}
-            >
-              {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-            </Button>
+            {SIDEBAR_COLLAPSE_ENABLED ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className={`hidden lg:flex h-8 w-8 rounded-full ${
+                  isProfessionalRole ? "bg-slate-900 hover:bg-slate-800 border-slate-800" : "bg-white hover:bg-gray-100 border-black/32"
+                } absolute top-1/2 -right-4 z-10 -translate-y-1/2 border ${isProfessionalRole ? "text-slate-300 hover:text-white" : ""}`}
+              >
+                {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              </Button>
+            ) : null}
           </div>
 
           {/* User Profile Section */}

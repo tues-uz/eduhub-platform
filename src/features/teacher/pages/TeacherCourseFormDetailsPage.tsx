@@ -24,8 +24,10 @@ const TeacherCourseFormDetailsPage = () => {
     setTitle,
     description,
     setDescription,
-    classMeetingsInSixMonths,
-    setClassMeetingsInSixMonths,
+    classStartDate,
+    setClassStartDate,
+    classEndDate,
+    setClassEndDate,
     thumbnailUrl,
     setThumbnailUrl,
     thumbnailUploading,
@@ -38,16 +40,17 @@ const TeacherCourseFormDetailsPage = () => {
   } = useTeacherCourseForm();
 
   const titleRequiredError = error === "Class title is required.";
-  const sessionsFieldErrors =
-    error === "Sessions in 6 months is required." ||
-    error === "Sessions in 6 months must be a whole number of at least 1.";
+  const dateFieldErrors =
+    error === "Enter both a class start date and a class end date, or leave both empty." ||
+    error === "Class end date must be on or after the start date." ||
+    error === "Class dates are invalid.";
   const showDetailsGlobalBanner =
-    Boolean(error) && !titleRequiredError && !sessionsFieldErrors;
+    Boolean(error) && !titleRequiredError && !dateFieldErrors;
 
-  const continueToLessons = () => {
+  const continueToSchedule = () => {
     setError("");
     if (!validateDetailsStep()) return;
-    navigate(`${basePath}/lessons`);
+    navigate(`${basePath}/schedule`);
   };
 
   const triggerThumbnailPick = () => thumbnailInputRef.current?.click();
@@ -189,34 +192,51 @@ const TeacherCourseFormDetailsPage = () => {
 
           <Separator className="bg-slate-100" />
 
-          <section className="space-y-2">
-            <label htmlFor="classMeetings6m" className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Sessions in 6 months <span className="text-red-600">*</span>
-            </label>
-            <Input
-              id="classMeetings6m"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              required
-              aria-required
-              value={classMeetingsInSixMonths}
-              onChange={(e) => setClassMeetingsInSixMonths(e.target.value.replace(/\D/g, ""))}
-              placeholder="24"
-              aria-invalid={sessionsFieldErrors}
-              aria-describedby={sessionsFieldErrors ? "classMeetings6m-error" : undefined}
-              className={`h-11 max-w-[10rem] rounded-xl bg-white text-lg font-medium tabular-nums shadow-none focus-visible:border-slate-400 focus-visible:ring-[#1e40af]/20 ${
-                sessionsFieldErrors ? "border-red-400 focus-visible:border-red-500" : "border-slate-200"
-              }`}
-            />
-            {sessionsFieldErrors ? (
-              <p id="classMeetings6m-error" className="text-sm text-red-600" role="alert">
+          <section className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Class dates <span className="font-normal normal-case tracking-normal text-slate-400">(optional)</span>
+              </p>
+              <p className="max-w-lg text-xs leading-relaxed text-slate-500">
+                When this run starts and ends — shown on student class pages and schedules. Leave blank if not set yet,
+                or choose both dates.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="classStartDate" className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Class starts
+                </label>
+                <Input
+                  id="classStartDate"
+                  type="date"
+                  value={classStartDate}
+                  onChange={(e) => setClassStartDate(e.target.value)}
+                  className="h-11 rounded-xl border-slate-200 bg-white text-[15px] shadow-none focus-visible:border-slate-400 focus-visible:ring-[#1e40af]/20"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="classEndDate" className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Class ends
+                </label>
+                <Input
+                  id="classEndDate"
+                  type="date"
+                  value={classEndDate}
+                  min={classStartDate || undefined}
+                  onChange={(e) => setClassEndDate(e.target.value)}
+                  className="h-11 rounded-xl border-slate-200 bg-white text-[15px] shadow-none focus-visible:border-slate-400 focus-visible:ring-[#1e40af]/20"
+                />
+              </div>
+            </div>
+            {dateFieldErrors ? (
+              <p id="class-dates-error" className="text-sm text-red-600" role="alert">
                 {error}
               </p>
             ) : null}
-            <p className="max-w-lg text-xs leading-relaxed text-slate-500">
-              Planned sessions for this window — used with student attendance (check-ins vs expected sessions).
-            </p>
           </section>
+
+          <Separator className="bg-slate-100" />
 
           <div className="rounded-xl border border-slate-100 bg-slate-50/90 px-4 py-3.5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Pricing</p>
@@ -232,8 +252,8 @@ const TeacherCourseFormDetailsPage = () => {
           <Button type="button" variant="outline" className="rounded-full" asChild>
             <Link to="/dashboard/teacher/courses">Cancel</Link>
           </Button>
-          <Button type="button" onClick={continueToLessons} className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
-            Continue to lessons
+          <Button type="button" onClick={continueToSchedule} className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
+            Continue to schedule
           </Button>
         </div>
       </div>

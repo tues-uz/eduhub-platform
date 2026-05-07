@@ -52,12 +52,15 @@ const SignIn = () => {
       const res = await eduhubAuth.login({ identifier: email.trim(), password });
       setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);
       const role = mapApiRoleToApp(res.user.role);
+      const emailLower = res.user.email.trim().toLowerCase();
+      const fromRegistration = localStorage.getItem(`eduhub_registration_phone_${emailLower}`);
       setSessionUser({
         id: res.user.id,
         name: res.user.fullName,
         email: res.user.email,
         role,
         avatarUrl: res.user.avatarUrl,
+        phoneNumber: res.user.phoneNumber ?? fromRegistration ?? localStorage.getItem("userPhone") ?? undefined,
       });
       refreshUser();
       
@@ -77,7 +80,13 @@ const SignIn = () => {
         (acc) => acc.email.toLowerCase().trim() === email.toLowerCase().trim() && acc.password === password
       );
       if (account) {
-        setSessionUser({ name: account.name, email: account.email, role: account.role });
+        const regPhone = localStorage.getItem(`eduhub_registration_phone_${account.email.toLowerCase()}`);
+        setSessionUser({
+          name: account.name,
+          email: account.email,
+          role: account.role,
+          phoneNumber: regPhone ?? undefined,
+        });
         refreshUser();
         toast({ title: "Welcome back!", description: `Signed in as ${account.name} (demo)` });
         const fallback =
@@ -97,7 +106,7 @@ const SignIn = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Nunito', sans-serif" }}>
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <main className="min-h-dvh pt-16 pb-20">
         <div className="container mx-auto px-6">
           {/* Sign In Card */}
@@ -105,7 +114,7 @@ const SignIn = () => {
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border-2 border-gray-200 p-8">
               {/* Header */}
               <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold text-foreground mb-2" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: '0.5px' }}>Welcome Back</h1>
+                <h1 className="text-3xl font-bold text-foreground mb-2" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>Welcome Back</h1>
                 <p className="text-foreground/70 text-sm">
                   Sign in to your account to continue learning
                 </p>

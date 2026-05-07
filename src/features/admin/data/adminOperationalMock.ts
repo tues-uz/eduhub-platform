@@ -181,10 +181,14 @@ export const mockAdminAttendance: AdminAttendanceRow[] = [
 
 export type AdminPaymentRow = {
   id: string;
+  /** Scheduled class / cohort (distinct from course catalog title). Used for payroll grouping. */
+  className: string;
   studentName: string;
   studentEmail: string;
   course: string;
   lecturerName: string;
+  /** For payroll notifications & proof page; optional in mock data. */
+  lecturerEmail?: string;
   amount: number;
   currency: string;
   dueDate: string;
@@ -199,10 +203,12 @@ export type AdminPaymentRow = {
 export const mockAdminPayments: AdminPaymentRow[] = [
   {
     id: "p1",
+    className: "BE-B2 Mon/Wed",
     studentName: "Dilnoza Karimova",
     studentEmail: "dilnoza@example.com",
     course: "Business English B2",
     lecturerName: "Dr. Karimov",
+    lecturerEmail: "karimov@eduhub.com",
     amount: 1_200_000,
     currency: "UZS",
     dueDate: "2026-03-15",
@@ -215,10 +221,12 @@ export const mockAdminPayments: AdminPaymentRow[] = [
   },
   {
     id: "p2",
+    className: "IELTS Sat",
     studentName: "Jamshid Toshmatov",
     studentEmail: "jamshid@example.com",
     course: "IELTS Intensive",
     lecturerName: "Sarah Johnson",
+    lecturerEmail: "sarah.j@eduhub.com",
     amount: 2_500_000,
     currency: "UZS",
     dueDate: "2026-03-01",
@@ -230,10 +238,12 @@ export const mockAdminPayments: AdminPaymentRow[] = [
   },
   {
     id: "p3",
+    className: "GE-A2 Tue/Thu",
     studentName: "Malika Yusupova",
     studentEmail: "malika@example.com",
     course: "General English A2",
     lecturerName: "Dr. Karimov",
+    lecturerEmail: "karimov@eduhub.com",
     amount: 900_000,
     currency: "UZS",
     dueDate: "2026-02-01",

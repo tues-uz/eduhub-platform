@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { mockAdminTeachers, type AdminTeacherRow } from "@/features/admin/data/adminOperationalMock";
+import { adminTeachersStore } from "@/features/admin/data/adminTeachersStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,9 +38,21 @@ export default function AdminTeachersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loadFilter, setLoadFilter] = useState<string>("all");
 
+  const teachers = useMemo(() => {
+    const fromStore = adminTeachersStore.getAll();
+    const map = new Map<string, AdminTeacherRow>();
+    // Prefer locally-created entries over mocks if emails collide.
+    [...mockAdminTeachers, ...fromStore].forEach((t) => {
+      const key = t.email.trim().toLowerCase();
+      if (!key) return;
+      map.set(key, t);
+    });
+    return Array.from(map.values());
+  }, []);
+
   const filteredTeachers = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return mockAdminTeachers.filter((t) => {
+    return teachers.filter((t) => {
       if (statusFilter === "active" && t.status !== "Active") return false;
       if (statusFilter === "inactive" && t.status !== "Inactive") return false;
       if (loadFilter === "with_courses" && t.coursesTaught.length <= 0) return false;
@@ -57,7 +70,7 @@ export default function AdminTeachersPage() {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [search, statusFilter, loadFilter]);
+  }, [search, statusFilter, loadFilter, teachers]);
 
   const hasActiveFilters =
     search.trim() !== "" || statusFilter !== "all" || loadFilter !== "all";

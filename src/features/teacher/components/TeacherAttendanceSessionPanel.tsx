@@ -192,7 +192,7 @@ export function TeacherAttendanceSessionPanel({ embedded = false, fixedCourse }:
 
   return (
     <>
-      <Card className="border border-gray-100 shadow-sm" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+      <Card className="border border-gray-100 shadow-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <QrCode className="h-5 w-5 text-[#1e40af]" />

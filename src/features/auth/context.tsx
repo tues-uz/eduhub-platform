@@ -5,6 +5,7 @@ import { eduhubAuth } from "@/api/eduhubClient";
 
 const USER_ID_KEY = "userId";
 const USER_AVATAR_URL_KEY = "userAvatarUrl";
+const USER_PHONE_KEY = "userPhone";
 
 function mapApiRoleToApp(apiRole: string): UserRole {
   if (apiRole === "LECTURER") return "teacher";
@@ -18,7 +19,8 @@ function readSessionUser(): SessionUser {
   const email = localStorage.getItem("userEmail") || "demo@eduhub.com";
   const id = localStorage.getItem(USER_ID_KEY) || undefined;
   const avatarUrl = localStorage.getItem(USER_AVATAR_URL_KEY) || undefined;
-  return { id, name, email, role, avatarUrl };
+  const phoneNumber = localStorage.getItem(USER_PHONE_KEY) || undefined;
+  return { id, name, email, role, avatarUrl, phoneNumber };
 }
 
 export function setSessionUser(user: SessionUser): void {
@@ -28,6 +30,8 @@ export function setSessionUser(user: SessionUser): void {
   localStorage.setItem("userRole", user.role);
   if (user.avatarUrl) localStorage.setItem(USER_AVATAR_URL_KEY, user.avatarUrl);
   else localStorage.removeItem(USER_AVATAR_URL_KEY);
+  if (user.phoneNumber) localStorage.setItem(USER_PHONE_KEY, user.phoneNumber);
+  else localStorage.removeItem(USER_PHONE_KEY);
 }
 
 export function clearSessionUser(): void {
@@ -35,6 +39,7 @@ export function clearSessionUser(): void {
   localStorage.removeItem("userName");
   localStorage.removeItem("userEmail");
   localStorage.removeItem("userRole");
+  localStorage.removeItem(USER_PHONE_KEY);
 }
 
 type AuthSessionValue = {
@@ -65,6 +70,7 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
           email: me.email,
           role,
           avatarUrl: me.avatarUrl ?? prev.avatarUrl,
+          phoneNumber: me.phoneNumber ?? prev.phoneNumber,
         });
         setUser(readSessionUser());
       })

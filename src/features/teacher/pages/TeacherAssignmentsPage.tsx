@@ -138,7 +138,7 @@ const TeacherAssignmentsPage = () => {
   };
 
   return (
-    <div className="min-h-dvh bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+    <div className="min-h-dvh bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardSidebar />
       <main
         className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${
@@ -157,7 +157,7 @@ const TeacherAssignmentsPage = () => {
           <div className="mb-8">
             <h1
               className="text-2xl font-bold text-foreground"
-              style={{ fontFamily: "'Geist Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
+              style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
             >
               Assignments
             </h1>

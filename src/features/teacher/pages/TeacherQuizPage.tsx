@@ -451,7 +451,7 @@ const TeacherQuizPage = () => {
   };
 
   return (
-    <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+    <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardSidebar />
       <main
         className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
@@ -471,7 +471,7 @@ const TeacherQuizPage = () => {
                 <div>
                   <h1
                     className="text-2xl font-bold text-foreground"
-                    style={{ fontFamily: "'Geist Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
+                    style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
                   >
                     Placement test / Quiz
                   </h1>
@@ -643,7 +643,7 @@ const TeacherQuizPage = () => {
             <>
               <h1
                 className="text-2xl font-bold text-foreground mb-6"
-                style={{ fontFamily: "'Geist Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
+                style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
               >
                 {editingQuizId ? "Edit quiz" : "Create quiz"}
               </h1>

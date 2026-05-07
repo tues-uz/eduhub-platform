@@ -353,11 +353,11 @@ const TeacherCourseFormLessonsPage = () => {
 
         <div className="flex w-full flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-3">
-            <Button type="button" variant="outline" className="rounded-full" asChild>
-              <Link to="/dashboard/teacher/courses">Cancel</Link>
+            <Button type="button" variant="outline" className="rounded-full" onClick={() => navigate(`${basePath}/schedule`)}>
+              Back
             </Button>
-            <Button type="button" variant="outline" className="rounded-full" onClick={() => navigate(`${basePath}/details`)}>
-              Edit class details
+            <Button type="button" variant="outline" className="rounded-full" onClick={() => navigate(`${basePath}/schedule`)}>
+              Edit schedule
             </Button>
           </div>
           <Button

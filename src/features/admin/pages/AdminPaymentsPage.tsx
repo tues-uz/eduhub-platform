@@ -1,14 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
-import {
-  mockAdminPayments,
-  type AdminPaymentRow,
-} from "@/features/admin/data/adminOperationalMock";
+import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock";
+import { adminPaymentsStore, useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -20,16 +18,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -39,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -52,9 +41,7 @@ function formatMoney(amount: number, currency: string) {
 }
 
 export default function AdminPaymentsPage() {
-  const [payments, setPayments] = useState<AdminPaymentRow[]>(() =>
-    mockAdminPayments.map((p) => ({ ...p }))
-  );
+  const payments = useAdminPayments();
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -62,6 +49,12 @@ export default function AdminPaymentsPage() {
   const [proofPaymentId, setProofPaymentId] = useState<string | null>(null);
   const [detailsPaymentId, setDetailsPaymentId] = useState<string | null>(null);
   const [markPaidPaymentId, setMarkPaidPaymentId] = useState<string | null>(null);
+  const [markPaidDraft, setMarkPaidDraft] = useState<{
+    paidAt: string;
+    method: string;
+    reference: string;
+    note: string;
+  }>({ paidAt: "", method: "", reference: "", note: "" });
 
   const lecturerOptions = useMemo(() => {
     const names = new Set(payments.map((p) => p.lecturerName));
@@ -76,8 +69,10 @@ export default function AdminPaymentsPage() {
       if (!q) return true;
       const haystack = [
         p.studentName,
+        p.className,
         p.course,
         p.lecturerName,
+        p.lecturerEmail,
         p.reference,
         p.studentEmail,
         formatMoney(p.amount, p.currency),
@@ -101,6 +96,18 @@ export default function AdminPaymentsPage() {
   const proofPayment = proofPaymentId
     ? payments.find((p) => p.id === proofPaymentId)
     : undefined;
+
+  // Seed mark-paid form when opening for a row
+  useEffect(() => {
+    if (!markPaidPaymentId || !markPaidPayment) return;
+    const today = new Date().toISOString().slice(0, 10);
+    setMarkPaidDraft({
+      paidAt: markPaidPayment.paidAt ?? today,
+      method: markPaidPayment.paymentMethod ?? "",
+      reference: markPaidPayment.reference ?? "",
+      note: "",
+    });
+  }, [markPaidPaymentId, markPaidPayment]);
 
   return (
     <AdminLayout>
@@ -202,6 +209,7 @@ export default function AdminPaymentsPage() {
                 </TableHead>
                 <TableHead>Student</TableHead>
                 <TableHead>Class</TableHead>
+                <TableHead>Course</TableHead>
                 <TableHead>Lecturer</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
@@ -211,7 +219,7 @@ export default function AdminPaymentsPage() {
             <TableBody>
               {filteredPayments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-slate-500">
+                  <TableCell colSpan={8} className="h-24 text-center text-slate-500">
                     No payments match your search or filters.
                   </TableCell>
                 </TableRow>
@@ -225,7 +233,8 @@ export default function AdminPaymentsPage() {
                     />
                   </TableCell>
                   <TableCell className="font-medium text-slate-900">{p.studentName}</TableCell>
-                  <TableCell>{p.course}</TableCell>
+                  <TableCell className="text-slate-800">{p.className}</TableCell>
+                  <TableCell className="text-slate-700">{p.course}</TableCell>
                   <TableCell className="text-slate-700">{p.lecturerName}</TableCell>
                   <TableCell>{formatMoney(p.amount, p.currency)}</TableCell>
                   <TableCell>
@@ -253,54 +262,130 @@ export default function AdminPaymentsPage() {
           </Table>
         </div>
 
-        <AlertDialog
+        <Dialog
           open={markPaidPaymentId !== null}
           onOpenChange={(open) => {
             if (!open) setMarkPaidPaymentId(null);
           }}
         >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Mark payment as paid?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Confirm this admin action only after you have verified the payment (for example, bank transfer received).
-              </AlertDialogDescription>
-            </AlertDialogHeader>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Mark as paid</DialogTitle>
+              <DialogDescription>
+                Only do this after you verify the payment (e.g. bank transfer received).
+              </DialogDescription>
+            </DialogHeader>
+
             {markPaidPayment ? (
-              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
-                <p className="font-medium text-slate-900">{markPaidPayment.studentName}</p>
-                <p className="text-slate-600">{markPaidPayment.course}</p>
-                <p className="text-slate-600">Lecturer: {markPaidPayment.lecturerName}</p>
-                <p className="text-slate-700 tabular-nums">
-                  {formatMoney(markPaidPayment.amount, markPaidPayment.currency)} · due {markPaidPayment.dueDate}
-                </p>
+              <div className="space-y-4">
+                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
+                  <p className="font-medium text-slate-900">{markPaidPayment.studentName}</p>
+                  <p className="text-slate-600">
+                    {markPaidPayment.className} · {markPaidPayment.course}
+                  </p>
+                  <p className="text-slate-600">Lecturer: {markPaidPayment.lecturerName}</p>
+                  <p className="text-slate-700 tabular-nums">
+                    {formatMoney(markPaidPayment.amount, markPaidPayment.currency)} · due {markPaidPayment.dueDate}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-600" htmlFor="mark-paid-date">
+                      Paid date
+                    </label>
+                    <Input
+                      id="mark-paid-date"
+                      type="date"
+                      value={markPaidDraft.paidAt}
+                      onChange={(e) => setMarkPaidDraft((p) => ({ ...p, paidAt: e.target.value }))}
+                      className="mt-1 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-slate-600" htmlFor="mark-paid-method">
+                      Payment method
+                    </label>
+                    <Select
+                      value={markPaidDraft.method || "unknown"}
+                      onValueChange={(v) => setMarkPaidDraft((p) => ({ ...p, method: v === "unknown" ? "" : v }))}
+                    >
+                      <SelectTrigger id="mark-paid-method" className="mt-1 bg-white">
+                        <SelectValue placeholder="Select method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unknown">Select…</SelectItem>
+                        <SelectItem value="Bank transfer">Bank transfer</SelectItem>
+                        <SelectItem value="Cash">Cash</SelectItem>
+                        <SelectItem value="Card">Card</SelectItem>
+                        <SelectItem value="Payme">Payme</SelectItem>
+                        <SelectItem value="Click">Click</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-slate-600" htmlFor="mark-paid-ref">
+                      Reference
+                    </label>
+                    <Input
+                      id="mark-paid-ref"
+                      value={markPaidDraft.reference}
+                      onChange={(e) => setMarkPaidDraft((p) => ({ ...p, reference: e.target.value }))}
+                      placeholder="e.g. bank txn id / receipt number"
+                      className="mt-1 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-slate-600" htmlFor="mark-paid-note">
+                      Note (optional)
+                    </label>
+                    <Textarea
+                      id="mark-paid-note"
+                      value={markPaidDraft.note}
+                      onChange={(e) => setMarkPaidDraft((p) => ({ ...p, note: e.target.value }))}
+                      placeholder="Internal admin note…"
+                      className="mt-1 bg-white min-h-[80px]"
+                    />
+                  </div>
+                </div>
               </div>
             ) : null}
-            <AlertDialogFooter>
-              <AlertDialogCancel>No, cancel</AlertDialogCancel>
-              <AlertDialogAction
+
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button variant="outline" type="button" onClick={() => setMarkPaidPaymentId(null)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={
+                  !markPaidPaymentId ||
+                  !markPaidPayment ||
+                  markPaidDraft.paidAt.trim() === "" ||
+                  markPaidDraft.method.trim() === "" ||
+                  markPaidDraft.reference.trim() === ""
+                }
                 onClick={() => {
                   const id = markPaidPaymentId;
-                  const label = markPaidPayment?.studentName;
-                  if (id) {
-                    const paidAt = new Date().toISOString().slice(0, 10);
-                    setPayments((prev) =>
-                      prev.map((p) =>
-                        p.id === id ? { ...p, status: "paid", paidAt } : p
-                      )
-                    );
-                    if (label) {
-                      toast.success("Marked paid (demo)", { description: label });
-                    }
-                  }
+                  if (!id || !markPaidPayment) return;
+                  adminPaymentsStore.updatePayment(id, {
+                    status: "paid",
+                    paidAt: markPaidDraft.paidAt.trim(),
+                    paymentMethod: markPaidDraft.method.trim(),
+                    reference: markPaidDraft.reference.trim(),
+                  });
+                  toast.success("Marked paid (demo)", { description: markPaidPayment.studentName });
                   setMarkPaidPaymentId(null);
                 }}
               >
-                Yes, mark as paid
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                Confirm paid
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog
           open={detailsPaymentId !== null}
@@ -330,6 +415,10 @@ export default function AdminPaymentsPage() {
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-slate-500">Class</span>
+                    <span className="text-slate-800 text-right">{detailsPayment.className}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-slate-500">Course</span>
                     <span className="text-slate-800 text-right">{detailsPayment.course}</span>
                   </div>
                   <div className="flex justify-between gap-4">

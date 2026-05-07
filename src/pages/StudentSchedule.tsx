@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
 import { Calendar, Clock, BookOpen, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import DashboardSidebar from "@/components/DashboardSidebar";
 
 const SCHEDULE_ITEMS = [
   { id: 1, type: "class", title: "Introduction to Economics – Lesson 8", time: "Mon 10:00 AM", location: "Online" },
@@ -13,23 +11,10 @@ const SCHEDULE_ITEMS = [
 ];
 
 const StudentSchedule = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
-
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
-      <DashboardSidebar />
-      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6">
+    <div className="container mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
-                Schedule
-              </h1>
               <p className="text-foreground/70 text-sm">Your upcoming classes and assignment deadlines.</p>
             </div>
             <Button variant="outline" className="rounded-full">
@@ -51,7 +36,7 @@ const StudentSchedule = () => {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                  <h3 className="font-semibold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                     {item.title}
                   </h3>
                   {item.type === "class" && "time" in item && (
@@ -73,8 +58,6 @@ const StudentSchedule = () => {
               </div>
             ))}
           </div>
-        </div>
-      </main>
     </div>
   );
 };

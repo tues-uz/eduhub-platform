@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
 import { Award, Download, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import DashboardSidebar from "@/components/DashboardSidebar";
 
 const CERTIFICATES = [
   { id: 1, title: "Business Fundamentals", course: "Business Management Fundamentals", date: "2024-11-20", score: "92%" },
@@ -14,22 +12,9 @@ const formatDate = (dateString: string) =>
   new Date(dateString).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 const StudentCertificates = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
-
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
-      <DashboardSidebar />
-      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6">
+    <div className="container mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           <div className="mb-8">
-            <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
-              Certificates
-            </h1>
             <p className="text-foreground/70 text-sm">Certificates you have earned from completed classes.</p>
             <div className="mt-4">
               <span className="rounded-full bg-green-50 px-4 py-2 text-green-700 font-medium text-sm">{CERTIFICATES.length} certificates earned</span>
@@ -41,7 +26,7 @@ const StudentCertificates = () => {
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500">
                   <Award className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                <h3 className="font-semibold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                   {c.title}
                 </h3>
                 <p className="text-sm text-foreground/60 mt-0.5 flex items-center gap-1">
@@ -58,8 +43,6 @@ const StudentCertificates = () => {
               </div>
             ))}
           </div>
-        </div>
-      </main>
     </div>
   );
 };

@@ -1,5 +1,7 @@
 // Worker for PDF.js (used for reading-time estimation). Vite resolves ?url in app code.
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import type { ClassMeetingSlot } from "../types";
+import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
 
 export function parseDurationMinutes(duration?: string): number | undefined {
   if (!duration?.trim()) return undefined;
@@ -63,6 +65,99 @@ export function parseOptionalPositiveInt(raw: string): number | undefined {
   const n = parseInt(t, 10);
   if (!Number.isFinite(n) || n < 1) return undefined;
   return n;
+}
+
+/** Pad / trim session rows to length `n` (course form + admin/teacher schedule views). */
+export function padMeetingSlotsForCourse(n: number, raw?: ClassMeetingSlot[]): ClassMeetingSlot[] {
+  const base = Array.isArray(raw)
+    ? raw.map((s) => ({
+        title: s.title ?? "",
+        sessionDate: s.sessionDate ?? "",
+        sessionTime: s.sessionTime ?? "",
+      }))
+    : [];
+  const out = base.slice(0, Math.max(0, n));
+  while (out.length < n) {
+    out.push({ title: "", sessionDate: "", sessionTime: "" });
+  }
+  return out;
+}
+
+/**
+ * API often omits `classMeetingsInSixMonths` while still returning `classMeetingSlots` / `classMeetingTitles`.
+ * Derive count + rows so instructors see the admin-proposed schedule.
+ */
+export function deriveClassScheduleFormState(course: {
+  classMeetingsInSixMonths?: number | null;
+  classMeetingSlots?: ClassMeetingSlot[];
+  classMeetingTitles?: string[];
+}): { meetingsSixMonthsStr: string; slots: ClassMeetingSlot[] } {
+  const slotsIn = course.classMeetingSlots;
+  const titlesRaw = course.classMeetingTitles;
+  let n = typeof course.classMeetingsInSixMonths === "number" ? course.classMeetingsInSixMonths : 0;
+  if (slotsIn?.length) n = Math.max(n, slotsIn.length);
+  if (titlesRaw?.length) n = Math.max(n, titlesRaw.length);
+
+  if (slotsIn?.length) {
+    const slots = padMeetingSlotsForCourse(n, slotsIn);
+    return { meetingsSixMonthsStr: n > 0 ? String(n) : "", slots };
+  }
+  if (titlesRaw?.length) {
+    const fromTitles = titlesRaw.map((t) => ({
+      title: t ?? "",
+      sessionDate: "",
+      sessionTime: "",
+    }));
+    const slots = padMeetingSlotsForCourse(n, fromTitles);
+    return { meetingsSixMonthsStr: n > 0 ? String(n) : "", slots };
+  }
+  return {
+    meetingsSixMonthsStr: n > 0 ? String(n) : "",
+    slots: padMeetingSlotsForCourse(n, []),
+  };
+}
+
+/**
+ * Merge API course with last admin proposal saved in this browser when GET omits slot details.
+ */
+export function resolveClassScheduleFormState(
+  course: {
+    classMeetingsInSixMonths?: number | null;
+    classMeetingSlots?: ClassMeetingSlot[];
+    classMeetingTitles?: string[];
+  },
+  courseId?: string,
+): { meetingsSixMonthsStr: string; slots: ClassMeetingSlot[] } {
+  const fromApi = deriveClassScheduleFormState(course);
+  if (!courseId) return fromApi;
+
+  const proposal = courseScheduleProposalStore.get(courseId);
+  if (!proposal) return fromApi;
+
+  const fromProposal = deriveClassScheduleFormState({
+    classMeetingsInSixMonths: proposal.classMeetingsInSixMonths,
+    classMeetingSlots: proposal.classMeetingSlots,
+  });
+
+  const apiHasFilledSlot = fromApi.slots.some(
+    (s) =>
+      (s.title?.trim() ?? "") !== "" ||
+      (s.sessionDate?.trim() ?? "") !== "" ||
+      (s.sessionTime?.trim() ?? "") !== "",
+  );
+  if (apiHasFilledSlot) return fromApi;
+
+  const proposalHasUseful =
+    fromProposal.slots.some(
+      (s) =>
+        (s.title?.trim() ?? "") !== "" ||
+        (s.sessionDate?.trim() ?? "") !== "" ||
+        (s.sessionTime?.trim() ?? "") !== "",
+    ) || parseOptionalPositiveInt(fromProposal.meetingsSixMonthsStr) != null;
+
+  if (proposalHasUseful) return fromProposal;
+
+  return fromApi;
 }
 
 /** Fetch PDF bytes from URL; try direct fetch then CORS proxy. */

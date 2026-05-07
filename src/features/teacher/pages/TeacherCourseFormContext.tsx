@@ -1,5 +1,5 @@
 import { createContext, useContext, type RefObject } from "react";
-import type { TeacherLesson } from "../types";
+import type { ClassMeetingSlot, TeacherLesson } from "../types";
 
 export type TeacherCourseFormContextValue = {
   isEdit: boolean;
@@ -12,6 +12,15 @@ export type TeacherCourseFormContextValue = {
   setDescription: (v: string) => void;
   classMeetingsInSixMonths: string;
   setClassMeetingsInSixMonths: (v: string) => void;
+  /** `YYYY-MM-DD` for `<input type="date" />`. */
+  classStartDate: string;
+  setClassStartDate: (v: string) => void;
+  classEndDate: string;
+  setClassEndDate: (v: string) => void;
+  /** Per session: title + optional date/time; length tracks “Sessions in 6 months”. */
+  classMeetingSlots: ClassMeetingSlot[];
+  setClassMeetingSlots: React.Dispatch<React.SetStateAction<ClassMeetingSlot[]>>;
+  updateMeetingSlot: (index: number, patch: Partial<ClassMeetingSlot>) => void;
   thumbnailUrl: string;
   setThumbnailUrl: React.Dispatch<React.SetStateAction<string>>;
   thumbnailUploading: boolean;
@@ -36,6 +45,7 @@ export type TeacherCourseFormContextValue = {
   error: string;
   setError: (v: string) => void;
   validateDetailsStep: () => boolean;
+  validateScheduleStep: () => boolean;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
   showAddLessonModal: boolean;
   setShowAddLessonModal: (v: boolean) => void;

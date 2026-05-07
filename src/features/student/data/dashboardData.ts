@@ -6,12 +6,41 @@ import {
   TrendingUp,
 } from "lucide-react";
 
+/** Overview stat tiles — `value` is default placeholder; dashboard can override from live data. */
 export const studentStats = [
-  { icon: BookOpen, label: "Classes enrolled", value: "12", color: "text-blue-500", bgColor: "bg-blue-50" },
-  { icon: FileText, label: "Assignments", value: "8", color: "text-purple-500", bgColor: "bg-purple-50" },
-  { icon: Award, label: "Certificates", value: "5", color: "text-orange-500", bgColor: "bg-orange-50" },
-  { icon: TrendingUp, label: "Progress", value: "78%", color: "text-green-500", bgColor: "bg-green-50" },
-];
+  {
+    icon: BookOpen,
+    label: "Classes enrolled",
+    value: "12",
+    color: "text-blue-500",
+    bgColor: "bg-blue-50",
+    href: "/dashboard/courses",
+  },
+  {
+    icon: FileText,
+    label: "Assignments",
+    value: "8",
+    color: "text-purple-500",
+    bgColor: "bg-purple-50",
+    href: "/dashboard/assignments",
+  },
+  {
+    icon: Award,
+    label: "Certificates",
+    value: "5",
+    color: "text-orange-500",
+    bgColor: "bg-orange-50",
+    href: "/dashboard/certificates",
+  },
+  {
+    icon: TrendingUp,
+    label: "Progress",
+    value: "78%",
+    color: "text-green-500",
+    bgColor: "bg-green-50",
+    href: "/dashboard/progress",
+  },
+] as const;
 
 export const studentCourses = [
   {

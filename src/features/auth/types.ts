@@ -7,4 +7,6 @@ export interface SessionUser {
   role: UserRole;
   /** Profile picture URL when provided by the API (e.g. /auth/me). */
   avatarUrl?: string;
+  /** Primary phone from API login/me or cached after registration. */
+  phoneNumber?: string;
 }

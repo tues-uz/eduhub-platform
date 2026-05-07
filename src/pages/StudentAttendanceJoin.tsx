@@ -2,14 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { appRoutes } from "@/app/routes";
 import { eduhubCourses, getAccessToken } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
-import { useLayoutContext } from "@/features/layout/context";
 import { recordAttendanceCheckIn } from "@/features/attendance/attendanceRollStorage";
 import { loadStoredMeetings } from "@/features/teacher/attendance/attendanceMeetingsStorage";
 
@@ -41,8 +39,6 @@ export default function StudentAttendanceJoin() {
   const [courseTitle, setCourseTitle] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
-  const { isSidebarCollapsed } = useLayoutContext();
-
   const validParams = Boolean(courseId && session);
   const hasToken = Boolean(getAccessToken());
   const joinPath = useMemo(
@@ -100,12 +96,8 @@ export default function StudentAttendanceJoin() {
   }, [validParams, storageKey, user.role, hasToken, courseId, session, user.id, user.email, user.name]);
 
   return (
-    <div className="min-h-dvh bg-slate-50">
-      <DashboardSidebar />
-      <main
-        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-4 pb-4 lg:pt-5 lg:pb-8 transition-all duration-300 flex items-center justify-center ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
-      >
-        <div className="w-full max-w-lg px-6">
+    <div className="flex min-h-[min(70dvh,calc(100dvh-12rem))] items-center justify-center bg-slate-50 py-8">
+        <div className="w-full max-w-lg">
           {!validParams ? (
             <Card>
               <CardHeader>
@@ -189,7 +181,6 @@ export default function StudentAttendanceJoin() {
             </Card>
           )}
         </div>
-      </main>
     </div>
   );
 }

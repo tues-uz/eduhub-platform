@@ -1,10 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, CheckCircle2, QrCode, Users } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Archive, ArchiveRestore, ArrowLeft, BookOpen, CheckCircle2, Pencil, QrCode, Trash2, Users } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -37,7 +48,11 @@ import {
 
 export default function TeacherCourseRosterPage() {
   const { courseId = "" } = useParams<{ courseId: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuthSession();
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     return localStorage.getItem("sidebarCollapsed") === "true";
   });
@@ -149,21 +164,108 @@ export default function TeacherCourseRosterPage() {
     return m ? formatMeetingOptionLabel(m) : null;
   }, [courseMeta?.id, overviewSessionId, attendanceUiKey]);
 
+  const handleDelete = async (id: string) => {
+    if (isUuid(id)) {
+      try {
+        await eduhubCourses.delete(id);
+      } catch {
+        return;
+      }
+    } else {
+      teacherCoursesStore.delete(id);
+    }
+    setDeleteId(null);
+    navigate("/dashboard/teacher/courses");
+  };
+
+  const handleArchive = async (id: string) => {
+    if (!isUuid(id)) return;
+    setPublishingId(id);
+    try {
+      await eduhubCourses.archive(id);
+      await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "course", courseId] });
+    } catch {
+      // ignore
+    }
+    setPublishingId(null);
+  };
+
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardSidebar />
       <main
-        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
+        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-0 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
       >
-        <div className="container mx-auto px-6 max-w-4xl">
-          <Link
-            to="/dashboard/teacher/courses"
-            className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to My Class
-          </Link>
+        <header
+          className={`fixed z-40 flex min-h-[4.5625rem] items-center border-b border-gray-100 bg-white transition-all duration-300 ${
+            isSidebarCollapsed ? "lg:left-20" : "lg:left-64"
+          } left-0 right-0 top-16 lg:top-0`}
+        >
+          <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-6">
+            <Link
+              to="/dashboard/teacher/courses"
+              className="inline-flex shrink-0 items-center gap-2 text-sm font-medium text-foreground/75 hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4 shrink-0" />
+              Back to My Class
+            </Link>
+            {courseMeta ? (
+              <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
+                {isUuid(courseId) && courseMeta.status === "DRAFT" ? (
+                  <span
+                    className="max-w-[140px] shrink-0 rounded-md border border-amber-200/90 bg-amber-50 px-2.5 py-1 text-center text-xs font-medium leading-tight text-amber-900"
+                    title="An admin will set the price and publish this class."
+                  >
+                    Awaiting admin approval
+                  </span>
+                ) : null}
+                {isUuid(courseId) && courseMeta.status !== "DRAFT" ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    type="button"
+                    className={`h-8 w-8 shrink-0 rounded-full border border-gray-200 bg-white hover:bg-gray-100 ${
+                      courseMeta.status === "ARCHIVED"
+                        ? "text-amber-600 hover:text-amber-700"
+                        : "text-orange-600 hover:text-orange-700"
+                    }`}
+                    disabled={publishingId === courseMeta.id}
+                    title={courseMeta.status === "ARCHIVED" ? "Unarchive" : "Archive"}
+                    onClick={() => handleArchive(courseMeta.id)}
+                  >
+                    {courseMeta.status === "ARCHIVED" ? (
+                      <ArchiveRestore className="h-3.5 w-3.5 shrink-0" />
+                    ) : (
+                      <Archive className="h-3.5 w-3.5 shrink-0" />
+                    )}
+                  </Button>
+                ) : null}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  className="h-8 w-8 shrink-0 rounded-full border border-gray-200 bg-white text-muted-foreground hover:bg-gray-100 hover:text-red-600"
+                  title="Delete class"
+                  onClick={() => setDeleteId(courseMeta.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                </Button>
+                <Button asChild variant="outline" className="h-8 shrink-0 rounded-full gap-1.5 px-4">
+                  <Link
+                    to={`/dashboard/teacher/courses/${courseMeta.id}/edit`}
+                    className="inline-flex items-center justify-center gap-1.5"
+                    title="Edit class content"
+                  >
+                    <Pencil className="h-3.5 w-3.5 shrink-0" />
+                    Edit class content
+                  </Link>
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </header>
 
+        <div className="container mx-auto max-w-4xl px-6 pt-[calc(4.5625rem+1rem)]">
           {!courseId ? (
             <p className="text-sm text-red-600">Missing class.</p>
           ) : loadingCourse ? (
@@ -181,14 +283,14 @@ export default function TeacherCourseRosterPage() {
               Class not found.
             </div>
           ) : (
-            <>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
+            <Card className="overflow-hidden rounded-xl border border-gray-100 bg-white">
+              <CardHeader className="flex flex-col gap-4 space-y-0 border-b border-gray-100/80 pb-6">
                 <div className="flex gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#1e40af]/10 ring-1 ring-[#1e40af]/15">
                     <BookOpen className="h-6 w-6 text-[#1e40af]" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-foreground tracking-tight">{courseMeta.title}</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">{courseMeta.title}</h1>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {courseMeta.status ? (
                         <Badge variant="outline" className="font-normal">
@@ -201,13 +303,9 @@ export default function TeacherCourseRosterPage() {
                     </div>
                   </div>
                 </div>
-                <Button asChild className="rounded-full shrink-0" variant="outline">
-                  <Link to={`/dashboard/teacher/courses/${courseMeta.id}/edit`} className="inline-flex items-center gap-2">
-                    Edit class content
-                  </Link>
-                </Button>
-              </div>
+              </CardHeader>
 
+              <CardContent className="pt-6">
               <Tabs defaultValue="roster" className="w-full">
                 <TabsList className="mb-6 grid h-11 w-full max-w-md grid-cols-2 rounded-xl border border-slate-200/90 bg-slate-100/80 p-1">
                   <TabsTrigger
@@ -318,8 +416,9 @@ export default function TeacherCourseRosterPage() {
                       Class meeting check-in (QR)
                     </h2>
                     <p className="text-sm text-foreground/60 mb-4">
-                      For weekly classes (often one or two meetings per week), generate a fresh QR each time students
-                      gather. Display it during that meeting; students check in on their phone while signed in.
+                      Each QR opens the check-in link; students must use it signed in as a student. The roster table
+                      below only shows check-ins stored on this browser—scanning on another device will not fill those cells
+                      until attendance is stored on the server.
                     </p>
                     <TeacherAttendanceSessionPanel
                       embedded
@@ -392,6 +491,12 @@ export default function TeacherCourseRosterPage() {
                             Select a meeting in the dropdown above to load check-in data for that session.
                           </p>
                         )}
+                        <p className="rounded-lg border border-amber-200/90 bg-amber-50/70 px-3 py-2 text-xs text-amber-950/85 leading-relaxed">
+                          Enrollment lists everyone who joined the class on the platform—it does not record scans by itself.
+                          Present and Checked in update only when this browser has a matching QR check-in for the meeting
+                          chosen above (student opened the link here or in another tab on this computer). Same-email roster
+                          row required.
+                        </p>
                         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-gray-50/30 shadow-sm">
                           <Table>
                             <TableHeader>
@@ -449,10 +554,33 @@ export default function TeacherCourseRosterPage() {
                   </section>
                 </TabsContent>
               </Tabs>
-            </>
+              </CardContent>
+            </Card>
           )}
         </div>
       </main>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this class?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this class and all its lessons. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteId) void handleDelete(deleteId);
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -15,15 +15,24 @@ import { useAuthSession } from "@/features/auth/context";
 import { teacherCoursesStore, createEmptyLesson } from "../data/teacherCoursesStore";
 import { eduhubCourses, eduhubModules, eduhubLessons, eduhubUploadFile } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
-import type { TeacherLesson } from "../types";
+import type { ClassMeetingSlot, TeacherLesson } from "../types";
 import { toast } from "sonner";
 import {
   fetchPdfReadingTimeEstimate,
   fetchVideoDurationFromUrl,
+  padMeetingSlotsForCourse,
   parseDurationMinutes,
   parseOptionalPositiveInt,
+  resolveClassScheduleFormState,
 } from "./teacherCourseFormHelpers";
 import { TeacherCourseFormContext, type TeacherCourseFormContextValue } from "./TeacherCourseFormContext";
+
+/** Normalize API ISO strings to `YYYY-MM-DD` for date inputs. */
+function toDateInputValue(iso?: string): string {
+  if (!iso?.trim()) return "";
+  const d = iso.trim().slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
+}
 
 const TeacherCourseFormLayout = () => {
   const navigate = useNavigate();
@@ -40,6 +49,8 @@ const TeacherCourseFormLayout = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [classMeetingsInSixMonths, setClassMeetingsInSixMonths] = useState("");
+  const [classStartDate, setClassStartDate] = useState("");
+  const [classEndDate, setClassEndDate] = useState("");
   const [lessons, setLessons] = useState<TeacherLesson[]>([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebarCollapsed");
@@ -56,6 +67,7 @@ const TeacherCourseFormLayout = () => {
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const [classMeetingSlots, setClassMeetingSlots] = useState<ClassMeetingSlot[]>([]);
 
   const videoUrlKey = lessons.map((l) => `${l.contentType}:${l.contentUrl ?? ""}`).join("|");
   useEffect(() => {
@@ -96,9 +108,13 @@ const TeacherCourseFormLayout = () => {
             setTitle(course.title);
             setDescription(course.description ?? "");
             setThumbnailUrl(course.thumbnailUrl ?? "");
-            setClassMeetingsInSixMonths(
-              course.classMeetingsInSixMonths != null ? String(course.classMeetingsInSixMonths) : ""
-            );
+            {
+              const { meetingsSixMonthsStr, slots } = resolveClassScheduleFormState(course, courseId);
+              setClassMeetingsInSixMonths(meetingsSixMonthsStr);
+              setClassMeetingSlots(slots);
+            }
+            setClassStartDate(toDateInputValue(course.classStartDate));
+            setClassEndDate(toDateInputValue(course.classEndDate));
             return eduhubModules.getByCourse(courseId);
           })
           .then((modules) => {
@@ -129,9 +145,13 @@ const TeacherCourseFormLayout = () => {
           setTitle(course.title);
           setDescription(course.description ?? "");
           setThumbnailUrl(course.thumbnailUrl ?? "");
-          setClassMeetingsInSixMonths(
-            course.classMeetingsInSixMonths != null ? String(course.classMeetingsInSixMonths) : ""
-          );
+          {
+            const { meetingsSixMonthsStr, slots } = resolveClassScheduleFormState(course, courseId);
+            setClassMeetingsInSixMonths(meetingsSixMonthsStr);
+            setClassMeetingSlots(slots);
+          }
+          setClassStartDate(toDateInputValue(course.classStartDate));
+          setClassEndDate(toDateInputValue(course.classEndDate));
           setLessons(
             course.lessons.length > 0 ? [...course.lessons].sort((a, b) => a.order - b.order) : [createEmptyLesson(0)]
           );
@@ -141,8 +161,32 @@ const TeacherCourseFormLayout = () => {
       }
     } else if (isNewFlow) {
       setLessons([createEmptyLesson(0)]);
+      setClassMeetingsInSixMonths("1");
+      setClassMeetingSlots(padMeetingSlotsForCourse(1, []));
     }
   }, [courseId, isEdit, isNewFlow]);
+
+  useEffect(() => {
+    const n = parseOptionalPositiveInt(classMeetingsInSixMonths.trim());
+    if (n === undefined) return;
+    setClassMeetingSlots((prev) => padMeetingSlotsForCourse(n, prev));
+  }, [classMeetingsInSixMonths]);
+
+  const updateMeetingSlot = useCallback((index: number, patch: Partial<ClassMeetingSlot>) => {
+    setClassMeetingSlots((prev) => {
+      const next = prev.map((s) => ({ ...s }));
+      while (next.length <= index) {
+        next.push({ title: "", sessionDate: "", sessionTime: "" });
+      }
+      next[index] = {
+        title: next[index]?.title ?? "",
+        sessionDate: next[index]?.sessionDate ?? "",
+        sessionTime: next[index]?.sessionTime ?? "",
+        ...patch,
+      };
+      return next;
+    });
+  }, []);
 
   const addLesson = () => {
     setLessons((prev) => [...prev, createEmptyLesson(prev.length)]);
@@ -244,18 +288,31 @@ const TeacherCourseFormLayout = () => {
       setError("Class title is required.");
       return false;
     }
-    const meetingsRaw = classMeetingsInSixMonths.trim();
-    if (!meetingsRaw) {
-      setError("Sessions in 6 months is required.");
+    const startTrim = classStartDate.trim();
+    const endTrim = classEndDate.trim();
+    if ((startTrim && !endTrim) || (!startTrim && endTrim)) {
+      setError("Enter both a class start date and a class end date, or leave both empty.");
       return false;
     }
-    const meetingsSixMo = parseOptionalPositiveInt(meetingsRaw);
-    if (meetingsSixMo === undefined) {
-      setError("Sessions in 6 months must be a whole number of at least 1.");
-      return false;
+    if (startTrim && endTrim) {
+      const s = new Date(`${startTrim}T12:00:00`);
+      const e = new Date(`${endTrim}T12:00:00`);
+      if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) {
+        setError("Class dates are invalid.");
+        return false;
+      }
+      if (e < s) {
+        setError("Class end date must be on or after the start date.");
+        return false;
+      }
     }
     return true;
-  }, [title, classMeetingsInSixMonths]);
+  }, [title, classStartDate, classEndDate]);
+
+  /** Schedule is owned by admin; this step is informational / approval only. */
+  const validateScheduleStep = useCallback((): boolean => {
+    return true;
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,15 +322,23 @@ const TeacherCourseFormLayout = () => {
       setError("Class title is required.");
       return;
     }
-    const meetingsRaw = classMeetingsInSixMonths.trim();
-    if (!meetingsRaw) {
-      setError("Sessions in 6 months is required.");
+    const startTrim = classStartDate.trim();
+    const endTrim = classEndDate.trim();
+    if ((startTrim && !endTrim) || (!startTrim && endTrim)) {
+      setError("Enter both a class start date and a class end date, or leave both empty.");
       return;
     }
-    const meetingsSixMo = parseOptionalPositiveInt(meetingsRaw);
-    if (meetingsSixMo === undefined) {
-      setError("Sessions in 6 months must be a whole number of at least 1.");
-      return;
+    if (startTrim && endTrim) {
+      const s = new Date(`${startTrim}T12:00:00`);
+      const e = new Date(`${endTrim}T12:00:00`);
+      if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) {
+        setError("Class dates are invalid.");
+        return;
+      }
+      if (e < s) {
+        setError("Class end date must be on or after the start date.");
+        return;
+      }
     }
     const validLessons = lessons
       .map((l, i) => ({ ...l, title: l.title.trim(), order: i }))
@@ -288,6 +353,13 @@ const TeacherCourseFormLayout = () => {
       const instructorName = user.name?.trim() || "Teacher";
 
       if (user.id && !isEdit) {
+        const meetingsSixMo = parseOptionalPositiveInt(classMeetingsInSixMonths.trim()) ?? 1;
+        const meetingSlotsForSave = Array.from({ length: meetingsSixMo }, (_, i) => ({
+          title: classMeetingSlots[i]?.title ?? "",
+          sessionDate: classMeetingSlots[i]?.sessionDate ?? "",
+          sessionTime: classMeetingSlots[i]?.sessionTime ?? "",
+        }));
+        const meetingTitlesForSave = meetingSlotsForSave.map((s) => s.title);
         const thumbTrim = thumbnailUrl.trim();
         const course = await eduhubCourses.create({
           title: trimmedTitle,
@@ -295,7 +367,12 @@ const TeacherCourseFormLayout = () => {
           category: "General",
           status: "DRAFT",
           classMeetingsInSixMonths: meetingsSixMo,
+          classMeetingTitles: meetingTitlesForSave,
+          classMeetingSlots: meetingSlotsForSave,
           ...(thumbTrim ? { thumbnailUrl: thumbTrim } : {}),
+          ...(startTrim && endTrim
+            ? { classStartDate: `${startTrim}T00:00:00.000Z`, classEndDate: `${endTrim}T00:00:00.000Z` }
+            : {}),
         });
         const module = await eduhubModules.create(course.id, { title: "Main", orderIndex: 0 });
         for (let i = 0; i < validLessons.length; i++) {
@@ -313,14 +390,26 @@ const TeacherCourseFormLayout = () => {
       }
 
       if (user.id && isEdit && courseId && isUuid(courseId)) {
+        const existingCourse = await eduhubCourses.getById(courseId);
+        const meetingsSixMo =
+          parseOptionalPositiveInt(classMeetingsInSixMonths.trim()) ??
+          existingCourse.classMeetingsInSixMonths ??
+          1;
+        const meetingSlotsForSave = padMeetingSlotsForCourse(meetingsSixMo, classMeetingSlots);
+        const meetingTitlesForSave = meetingSlotsForSave.map((s) => s.title);
         const thumbTrimEdit = thumbnailUrl.trim();
         await eduhubCourses.update(courseId, {
           title: trimmedTitle,
           description: description.trim() || "—",
-          category: "General",
-          status: "DRAFT",
+          category: existingCourse.category,
+          status: existingCourse.status,
           classMeetingsInSixMonths: meetingsSixMo,
+          classMeetingTitles: meetingTitlesForSave,
+          classMeetingSlots: meetingSlotsForSave,
           ...(thumbTrimEdit ? { thumbnailUrl: thumbTrimEdit } : {}),
+          ...(startTrim && endTrim
+            ? { classStartDate: `${startTrim}T00:00:00.000Z`, classEndDate: `${endTrim}T00:00:00.000Z` }
+            : {}),
         });
         const modules = await eduhubModules.getByCourse(courseId);
         if (modules.length > 0) {
@@ -349,22 +438,40 @@ const TeacherCourseFormLayout = () => {
       }
 
       if (isEdit && courseId) {
+        const meetingsSixMo = parseOptionalPositiveInt(classMeetingsInSixMonths.trim()) ?? 1;
+        const meetingSlotsForSave = Array.from({ length: meetingsSixMo }, (_, i) => ({
+          title: classMeetingSlots[i]?.title ?? "",
+          sessionDate: classMeetingSlots[i]?.sessionDate ?? "",
+          sessionTime: classMeetingSlots[i]?.sessionTime ?? "",
+        }));
         teacherCoursesStore.update(courseId, {
           title: trimmedTitle,
           description: description.trim(),
           instructorName,
           lessons: validLessons,
           classMeetingsInSixMonths: meetingsSixMo,
+          classMeetingSlots: meetingSlotsForSave,
           thumbnailUrl: thumbnailUrl.trim() || undefined,
+          classStartDate: startTrim && endTrim ? `${startTrim}T00:00:00.000Z` : undefined,
+          classEndDate: startTrim && endTrim ? `${endTrim}T00:00:00.000Z` : undefined,
         });
       } else {
+        const meetingsSixMo = parseOptionalPositiveInt(classMeetingsInSixMonths.trim()) ?? 1;
+        const meetingSlotsForSave = Array.from({ length: meetingsSixMo }, (_, i) => ({
+          title: classMeetingSlots[i]?.title ?? "",
+          sessionDate: classMeetingSlots[i]?.sessionDate ?? "",
+          sessionTime: classMeetingSlots[i]?.sessionTime ?? "",
+        }));
         teacherCoursesStore.create({
           title: trimmedTitle,
           description: description.trim(),
           instructorName,
           lessons: validLessons,
           classMeetingsInSixMonths: meetingsSixMo,
+          classMeetingSlots: meetingSlotsForSave,
           thumbnailUrl: thumbnailUrl.trim() || undefined,
+          classStartDate: startTrim && endTrim ? `${startTrim}T00:00:00.000Z` : undefined,
+          classEndDate: startTrim && endTrim ? `${endTrim}T00:00:00.000Z` : undefined,
         });
       }
       navigate("/dashboard/teacher/courses");
@@ -387,6 +494,13 @@ const TeacherCourseFormLayout = () => {
     setDescription,
     classMeetingsInSixMonths,
     setClassMeetingsInSixMonths,
+    classStartDate,
+    setClassStartDate,
+    classEndDate,
+    setClassEndDate,
+    classMeetingSlots,
+    setClassMeetingSlots,
+    updateMeetingSlot,
     thumbnailUrl,
     setThumbnailUrl,
     thumbnailUploading,
@@ -411,6 +525,7 @@ const TeacherCourseFormLayout = () => {
     error,
     setError,
     validateDetailsStep,
+    validateScheduleStep,
     handleSubmit,
     showAddLessonModal,
     setShowAddLessonModal,
@@ -429,7 +544,7 @@ const TeacherCourseFormLayout = () => {
 
   return (
     <TeacherCourseFormContext.Provider value={contextValue}>
-      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         <DashboardSidebar />
         <main
           className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-0 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
@@ -438,20 +553,26 @@ const TeacherCourseFormLayout = () => {
             <div className="sticky top-16 z-30 -mx-6 mb-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-slate-100 bg-white px-6 pb-6 pt-4 lg:top-0">
               <h1
                 className="min-w-0 text-2xl font-bold text-foreground"
-                style={{ fontFamily: "'Geist Sans', sans-serif", letterSpacing: "0.5px" }}
+                style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.5px" }}
               >
-                {isEdit ? "Edit class" : "Add new class"}
+                {isEdit ? "Edit Class" : "Add New Class"}
               </h1>
 
               <nav className="flex shrink-0 flex-wrap items-center gap-2" aria-label="Class setup steps">
                 <NavLink to={`${basePath}/details`} className={stepLinkClass} end>
-                  1 · Class details
+                  1 · Details
+                </NavLink>
+                <span className="text-slate-300 select-none" aria-hidden>
+                  /
+                </span>
+                <NavLink to={`${basePath}/schedule`} className={stepLinkClass}>
+                  2 · Schedule approval
                 </NavLink>
                 <span className="text-slate-300 select-none" aria-hidden>
                   /
                 </span>
                 <NavLink to={`${basePath}/lessons`} className={stepLinkClass}>
-                  2 · Lessons
+                  3 · Lessons
                 </NavLink>
               </nav>
             </div>

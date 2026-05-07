@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ClipboardList, ArrowLeft, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
+import { ClipboardList, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import { useAuthSession } from "@/features/auth/context";
 import { eduhubCourseQuizzes, QuizResponseForStudent, QuizResultResponse } from "@/api/eduhubClient";
 
@@ -10,8 +9,6 @@ const LETTER_COLORS = ["bg-blue-500", "bg-red-500", "bg-amber-500", "bg-green-50
 
 export default function StudentPlacementTests() {
   const { user } = useAuthSession();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
-  
   const [quizzes, setQuizzes] = useState<QuizResponseForStudent[]>([]);
   const [completedQuizIds, setCompletedQuizIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -54,12 +51,6 @@ export default function StudentPlacementTests() {
   useEffect(() => {
     fetchQuizzes();
   }, [fetchQuizzes]);
-
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
 
   const startQuiz = (quiz: QuizResponseForStudent) => {
     setCurrentQuiz(quiz);
@@ -115,24 +106,10 @@ export default function StudentPlacementTests() {
   };
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
-      <DashboardSidebar />
-      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6 max-w-3xl">
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Link>
-
+    <div className="container mx-auto max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           {screen === "list" && (
             <>
               <div className="mb-8">
-                <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
-                  Placement Test
-                </h1>
                 <p className="text-foreground/70 text-sm">Assess your level before starting a class.</p>
               </div>
 
@@ -169,7 +146,7 @@ export default function StudentPlacementTests() {
                           </div>
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h2 className="font-semibold text-foreground uppercase tracking-wide" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                              <h2 className="font-semibold text-foreground uppercase tracking-wide" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                                 {quiz.title}
                               </h2>
                               {completed && (
@@ -221,7 +198,7 @@ export default function StudentPlacementTests() {
                     />
                   </div>
                 )}
-                <h2 className="mb-8 text-xl font-bold text-foreground leading-relaxed" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                <h2 className="mb-8 text-xl font-bold text-foreground leading-relaxed" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                   {question.question}
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -278,7 +255,7 @@ export default function StudentPlacementTests() {
                 <div className="mb-6 inline-flex h-24 w-24 items-center justify-center rounded-full bg-green-100 ring-8 ring-green-50 shadow-inner">
                   <CheckCircle2 className="h-12 w-12 text-green-600" />
                 </div>
-                <h2 className="mb-2 text-3xl font-black text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                <h2 className="mb-2 text-3xl font-black text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                   Great Job!
                 </h2>
                 <p className="mb-8 text-foreground/60 font-medium">
@@ -287,7 +264,7 @@ export default function StudentPlacementTests() {
                 
                 <div className="mb-10 inline-block bg-violet-50 rounded-3xl px-12 py-8 border-2 border-dashed border-violet-200">
                   <p className="text-sm font-bold text-violet-400 uppercase tracking-[0.2em] mb-2">Your Score</p>
-                  <p className="text-6xl font-black text-violet-600" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+                  <p className="text-6xl font-black text-violet-600" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                     {score}<span className="text-3xl text-violet-300">/100</span>
                   </p>
                 </div>
@@ -304,8 +281,6 @@ export default function StudentPlacementTests() {
               </div>
             );
           })()}
-        </div>
-      </main>
     </div>
   );
 }

@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
 import { BarChart3, Target, BookOpen, Award } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import DashboardSidebar from "@/components/DashboardSidebar";
 
 const COURSE_PROGRESS = [
   { title: "Introduction to Economics", progress: 75 },
@@ -13,25 +11,12 @@ const COURSE_PROGRESS = [
 ];
 
 const StudentProgress = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
-
   const overallProgress = Math.round(COURSE_PROGRESS.reduce((s, c) => s + c.progress, 0) / COURSE_PROGRESS.length);
   const completedCount = COURSE_PROGRESS.filter((c) => c.progress === 100).length;
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
-      <DashboardSidebar />
-      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6">
+    <div className="container mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           <div className="mb-8">
-            <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
-              Progress
-            </h1>
             <p className="text-foreground/70 text-sm">Track your learning progress across all classes.</p>
           </div>
           {/* Summary stats row */}
@@ -64,7 +49,7 @@ const StudentProgress = () => {
 
           {/* By course - full width */}
           <div className="rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm">
-            <h2 className="mb-6 font-semibold text-foreground flex items-center gap-2" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400 }}>
+            <h2 className="mb-6 font-semibold text-foreground flex items-center gap-2" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
               <BarChart3 className="h-5 w-5" />
               By class
             </h2>
@@ -80,8 +65,6 @@ const StudentProgress = () => {
               ))}
             </div>
           </div>
-        </div>
-      </main>
     </div>
   );
 };

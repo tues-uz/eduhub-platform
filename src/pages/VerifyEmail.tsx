@@ -36,7 +36,7 @@ const VerifyEmail = () => {
     }, [token]);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50" style={{ fontFamily: "'Nunito', sans-serif" }}>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
             <EduHubHeader />
 
             <main className="min-h-dvh pt-32 pb-20">

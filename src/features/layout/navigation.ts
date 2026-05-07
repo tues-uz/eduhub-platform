@@ -13,6 +13,7 @@ import {
   Users,
   Link2,
   QrCode,
+  CreditCard,
 } from "lucide-react";
 
 type MenuItemBase = {
@@ -32,6 +33,7 @@ export const studentMenuItems: FlatMenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: BookOpen, label: "My Class", path: "/dashboard/courses" },
   { icon: Library, label: "Available Classes", path: "/dashboard/available-courses" },
+  { icon: CreditCard, label: "Payment history", path: "/dashboard/payment" },
   { icon: ListChecks, label: "Placement Test", path: "/dashboard/placement-tests" },
   { icon: ClipboardList, label: "Quiz", path: "/dashboard/quiz" },
   { icon: Award, label: "Certificates", path: "/dashboard/certificates" },
@@ -57,8 +59,9 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
     icon: BookOpen,
     label: "Classes",
     children: [
-      { label: "All classes", path: "/dashboard/admin/courses" },
+      { label: "All classes & schedules", path: "/dashboard/admin/courses" },
       { label: "Enrollments & waitlist", path: "/dashboard/admin/enrollments" },
+      { label: "Enrollment applications", path: "/dashboard/admin/enrollment-applications" },
       { label: "Classes & rosters", path: "/dashboard/admin/classes" },
     ],
   },
@@ -67,6 +70,8 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
     label: "Operations",
     children: [
       { label: "Payments & reminders", path: "/dashboard/admin/payments" },
+      { label: "Payroll", path: "/dashboard/admin/payroll" },
+      { label: "Payroll submission log", path: "/dashboard/admin/payroll/submissions" },
       { label: "Transactions", path: "/dashboard/admin/transactions" },
       { label: "Attendance & progress", path: "/dashboard/admin/attendance" },
       { label: "Placement tests", path: "/dashboard/admin/placement-tests" },
@@ -89,10 +94,19 @@ export const teacherMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
     label: "Class",
     children: [
       { label: "My Class", path: "/dashboard/teacher/courses" },
-      { label: "Add new class", path: "/dashboard/teacher/courses/new" },
+      { label: "Add New Class", path: "/dashboard/teacher/courses/new" },
       { label: "Placement Test/Quiz", path: "/dashboard/teacher/placement-test" },
     ],
   },
-  { icon: Calendar, label: "Schedule", path: "/dashboard/teacher/schedule" },
+  { icon: Calendar, label: "Schedule approvals", path: "/dashboard/teacher/schedule" },
+  { icon: Bell, label: "Notifications", path: "/dashboard/teacher/notifications" },
+  {
+    icon: CreditCard,
+    label: "Payroll",
+    children: [
+      { label: "Overview", path: "/dashboard/teacher/payroll" },
+      { label: "Submissions", path: "/dashboard/teacher/payroll/submissions" },
+    ],
+  },
   { icon: Settings, label: "Settings", path: "/dashboard/teacher/settings" },
 ];

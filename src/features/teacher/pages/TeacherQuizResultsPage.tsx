@@ -120,7 +120,7 @@ export default function TeacherQuizResultsPage() {
 
   if (loading) {
     return (
-      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         <DashboardSidebar />
         <main
           className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
@@ -138,7 +138,7 @@ export default function TeacherQuizResultsPage() {
 
   if (error || !quiz) {
     return (
-      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         <DashboardSidebar />
         <main
           className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
@@ -164,7 +164,7 @@ export default function TeacherQuizResultsPage() {
   const quizTitle = quiz?.title || "";
 
   return (
-    <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+    <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardSidebar />
       <main
         className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
@@ -184,7 +184,7 @@ export default function TeacherQuizResultsPage() {
                 <BarChart2 className="h-6 w-6 text-[#1e40af]/80" />
                 <h1
                   className="text-2xl font-bold text-foreground"
-                  style={{ fontFamily: "'Geist Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
+                  style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
                 >
                   {typeLabel} results — {quizTitle}
                 </h1>

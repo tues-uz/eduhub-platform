@@ -11,8 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import DashboardSidebar from "@/components/DashboardSidebar";
-import { useLayoutContext } from "@/features/layout/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 
 const formatDate = (dateString: string) => {
@@ -33,7 +31,6 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
 ];
 
 const StudentCourses = () => {
-  const { isSidebarCollapsed } = useLayoutContext();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -51,19 +48,11 @@ const StudentCourses = () => {
   const completedCount = enrolledCourses.filter((c) => c.status === "Completed").length;
 
   return (
-    <div className="min-h-dvh bg-white" style={{ fontFamily: "'Comfortaa', cursive" }}>
-      <DashboardSidebar />
-
-      <main className={`h-dvh overflow-y-auto pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6 min-h-dvh">
-          {/* Page Header */}
+    <div className="container mx-auto min-h-0 px-0">
           <div className="mb-8">
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="mb-2 font-bold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.5px", fontSize: "32px" }}>
-                  My Class
-                </h1>
-                <p className="text-foreground/70" style={{ fontSize: "14px" }}>
+                <p className="text-foreground/70 text-sm">
                   Information about the classes you are enrolled in. Continue learning or review completed classes.
                 </p>
               </div>
@@ -135,7 +124,7 @@ const StudentCourses = () => {
                         {course.category}
                       </span>
                     )}
-                    <h3 className="mt-0.5 mb-1 font-semibold text-foreground" style={{ fontFamily: "'Fredoka One', cursive", fontWeight: 400, letterSpacing: "0.3px" }}>
+                    <h3 className="mt-0.5 mb-1 font-semibold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.3px" }}>
                       {course.title}
                     </h3>
                     <div className="flex items-center gap-1.5 text-sm text-foreground/60">
@@ -213,8 +202,6 @@ const StudentCourses = () => {
               </Button>
             </div>
           )}
-        </div>
-      </main>
     </div>
   );
 };

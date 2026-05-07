@@ -230,7 +230,7 @@ const EduHub = () => {
   };
 
   return (
-    <div ref={rootRef} className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+    <div ref={rootRef} className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <EduHubHeader />
       
       {/* Hero Section */}
@@ -249,7 +249,7 @@ const EduHub = () => {
               </div>
               {/* Heading */}
               <div className="mb-4">
-                <h1 className="font-extrabold text-foreground tracking-tight" style={{ fontFamily: "'Geist Sans', sans-serif", fontSize: '80px', lineHeight: '80%' }}>
+                <h1 className="font-extrabold text-foreground tracking-tight" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '80px', lineHeight: '80%' }}>
                   Your Gateway to
                   <br />
                   <span className="block relative overflow-hidden" style={{ height: '1.2em', minWidth: '300px', display: 'inline-block' }}>
@@ -307,7 +307,7 @@ const EduHub = () => {
         <div className="section-reveal container mx-auto px-6">
           {/* Tagline + heading */}
           <div className="text-center mb-12">
-            <h2 className="text-lg lg:text-xl font-bold text-foreground mb-4" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+            <h2 className="text-lg lg:text-xl font-bold text-foreground mb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               Our Valuable Partners
             </h2>
           </div>
@@ -369,7 +369,7 @@ const EduHub = () => {
             </div>
             <h2
               className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground leading-tight tracking-tight"
-              style={{ fontFamily: "'Geist Sans', sans-serif" }}
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Why you should<br />join with us?
             </h2>
@@ -391,7 +391,7 @@ const EduHub = () => {
                   <div className="text-4xl lg:text-5xl xl:text-[72px] font-bold leading-none mb-2 text-white">
                     {stats[0].value}
                   </div>
-                  <h3 className="text-base font-semibold text-white/90" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+                  <h3 className="text-base font-semibold text-white/90" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                     {stats[0].label}
                   </h3>
                 </div>
@@ -404,7 +404,7 @@ const EduHub = () => {
                 <div className="flex flex-col flex-1">
                   <h4
                     className="text-center text-[32px] font-bold mb-3 flex-shrink-0 px-5 lg:px-6 pt-5 lg:pt-6"
-                    style={{ color: "rgb(38, 41, 46)", fontFamily: "'Geist Sans', sans-serif" }}
+                    style={{ color: "rgb(38, 41, 46)", fontFamily: "'DM Sans', sans-serif" }}
                   >
                     500+ Classes
                   </h4>
@@ -475,7 +475,7 @@ const EduHub = () => {
                   </div>
                   <p
                     className="text-center text-sm font-medium mt-2 flex-shrink-0 px-5 lg:px-6 pb-5 lg:pb-6"
-                    style={{ color: "rgb(102, 112, 122)", fontFamily: "'Geist Sans', sans-serif" }}
+                    style={{ color: "rgb(102, 112, 122)", fontFamily: "'DM Sans', sans-serif" }}
                   >
                     Wide variety
                   </p>
@@ -503,7 +503,7 @@ const EduHub = () => {
                       </div>
                       <h3
                         className="text-sm font-semibold"
-                        style={{ color: isAccent ? "rgb(38, 41, 46)" : "rgb(102, 112, 122)", fontFamily: "'Geist Sans', sans-serif" }}
+                        style={{ color: isAccent ? "rgb(38, 41, 46)" : "rgb(102, 112, 122)", fontFamily: "'DM Sans', sans-serif" }}
                       >
                         {stat.label}
                       </h3>
@@ -525,7 +525,7 @@ const EduHub = () => {
               <div className="flex flex-col lg:flex-row lg:items-end gap-6 lg:gap-16 text-left w-full max-w-7xl mx-auto">
                 <h2
                   className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight flex-shrink-0"
-                  style={{ fontFamily: "'Geist Sans', sans-serif", color: "rgb(3, 2, 11)" }}
+                  style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(3, 2, 11)" }}
                 >
                   Meet the Team
                 <br />
@@ -561,7 +561,7 @@ const EduHub = () => {
                 </div>
                 <div className="p-5 flex flex-col flex-1 items-center text-center" data-framer-name="Info Block">
                   <div className="flex flex-col flex-1 text-center w-full">
-                    <p className="text-lg font-semibold mb-1" style={{ color: "rgb(3, 2, 11)", fontFamily: "'Geist Sans', sans-serif", lineHeight: "120%" }}>
+                    <p className="text-lg font-semibold mb-1" style={{ color: "rgb(3, 2, 11)", fontFamily: "'DM Sans', sans-serif", lineHeight: "120%" }}>
                       {member.nameLine1}
                       <br />
                       {member.nameLine2}
@@ -593,7 +593,7 @@ const EduHub = () => {
         <div className="section-reveal container mx-auto px-6">
           <div className="grid grid-cols-1 gap-8 items-start lg:grid-cols-2 lg:gap-12">
             <div className="text-center lg:text-left lg:sticky lg:top-24 pt-4 h-[600px] flex flex-col">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 Why Choose EduHub?
               </h2>
               <p className="text-foreground/70 max-w-2xl lg:max-w-none mx-auto lg:mx-0 leading-relaxed mb-4" style={{ fontSize: '16px' }}>
@@ -628,7 +628,7 @@ const EduHub = () => {
                     <div className="w-10 h-10 rounded-full bg-[rgb(238,238,238)] flex items-center justify-center flex-shrink-0 text-sm font-medium" style={{ color: "rgb(109, 109, 109)" }}>
                       {String(index + 1).padStart(2, "0")}
                     </div>
-                    <h3 className="text-lg font-semibold" style={{ fontFamily: "'Geist Sans', sans-serif", color: "rgb(61, 61, 61)" }}>{feature.title}</h3>
+                    <h3 className="text-lg font-semibold" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(61, 61, 61)" }}>{feature.title}</h3>
                   </div>
                   <div className="px-5 pt-0 pb-2">
                     <p className="text-sm leading-relaxed" style={{ color: "rgb(109, 109, 109)" }}>{feature.description}</p>
@@ -677,7 +677,7 @@ const EduHub = () => {
                     Vision &amp; Mission
                   </span>
                 </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                   Where our vision and promises<br />come to life
                 </h2>
               </div>
@@ -811,7 +811,7 @@ const EduHub = () => {
           <div className="grid lg:grid-cols-[2fr_3fr] gap-12 items-stretch p-8 bg-gray-100 rounded-[16px]">
             {/* Left - Content (Framer style: pill badge, heading, text, button, stars) */}
             <div className="flex flex-col">
-              <h2 className="text-3xl lg:text-4xl font-bold mb-4 leading-tight" style={{ fontFamily: "'Geist Sans', sans-serif", color: "rgb(17, 17, 17)" }}>
+              <h2 className="text-3xl lg:text-4xl font-bold mb-4 leading-tight" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(17, 17, 17)" }}>
                 Discover Our
                 <br />
                 Learning Platform
@@ -828,7 +828,7 @@ const EduHub = () => {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-bold mb-1" style={{ fontFamily: "'Geist Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>Interactive Learning</h3>
+                    <h3 className="font-bold mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>Interactive Learning</h3>
                     <p className="text-sm" style={{ color: "rgb(61, 61, 61)" }}>Engage with multimedia content and interactive exercises</p>
                   </div>
                 </div>
@@ -839,7 +839,7 @@ const EduHub = () => {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-bold mb-1" style={{ fontFamily: "'Geist Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>Expert Instructors</h3>
+                    <h3 className="font-bold mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>Expert Instructors</h3>
                     <p className="text-sm" style={{ color: "rgb(61, 61, 61)" }}>Learn from industry professionals and academic experts</p>
                   </div>
                 </div>
@@ -850,7 +850,7 @@ const EduHub = () => {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-bold mb-1" style={{ fontFamily: "'Geist Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>Flexible Schedule</h3>
+                    <h3 className="font-bold mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>Flexible Schedule</h3>
                     <p className="text-sm" style={{ color: "rgb(61, 61, 61)" }}>Study at your own pace, anytime and anywhere</p>
                   </div>
                 </div>
@@ -878,7 +878,7 @@ const EduHub = () => {
             >
               Blog
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-center" style={{ fontFamily: "'Geist Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
+            <h2 className="text-3xl md:text-4xl font-bold text-center" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
               Insights &amp; Updates
             </h2>
           </header>
@@ -900,7 +900,7 @@ const EduHub = () => {
                 </div>
               </div>
               <div className="p-5 pt-0">
-                <h5 className="text-lg font-semibold mb-2 group-hover:underline" style={{ fontFamily: "'Geist Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
+                <h5 className="text-lg font-semibold mb-2 group-hover:underline" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
                   New Language Programs Launch This Semester
                 </h5>
                 <p className="text-sm leading-relaxed" style={{ color: "rgb(153, 153, 153)" }}>
@@ -926,7 +926,7 @@ const EduHub = () => {
                 </div>
               </div>
               <div className="p-5 pt-0">
-                <h5 className="text-lg font-semibold mb-2 group-hover:underline" style={{ fontFamily: "'Geist Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
+                <h5 className="text-lg font-semibold mb-2 group-hover:underline" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
                   EduHub Student Success Stories: From Classroom to Career
                 </h5>
                 <p className="text-sm leading-relaxed" style={{ color: "rgb(153, 153, 153)" }}>
@@ -952,7 +952,7 @@ const EduHub = () => {
                 </div>
               </div>
               <div className="p-5 pt-0">
-                <h5 className="text-lg font-semibold mb-2 group-hover:underline" style={{ fontFamily: "'Geist Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
+                <h5 className="text-lg font-semibold mb-2 group-hover:underline" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
                   Upcoming Workshops and Cultural Exchange Events
                 </h5>
                 <p className="text-sm leading-relaxed" style={{ color: "rgb(153, 153, 153)" }}>
@@ -981,7 +981,7 @@ const EduHub = () => {
       <section className="py-24 bg-white">
         <div className="section-reveal container mx-auto px-6">
           <div className="text-center mb-8">
-            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4" style={{ fontFamily: "'Geist Sans', sans-serif" }}>
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               Learning Highlights
             </h2>
             <p className="text-foreground/70 max-w-2xl mx-auto leading-relaxed" style={{ fontSize: '16px' }}>
@@ -1004,7 +1004,7 @@ const EduHub = () => {
                     >
                       <Icon className="h-5 w-5" style={{ color: "rgb(18, 18, 18)" }} />
                     </div>
-                    <h3 className="text-xl font-semibold" style={{ fontFamily: "'Geist Sans', sans-serif", color: "rgb(18, 18, 18)", fontSize: "20px" }}>
+                    <h3 className="text-xl font-semibold" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(18, 18, 18)", fontSize: "20px" }}>
                       {highlight.title}
                     </h3>
                   </div>
@@ -1043,7 +1043,7 @@ const EduHub = () => {
               </div>
               <h3
                 className="text-2xl lg:text-4xl font-bold mb-8 text-white max-w-2xl"
-                style={{ fontFamily: "'Geist Sans', sans-serif" }}
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
                 Ready to start learning?
               </h3>

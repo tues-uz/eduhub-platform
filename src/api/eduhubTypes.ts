@@ -9,6 +9,7 @@ export interface UserResponse {
   role: ApiRole;
   avatarUrl?: string;
   bio?: string;
+  phoneNumber?: string;
 }
 
 export interface AuthResponse {
@@ -25,6 +26,13 @@ export interface LoginRequest {
   password: string;
 }
 
+/** Planned session row from lecturer (API may ignore unknown fields until backend supports). */
+export interface ClassMeetingSlotDto {
+  title?: string;
+  sessionDate?: string;
+  sessionTime?: string;
+}
+
 export interface CourseRequest {
   title: string;
   description: string;
@@ -33,6 +41,14 @@ export interface CourseRequest {
   status?: "DRAFT" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
   /** How many in-person/live class sessions meet within a 6‑month period (lecturer-provided). */
   classMeetingsInSixMonths?: number;
+  /** ISO 8601 date (date-only or full); optional cohort/window start. */
+  classStartDate?: string;
+  /** ISO 8601 date; optional cohort/window end (must be ≥ start when both set). */
+  classEndDate?: string;
+  /** Optional title per session slot (length should match `classMeetingsInSixMonths` when provided). */
+  classMeetingTitles?: string[];
+  /** Richer per-session scheduling (optional). */
+  classMeetingSlots?: ClassMeetingSlotDto[];
 }
 
 export interface CoursePricingResponse {
@@ -59,6 +75,15 @@ export interface CourseResponse {
   updatedAt: string;
   /** When returned by API, mirrors lecturer input from course create/update. */
   classMeetingsInSixMonths?: number;
+  /** Optional gallery; lecturer-uploaded class or environment photos. */
+  classPhotoUrls?: string[];
+  /** ISO 8601 date; first session / cohort start (when provided by API). */
+  classStartDate?: string;
+  /** ISO 8601 date; last session / cohort end (when provided by API). */
+  classEndDate?: string;
+  /** When returned by API: optional label per planned session. */
+  classMeetingTitles?: string[];
+  classMeetingSlots?: ClassMeetingSlotDto[];
 }
 
 export interface CourseSummaryResponse {
@@ -69,6 +94,8 @@ export interface CourseSummaryResponse {
   category: string;
   lecturerName: string;
   enrollmentCount?: number;
+  /** Present when the API includes it on list endpoints; otherwise filled via GET /courses/{id}. */
+  classMeetingsInSixMonths?: number;
   /** When the lecturer created the course (first submitted as draft). */
   createdAt: string;
   pricing?: CoursePricingResponse;
