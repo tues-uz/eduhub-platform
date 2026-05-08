@@ -47,7 +47,7 @@ export type TeacherCourse = {
   lessons: TeacherLesson[];
   createdAt: string;
   updatedAt: string;
-  status?: "DRAFT" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
+  status?: "DRAFT" | "SCHEDULE_PENDING" | "SCHEDULE_APPROVED" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
   /** From API / roster — enrolled students for this class. */
   enrollmentCount?: number;
 };

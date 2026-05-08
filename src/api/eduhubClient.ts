@@ -17,6 +17,8 @@ import type {
   LessonProgressRequest,
   LessonProgressResponse,
   ApiResponse,
+  ScheduleProposalRequest,
+  ScheduleProposalResponse,
 } from "./eduhubTypes";
 
 const BASE = EDUHUB_API_BASE_URL + EDUHUB_API_PREFIX;
@@ -602,6 +604,24 @@ export const eduhubAdmin = {
 
   setUserStatus: (id: string, enabled: boolean) =>
     request<UserResponse>(`/admin/users/${id}/status`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
+
+  proposeSchedule: (courseId: string, body: ScheduleProposalRequest) =>
+    request<ScheduleProposalResponse>(`/admin/courses/${courseId}/schedule`, { method: "POST", body: JSON.stringify(body) }),
+};
+
+/** Schedule Workflow */
+export const eduhubSchedule = {
+  getProposal: (courseId: string) =>
+    request<ScheduleProposalResponse>(`/courses/${courseId}/schedule`),
+
+  approve: (courseId: string) =>
+    request<ScheduleProposalResponse>(`/courses/${courseId}/schedule/approve`, { method: "PATCH" }),
+
+  reject: (courseId: string, rejectionNote?: string) =>
+    request<ScheduleProposalResponse>(`/courses/${courseId}/schedule/reject`, {
+      method: "PATCH",
+      body: JSON.stringify({ rejectionNote }),
+    }),
 };
 
 /** Assignments */
@@ -694,20 +714,39 @@ export interface SubmissionRequest {
   attachments?: string[];
 }
 
-/** Storage: file upload (returns URL). Use multipart/form-data; do not set Content-Type. */
+/** Storage: presigned URL upload flow. Returns the public URL of the uploaded file. */
 export async function eduhubUploadFile(file: File, folder = "materials"): Promise<{ url: string }> {
-  const url = `${BASE}/storage/upload?folder=${encodeURIComponent(folder)}`;
-  const token = getAccessToken();
-  const headers = new Headers();
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  const formData = new FormData();
-  formData.append("file", file);
+  // Step 1: Get presigned URL from backend
+  const presignedResponse = await request<{ uploadUrl: string; publicUrl: string; key: string }>(
+    "/storage/presigned-url",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        filename: file.name,
+        contentType: file.type || "application/octet-stream",
+        folder,
+      }),
+    }
+  );
+
+  // Step 2: Upload file directly to R2 using presigned URL
   const uploadTimeoutMs = 120_000;
   const uploadController = new AbortController();
   const uploadTimer = setTimeout(() => uploadController.abort(), uploadTimeoutMs);
-  let res: Response;
+
   try {
-    res = await fetch(url, { method: "POST", headers, body: formData, signal: uploadController.signal });
+    const uploadRes = await fetch(presignedResponse.uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": file.type || "application/octet-stream",
+      },
+      body: file,
+      signal: uploadController.signal,
+    });
+
+    if (!uploadRes.ok) {
+      throw new Error(`Upload failed with status ${uploadRes.status}`);
+    }
   } catch (e: unknown) {
     const aborted =
       (typeof DOMException !== "undefined" && e instanceof DOMException && e.name === "AbortError") ||
@@ -719,17 +758,7 @@ export async function eduhubUploadFile(file: File, folder = "materials"): Promis
   } finally {
     clearTimeout(uploadTimer);
   }
-  const text = await res.text();
-  if (!res.ok) {
-    let message = res.statusText;
-    try {
-      const json = JSON.parse(text);
-      message = (json as { message?: string }).message ?? message;
-    } catch {
-      if (text) message = text;
-    }
-    throw new Error(message);
-  }
-  if (!text) throw new Error("Empty response");
-  return JSON.parse(text) as { url: string };
+
+  // Step 3: Return the public URL
+  return { url: presignedResponse.publicUrl };
 }

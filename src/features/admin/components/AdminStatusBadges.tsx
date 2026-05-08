@@ -5,6 +5,8 @@ import type { ClassStatus, PaymentStatus, StudentStatus } from "@/features/admin
 const courseStatusClass: Record<string, string> = {
   PUBLISHED: "border-emerald-200 bg-emerald-50 text-emerald-800",
   DRAFT: "border-amber-200 bg-amber-50 text-amber-800",
+  SCHEDULE_PENDING: "border-blue-200 bg-blue-50 text-blue-800",
+  SCHEDULE_APPROVED: "border-teal-200 bg-teal-50 text-teal-800",
   REJECTED: "border-red-200 bg-red-50 text-red-800",
   ARCHIVED: "border-slate-300 bg-slate-100 text-slate-700",
 };
@@ -12,6 +14,8 @@ const courseStatusClass: Record<string, string> = {
 const courseStatusLabel: Record<string, string> = {
   PUBLISHED: "Published",
   DRAFT: "Draft",
+  SCHEDULE_PENDING: "Schedule Pending",
+  SCHEDULE_APPROVED: "Schedule Approved",
   REJECTED: "Rejected",
   ARCHIVED: "Archived",
 };

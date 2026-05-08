@@ -8,12 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { eduhubCourses } from "@/api/eduhubClient";
+import { eduhubAdmin, eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
-import type { ClassMeetingSlotDto } from "@/api/eduhubTypes";
-import { boundsFromMeetingSlots } from "@/features/admin/utils/adminCourseScheduleDisplay";
-import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
-import { courseScheduleWorkflowStore, type ScheduleWorkflowStatus } from "@/features/courses/courseScheduleWorkflowStore";
+import type { ScheduleProposalResponse, ScheduleSessionDto } from "@/api/eduhubTypes";
+import { CourseStatusBadge } from "@/features/admin/components/AdminStatusBadges";
 import { parseOptionalPositiveInt } from "@/features/teacher/pages/teacherCourseFormHelpers";
 
 function formatClassDate(iso?: string): string {
@@ -23,84 +21,33 @@ function formatClassDate(iso?: string): string {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(d);
 }
 
-function padMeetingSlots(n: number, raw?: ClassMeetingSlotDto[]): ClassMeetingSlotDto[] {
+function padSessions(n: number, raw?: ScheduleSessionDto[]): ScheduleSessionDto[] {
   const base = Array.isArray(raw)
     ? raw.map((s) => ({
         title: s.title ?? "",
         sessionDate: s.sessionDate ?? "",
         sessionTime: s.sessionTime ?? "",
+        durationMinutes: s.durationMinutes ?? undefined,
       }))
     : [];
   const out = base.slice(0, Math.max(0, n));
   while (out.length < n) {
-    out.push({ title: "", sessionDate: "", sessionTime: "" });
+    out.push({ title: "", sessionDate: "", sessionTime: "", durationMinutes: undefined });
   }
   return out;
-}
-
-function buildInitialSlots(course: {
-  classMeetingsInSixMonths?: number | null;
-  classMeetingSlots?: ClassMeetingSlotDto[];
-  classMeetingTitles?: string[];
-}): { count: string; slots: ClassMeetingSlotDto[] } {
-  const n = course.classMeetingsInSixMonths ?? 0;
-  const countStr = n > 0 ? String(n) : "";
-  if (course.classMeetingSlots?.length) {
-    return { count: countStr || String(Math.max(n, course.classMeetingSlots.length)), slots: padMeetingSlots(n || course.classMeetingSlots.length, course.classMeetingSlots) };
-  }
-  const fromTitles = course.classMeetingTitles?.map((t) => ({
-    title: t ?? "",
-    sessionDate: "",
-    sessionTime: "",
-  }));
-  return { count: countStr, slots: padMeetingSlots(n, fromTitles) };
-}
-
-function statusLabel(s: ScheduleWorkflowStatus): string {
-  switch (s) {
-    case "none":
-      return "Draft (not sent)";
-    case "pending_instructor":
-      return "Awaiting instructor";
-    case "approved":
-      return "Approved by instructor";
-    case "instructor_rejected":
-      return "Instructor requested changes";
-    default:
-      return s;
-  }
-}
-
-function statusBadgeClass(s: ScheduleWorkflowStatus): string {
-  switch (s) {
-    case "pending_instructor":
-      return "bg-amber-50 text-amber-900 border-amber-200";
-    case "approved":
-      return "bg-emerald-50 text-emerald-900 border-emerald-200";
-    case "instructor_rejected":
-      return "bg-red-50 text-red-900 border-red-200";
-    default:
-      return "bg-slate-50 text-slate-800 border-slate-200";
-  }
 }
 
 export default function AdminCourseSchedulePage() {
   const { courseId = "" } = useParams<{ courseId: string }>();
   const [title, setTitle] = useState("");
-  const [classMeetingsInSixMonths, setClassMeetingsInSixMonths] = useState("");
-  const [classMeetingSlots, setClassMeetingSlots] = useState<ClassMeetingSlotDto[]>([]);
+  const [courseStatus, setCourseStatus] = useState("");
+  const [sessionCount, setSessionCount] = useState("");
+  const [sessions, setSessions] = useState<ScheduleSessionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [workflowTick, setWorkflowTick] = useState(0);
-  const [apiCohortDates, setApiCohortDates] = useState<{ start?: string; end?: string }>({});
-
-  const workflow = useMemo(
-    () => (courseId ? courseScheduleWorkflowStore.get(courseId) : null),
-    [courseId, workflowTick],
-  );
-
-  const reloadWorkflow = () => setWorkflowTick((v) => v + 1);
+  const [proposal, setProposal] = useState<ScheduleProposalResponse | null>(null);
+  const [scheduleRejectionNote, setScheduleRejectionNote] = useState<string | undefined>();
 
   useEffect(() => {
     if (!courseId || !isUuid(courseId)) {
@@ -111,33 +58,46 @@ export default function AdminCourseSchedulePage() {
     let cancelled = false;
     setLoading(true);
     setError("");
-    eduhubCourses
-      .getById(courseId)
-      .then((course) => {
+
+    Promise.all([
+      eduhubCourses.getById(courseId),
+      eduhubSchedule.getProposal(courseId).catch(() => null),
+    ])
+      .then(([course, proposalData]) => {
         if (cancelled) return;
         setTitle(course.title);
-        setApiCohortDates({
-          start: course.classStartDate?.trim() || undefined,
-          end: course.classEndDate?.trim() || undefined,
-        });
-        const init = buildInitialSlots(course);
-        let countStr = init.count || "12";
-        let slotSeed = init.slots;
-        const proposal = courseScheduleProposalStore.get(courseId);
-        const apiHasScheduleRows =
-          (course.classMeetingSlots?.length ?? 0) > 0 ||
-          (typeof course.classMeetingsInSixMonths === "number" && course.classMeetingsInSixMonths > 0);
-        if (!apiHasScheduleRows && proposal?.classMeetingSlots?.length) {
-          const pn =
-            proposal.classMeetingsInSixMonths > 0
-              ? proposal.classMeetingsInSixMonths
-              : proposal.classMeetingSlots.length;
-          countStr = String(pn);
-          slotSeed = padMeetingSlots(pn, proposal.classMeetingSlots);
+        setCourseStatus(course.status);
+        setScheduleRejectionNote(course.scheduleRejectionNote);
+
+        if (proposalData) {
+          setProposal(proposalData);
+          const count = proposalData.sessionCount;
+          setSessionCount(String(count));
+          setSessions(
+            padSessions(
+              count,
+              proposalData.sessions.map((s) => ({
+                title: s.title,
+                sessionDate: s.sessionDate,
+                sessionTime: s.sessionTime,
+                durationMinutes: s.durationMinutes,
+              }))
+            )
+          );
+        } else {
+          const count = course.classMeetingsInSixMonths ?? 12;
+          setSessionCount(String(count));
+          setSessions(
+            padSessions(
+              count,
+              course.classMeetingSlots?.map((s) => ({
+                title: s.title ?? "",
+                sessionDate: s.sessionDate ?? "",
+                sessionTime: s.sessionTime ?? "",
+              }))
+            )
+          );
         }
-        setClassMeetingsInSixMonths(countStr);
-        const n = parseOptionalPositiveInt(countStr.trim()) ?? 12;
-        setClassMeetingSlots(padMeetingSlots(n, slotSeed));
       })
       .catch(() => {
         if (!cancelled) setError("Could not load class.");
@@ -151,13 +111,13 @@ export default function AdminCourseSchedulePage() {
   }, [courseId]);
 
   useEffect(() => {
-    const n = parseOptionalPositiveInt(classMeetingsInSixMonths.trim());
+    const n = parseOptionalPositiveInt(sessionCount.trim());
     if (n === undefined) return;
-    setClassMeetingSlots((prev) => padMeetingSlots(n, prev));
-  }, [classMeetingsInSixMonths]);
+    setSessions((prev) => padSessions(n, prev));
+  }, [sessionCount]);
 
-  const updateSlot = useCallback((index: number, patch: Partial<ClassMeetingSlotDto>) => {
-    setClassMeetingSlots((prev) => {
+  const updateSession = useCallback((index: number, patch: Partial<ScheduleSessionDto>) => {
+    setSessions((prev) => {
       const next = prev.map((s) => ({ ...s }));
       while (next.length <= index) next.push({ title: "", sessionDate: "", sessionTime: "" });
       next[index] = {
@@ -170,61 +130,28 @@ export default function AdminCourseSchedulePage() {
     });
   }, []);
 
-  const buildPayload = useCallback(() => {
-    const meetingsRaw = classMeetingsInSixMonths.trim();
-    const meetingsSixMo = parseOptionalPositiveInt(meetingsRaw);
-    if (meetingsSixMo === undefined) {
-      throw new Error("Enter a valid number of sessions (whole number ≥ 1).");
-    }
-    const meetingSlotsForSave = Array.from({ length: meetingsSixMo }, (_, i) => ({
-      title: classMeetingSlots[i]?.title ?? "",
-      sessionDate: classMeetingSlots[i]?.sessionDate ?? "",
-      sessionTime: classMeetingSlots[i]?.sessionTime ?? "",
-    }));
-    const meetingTitlesForSave = meetingSlotsForSave.map((s) => s.title);
-    return { meetingsSixMo, meetingSlotsForSave, meetingTitlesForSave };
-  }, [classMeetingsInSixMonths, classMeetingSlots]);
-
-  const persistSchedule = async () => {
-    if (!courseId || !isUuid(courseId)) return;
-    const { meetingsSixMo, meetingSlotsForSave, meetingTitlesForSave } = buildPayload();
-    const course = await eduhubCourses.getById(courseId);
-    await eduhubCourses.update(courseId, {
-      title: course.title,
-      description: course.description ?? "—",
-      category: course.category,
-      status: course.status,
-      classMeetingsInSixMonths: meetingsSixMo,
-      classMeetingTitles: meetingTitlesForSave,
-      classMeetingSlots: meetingSlotsForSave,
-      ...(course.thumbnailUrl ? { thumbnailUrl: course.thumbnailUrl } : {}),
-      ...(course.classStartDate ? { classStartDate: course.classStartDate } : {}),
-      ...(course.classEndDate ? { classEndDate: course.classEndDate } : {}),
-    });
-    courseScheduleProposalStore.save(courseId, {
-      classMeetingsInSixMonths: meetingsSixMo,
-      classMeetingSlots: meetingSlotsForSave,
-    });
-  };
-
-  const handleSaveDraft = async () => {
-    setSaving(true);
-    try {
-      await persistSchedule();
-      toast.success("Schedule saved");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Save failed");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleSendToInstructor = async () => {
+    const n = parseOptionalPositiveInt(sessionCount.trim());
+    if (n === undefined || n < 1) {
+      toast.error("Enter a valid number of sessions (whole number ≥ 1).");
+      return;
+    }
     setSaving(true);
     try {
-      await persistSchedule();
-      courseScheduleWorkflowStore.sendToInstructor(courseId);
-      reloadWorkflow();
+      const sessionsPayload = sessions.slice(0, n).map((s, i) => ({
+        title: s.title || `Session ${i + 1}`,
+        sessionDate: s.sessionDate || undefined,
+        sessionTime: s.sessionTime || undefined,
+        durationMinutes: s.durationMinutes || undefined,
+      }));
+
+      const result = await eduhubAdmin.proposeSchedule(courseId, {
+        sessionCount: n,
+        sessions: sessionsPayload,
+      });
+
+      setProposal(result);
+      setCourseStatus("SCHEDULE_PENDING");
       toast.success("Schedule sent to instructor for approval");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not send");
@@ -233,11 +160,23 @@ export default function AdminCourseSchedulePage() {
     }
   };
 
-  const sessionsCount = parseOptionalPositiveInt(classMeetingsInSixMonths.trim());
+  const sessionsCount = parseOptionalPositiveInt(sessionCount.trim());
 
-  const derivedFromSlots = useMemo(() => boundsFromMeetingSlots(classMeetingSlots), [classMeetingSlots]);
-  const classStartDisplay = derivedFromSlots.start ?? apiCohortDates.start;
-  const classEndDisplay = derivedFromSlots.end ?? apiCohortDates.end;
+  const classStartDisplay = useMemo(() => {
+    const dates = sessions
+      .map((s) => s.sessionDate)
+      .filter((d): d is string => !!d?.trim())
+      .sort();
+    return dates[0] || undefined;
+  }, [sessions]);
+
+  const classEndDisplay = useMemo(() => {
+    const dates = sessions
+      .map((s) => s.sessionDate)
+      .filter((d): d is string => !!d?.trim())
+      .sort();
+    return dates[dates.length - 1] || undefined;
+  }, [sessions]);
 
   if (!isUuid(courseId)) {
     return (
@@ -265,19 +204,21 @@ export default function AdminCourseSchedulePage() {
           description="Set sessions and optional date/time per session, then send to the instructor for approval."
         />
 
-        {workflow ? (
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="text-sm text-slate-600">Status:</span>
-            <Badge variant="outline" className={statusBadgeClass(workflow.status)}>
-              {statusLabel(workflow.status)}
-            </Badge>
-            {workflow.status === "instructor_rejected" && workflow.rejectionNote ? (
-              <p className="text-sm text-red-800 w-full mt-1 rounded-md border border-red-200 bg-red-50 px-3 py-2">
-                Instructor note: {workflow.rejectionNote}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-sm text-slate-600">Course status:</span>
+          <CourseStatusBadge status={courseStatus} />
+          {courseStatus === "SCHEDULE_PENDING" && (
+            <span className="text-sm text-blue-600">— Waiting for instructor approval</span>
+          )}
+          {courseStatus === "SCHEDULE_APPROVED" && (
+            <span className="text-sm text-teal-600">— Schedule approved, ready to publish</span>
+          )}
+          {scheduleRejectionNote && (
+            <p className="text-sm text-red-800 w-full mt-1 rounded-md border border-red-200 bg-red-50 px-3 py-2">
+              Instructor note: {scheduleRejectionNote}
+            </p>
+          )}
+        </div>
 
         {loading ? (
           <p className="text-sm text-slate-600">Loading…</p>
@@ -305,8 +246,7 @@ export default function AdminCourseSchedulePage() {
                 </div>
               </div>
               <p className="mt-2 text-xs text-slate-500">
-                From the earliest and latest session dates you enter below. If sessions have no dates yet, this falls
-                back to dates stored on the class (when the API returns them).
+                From the earliest and latest session dates you enter below.
               </p>
             </div>
 
@@ -323,10 +263,11 @@ export default function AdminCourseSchedulePage() {
                     id="adminClassMeetings6m"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    value={classMeetingsInSixMonths}
-                    onChange={(e) => setClassMeetingsInSixMonths(e.target.value.replace(/\D/g, ""))}
+                    value={sessionCount}
+                    onChange={(e) => setSessionCount(e.target.value.replace(/\D/g, ""))}
                     placeholder="24"
                     className="h-11 max-w-[10rem] rounded-xl bg-white text-lg font-medium tabular-nums shadow-none"
+                    disabled={courseStatus === "SCHEDULE_PENDING"}
                   />
                   <p className="max-w-lg text-xs leading-relaxed text-slate-500">
                     Planned sessions for attendance tracking. The instructor will confirm this schedule.
@@ -344,7 +285,7 @@ export default function AdminCourseSchedulePage() {
                       </div>
                       <div className="space-y-3">
                         {Array.from({ length: sessionsCount }, (_, i) => {
-                          const slot = classMeetingSlots[i] ?? { title: "", sessionDate: "", sessionTime: "" };
+                          const slot = sessions[i] ?? { title: "", sessionDate: "", sessionTime: "" };
                           return (
                             <div
                               key={i}
@@ -360,9 +301,10 @@ export default function AdminCourseSchedulePage() {
                                 <Input
                                   id={`admin-meeting-title-${i}`}
                                   value={slot.title ?? ""}
-                                  onChange={(e) => updateSlot(i, { title: e.target.value })}
+                                  onChange={(e) => updateSession(i, { title: e.target.value })}
                                   placeholder={`Session ${i + 1} title`}
                                   className="h-11 rounded-xl border-slate-200 bg-white text-[15px]"
+                                  disabled={courseStatus === "SCHEDULE_PENDING"}
                                 />
                               </div>
                               <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-end sm:gap-2">
@@ -377,8 +319,9 @@ export default function AdminCourseSchedulePage() {
                                     id={`admin-meeting-date-${i}`}
                                     type="date"
                                     value={slot.sessionDate ?? ""}
-                                    onChange={(e) => updateSlot(i, { sessionDate: e.target.value })}
+                                    onChange={(e) => updateSession(i, { sessionDate: e.target.value })}
                                     className="h-11 rounded-xl border-slate-200 bg-white text-[15px]"
+                                    disabled={courseStatus === "SCHEDULE_PENDING"}
                                   />
                                 </div>
                                 <div className="w-full space-y-1.5 sm:w-[8.5rem]">
@@ -392,8 +335,9 @@ export default function AdminCourseSchedulePage() {
                                     id={`admin-meeting-time-${i}`}
                                     type="time"
                                     value={slot.sessionTime ?? ""}
-                                    onChange={(e) => updateSlot(i, { sessionTime: e.target.value })}
+                                    onChange={(e) => updateSession(i, { sessionTime: e.target.value })}
                                     className="h-11 rounded-xl border-slate-200 bg-white text-[15px]"
+                                    disabled={courseStatus === "SCHEDULE_PENDING"}
                                   />
                                 </div>
                               </div>
@@ -412,17 +356,14 @@ export default function AdminCourseSchedulePage() {
                 <Link to={`/dashboard/admin/courses/${courseId}`}>Cancel</Link>
               </Button>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="secondary" disabled={saving} onClick={() => void handleSaveDraft()}>
-                  Save draft
-                </Button>
                 <Button
                   type="button"
-                  disabled={saving}
+                  disabled={saving || courseStatus === "SCHEDULE_PENDING"}
                   className="bg-slate-900 hover:bg-slate-800"
                   onClick={() => void handleSendToInstructor()}
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  Send to instructor
+                  {courseStatus === "SCHEDULE_APPROVED" ? "Re-send to instructor" : "Send to instructor"}
                 </Button>
               </div>
             </div>

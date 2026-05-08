@@ -33,12 +33,14 @@ export interface ClassMeetingSlotDto {
   sessionTime?: string;
 }
 
+export type CourseStatus = "DRAFT" | "SCHEDULE_PENDING" | "SCHEDULE_APPROVED" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
+
 export interface CourseRequest {
   title: string;
   description: string;
   thumbnailUrl?: string;
   category: string;
-  status?: "DRAFT" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
+  status?: CourseStatus;
   /** How many in-person/live class sessions meet within a 6‑month period (lecturer-provided). */
   classMeetingsInSixMonths?: number;
   /** ISO 8601 date (date-only or full); optional cohort/window start. */
@@ -64,12 +66,13 @@ export interface CourseResponse {
   title: string;
   description: string;
   thumbnailUrl?: string;
-  status: "DRAFT" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
+  status: CourseStatus;
   category: string;
   lecturer: UserResponse;
   enrollmentCount?: number;
   pricing?: CoursePricingResponse;
   rejectionReason?: string;
+  scheduleRejectionNote?: string;
   reviewedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -90,7 +93,7 @@ export interface CourseSummaryResponse {
   id: string;
   title: string;
   thumbnailUrl?: string;
-  status: "DRAFT" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
+  status: CourseStatus;
   category: string;
   lecturerName: string;
   enrollmentCount?: number;
@@ -212,4 +215,40 @@ export interface LessonProgressResponse {
   lessonId: string;
   isCompleted: boolean;
   completedAt?: string;
+}
+
+// Schedule Workflow Types
+
+export interface ScheduleSessionDto {
+  title: string;
+  sessionDate?: string;
+  sessionTime?: string;
+  durationMinutes?: number;
+}
+
+export interface ScheduleProposalRequest {
+  sessionCount: number;
+  sessions: ScheduleSessionDto[];
+}
+
+export interface ScheduleSessionResponse {
+  id: string;
+  sessionIndex: number;
+  title: string;
+  sessionDate?: string;
+  sessionTime?: string;
+  durationMinutes?: number;
+}
+
+export interface ScheduleProposalResponse {
+  id: string;
+  courseId: string;
+  proposedByName: string;
+  sessionCount: number;
+  sessions: ScheduleSessionResponse[];
+  createdAt: string;
+}
+
+export interface ScheduleRejectRequest {
+  rejectionNote?: string;
 }
