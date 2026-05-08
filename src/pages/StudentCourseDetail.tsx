@@ -28,8 +28,8 @@ import { loadStoredMeetings } from "@/features/teacher/attendance/attendanceMeet
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import type { TeacherCourse } from "@/features/teacher/types";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
-import { eduhubCourses, eduhubModules, eduhubLessons } from "@/api/eduhubClient";
-import type { CourseResponse } from "@/api/eduhubTypes";
+import { eduhubCourses, eduhubModules, eduhubLessons, eduhubSchedule } from "@/api/eduhubClient";
+import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import {
   boundsFromMeetingSlots,
@@ -274,10 +274,18 @@ function StudentSessionScheduleCard({
 function resolveStudentSessionSlots(
   courseId: string | undefined,
   apiDetail: CourseResponse | null,
+  scheduleProposal: ScheduleProposalResponse | null,
   isApiCourse: boolean,
   tc: TeacherCourse | null,
 ): SessionSlotLike[] {
   if (isApiCourse && courseId && apiDetail) {
+    if (scheduleProposal?.sessions.length) {
+      return scheduleProposal.sessions.map((s) => ({
+        title: s.title,
+        sessionDate: s.sessionDate ?? "",
+        sessionTime: s.sessionTime ?? "",
+      }));
+    }
     const wf = courseScheduleWorkflowStore.get(courseId);
     const useProposal = wf?.status === "approved";
     if (useProposal) {
@@ -345,6 +353,7 @@ const StudentCourseDetail = () => {
   const [apiLessons, setApiLessons] = useState<LessonRow[]>([]);
   /** Full GET /courses/{id} payload — used to merge admin-approved schedule + proposal like admin UI. */
   const [apiCourseDetail, setApiCourseDetail] = useState<CourseResponse | null>(null);
+  const [apiScheduleProposal, setApiScheduleProposal] = useState<ScheduleProposalResponse | null>(null);
   const [apiLoading, setApiLoading] = useState(false);
   const scheduleLocalTick = useAdminCourseLocalDataVersion();
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -367,8 +376,13 @@ const StudentCourseDetail = () => {
     if (courseId && isUuid(courseId) && !isTeacherCourse) {
       setApiLoading(true);
       setApiCourseDetail(null);
+      setApiScheduleProposal(null);
       eduhubCourses.getById(courseId).then((c) => {
         setApiCourseDetail(c);
+        void eduhubSchedule
+          .getProposal(courseId)
+          .then(setApiScheduleProposal)
+          .catch(() => setApiScheduleProposal(null));
         const amount = c.pricing?.discountedAmount ?? c.pricing?.amount;
         setApiCourse({
           id: c.id,
@@ -412,6 +426,7 @@ const StudentCourseDetail = () => {
       }).finally(() => setApiLoading(false));
     } else {
       setApiCourseDetail(null);
+      setApiScheduleProposal(null);
     }
   }, [courseId, isTeacherCourse]);
 
@@ -419,6 +434,19 @@ const StudentCourseDetail = () => {
     void scheduleLocalTick;
     if (!courseId) return null;
     if (apiCourseDetail && isUuid(courseId) && !isTeacherCourse) {
+      if (apiScheduleProposal) {
+        const slots = apiScheduleProposal.sessions.map((s) => ({
+          title: s.title,
+          sessionDate: s.sessionDate ?? "",
+          sessionTime: s.sessionTime ?? "",
+        }));
+        const bounds = boundsFromMeetingSlots(slots);
+        return {
+          sessionsSixMo: Math.max(apiScheduleProposal.sessionCount, slots.length),
+          classStartDate: bounds.start,
+          classEndDate: bounds.end,
+        };
+      }
       const wf = courseScheduleWorkflowStore.get(courseId);
       const useProposal = wf?.status === "approved";
       return mergeScheduleDisplayForAdminReview(courseId, apiCourseDetail, {
@@ -439,13 +467,13 @@ const StudentCourseDetail = () => {
       };
     }
     return null;
-  }, [courseId, apiCourseDetail, isTeacherCourse, teacherCourse, scheduleLocalTick]);
+  }, [courseId, apiCourseDetail, apiScheduleProposal, isTeacherCourse, teacherCourse, scheduleLocalTick]);
 
   const sessionSlotsForSidebar = useMemo(() => {
     void scheduleLocalTick;
     const isApi =
       Boolean(apiCourseDetail && courseId && isUuid(courseId) && !isTeacherCourse);
-    const raw = resolveStudentSessionSlots(courseId, apiCourseDetail, isApi, teacherCourse);
+    const raw = resolveStudentSessionSlots(courseId, apiCourseDetail, apiScheduleProposal, isApi, teacherCourse);
     const now = Date.now();
     const decorated = raw.map((slot, i) => ({ slot, i, ms: sessionDateMs(slot.sessionDate) }));
     decorated.sort((a, b) => {
@@ -458,7 +486,7 @@ const StudentCourseDetail = () => {
       (x) => Number.isNaN(x.ms) || x.ms >= now - 86400000,
     );
     return upcoming.slice(0, 8).map((x) => x.slot);
-  }, [courseId, apiCourseDetail, isTeacherCourse, teacherCourse, scheduleLocalTick]);
+  }, [courseId, apiCourseDetail, apiScheduleProposal, isTeacherCourse, teacherCourse, scheduleLocalTick]);
 
   const lessonsFromApi = apiLessons.map((l) => ({
     ...l,

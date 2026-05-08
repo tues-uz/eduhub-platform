@@ -105,7 +105,16 @@ export default function TeacherCourseFormSchedulePage() {
     loadScheduleData();
   }, [isEdit, courseId, loadScheduleData]);
 
-  const sessionsCount = parseOptionalPositiveInt(classMeetingsInSixMonths.trim());
+  const formSessionsCount = parseOptionalPositiveInt(classMeetingsInSixMonths.trim());
+  const proposalSessions = proposal?.sessions.map((s) => ({
+    title: s.title,
+    sessionDate: s.sessionDate ?? "",
+    sessionTime: s.sessionTime ?? "",
+  }));
+  const sessionsCount = proposal
+    ? Math.max(proposal.sessionCount, proposalSessions?.length ?? 0)
+    : formSessionsCount;
+  const displaySlots = proposal ? proposalSessions ?? [] : classMeetingSlots;
   const apiCourse = Boolean(courseId && isUuid(courseId));
 
   const continueToLessons = () => {
@@ -214,7 +223,7 @@ export default function TeacherCourseFormSchedulePage() {
                       </div>
                       <div className="space-y-3">
                         {Array.from({ length: sessionsCount }, (_, i) => {
-                          const slot = classMeetingSlots[i] ?? { title: "", sessionDate: "", sessionTime: "" };
+                          const slot = displaySlots[i] ?? { title: "", sessionDate: "", sessionTime: "" };
                           return (
                             <div
                               key={i}
