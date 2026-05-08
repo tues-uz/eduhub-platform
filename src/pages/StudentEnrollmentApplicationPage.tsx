@@ -30,18 +30,14 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthSession } from "@/features/auth/context";
-import {
-  enrollmentApplicationStore,
-  type EnrollmentInstallmentCount,
-  type EnrollmentPaymentPlan,
-} from "@/features/enrollment/enrollmentApplicationStore";
-import { eduhubCourses } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubUploadFile, eduhubEnrollmentApplications } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import {
   enrollmentRecordToPdfData,
   type EnrollmentApplicationPdfData,
 } from "@/features/enrollment/enrollmentApplicationPdf";
+import type { EnrollmentInstallmentCount, EnrollmentPaymentPlan } from "@/api/eduhubTypes";
 
 const ENROLL_SUCCESS_SESSION_PREFIX = "eduhub_enrollment_success_pdf__";
 
@@ -98,10 +94,6 @@ function parseAmountInput(raw: string): number | null {
 
 /** Transfer proof upload limit */
 const PROOF_MAX_BYTES = 2 * 1024 * 1024;
-
-/** Payment proof and ID are not uploaded to remote storage; URLs are placeholders so enrollment saves offline (API uploads disabled). */
-const ENROLLMENT_PLACEHOLDER_PROOF_URL = "local://eduhub-enrollment/payment-proof";
-const ENROLLMENT_PLACEHOLDER_ID_URL = "local://eduhub-enrollment/id-document";
 
 function isAllowedProofType(f: File): boolean {
   return (
@@ -268,17 +260,40 @@ const StudentEnrollmentApplicationPage = () => {
 
   useEffect(() => {
     if (!courseId || !user.email.trim()) return;
-    const pending = enrollmentApplicationStore.findPendingForCourseAndEmail(
-      courseId,
-      user.email.trim().toLowerCase(),
-    );
-    if (!pending) return;
-    const pdfData = enrollmentRecordToPdfData(pending);
-    navigate(
-      `/dashboard/available-courses/enroll/${encodeURIComponent(courseId)}/success`,
-      { replace: true, state: { pdfData } },
-    );
-  }, [courseId, user.email, navigate]);
+    const emailNorm = user.email.trim().toLowerCase();
+    eduhubEnrollmentApplications
+      .getMyPending(courseId, emailNorm)
+      .then((pending) => {
+        if (pending.length > 0) {
+          const app = pending[0];
+          const pdfData: EnrollmentApplicationPdfData = {
+            submittedAtIso: app.submittedAt,
+            courseTitle: app.courseTitle ?? courseId,
+            courseId: app.courseId,
+            tuitionLabel: priceDisplay || "—",
+            fullName: app.fullName,
+            email: app.email,
+            phone: app.phone,
+            phoneSecondary: app.phoneSecondary,
+            address: app.address,
+            paymentDetailLines: [
+              app.paymentPlan === "FULL"
+                ? "Payment plan: Full payment"
+                : `Payment plan: Down payment (${app.installmentCount ?? 2} instalments)`,
+            ],
+            proofFileName: "payment-proof",
+            idFileName: "id-document",
+          };
+          navigate(
+            `/dashboard/available-courses/enroll/${encodeURIComponent(courseId)}/success`,
+            { replace: true, state: { pdfData } },
+          );
+        }
+      })
+      .catch(() => {
+        // Ignore errors - user can still submit
+      });
+  }, [courseId, user.email, navigate, priceDisplay]);
 
   useEffect(() => {
     if (paymentPlan === "FULL") setInstallmentCount(2);
@@ -345,21 +360,18 @@ const StudentEnrollmentApplicationPage = () => {
       }
       downAmount = parsed;
     }
-    const existing = enrollmentApplicationStore.findPendingForCourseAndEmail(courseId, emailNorm);
-    if (existing) {
-      const pdfData = enrollmentRecordToPdfData(existing);
-      navigate(`/dashboard/available-courses/enroll/${encodeURIComponent(courseId)}/success`, {
-        replace: true,
-        state: { pdfData },
-      });
-      return;
-    }
 
     setSubmitting(true);
-    const paymentProofUrl = ENROLLMENT_PLACEHOLDER_PROOF_URL;
-    const idCardUrl = ENROLLMENT_PLACEHOLDER_ID_URL;
 
     try {
+      // Upload files to R2
+      toast.loading("Uploading files...", { id: "enrollment-upload" });
+      const [proofResult, idResult] = await Promise.all([
+        eduhubUploadFile(file, "enrollment-proofs"),
+        eduhubUploadFile(idCardFile, "enrollment-ids"),
+      ]);
+      toast.dismiss("enrollment-upload");
+
       const paymentDetailLines: string[] = [];
       paymentDetailLines.push(
         paymentPlan === "FULL"
@@ -399,6 +411,22 @@ const StudentEnrollmentApplicationPage = () => {
         }
       }
 
+      // Submit application to API
+      await eduhubEnrollmentApplications.submit({
+        courseId,
+        fullName: user.name.trim(),
+        email: user.email.trim(),
+        phone: primaryPhone,
+        phoneSecondary: phoneSecondary.trim() || undefined,
+        address: address.trim(),
+        paymentProofUrl: proofResult.url,
+        idCardUrl: idResult.url,
+        paymentPlan,
+        downPaymentAmount: downAmount,
+        priceCurrency,
+        installmentCount: paymentPlan === "DOWN_PAYMENT" ? installmentCount : undefined,
+      });
+
       const pdfData: EnrollmentApplicationPdfData = {
         submittedAtIso: new Date().toISOString(),
         courseTitle: courseTitle ?? courseId,
@@ -414,24 +442,6 @@ const StudentEnrollmentApplicationPage = () => {
         idFileName: idCardFile.name,
       };
 
-      enrollmentApplicationStore.add({
-        courseId,
-        courseTitle,
-        applicantUserId: user.id,
-        applicantEmailNorm: emailNorm,
-        fullName: user.name.trim(),
-        email: user.email.trim(),
-        phone: primaryPhone,
-        phoneSecondary: phoneSecondary.trim() || undefined,
-        address: address.trim(),
-        paymentProofUrl,
-        idCardUrl,
-        paymentPlan,
-        downPaymentAmount: downAmount,
-        priceCurrency,
-        installmentCount: paymentPlan === "DOWN_PAYMENT" ? installmentCount : undefined,
-      });
-
       try {
         sessionStorage.setItem(enrollSuccessSessionKey(courseId, emailNorm), JSON.stringify(pdfData));
       } catch {
@@ -444,7 +454,7 @@ const StudentEnrollmentApplicationPage = () => {
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      toast.error("Could not save your application", {
+      toast.error("Could not submit your application", {
         description: message,
       });
     } finally {

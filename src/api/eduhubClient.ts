@@ -13,6 +13,9 @@ import type {
   LessonContentResponse,
   EnrollmentRequest,
   EnrollmentResponse,
+  EnrollmentApplicationRequest,
+  EnrollmentApplicationResponse,
+  EnrollmentApplicationReviewRequest,
   Pageable,
   LessonProgressRequest,
   LessonProgressResponse,
@@ -558,6 +561,47 @@ export const eduhubEnrollments = {
 
   markComplete: (id: string) =>
     request<void>(`/enrollments/${id}/complete`, { method: "PATCH" }),
+};
+
+/** Enrollment Applications (Student) */
+export const eduhubEnrollmentApplications = {
+  submit: (body: EnrollmentApplicationRequest) =>
+    request<EnrollmentApplicationResponse>("/enrollment-applications", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  getMy: (email: string) =>
+    request<EnrollmentApplicationResponse[]>(`/enrollment-applications/me?email=${encodeURIComponent(email)}`),
+
+  getMyPending: (courseId: string, email: string) =>
+    request<EnrollmentApplicationResponse[]>(
+      `/enrollment-applications/me/pending?courseId=${courseId}&email=${encodeURIComponent(email)}`
+    ),
+
+  get: (id: string) =>
+    request<EnrollmentApplicationResponse>(`/enrollment-applications/${id}`),
+};
+
+/** Enrollment Applications (Admin) */
+export const eduhubAdminEnrollmentApplications = {
+  listAll: () =>
+    request<EnrollmentApplicationResponse[]>("/admin/enrollment-applications"),
+
+  get: (id: string) =>
+    request<EnrollmentApplicationResponse>(`/admin/enrollment-applications/${id}`),
+
+  approve: (id: string, body?: EnrollmentApplicationReviewRequest) =>
+    request<EnrollmentApplicationResponse>(`/admin/enrollment-applications/${id}/approve`, {
+      method: "PATCH",
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+
+  reject: (id: string, body?: EnrollmentApplicationReviewRequest) =>
+    request<EnrollmentApplicationResponse>(`/admin/enrollment-applications/${id}/reject`, {
+      method: "PATCH",
+      body: body ? JSON.stringify(body) : undefined,
+    }),
 };
 
 /** Lecturer - stats and student management */

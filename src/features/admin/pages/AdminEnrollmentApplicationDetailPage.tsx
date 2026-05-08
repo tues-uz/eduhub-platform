@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -14,15 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  enrollmentApplicationStore,
-  type EnrollmentApplicationRecord,
-} from "@/features/enrollment/enrollmentApplicationStore";
-import { eduhubEnrollments } from "@/api/eduhubClient";
-import { studentKeys } from "@/api/queryKeys";
-import { notifyEnrollmentDecision } from "@/features/notifications/appNotificationStore";
-
-const CHANGE_EVENT = "eduhub-enrollment-applications-changed";
+import { eduhubAdminEnrollmentApplications } from "@/api/eduhubClient";
+import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
 
 function formatMoney(price: number | undefined, currency = "USD"): string {
   if (price == null || price <= 0) return "—";
@@ -48,97 +40,80 @@ function formatDate(iso: string) {
 export default function AdminEnrollmentApplicationDetailPage() {
   const { applicationId } = useParams<{ applicationId: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [record, setRecord] = useState<EnrollmentApplicationRecord | null>(() =>
-    applicationId ? enrollmentApplicationStore.getById(applicationId) ?? null : null,
-  );
+  const [record, setRecord] = useState<EnrollmentApplicationResponse | null>(null);
+  const [loading, setLoading] = useState(true);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const syncFromStore = useCallback(() => {
+  const fetchRecord = useCallback(() => {
     if (!applicationId) {
       setRecord(null);
+      setLoading(false);
       return;
     }
-    setRecord(enrollmentApplicationStore.getById(applicationId) ?? null);
+    setLoading(true);
+    eduhubAdminEnrollmentApplications
+      .get(applicationId)
+      .then(setRecord)
+      .catch(() => {
+        setRecord(null);
+        toast.error("Failed to load application");
+      })
+      .finally(() => setLoading(false));
   }, [applicationId]);
 
   useEffect(() => {
-    syncFromStore();
-    window.addEventListener(CHANGE_EVENT, syncFromStore);
-    return () => window.removeEventListener(CHANGE_EVENT, syncFromStore);
-  }, [syncFromStore]);
+    fetchRecord();
+  }, [fetchRecord]);
 
   const approve = async () => {
     if (!record || record.status !== "PENDING") return;
     setBusy(true);
     try {
-      if (!record.courseId.startsWith("teacher_")) {
-        try {
-          // NOTE: Current API commonly restricts POST /enrollments to the student ("me").
-          // Until an admin approval endpoint exists, treat server enrollment as best-effort.
-          await eduhubEnrollments.enroll({ courseId: record.courseId });
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : "";
-          if (msg.toLowerCase().includes("access denied") || msg.toLowerCase().includes("permission")) {
-            toast.message("Saved as approved (local)", {
-              description:
-                "The API rejected admin enrollment. This approval is saved in-app for now; backend needs an admin approval endpoint.",
-            });
-          } else {
-            throw e;
-          }
-        }
-      }
-      enrollmentApplicationStore.update(record.id, {
-        status: "APPROVED",
-        reviewedAt: new Date().toISOString(),
-      });
-      notifyEnrollmentDecision({
-        courseTitle: record.courseTitle ?? record.courseId,
-        courseId: record.courseId,
-        studentName: record.fullName,
-        studentEmailNorm: record.applicantEmailNorm,
-        decision: "approved",
-      });
-      await queryClient.invalidateQueries({ queryKey: studentKeys.courses() });
+      await eduhubAdminEnrollmentApplications.approve(record.id);
       toast.success("Approved", {
-        description: record.courseId.startsWith("teacher_")
-          ? "Student can access this class. Notifications saved for you both."
-          : "Student enrolled on the server. Notifications saved for you both.",
+        description: "Student enrolled successfully. They can now access this class.",
       });
       navigate("/dashboard/admin/enrollment-applications");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
-      toast.error("Could not complete enrollment", { description: msg });
+      toast.error("Could not approve application", { description: msg });
     } finally {
       setBusy(false);
     }
   };
 
-  const confirmReject = () => {
+  const confirmReject = async () => {
     if (!record) return;
-    const adminNote = rejectNote.trim() || undefined;
-    enrollmentApplicationStore.update(record.id, {
-      status: "REJECTED",
-      reviewedAt: new Date().toISOString(),
-      adminNote,
-    });
-    notifyEnrollmentDecision({
-      courseTitle: record.courseTitle ?? record.courseId,
-      courseId: record.courseId,
-      studentName: record.fullName,
-      studentEmailNorm: record.applicantEmailNorm,
-      decision: "rejected",
-      adminNote,
-    });
-    toast.message("Application rejected", {
-      description: "The student was notified in-app. They can submit again if you allow it.",
-    });
-    setRejectOpen(false);
-    navigate("/dashboard/admin/enrollment-applications");
+    setBusy(true);
+    try {
+      await eduhubAdminEnrollmentApplications.reject(record.id, {
+        adminNote: rejectNote.trim() || undefined,
+      });
+      toast.message("Application rejected", {
+        description: "The student can submit again if needed.",
+      });
+      setRejectOpen(false);
+      navigate("/dashboard/admin/enrollment-applications");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      toast.error("Could not reject application", { description: msg });
+    } finally {
+      setBusy(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+          <span className="ml-2 text-sm text-slate-500">Loading application...</span>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!applicationId) {
     return (
@@ -295,6 +270,7 @@ export default function AdminEnrollmentApplicationDetailPage() {
             {record.reviewedAt ? (
               <p className="text-xs text-slate-500 border-t border-slate-100 pt-4">
                 Reviewed {formatDate(record.reviewedAt)}
+                {record.reviewedByName ? ` by ${record.reviewedByName}` : ""}
               </p>
             ) : null}
           </div>
@@ -326,7 +302,7 @@ export default function AdminEnrollmentApplicationDetailPage() {
             <DialogTitle>Reject application</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="reject-note-detail">Note to record (optional)</Label>
+            <Label htmlFor="reject-note-detail">Note to student (optional)</Label>
             <Textarea
               id="reject-note-detail"
               value={rejectNote}
@@ -339,8 +315,8 @@ export default function AdminEnrollmentApplicationDetailPage() {
             <Button variant="outline" onClick={() => setRejectOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmReject}>
-              Reject application
+            <Button variant="destructive" disabled={busy} onClick={() => void confirmReject()}>
+              {busy ? "Rejecting…" : "Reject application"}
             </Button>
           </DialogFooter>
         </DialogContent>

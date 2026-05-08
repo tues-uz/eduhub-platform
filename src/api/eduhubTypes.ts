@@ -252,3 +252,54 @@ export interface ScheduleProposalResponse {
 export interface ScheduleRejectRequest {
   rejectionNote?: string;
 }
+
+// Enrollment Application Types
+
+export type EnrollmentApplicationStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type EnrollmentPaymentPlan = "FULL" | "DOWN_PAYMENT";
+
+export type EnrollmentInstallmentCount = 2 | 4 | 6 | 8;
+
+export interface EnrollmentApplicationRequest {
+  courseId: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  phoneSecondary?: string;
+  address: string;
+  paymentProofUrl: string;
+  idCardUrl?: string;
+  paymentPlan: EnrollmentPaymentPlan;
+  downPaymentAmount?: number;
+  priceCurrency?: string;
+  installmentCount?: EnrollmentInstallmentCount;
+}
+
+export interface EnrollmentApplicationResponse {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  applicantUserId?: string;
+  applicantEmailNorm: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  phoneSecondary?: string;
+  address: string;
+  paymentProofUrl: string;
+  idCardUrl?: string;
+  paymentPlan: EnrollmentPaymentPlan;
+  downPaymentAmount?: number;
+  priceCurrency?: string;
+  installmentCount?: EnrollmentInstallmentCount;
+  status: EnrollmentApplicationStatus;
+  submittedAt: string;
+  reviewedAt?: string;
+  adminNote?: string;
+  reviewedByName?: string;
+}
+
+export interface EnrollmentApplicationReviewRequest {
+  adminNote?: string;
+}

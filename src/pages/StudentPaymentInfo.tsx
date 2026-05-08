@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Download, Receipt, Upload } from "lucide-react";
+import { Download, Loader2, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,15 +19,11 @@ import {
 import { useAuthSession } from "@/features/auth/context";
 import {
   downloadEnrollmentApplicationPdf,
-  enrollmentRecordToPdfData,
+  type EnrollmentApplicationPdfData,
 } from "@/features/enrollment/enrollmentApplicationPdf";
-import {
-  enrollmentApplicationStore,
-  type EnrollmentApplicationRecord,
-} from "@/features/enrollment/enrollmentApplicationStore";
+import { eduhubEnrollmentApplications } from "@/api/eduhubClient";
+import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
 import { Input } from "@/components/ui/input";
-
-const ENROLLMENT_STORE_EVENT = "eduhub-enrollment-applications-changed";
 
 function formatMoney(price: number | undefined, currency = "USD"): string {
   if (price == null || price <= 0) return "—";
@@ -50,7 +46,7 @@ function formatSubmittedAt(iso: string): string {
   }
 }
 
-function planSummary(r: EnrollmentApplicationRecord): string {
+function planSummary(r: EnrollmentApplicationResponse): string {
   if (r.paymentPlan === "DOWN_PAYMENT") {
     const amt = formatMoney(r.downPaymentAmount, r.priceCurrency ?? "USD");
     const inst =
@@ -60,7 +56,7 @@ function planSummary(r: EnrollmentApplicationRecord): string {
   return "Full payment";
 }
 
-function statusStyles(status: EnrollmentApplicationRecord["status"]): string {
+function statusStyles(status: EnrollmentApplicationResponse["status"]): string {
   if (status === "APPROVED") return "bg-emerald-100 text-emerald-900";
   if (status === "REJECTED") return "bg-red-100 text-red-900";
   return "bg-amber-100 text-amber-950";
@@ -70,7 +66,31 @@ function isHttpUrl(u: string): boolean {
   return /^https?:\/\//i.test(u.trim());
 }
 
-function EnrollmentDetailFields({ r }: { r: EnrollmentApplicationRecord }) {
+function applicationToPdfData(r: EnrollmentApplicationResponse): EnrollmentApplicationPdfData {
+  const paymentDetailLines: string[] = [];
+  paymentDetailLines.push(
+    r.paymentPlan === "FULL"
+      ? "Payment plan: Full payment"
+      : `Payment plan: Down payment (${r.installmentCount ?? 2} instalments)`,
+  );
+  paymentDetailLines.push(`Tuition: ${formatMoney(r.downPaymentAmount ?? 0, r.priceCurrency ?? "USD")}`);
+  return {
+    submittedAtIso: r.submittedAt,
+    courseTitle: r.courseTitle ?? r.courseId,
+    courseId: r.courseId,
+    tuitionLabel: formatMoney(r.downPaymentAmount ?? 0, r.priceCurrency ?? "USD"),
+    fullName: r.fullName,
+    email: r.email,
+    phone: r.phone,
+    phoneSecondary: r.phoneSecondary,
+    address: r.address,
+    paymentDetailLines,
+    proofFileName: "payment-proof",
+    idFileName: "id-document",
+  };
+}
+
+function EnrollmentDetailFields({ r }: { r: EnrollmentApplicationResponse }) {
   return (
     <dl className="space-y-3 text-sm">
       <div>
@@ -130,29 +150,25 @@ function EnrollmentDetailFields({ r }: { r: EnrollmentApplicationRecord }) {
 
 const StudentPaymentInfo = () => {
   const { user } = useAuthSession();
-  const [listVersion, setListVersion] = useState(0);
-  const [detailRecord, setDetailRecord] = useState<EnrollmentApplicationRecord | null>(null);
+  const [rows, setRows] = useState<EnrollmentApplicationResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [detailRecord, setDetailRecord] = useState<EnrollmentApplicationResponse | null>(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const bump = () => setListVersion((n) => n + 1);
-    window.addEventListener(ENROLLMENT_STORE_EVENT, bump);
-    window.addEventListener("storage", bump);
-    return () => {
-      window.removeEventListener(ENROLLMENT_STORE_EVENT, bump);
-      window.removeEventListener("storage", bump);
-    };
-  }, []);
-
-  const rows = useMemo(() => {
-    void listVersion;
     const emailNorm = user.email.trim().toLowerCase();
-    if (!emailNorm) return [] as EnrollmentApplicationRecord[];
-    return enrollmentApplicationStore
-      .list()
-      .filter((r) => r.applicantEmailNorm === emailNorm)
-      .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
-  }, [user.email, listVersion]);
+    if (!emailNorm) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    eduhubEnrollmentApplications
+      .getMy(emailNorm)
+      .then(setRows)
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
+  }, [user.email]);
 
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -186,7 +202,12 @@ const StudentPaymentInfo = () => {
           .
         </p>
 
-        {rows.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+            <span className="ml-2 text-sm text-zinc-500">Loading applications...</span>
+          </div>
+        ) : rows.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-6 py-12 text-center">
             <Receipt className="mx-auto mb-3 h-10 w-10 text-zinc-300" aria-hidden />
             <p className="text-sm font-medium text-zinc-800">No payment activity yet</p>
@@ -301,28 +322,11 @@ const StudentPaymentInfo = () => {
                     </div>
                     <EnrollmentDetailFields r={detailRecord} />
                     <div className="flex flex-wrap gap-2 border-t border-zinc-100 pt-4">
-                      {(detailRecord.status === "PENDING" || detailRecord.status === "REJECTED") && !isHttpUrl(detailRecord.paymentProofUrl) ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="rounded-xl"
-                          onClick={() => {
-                            // Demo: mimic a newly uploaded file URL.
-                            enrollmentApplicationStore.update(detailRecord.id, {
-                              paymentProofUrl: "https://files.eduhub.local/demo-payment-proof.pdf",
-                            });
-                            setDetailRecord(enrollmentApplicationStore.getById(detailRecord.id) ?? null);
-                          }}
-                        >
-                          <Upload className="mr-2 h-4 w-4" aria-hidden />
-                          Upload proof (demo)
-                        </Button>
-                      ) : null}
                       <Button
                         type="button"
                         className="rounded-xl bg-[#3954d0] hover:bg-[#2f47b3]"
                         onClick={() =>
-                          downloadEnrollmentApplicationPdf(enrollmentRecordToPdfData(detailRecord))
+                          downloadEnrollmentApplicationPdf(applicationToPdfData(detailRecord))
                         }
                       >
                         <Download className="mr-2 h-4 w-4" aria-hidden />
@@ -338,11 +342,6 @@ const StudentPaymentInfo = () => {
             </Dialog>
           </>
         )}
-
-        <p className="mt-6 text-xs leading-relaxed text-zinc-500">
-          History is based on enrollment applications stored in your browser for this account. If you use another
-          device or clear site data, older rows may not appear until connected to your school&apos;s billing system.
-        </p>
       </div>
     </div>
   );
