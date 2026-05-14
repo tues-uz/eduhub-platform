@@ -44,6 +44,7 @@ export const studentMenuItems: FlatMenuItem[] = [
 /** Admin: nested groups for LMS + booking + payments operations */
 export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard/admin" },
+  { icon: Bell, label: "Notifications", path: "/dashboard/admin/notifications" },
   {
     icon: Users,
     label: "People",
@@ -71,13 +72,15 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
     children: [
       { label: "Payments & reminders", path: "/dashboard/admin/payments" },
       { label: "Payroll", path: "/dashboard/admin/payroll" },
-      { label: "Payroll submission log", path: "/dashboard/admin/payroll/submissions" },
+      { label: "Instructor payroll requests", path: "/dashboard/admin/payroll/instructor-requests" },
+      { label: "Payout proof log", path: "/dashboard/admin/payroll/submissions" },
       { label: "Transactions", path: "/dashboard/admin/transactions" },
       { label: "Attendance & progress", path: "/dashboard/admin/attendance" },
       { label: "Placement tests", path: "/dashboard/admin/placement-tests" },
       { label: "Certifications", path: "/dashboard/admin/certifications" },
       { label: "Calendar", path: "/dashboard/admin/calendar" },
       { label: "Support sessions", path: "/dashboard/admin/support-sessions" },
+      { label: "Substitute cover requests", path: "/dashboard/admin/substitute-requests" },
     ],
   },
   { icon: Link2, label: "Integrations", path: "/dashboard/admin/integrations" },
@@ -95,7 +98,6 @@ export const teacherMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
     children: [
       { label: "My Class", path: "/dashboard/teacher/courses" },
       { label: "Add New Class", path: "/dashboard/teacher/courses/new" },
-      { label: "Placement Test/Quiz", path: "/dashboard/teacher/placement-test" },
     ],
   },
   { icon: Calendar, label: "Schedule approvals", path: "/dashboard/teacher/schedule" },

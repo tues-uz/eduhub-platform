@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import QRCode from "react-qr-code";
-import { Maximize2, Minimize2, QrCode, RefreshCw } from "lucide-react";
+import { Maximize2, Minimize2, QrCode, RefreshCw, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,12 +24,41 @@ import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore
 import type { TeacherCourse } from "@/features/teacher/types";
 import { eduhubCourses } from "@/api/eduhubClient";
 import {
+  notifyAttendanceQrGenerated,
+  notifyAttendanceSessionCompleted,
+} from "@/features/notifications/appNotificationStore";
+import {
+  backfillCompletedSessionLog,
+  finalizeOpenSessionsForCourse,
+  finalizeSessionLog,
+  listAttendanceSessionLogsForInstructor,
+  startSessionLog,
+} from "@/features/teacher/attendance/attendanceSessionLogsStorage";
+import {
+  ATTENDANCE_SESSION_MAX_MS,
   buildAttendanceJoinUrl,
   loadStoredMeetings,
   MAX_STORED_MEETINGS,
   persistMeetings,
   type StoredAttendanceMeeting,
 } from "@/features/teacher/attendance/attendanceMeetingsStorage";
+import {
+  AttendanceSessionLogsSection,
+  useAttendanceSessionLogsTick,
+} from "@/features/teacher/components/AttendanceSessionLogsSection";
+import { AttendanceOverviewQrPicker, type ApprovedScheduleSlotOption } from "@/features/teacher/components/AttendanceOverviewQrPicker";
+
+function formatElapsedParts(ms: number): { h: number; m: number; s: number } {
+  const sec = Math.floor(Math.max(0, ms) / 1000);
+  return { h: Math.floor(sec / 3600), m: Math.floor((sec % 3600) / 60), s: sec % 60 };
+}
+
+function formatElapsedLabel(ms: number): string {
+  const { h, m, s } = formatElapsedParts(ms);
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
 
 /** ~26 weeks ≈ six calendar months — rough guide for “meetings per week” hints. */
 const WEEKS_IN_SIX_MONTHS = 26;
@@ -41,14 +70,44 @@ function meetingsPerWeekHint(sessionsSixMo: number): string | null {
   return `Your target (${sessionsSixMo} sessions in 6 months) works out to about ${rounded} class meeting${rounded === 1 ? "" : "s"} per week on average.`;
 }
 
+function defaultAutoCheckInMeetingLabel(): string {
+  const d = new Date();
+  return `Check-in · ${d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })}`;
+}
+
 type Props = {
   /** Tighter layout + slightly smaller QR when used inside My Class tab */
   embedded?: boolean;
   /** When set, lock QR to this course and hide the course dropdown (e.g. course roster page). */
   fixedCourse?: { id: string; title: string; classMeetingsInSixMonths?: number };
+  /**
+   * When non-empty, pre-fills "Name this class meeting" while the field is empty, and re-applies after each new QR
+   * (e.g. substitute cover tied to a schedule row).
+   */
+  suggestedMeetingName?: string;
+  /**
+   * Renders the roster “which meeting for the table” picker in this card (after naming the meeting), so instructors
+   * align schedule → name → meeting for overview → generate QR in one place.
+   */
+  rosterAttendanceOverviewPicker?: {
+    onSelectionChange?: (sessionId: string | null) => void;
+    /** Approved / planned class meetings (schedule tab) so the overview picker can align with admin + instructor schedule. */
+    approvedScheduleSlots?: { index: number; label: string; sessionDate?: string }[];
+  };
 };
 
-export function TeacherAttendanceSessionPanel({ embedded = false, fixedCourse }: Props) {
+export function TeacherAttendanceSessionPanel({
+  embedded = false,
+  fixedCourse,
+  suggestedMeetingName,
+  rosterAttendanceOverviewPicker,
+}: Props) {
   const { user } = useAuthSession();
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +117,18 @@ export function TeacherAttendanceSessionPanel({ embedded = false, fixedCourse }:
   /** Required label before generating a new QR */
   const [nextMeetingName, setNextMeetingName] = useState("");
   const [projectorMode, setProjectorMode] = useState(false);
+  const [sessionClock, setSessionClock] = useState(() => Date.now());
+  /** Sessions ended early via Stop — hides QR until a new meeting QR is generated. */
+  const [manuallyStoppedSessionIds, setManuallyStoppedSessionIds] = useState<string[]>([]);
+  /** Roster: saved meeting id chosen in overview picker (drives attendance table). */
+  const [rosterOverviewSessionId, setRosterOverviewSessionId] = useState<string | null>(null);
+  /** Roster: planned schedule row chosen with no matching QR yet — enables Generate using that label. */
+  const [rosterScheduleSlotIntent, setRosterScheduleSlotIntent] = useState<ApprovedScheduleSlotOption | null>(null);
+
+  useEffect(() => {
+    setRosterOverviewSessionId(null);
+    setRosterScheduleSlotIntent(null);
+  }, [courseId]);
 
   useEffect(() => {
     if (fixedCourse) {
@@ -126,6 +197,12 @@ export function TeacherAttendanceSessionPanel({ embedded = false, fixedCourse }:
   }, [user.id, fixedCourse?.id, fixedCourse?.title]);
 
   useEffect(() => {
+    const s = suggestedMeetingName?.trim();
+    if (!s || rosterAttendanceOverviewPicker) return;
+    setNextMeetingName((prev) => (prev.trim() === "" ? s : prev));
+  }, [suggestedMeetingName, rosterAttendanceOverviewPicker]);
+
+  useEffect(() => {
     if (!courseId) {
       setStoredMeetings([]);
       setSessionId(null);
@@ -139,10 +216,61 @@ export function TeacherAttendanceSessionPanel({ embedded = false, fixedCourse }:
     });
   }, [courseId]);
 
+  const selectedCourse = useMemo(
+    () => courses.find((c) => c.id === courseId),
+    [courses, courseId],
+  );
+
+  const prevCourseForLogRef = useRef<string | undefined>(undefined);
+  const finalizedMaxDurationRef = useRef<Set<string>>(new Set());
+  const manualStopOnceRef = useRef<Set<string>>(new Set());
+  const logTick = useAttendanceSessionLogsTick();
+
+  useEffect(() => {
+    if (!courseId) {
+      prevCourseForLogRef.current = undefined;
+      return;
+    }
+    const prev = prevCourseForLogRef.current;
+    prevCourseForLogRef.current = courseId;
+    if (prev && prev !== courseId) {
+      const ended = finalizeOpenSessionsForCourse(prev, "course_changed");
+      ended.forEach((e) => notifyAttendanceSessionCompleted(e));
+    }
+  }, [courseId]);
+
+  const handleRosterScheduleSlotIntent = useCallback(
+    (slot: ApprovedScheduleSlotOption | null) => {
+      setRosterScheduleSlotIntent(slot);
+      if (slot) {
+        setRosterOverviewSessionId(null);
+        rosterAttendanceOverviewPicker?.onSelectionChange?.(null);
+      }
+    },
+    [rosterAttendanceOverviewPicker],
+  );
+
   const generateSession = useCallback(() => {
     if (!courseId) return;
-    const name = nextMeetingName.trim();
+    const name = rosterAttendanceOverviewPicker
+      ? (rosterScheduleSlotIntent?.label.trim() ||
+          suggestedMeetingName?.trim() ||
+          defaultAutoCheckInMeetingLabel())
+      : nextMeetingName.trim();
     if (!name) return;
+
+    const prevSessionId = sessionId;
+    const courseTitle = selectedCourse?.title?.trim() || "Class";
+
+    if (prevSessionId) {
+      const ended = finalizeSessionLog({
+        courseId,
+        sessionId: prevSessionId,
+        endReason: "new_session",
+      });
+      if (ended) notifyAttendanceSessionCompleted(ended);
+    }
+
     const next: StoredAttendanceMeeting = {
       sessionId: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
@@ -155,16 +283,39 @@ export function TeacherAttendanceSessionPanel({ embedded = false, fixedCourse }:
       return merged;
     });
     setSessionId(next.sessionId);
-    setNextMeetingName("");
-  }, [courseId, nextMeetingName]);
+    setNextMeetingName(rosterAttendanceOverviewPicker ? "" : (suggestedMeetingName?.trim() ?? ""));
 
-  const selectedCourse = useMemo(
-    () => courses.find((c) => c.id === courseId),
-    [courses, courseId],
-  );
+    const log = startSessionLog({
+      courseId,
+      courseTitle,
+      sessionId: next.sessionId,
+      meetingName: name,
+      instructorId: user.id,
+      instructorEmail: user.email ?? "",
+      instructorName: user.name ?? "",
+    });
+    notifyAttendanceQrGenerated(log);
+    if (rosterAttendanceOverviewPicker) {
+      setRosterScheduleSlotIntent(null);
+    }
+  }, [
+    courseId,
+    nextMeetingName,
+    rosterAttendanceOverviewPicker,
+    rosterScheduleSlotIntent,
+    sessionId,
+    selectedCourse?.title,
+    suggestedMeetingName,
+    user.email,
+    user.id,
+    user.name,
+  ]);
 
-  const joinUrl =
-    courseId && sessionId ? buildAttendanceJoinUrl(courseId, sessionId) : "";
+  const joinUrl = useMemo(() => {
+    if (!courseId || !sessionId) return "";
+    const meeting = storedMeetings.find((m) => m.sessionId === sessionId);
+    return buildAttendanceJoinUrl(courseId, sessionId, meeting?.createdAt);
+  }, [courseId, sessionId, storedMeetings]);
 
   const activeMeeting = useMemo(
     () => storedMeetings.find((m) => m.sessionId === sessionId),
@@ -190,6 +341,102 @@ export function TeacherAttendanceSessionPanel({ embedded = false, fixedCourse }:
       ? meetingsPerWeekHint(fixedCourse.classMeetingsInSixMonths)
       : null;
 
+  useEffect(() => {
+    if (!activeMeeting?.createdAt) return;
+    const start = new Date(activeMeeting.createdAt).getTime();
+    if (!Number.isFinite(start)) return;
+    const tick = () => setSessionClock(Date.now());
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [activeMeeting?.createdAt, activeMeeting?.sessionId]);
+
+  const sessionStartMs = activeMeeting?.createdAt
+    ? new Date(activeMeeting.createdAt).getTime()
+    : NaN;
+  const sessionElapsedMs =
+    activeMeeting && Number.isFinite(sessionStartMs)
+      ? Math.max(0, sessionClock - sessionStartMs)
+      : 0;
+  const sessionRemainingMs = Math.max(0, ATTENDANCE_SESSION_MAX_MS - sessionElapsedMs);
+
+  const isSessionManuallyStopped =
+    Boolean(sessionId) && manuallyStoppedSessionIds.includes(sessionId as string);
+
+  const checkInWindowOpen =
+    Boolean(activeMeeting && Number.isFinite(sessionStartMs)) &&
+    !isSessionManuallyStopped &&
+    sessionElapsedMs < ATTENDANCE_SESSION_MAX_MS;
+
+  useEffect(() => {
+    if (!courseId || !activeMeeting?.sessionId) return;
+    if (sessionElapsedMs < ATTENDANCE_SESSION_MAX_MS) return;
+    const sid = activeMeeting.sessionId;
+    if (finalizedMaxDurationRef.current.has(sid)) return;
+    const courseTitle = selectedCourse?.title?.trim() || "Class";
+    let ended = finalizeSessionLog({ courseId, sessionId: sid, endReason: "max_duration" });
+    if (!ended) {
+      ended = backfillCompletedSessionLog({
+        courseId,
+        courseTitle,
+        sessionId: sid,
+        meetingName: activeMeeting.name.trim() || "Meeting",
+        instructorId: user.id,
+        instructorEmail: user.email ?? "",
+        instructorName: user.name ?? "",
+        sessionStartedAtIso: activeMeeting.createdAt,
+        endReason: "max_duration",
+      });
+    }
+    if (ended) {
+      finalizedMaxDurationRef.current.add(sid);
+      notifyAttendanceSessionCompleted(ended);
+    }
+  }, [
+    courseId,
+    activeMeeting?.sessionId,
+    activeMeeting?.createdAt,
+    activeMeeting?.name,
+    sessionElapsedMs,
+    selectedCourse?.title,
+    user.email,
+    user.id,
+    user.name,
+  ]);
+
+  const stopSession = useCallback(() => {
+    if (!courseId || !sessionId || !activeMeeting) return;
+    if (manuallyStoppedSessionIds.includes(sessionId)) return;
+    if (manualStopOnceRef.current.has(sessionId)) return;
+    manualStopOnceRef.current.add(sessionId);
+
+    const courseTitle = selectedCourse?.title?.trim() || "Class";
+    let ended = finalizeSessionLog({ courseId, sessionId, endReason: "manual_stop" });
+    if (!ended) {
+      ended = backfillCompletedSessionLog({
+        courseId,
+        courseTitle,
+        sessionId,
+        meetingName: activeMeeting.name.trim() || "Meeting",
+        instructorId: user.id,
+        instructorEmail: user.email ?? "",
+        instructorName: user.name ?? "",
+        sessionStartedAtIso: activeMeeting.createdAt,
+        endReason: "manual_stop",
+      });
+    }
+    if (ended) {
+      notifyAttendanceSessionCompleted(ended);
+    }
+    setManuallyStoppedSessionIds((prev) => (prev.includes(sessionId) ? prev : [...prev, sessionId]));
+  }, [courseId, sessionId, activeMeeting, selectedCourse?.title, user.email, user.id, user.name]);
+
+  const instructorEmailNorm = user.email.trim().toLowerCase();
+  const courseSessionLogs = useMemo(() => {
+    void logTick;
+    return listAttendanceSessionLogsForInstructor(instructorEmailNorm, user.name).filter((l) => l.courseId === courseId);
+  }, [courseId, instructorEmailNorm, logTick, user.name]);
+
   return (
     <>
       <Card className="border border-gray-100 shadow-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -200,7 +447,7 @@ export function TeacherAttendanceSessionPanel({ embedded = false, fixedCourse }:
           </CardTitle>
           <CardDescription>
             {fixedCourse
-              ? "Name each meeting, generate a QR (or share the link), and use projector mode when you need it. Past meetings stay on this browser (see Student attendance overview below for a list by name)."
+              ? "Generate a QR (or share the link) and use projector mode when you need it. Pick which saved meeting the attendance table uses, then generate—the meeting name comes from your schedule when set, otherwise a time-stamped label."
               : embedded
                 ? "Name the meeting, then generate. Share the link or show the QR. Older meetings stay in this browser."
                 : "Generate a check-in code for each session; recent meetings are kept on this device."}
@@ -248,29 +495,67 @@ export function TeacherAttendanceSessionPanel({ embedded = false, fixedCourse }:
                 </div>
               ) : null}
 
-              <div className="space-y-2">
-                <Label htmlFor={embedded ? "attendance-meeting-name-embedded" : "attendance-meeting-name"}>
-                  Name this class meeting
-                </Label>
-                <Input
-                  id={embedded ? "attendance-meeting-name-embedded" : "attendance-meeting-name"}
-                  value={nextMeetingName}
-                  onChange={(e) => setNextMeetingName(e.target.value.slice(0, 120))}
-                  placeholder='e.g. Week 3 — Tuesday, or "Midterm review (online)"'
-                  className="max-w-xl bg-white"
-                  autoComplete="off"
+              {!rosterAttendanceOverviewPicker ? (
+                <div className="space-y-2">
+                  <Label htmlFor={embedded ? "attendance-meeting-name-embedded" : "attendance-meeting-name"}>
+                    Name this class meeting
+                  </Label>
+                  <Input
+                    id={embedded ? "attendance-meeting-name-embedded" : "attendance-meeting-name"}
+                    value={nextMeetingName}
+                    onChange={(e) => setNextMeetingName(e.target.value.slice(0, 120))}
+                    placeholder='e.g. Week 3 — Tuesday, or "Midterm review (online)"'
+                    className="max-w-xl bg-white"
+                    autoComplete="off"
+                  />
+                  <p className="text-xs text-muted-foreground max-w-xl">
+                    Enter a short name before generating the QR (shown under the code and in projector view).
+                    {suggestedMeetingName?.trim() ? (
+                      <>
+                        {" "}
+                        <span className="text-foreground/75">
+                          Pre-filled from your scheduled cover session; edit if you need a different label.
+                        </span>
+                      </>
+                    ) : null}
+                  </p>
+                </div>
+              ) : null}
+
+              {fixedCourse && rosterAttendanceOverviewPicker ? (
+                <AttendanceOverviewQrPicker
+                  courseId={fixedCourse.id}
+                  className="mb-0"
+                  generateQrBelow
+                  deferAutoSelectFirstMeeting
+                  approvedScheduleSlots={rosterAttendanceOverviewPicker.approvedScheduleSlots}
+                  onSelectionChange={(id) => {
+                    setRosterOverviewSessionId(id);
+                    rosterAttendanceOverviewPicker.onSelectionChange?.(id);
+                  }}
+                  onScheduleSlotIntent={handleRosterScheduleSlotIntent}
                 />
-                <p className="text-xs text-muted-foreground max-w-xl">
-                  Enter a short name before generating the QR (shown under the code and in projector view).
-                </p>
-              </div>
+              ) : null}
 
               <div className="flex flex-wrap gap-3">
                 <Button
                   type="button"
                   className="rounded-full bg-[#1e40af] hover:bg-[#1e3a8a]"
                   onClick={generateSession}
-                  disabled={!courseId || !nextMeetingName.trim()}
+                  disabled={
+                    !courseId ||
+                    (!rosterAttendanceOverviewPicker && !nextMeetingName.trim()) ||
+                    (Boolean(rosterAttendanceOverviewPicker) &&
+                      !rosterOverviewSessionId &&
+                      !rosterScheduleSlotIntent)
+                  }
+                  title={
+                    rosterAttendanceOverviewPicker &&
+                    !rosterOverviewSessionId &&
+                    !rosterScheduleSlotIntent
+                      ? "Choose a planned session or saved meeting in the dropdown above first."
+                      : undefined
+                  }
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   {storedMeetings.length > 0 ? "New QR for next meeting" : "Generate QR for this meeting"}
@@ -302,19 +587,76 @@ export function TeacherAttendanceSessionPanel({ embedded = false, fixedCourse }:
                       </p>
                     ) : null}
                   </div>
-                  <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200/80">
-                    <QRCode value={joinUrl} size={qrSize} level="M" />
-                  </div>
-                  <p className="text-xs text-center text-foreground/55 max-w-md">
-                    Scan opens student check-in for this meeting only. Meeting id (support):{" "}
-                    <span className="font-mono text-foreground/70">{sessionId.slice(0, 8)}…</span>
-                  </p>
+                  {checkInWindowOpen ? (
+                    <>
+                      <div className="w-full max-w-md rounded-lg border border-[#1e40af]/25 bg-[#1e40af]/[0.06] px-4 py-3 text-center">
+                        <p className="text-xs font-medium uppercase tracking-wide text-[#1e40af]/90">
+                          Class session time
+                        </p>
+                        <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
+                          {formatElapsedLabel(sessionElapsedMs)}
+                          <span className="text-sm font-normal text-muted-foreground">
+                            {" "}
+                            / {formatElapsedLabel(ATTENDANCE_SESSION_MAX_MS)} max
+                          </span>
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Check-in closes automatically after{" "}
+                          {formatElapsedLabel(ATTENDANCE_SESSION_MAX_MS)} total ·{" "}
+                          {formatElapsedLabel(sessionRemainingMs)} remaining
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-3 rounded-full border-red-200 bg-white text-red-800 hover:bg-red-50 hover:text-red-900"
+                          onClick={stopSession}
+                        >
+                          <Square className="h-3.5 w-3.5 mr-2 fill-current" />
+                          Stop session
+                        </Button>
+                      </div>
+                      <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200/80">
+                        <QRCode value={joinUrl} size={qrSize} level="M" />
+                      </div>
+                      <p className="text-xs text-center text-foreground/55 max-w-md">
+                        Scan opens student check-in for this meeting only. Meeting id (support):{" "}
+                        <span className="font-mono text-foreground/70">{sessionId.slice(0, 8)}…</span>
+                      </p>
+                    </>
+                  ) : isSessionManuallyStopped ? (
+                    <div className="w-full max-w-md rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-5 text-center">
+                      <p className="text-sm font-semibold text-amber-950">Session stopped</p>
+                      <p className="mt-2 text-sm text-amber-950/85">
+                        You ended check-in for this meeting ({formatElapsedLabel(sessionElapsedMs)}). Generate a new QR
+                        when you are ready for another check-in window.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="w-full max-w-md rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-5 text-center">
+                      <p className="text-sm font-semibold text-amber-950">Check-in window ended</p>
+                      <p className="mt-2 text-sm text-amber-950/85">
+                        This session ran for {formatElapsedLabel(ATTENDANCE_SESSION_MAX_MS)} (the maximum length).
+                        Generate a new QR if you need another check-in period.
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-foreground/60">
-                  Pick a class and tap Generate QR for this meeting to create the code for today&apos;s session.
+                  {rosterAttendanceOverviewPicker
+                    ? "Tap Generate below to create the check-in QR for this class."
+                    : "Pick a class and tap Generate QR for this meeting to create the code for today's session."}
                 </p>
               )}
+
+              {courseId ? (
+                <AttendanceSessionLogsSection
+                  entries={courseSessionLogs.slice(0, 12)}
+                  title="Session log (this class)"
+                  description="Each QR starts a logged session; time in class is saved when you tap Stop session, hit the 2h 15m cap, start a new QR, or switch class. Same data appears under Notifications."
+                />
+              ) : null}
             </>
           )}
         </CardContent>
@@ -330,16 +672,32 @@ export function TeacherAttendanceSessionPanel({ embedded = false, fixedCourse }:
           {activeMeeting?.name.trim() ? (
             <p className="text-base text-white/90 font-medium text-center mb-1 max-w-4xl">{activeMeeting.name.trim()}</p>
           ) : null}
-          <p className="text-sm text-white/70 mb-8 text-center max-w-lg">
+          <p className="text-sm text-white/70 mb-4 text-center max-w-lg">
             {activeMeeting?.modality === "online"
               ? "Online meeting check-in · Scan or open link · Esc to exit"
               : activeMeeting
                 ? "In-person meeting check-in · Scan to check in · Esc to exit"
                 : "Class meeting check-in · Scan to check in · Esc to exit"}
           </p>
-          <div className="rounded-3xl bg-white p-6 sm:p-10 shadow-2xl">
-            <QRCode value={joinUrl} size={qrSize} level="H" />
-          </div>
+          {checkInWindowOpen ? (
+            <>
+              <p className="text-lg font-semibold tabular-nums text-white mb-8">
+                Session: {formatElapsedLabel(sessionElapsedMs)} / {formatElapsedLabel(ATTENDANCE_SESSION_MAX_MS)}
+              </p>
+              <div className="rounded-3xl bg-white p-6 sm:p-10 shadow-2xl">
+                <QRCode value={joinUrl} size={qrSize} level="H" />
+              </div>
+            </>
+          ) : isSessionManuallyStopped ? (
+            <p className="text-lg text-center text-amber-200 max-w-lg mb-8">
+              Session stopped — check-in closed for this meeting. Generate a new QR to continue.
+            </p>
+          ) : (
+            <p className="text-lg text-center text-amber-200 max-w-lg mb-8">
+              Check-in closed — session reached {formatElapsedLabel(ATTENDANCE_SESSION_MAX_MS)}. Generate a new QR to
+              continue.
+            </p>
+          )}
           <Button
             type="button"
             variant="secondary"

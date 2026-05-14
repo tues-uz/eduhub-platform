@@ -1,29 +1,18 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
+import { ArrowLeft, Eye } from "lucide-react";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { buildPayrollProofPagePath } from "@/features/admin/data/adminPayrollProofStore";
 import { PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
-import type { AdminPaymentRow, PaymentStatus } from "@/features/admin/data/adminOperationalMock";
+import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock";
 import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
-import {
-  aggregatePaymentsByClass,
-  currencyMapToFormattedLines,
-  estimateInstructorPayoutLines,
-  formatMoney,
-  INSTRUCTOR_REVENUE_SHARE,
-  sumAmountsForStatuses,
-} from "@/features/payroll/classPayrollAggregate";
-import {
-  instructorPayrollRequestStore,
-  useInstructorPayrollRequests,
-} from "@/features/teacher/data/instructorPayrollRequestStore";
+import { aggregatePaymentsByClass, formatMoney, sumAmountsForStatuses } from "@/features/payroll/classPayrollAggregate";
+import { formatThousandsInText } from "@/lib/utils";
+import { useInstructorPayrollRequests } from "@/features/teacher/data/instructorPayrollRequestStore";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -61,24 +50,26 @@ function CurrencyAmountLines({
   );
 }
 
-function initialsFromName(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0] ?? ""}${parts[parts.length - 1]?.[0] ?? ""}`.toUpperCase();
+function formatSubmittedShort(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  } catch {
+    return iso;
+  }
 }
 
 export default function AdminPayrollPage() {
   const payments = useAdminPayments();
   const payrollRequests = useInstructorPayrollRequests();
-  const pendingPayrollRequests = useMemo(
-    () => payrollRequests.filter((r) => r.status === "pending"),
+  const pendingPayrollCount = useMemo(
+    () => payrollRequests.filter((r) => r.status === "pending").length,
     [payrollRequests],
   );
-  const [rejectNotes, setRejectNotes] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [requestStatusFilter, setRequestStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [requestSearch, setRequestSearch] = useState("");
 
   const classOptions = useMemo(() => {
     const names = new Set(payments.map((p) => p.className));
@@ -128,6 +119,36 @@ export default function AdminPayrollPage() {
 
   const totalsByClass = useMemo(() => aggregatePaymentsByClass(filteredPayments), [filteredPayments]);
 
+  const instructorRequestsSorted = useMemo(
+    () => [...payrollRequests].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
+    [payrollRequests],
+  );
+
+  const instructorRequestsFiltered = useMemo(() => {
+    const q = requestSearch.trim().toLowerCase();
+    return instructorRequestsSorted.filter((r) => {
+      if (requestStatusFilter !== "all" && r.status !== requestStatusFilter) return false;
+      if (!q) return true;
+      const hay = [
+        r.instructorName,
+        r.instructorEmailNorm,
+        r.classSection,
+        r.course,
+        r.periodLabel,
+        r.sessionsTaught,
+        r.requestedPayout,
+        r.payoutDetails,
+        r.summary,
+        r.instructorNotes,
+        r.adminNote ?? "",
+        r.status,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [instructorRequestsSorted, requestStatusFilter, requestSearch]);
+
   const hasActiveFilters = search.trim() !== "" || classFilter !== "all" || statusFilter !== "all";
 
   return (
@@ -143,11 +164,21 @@ export default function AdminPayrollPage() {
 
         <AdminPageHeader
           title="Payroll"
-          description="Tuition by class — synced with Payments. Payout proofs are uploaded on a dedicated page per class."
+          description="Instructor submissions (compact list) and student tuition below. Open the eye for full detail, approve / reject, and transfer proof."
           actions={
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" asChild>
-                <Link to="/dashboard/admin/payroll/submissions">Submission log</Link>
+                <Link to="/dashboard/admin/payroll/instructor-requests" className="inline-flex items-center gap-2">
+                  Instructor requests
+                  {pendingPayrollCount > 0 ? (
+                    <Badge variant="secondary" className="h-5 min-w-5 justify-center rounded-full px-1.5 tabular-nums">
+                      {pendingPayrollCount}
+                    </Badge>
+                  ) : null}
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/dashboard/admin/payroll/submissions">Payout proof log</Link>
               </Button>
               <Button variant="outline" size="sm" asChild>
                 <Link to="/dashboard/admin/payments">Payments & reminders</Link>
@@ -155,126 +186,6 @@ export default function AdminPayrollPage() {
             </div>
           }
         />
-
-        {pendingPayrollRequests.length > 0 ? (
-          <Card className="mb-8 rounded-xl border-amber-200/90 bg-amber-50/40 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base text-slate-900">Instructor payroll requests</CardTitle>
-              <p className="text-sm text-slate-600 font-normal">
-                Instructors submitted figures from their Payroll page. Approve to acknowledge, or reject with a short note.
-                You can still upload payout proof from each class card below.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {pendingPayrollRequests.map((r) => (
-                <div
-                  key={r.id}
-                  className="rounded-lg border border-amber-200/80 bg-white p-4 shadow-sm space-y-3"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-slate-900">
-                        {r.classSection} · {r.course}
-                      </p>
-                      <p className="text-sm text-slate-600 mt-0.5">
-                        {r.instructorName}
-                        {r.instructorEmailNorm ? (
-                          <span className="text-slate-500"> · {r.instructorEmailNorm}</span>
-                        ) : null}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-2">
-                        Submitted {new Date(r.submittedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2 shrink-0">
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="bg-emerald-600 hover:bg-emerald-700"
-                        onClick={() => {
-                          const ok = instructorPayrollRequestStore.approve(r.id);
-                          if (ok) toast.success("Request approved", { description: r.instructorName });
-                          else toast.error("Could not approve", { description: "Request may have been removed." });
-                        }}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => {
-                          const note = rejectNotes[r.id]?.trim();
-                          const ok = instructorPayrollRequestStore.reject(r.id, note);
-                          if (ok) {
-                            toast.message("Request rejected", { description: r.instructorName });
-                            setRejectNotes((prev) => {
-                              const next = { ...prev };
-                              delete next[r.id];
-                              return next;
-                            });
-                          } else toast.error("Could not reject");
-                        }}
-                      >
-                        Reject
-                      </Button>
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-700">{r.summary}</p>
-                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                    {r.periodLabel ? (
-                      <div>
-                        <dt className="text-xs font-medium text-slate-500">Period</dt>
-                        <dd className="text-slate-800">{r.periodLabel}</dd>
-                      </div>
-                    ) : null}
-                    {r.sessionsTaught ? (
-                      <div>
-                        <dt className="text-xs font-medium text-slate-500">Sessions taught</dt>
-                        <dd className="text-slate-800">{r.sessionsTaught}</dd>
-                      </div>
-                    ) : null}
-                    {r.requestedPayout ? (
-                      <div>
-                        <dt className="text-xs font-medium text-slate-500">Requested payout</dt>
-                        <dd className="text-slate-800 tabular-nums">{r.requestedPayout}</dd>
-                      </div>
-                    ) : null}
-                    {r.payoutDetails ? (
-                      <div>
-                        <dt className="text-xs font-medium text-slate-500">Payout details</dt>
-                        <dd className="text-slate-800">{r.payoutDetails}</dd>
-                      </div>
-                    ) : null}
-                  </dl>
-                  {r.instructorNotes ? (
-                    <p className="text-sm text-slate-600">
-                      <span className="font-medium text-slate-700">Instructor notes: </span>
-                      {r.instructorNotes}
-                    </p>
-                  ) : null}
-                  <div>
-                    <label className="text-xs font-medium text-slate-600" htmlFor={`reject-${r.id}`}>
-                      Optional note to instructor (shown on reject)
-                    </label>
-                    <Textarea
-                      id={`reject-${r.id}`}
-                      value={rejectNotes[r.id] ?? ""}
-                      onChange={(e) =>
-                        setRejectNotes((prev) => ({
-                          ...prev,
-                          [r.id]: e.target.value,
-                        }))
-                      }
-                      placeholder="Reason or next steps…"
-                      className="mt-1 bg-white min-h-[72px]"
-                    />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ) : null}
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-8">
           <Input
@@ -357,150 +268,88 @@ export default function AdminPayrollPage() {
         </div>
 
         <div className="mb-8">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between mb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between mb-4">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Payroll by class</h2>
+              <h2 className="text-base font-semibold text-slate-900">Instructor payroll submissions</h2>
               <p className="text-sm text-slate-500 mt-1">
-                Tuition and demo payout share per section ({Math.round(INSTRUCTOR_REVENUE_SHARE * 100)}% of collected).
+                Summary list only — use the eye for course, status, summary, email, and admin actions. Filter by status or search (includes hidden fields).
               </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Input
+                placeholder="Search name, class, amount, course…"
+                value={requestSearch}
+                onChange={(e) => setRequestSearch(e.target.value)}
+                className="w-full sm:w-[240px] bg-white"
+              />
+              <Select
+                value={requestStatusFilter}
+                onValueChange={(v) => setRequestStatusFilter(v as typeof requestStatusFilter)}
+              >
+                <SelectTrigger className="w-full sm:w-[160px] bg-white">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {totalsByClass.length === 0 ? (
+          {instructorRequestsSorted.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center text-sm text-slate-500">
-              No enrollment payments match your filters. Try clearing filters or recording payments first.
+              No instructor payroll submissions yet. They appear when a teacher submits from Payroll.
+            </div>
+          ) : instructorRequestsFiltered.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center text-sm text-slate-500">
+              No rows match your search or status filter.
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {totalsByClass.map((row) => {
-                const paidLines = currencyMapToFormattedLines(row.paidByCurrency);
-                const outLines = currencyMapToFormattedLines(row.outstandingByCurrency);
-                const payoutLines = estimateInstructorPayoutLines(row.paidByCurrency);
-                const focused = classFilter === row.className && classFilter !== "all";
-                return (
-                  <article
-                    key={`${row.className}-${row.course}`}
-                    className={`flex flex-col rounded-xl border bg-white p-5 transition-colors ${
-                      focused ? "border-slate-900" : "border-slate-200 hover:border-slate-300"
-                    }`}
-                  >
-                    <header className="space-y-1">
-                      <h3 className="text-[17px] font-semibold leading-snug tracking-tight text-slate-900">
-                        {row.className}
-                      </h3>
-                      <p className="text-sm text-slate-500">{row.course}</p>
-                    </header>
-
-                    <div className="mt-5 flex items-center gap-3">
-                      <div
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600"
-                        aria-hidden
-                      >
-                        {initialsFromName(row.lecturerName)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-slate-900">{row.lecturerName}</p>
-                        <p className="text-xs text-slate-500">
-                          {row.paymentCount} invoice{row.paymentCount === 1 ? "" : "s"} · {row.paidCount} paid ·{" "}
-                          {row.unpaidCount} unpaid
-                        </p>
-                      </div>
-                    </div>
-
-                    <dl className="mt-5 space-y-3 border-t border-slate-100 pt-5">
-                      <div className="flex items-start justify-between gap-4">
-                        <dt className="text-sm text-slate-500">Collected</dt>
-                        <dd className="text-right">
-                          {paidLines.length === 0 ? (
-                            <span className="text-sm tabular-nums text-slate-400">—</span>
-                          ) : (
-                            paidLines.map((line) => (
-                              <p key={line.currency} className="text-sm font-semibold tabular-nums text-slate-900">
-                                {line.formatted}
-                              </p>
-                            ))
-                          )}
-                        </dd>
-                      </div>
-                      <div className="flex items-start justify-between gap-4">
-                        <dt className="text-sm text-slate-500">Outstanding</dt>
-                        <dd className="text-right">
-                          {outLines.length === 0 ? (
-                            <span className="text-sm tabular-nums text-slate-400">—</span>
-                          ) : (
-                            outLines.map((line) => (
-                              <p key={line.currency} className="text-sm font-semibold tabular-nums text-slate-900">
-                                {line.formatted}
-                              </p>
-                            ))
-                          )}
-                        </dd>
-                      </div>
-                    </dl>
-
-                    <div className="mt-4 border-t border-slate-100 pt-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm text-slate-500">Est. payout</p>
-                          <p className="mt-0.5 text-[11px] text-slate-400">
-                            Demo · {Math.round(INSTRUCTOR_REVENUE_SHARE * 100)}% of collected
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          {payoutLines.length === 0 ? (
-                            <span className="text-sm text-slate-400">—</span>
-                          ) : (
-                            payoutLines.map((line) => (
-                              <p key={line.currency} className="text-base font-semibold tabular-nums text-slate-900">
-                                {line.formatted}
-                              </p>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="mt-4 w-full font-normal"
-                      asChild
-                    >
-                      <Link
-                        to={buildPayrollProofPagePath(
-                          row.className,
-                          row.course,
-                          row.lecturerName,
-                          row.lecturerEmail,
-                        )}
-                      >
-                        Upload payout proof
-                      </Link>
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="mt-2 w-full justify-between gap-2 font-normal text-slate-700"
-                      disabled={focused}
-                      onClick={() => {
-                        setClassFilter(row.className);
-                        requestAnimationFrame(() => {
-                          document.getElementById("admin-payroll-student-payments")?.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start",
-                          });
-                        });
-                      }}
-                    >
-                      <span>{focused ? "Shown below" : "View payments"}</span>
-                      {!focused ? <ChevronRight className="h-4 w-4 text-slate-400" aria-hidden /> : null}
-                    </Button>
-                  </article>
-                );
-              })}
+            <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50">
+                    <TableHead className="whitespace-nowrap">Date submitted</TableHead>
+                    <TableHead>Instructor</TableHead>
+                    <TableHead>Class</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Request amount</TableHead>
+                    <TableHead className="whitespace-nowrap">Period</TableHead>
+                    <TableHead className="w-12 text-center">
+                      <span className="sr-only">Open detail</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {instructorRequestsFiltered.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="whitespace-nowrap text-xs text-slate-600 tabular-nums">
+                        {formatSubmittedShort(r.submittedAt)}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium text-slate-900 whitespace-nowrap">{r.instructorName}</TableCell>
+                      <TableCell className="text-sm text-slate-800 max-w-[220px] truncate" title={`${r.classSection} · ${r.course}`}>
+                        {r.classSection}
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-700 tabular-nums whitespace-nowrap text-right">
+                        {r.requestedPayout ? formatThousandsInText(r.requestedPayout) : "—"}
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-600 whitespace-nowrap">{r.periodLabel || "—"}</TableCell>
+                      <TableCell className="text-center p-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 hover:text-slate-900" asChild>
+                          <Link
+                            to={`/dashboard/admin/payroll/instructor-request/${r.id}`}
+                            aria-label={`View submission: ${r.instructorName}, ${r.classSection}`}
+                          >
+                            <Eye className="h-4 w-4" aria-hidden />
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </div>

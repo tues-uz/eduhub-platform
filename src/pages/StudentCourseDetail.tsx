@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   BookOpen,
   PlayCircle,
@@ -12,6 +12,8 @@ import {
   CalendarDays,
   CalendarRange,
   Users,
+  FileText,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CircularProgress } from "@/components/ui/circular-progress";
@@ -28,7 +30,14 @@ import { loadStoredMeetings } from "@/features/teacher/attendance/attendanceMeet
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import type { TeacherCourse } from "@/features/teacher/types";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
-import { eduhubCourses, eduhubModules, eduhubLessons, eduhubSchedule } from "@/api/eduhubClient";
+import {
+  eduhubCourses,
+  eduhubModules,
+  eduhubLessons,
+  eduhubSchedule,
+  eduhubCourseQuizzes,
+  type QuizResponseForStudent,
+} from "@/api/eduhubClient";
 import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import {
@@ -42,6 +51,11 @@ import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueri
 import { cn } from "@/lib/utils";
 import { useAuthSession } from "@/features/auth/context";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
+import {
+  CLASS_RESUME_CHANGED,
+  CLASS_RESUME_STORAGE_KEY,
+  listClassResumes,
+} from "@/features/courses/classResumeStorage";
 
 function nameInitials(name: string, max = 2): string {
   const t = name.trim();
@@ -332,6 +346,7 @@ type BarcodeDetectorCtor = new (options?: { formats?: string[] }) => BarcodeDete
 const StudentCourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuthSession();
   const [apiCourse, setApiCourse] = useState<{
     id: string;
@@ -356,12 +371,18 @@ const StudentCourseDetail = () => {
   const [apiScheduleProposal, setApiScheduleProposal] = useState<ScheduleProposalResponse | null>(null);
   const [apiLoading, setApiLoading] = useState(false);
   const scheduleLocalTick = useAdminCourseLocalDataVersion();
+  const [classResumeRev, setClassResumeRev] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState<string | null>(null);
   const [scannerStatus, setScannerStatus] = useState("Point the camera at attendance QR");
   const scannerVideoRef = useRef<HTMLVideoElement | null>(null);
   const scannerStreamRef = useRef<MediaStream | null>(null);
   const scannerRafRef = useRef<number | null>(null);
+
+  const [studentQuizzes, setStudentQuizzes] = useState<QuizResponseForStudent[]>([]);
+  const [studentQuizzesLoading, setStudentQuizzesLoading] = useState(false);
+  const [studentQuizzesError, setStudentQuizzesError] = useState<string | null>(null);
+  const [completedStudentQuizIds, setCompletedStudentQuizIds] = useState<Set<string>>(() => new Set());
 
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const isTeacherCourse = courseId?.startsWith(TEACHER_PREFIX);
@@ -371,6 +392,73 @@ const StudentCourseDetail = () => {
   const id = courseId && !isTeacherCourse && !isUuid(courseId ?? "") ? parseInt(courseId, 10) : NaN;
 
   const isEnrolled = courseId ? enrolledCourses.some((c) => c.id === courseId || c.id === courseId) : false;
+
+  const tabRaw = searchParams.get("tab");
+  const activeCourseTab =
+    tabRaw === "resume" || tabRaw === "attendance" || tabRaw === "quiz" ? tabRaw : "content";
+
+  const onCourseTabChange = (value: string) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (value === "content") next.delete("tab");
+        else next.set("tab", value);
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  const canLoadStudentQuizzes =
+    Boolean(courseId) && isUuid(courseId ?? "") && !isTeacherCourse && isEnrolled;
+
+  useEffect(() => {
+    if (activeCourseTab !== "quiz" || !canLoadStudentQuizzes) return;
+    let cancelled = false;
+    setStudentQuizzesLoading(true);
+    setStudentQuizzesError(null);
+    void (async () => {
+      try {
+        const [list, results] = await Promise.all([
+          eduhubCourseQuizzes.listForStudent(courseId!),
+          eduhubCourseQuizzes.getAllMyResults().catch(() => []),
+        ]);
+        if (cancelled) return;
+        setStudentQuizzes(list);
+        setCompletedStudentQuizIds(new Set(results.map((r) => r.quizId || "")));
+      } catch {
+        if (!cancelled) {
+          setStudentQuizzes([]);
+          setStudentQuizzesError("Could not load quizzes for this class.");
+        }
+      } finally {
+        if (!cancelled) setStudentQuizzesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCourseTab, canLoadStudentQuizzes, courseId]);
+
+  useEffect(() => {
+    const bump = () => setClassResumeRev((r) => r + 1);
+    window.addEventListener(CLASS_RESUME_CHANGED, bump);
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === CLASS_RESUME_STORAGE_KEY) bump();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(CLASS_RESUME_CHANGED, bump);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  const classResumeStorageKey =
+    isTeacherCourse && teacherCourseId ? teacherCourseId : (courseId ?? "");
+  const classResumeList = useMemo(
+    () => (classResumeStorageKey ? listClassResumes(classResumeStorageKey) : []),
+    [classResumeStorageKey, classResumeRev],
+  );
 
   useEffect(() => {
     if (courseId && isUuid(courseId) && !isTeacherCourse) {
@@ -962,11 +1050,19 @@ const StudentCourseDetail = () => {
                 </div>
 
                 <div className="mt-8 w-full min-w-0">
-          <Tabs defaultValue="content" className="w-full">
+          <Tabs value={activeCourseTab} onValueChange={onCourseTabChange} className="w-full">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
-              <TabsList>
+              <TabsList className="flex flex-wrap gap-1">
                 <TabsTrigger value="content" className="font-bold">
                   Class Content
+                </TabsTrigger>
+                <TabsTrigger value="resume" className="gap-1.5">
+                  <FileText className="h-3.5 w-3.5 opacity-70" aria-hidden />
+                  Resume
+                </TabsTrigger>
+                <TabsTrigger value="quiz" className="gap-1.5">
+                  <ClipboardList className="h-3.5 w-3.5 opacity-70" aria-hidden />
+                  Quiz
                 </TabsTrigger>
                 <TabsTrigger value="attendance">Attendance</TabsTrigger>
               </TabsList>
@@ -1081,17 +1177,191 @@ const StudentCourseDetail = () => {
                       Placement test / Quiz
                     </h3>
                     <p className="mt-1 text-sm text-foreground/60 max-w-md mx-auto">
-                      After finishing the class content, take the quiz to test your knowledge and see your score.
+                      Quizzes from your instructor also appear in the Quiz tab. Start a quiz when you are ready.
                     </p>
                   </div>
-                  <Link to={`/dashboard/quiz?courseId=${course.id}`}>
-                    <Button className="rounded-full mt-2" style={{ backgroundColor: "#3954d0" }}>
-                      <ClipboardList className="mr-2 h-4 w-4" />
-                      Go to Quiz
-                    </Button>
-                  </Link>
+                  <Button
+                    type="button"
+                    className="rounded-full mt-2"
+                    style={{ backgroundColor: "#3954d0" }}
+                    onClick={() => onCourseTabChange("quiz")}
+                  >
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                    Open Quiz tab
+                  </Button>
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="resume" className="mt-0">
+              {!isEnrolled ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
+                  Enroll in this class first to read your instructor&apos;s class resume and recap notes.
+                </div>
+              ) : classResumeList.length > 0 ? (
+                <div className="space-y-4">
+                  <p className="text-xs text-foreground/55 leading-relaxed">
+                    Recaps from your instructor (newest first). Stored in your browser for this demo until a server sync
+                    exists.
+                  </p>
+                  <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 xl:grid-cols-3">
+                    {classResumeList.map((r) => (
+                      <li
+                        key={r.id}
+                        className="flex h-full flex-col rounded-xl border border-violet-200/90 bg-violet-50/60 p-5 shadow-sm ring-1 ring-violet-900/[0.04]"
+                      >
+                        {r.thumbnailUrl ? (
+                          <div className="mb-4 overflow-hidden rounded-lg border border-violet-200 bg-white">
+                            <img
+                              src={r.thumbnailUrl}
+                              alt="Resume thumbnail"
+                              className="h-40 w-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                        ) : null}
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0 space-y-1">
+                            <h3 className="font-semibold text-violet-950 flex items-center gap-2">
+                              <FileText className="h-5 w-5 shrink-0 text-violet-700" aria-hidden />
+                              Class resume
+                            </h3>
+                            {r.sessionLabel ? (
+                              <p className="text-sm font-medium text-violet-900/85">{r.sessionLabel}</p>
+                            ) : (
+                              <p className="text-sm text-violet-900/75">General recap</p>
+                            )}
+                          </div>
+                          {r.updatedAt ? (
+                            <p className="text-xs text-violet-900/70 tabular-nums shrink-0">
+                              Updated{" "}
+                              {new Date(r.updatedAt).toLocaleString(undefined, {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          ) : null}
+                        </div>
+                        <p className="mt-3 border-t border-violet-200/70 pt-3 text-sm leading-relaxed text-violet-950/90 whitespace-pre-wrap">
+                          {r.body}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-8 text-center">
+                  <FileText className="mx-auto h-10 w-10 text-foreground/20" aria-hidden />
+                  <p className="mt-3 text-sm font-medium text-foreground">No class resumes yet</p>
+                  <p className="mt-1 text-sm text-foreground/60 max-w-md mx-auto">
+                    When your instructor publishes recap notes for this class, they will appear here.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="quiz" className="mt-0 space-y-4">
+              {!isEnrolled ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
+                  Enroll in this class first to see quizzes your instructor publishes for it.
+                </div>
+              ) : !canLoadStudentQuizzes ? (
+                <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-8 text-center text-sm text-foreground/70">
+                  {isTeacherCourse ? (
+                    <p>
+                      This class is stored only in the browser. When it is connected to the platform, quizzes from your
+                      instructor will load here.
+                    </p>
+                  ) : (
+                    <p>
+                      Quizzes load for catalog classes on the server. Open a class from <span className="font-medium">My Class</span>{" "}
+                      to take instructor quizzes here.
+                    </p>
+                  )}
+                </div>
+              ) : studentQuizzesLoading ? (
+                <div className="flex items-center justify-center gap-3 rounded-xl border border-gray-200/80 bg-white py-14 text-muted-foreground">
+                  <Loader2 className="h-8 w-8 shrink-0 animate-spin" aria-hidden />
+                  <span>Loading quizzes…</span>
+                </div>
+              ) : (
+                <>
+                  {studentQuizzesError ? (
+                    <div className="rounded-lg border border-amber-200/90 bg-amber-50/90 px-3 py-2.5 text-sm text-amber-950">
+                      {studentQuizzesError}
+                    </div>
+                  ) : null}
+                  <p className="text-xs text-foreground/55 leading-relaxed">
+                    Published quizzes for this class. Select <span className="font-medium text-foreground/70">Start</span> to
+                    take a quiz on the full quiz page.
+                  </p>
+                  {studentQuizzes.length === 0 ? (
+                    <div className="rounded-xl border border-gray-200/50 bg-white/80 p-8 text-center">
+                      <ClipboardList className="mx-auto mb-3 h-12 w-12 text-foreground/30" aria-hidden />
+                      <p className="text-foreground/60">
+                        No quizzes available yet. Your instructor may add a practice quiz or placement test soon.
+                      </p>
+                    </div>
+                  ) : (
+                    <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 xl:grid-cols-3">
+                      {studentQuizzes.map((quiz) => {
+                        const completed = completedStudentQuizIds.has(quiz.id);
+                        const isPlacement = (quiz.quizType ?? "QUIZ") === "PLACEMENT_TEST";
+                        return (
+                          <li
+                            key={quiz.id}
+                            className="flex h-full flex-col rounded-xl border border-gray-200/90 bg-gray-50/40 p-4 shadow-sm ring-1 ring-gray-900/[0.03]"
+                          >
+                            <div className="mb-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1e40af]/10 ring-1 ring-[#1e40af]/15">
+                              <ClipboardList className="h-5 w-5 text-[#1e40af]" aria-hidden />
+                            </div>
+                            <div className="min-h-0 flex-1 space-y-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-semibold leading-snug text-foreground line-clamp-2">{quiz.title}</p>
+                                {completed ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                                    <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                                    Done
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                <span
+                                  className={`rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ${
+                                    isPlacement ? "bg-violet-100 text-violet-900" : "bg-slate-100 text-slate-800"
+                                  }`}
+                                >
+                                  {isPlacement ? "Placement" : "Quiz"}
+                                </span>
+                                <span className="tabular-nums">
+                                  {quiz.questions.length} question{quiz.questions.length === 1 ? "" : "s"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="mt-4 flex shrink-0 flex-wrap gap-2 border-t border-gray-200/80 pt-3">
+                              {completed ? (
+                                <span className="text-sm font-medium text-muted-foreground">Completed</span>
+                              ) : (
+                                <Button className="rounded-full" style={{ backgroundColor: "#3954d0" }} asChild>
+                                  <Link
+                                    to={`/dashboard/quiz?courseId=${encodeURIComponent(String(course.id))}`}
+                                    aria-label={`Start quiz: ${quiz.title}`}
+                                  >
+                                    Start
+                                  </Link>
+                                </Button>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </>
+              )}
             </TabsContent>
 
             <TabsContent value="attendance" className="mt-0">

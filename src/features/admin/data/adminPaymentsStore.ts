@@ -5,7 +5,7 @@ import {
   type PaymentStatus,
 } from "@/features/admin/data/adminOperationalMock";
 
-const STORAGE_KEY = "eduhub.adminPayments.v1";
+const STORAGE_KEY = "eduhub.adminPayments.v2";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -36,6 +36,7 @@ function parseStored(raw: string | null): AdminPaymentRow[] | null {
         studentEmail: typeof r.studentEmail === "string" ? r.studentEmail : "",
         course: typeof r.course === "string" ? r.course : "",
         lecturerName: typeof r.lecturerName === "string" ? r.lecturerName : "",
+        lecturerEmail: typeof r.lecturerEmail === "string" ? r.lecturerEmail : undefined,
         amount: typeof r.amount === "number" && Number.isFinite(r.amount) ? r.amount : 0,
         currency: typeof r.currency === "string" ? r.currency : "UZS",
         dueDate: typeof r.dueDate === "string" ? r.dueDate : "",

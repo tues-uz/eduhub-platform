@@ -259,7 +259,8 @@ export type EnrollmentApplicationStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export type EnrollmentPaymentPlan = "FULL" | "DOWN_PAYMENT";
 
-export type EnrollmentInstallmentCount = 2 | 4 | 6 | 8;
+/** After first payment; 1 = one remaining instalment (2-month plan). */
+export type EnrollmentInstallmentCount = 1 | 2 | 4 | 6 | 8;
 
 export interface EnrollmentApplicationRequest {
   courseId: string;

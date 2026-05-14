@@ -21,6 +21,9 @@ import StudentQuiz from "@/pages/StudentQuiz";
 import StudentPlacementTests from "@/pages/StudentPlacementTests";
 import StudentPaymentInfo from "@/pages/StudentPaymentInfo";
 import AdminDashboardPage from "@/features/admin/pages/AdminDashboardPage";
+import AdminNotificationsPage from "@/features/admin/pages/AdminNotificationsPage";
+import AdminSubstituteCoverRequestsPage from "@/features/admin/pages/AdminSubstituteCoverRequestsPage";
+import AdminSubstituteInviteDetailPage from "@/features/admin/pages/AdminSubstituteInviteDetailPage";
 import AdminStudentsPage from "@/features/admin/pages/AdminStudentsPage";
 import AdminEnrollmentsPage from "@/features/admin/pages/AdminEnrollmentsPage";
 import AdminEnrollmentApplicationsPage from "@/features/admin/pages/AdminEnrollmentApplicationsPage";
@@ -31,6 +34,8 @@ import AdminPaymentsPage from "@/features/admin/pages/AdminPaymentsPage";
 import AdminPayrollPage from "@/features/admin/pages/AdminPayrollPage";
 import AdminPayrollProofPage from "@/features/admin/pages/AdminPayrollProofPage";
 import AdminPayrollSubmissionsPage from "@/features/admin/pages/AdminPayrollSubmissionsPage";
+import AdminInstructorPayrollRequestsPage from "@/features/admin/pages/AdminInstructorPayrollRequestsPage";
+import AdminInstructorPayrollRequestDetailPage from "@/features/admin/pages/AdminInstructorPayrollRequestDetailPage";
 import AdminPlacementTestsPage from "@/features/admin/pages/AdminPlacementTestsPage";
 import AdminCertificationsPage from "@/features/admin/pages/AdminCertificationsPage";
 import AdminCalendarPage from "@/features/admin/pages/AdminCalendarPage";
@@ -54,6 +59,7 @@ import TeacherCourseFormDetailsPage from "@/features/teacher/pages/TeacherCourse
 import TeacherCourseFormSchedulePage from "@/features/teacher/pages/TeacherCourseFormSchedulePage";
 import TeacherCourseFormLessonsPage from "@/features/teacher/pages/TeacherCourseFormLessonsPage";
 import TeacherCourseRosterPage from "@/features/teacher/pages/TeacherCourseRosterPage";
+import TeacherCourseResumeEditPage from "@/features/teacher/pages/TeacherCourseResumeEditPage";
 import TeacherQuizPage from "@/features/teacher/pages/TeacherQuizPage";
 import TeacherQuizResultsPage from "@/features/teacher/pages/TeacherQuizResultsPage";
 import TeacherStudentsPage from "@/features/teacher/pages/TeacherStudentsPage";
@@ -62,6 +68,7 @@ import TeacherAttendanceQrPage from "@/features/teacher/pages/TeacherAttendanceQ
 import TeacherPayrollPage from "@/features/teacher/pages/TeacherPayrollPage";
 import TeacherPayrollSubmissionsPage from "@/features/teacher/pages/TeacherPayrollSubmissionsPage";
 import TeacherNotifications from "@/pages/TeacherNotifications";
+import TeacherSubstituteInviteReviewPage from "@/features/teacher/pages/TeacherSubstituteInviteReviewPage";
 import TeacherScheduleApprovalsPage from "@/features/teacher/pages/TeacherScheduleApprovalsPage";
 import NotFound from "@/pages/NotFound";
 import StudentAttendanceJoin from "@/pages/StudentAttendanceJoin";
@@ -82,6 +89,9 @@ export function AppRoutes() {
       <Route path={appRoutes.dashboard} element={<DashboardRedirect />} />
 
       <Route path={appRoutes.dashboardAdmin} element={<AdminDashboardPage />} />
+      <Route path="/dashboard/admin/notifications" element={<AdminNotificationsPage />} />
+      <Route path="/dashboard/admin/substitute-requests" element={<AdminSubstituteCoverRequestsPage />} />
+      <Route path="/dashboard/admin/substitute-requests/:inviteId" element={<AdminSubstituteInviteDetailPage />} />
       <Route path="/dashboard/admin/students" element={<AdminStudentsPage />} />
       <Route path="/dashboard/admin/enrollments" element={<AdminEnrollmentsPage />} />
       <Route
@@ -93,6 +103,8 @@ export function AppRoutes() {
       <Route path="/dashboard/admin/attendance" element={<AdminAttendancePage />} />
       <Route path="/dashboard/admin/payments" element={<AdminPaymentsPage />} />
       <Route path="/dashboard/admin/payroll" element={<AdminPayrollPage />} />
+      <Route path="/dashboard/admin/payroll/instructor-request/:requestId" element={<AdminInstructorPayrollRequestDetailPage />} />
+      <Route path="/dashboard/admin/payroll/instructor-requests" element={<AdminInstructorPayrollRequestsPage />} />
       <Route path="/dashboard/admin/payroll/proof" element={<AdminPayrollProofPage />} />
       <Route path="/dashboard/admin/payroll/submissions" element={<AdminPayrollSubmissionsPage />} />
       <Route path="/dashboard/admin/placement-tests" element={<AdminPlacementTestsPage />} />
@@ -125,6 +137,15 @@ export function AppRoutes() {
         <Route path="schedule" element={<TeacherCourseFormSchedulePage />} />
         <Route path="lessons" element={<TeacherCourseFormLessonsPage />} />
       </Route>
+      {/** Static `new` must be its own path so it always wins over `:courseId`-only routes in the matcher. */}
+      <Route
+        path="/dashboard/teacher/courses/:courseId/resume/new"
+        element={<TeacherCourseResumeEditPage />}
+      />
+      <Route
+        path="/dashboard/teacher/courses/:courseId/resume/:resumeId"
+        element={<TeacherCourseResumeEditPage />}
+      />
       <Route path="/dashboard/teacher/courses/:courseId" element={<TeacherCourseRosterPage />} />
       <Route path="/dashboard/teacher/placement-test" element={<TeacherQuizPage />} />
       <Route path="/dashboard/teacher/placement-test/:courseId/:quizId/results" element={<TeacherQuizResultsPage />} />
@@ -134,6 +155,7 @@ export function AppRoutes() {
       <Route path="/dashboard/teacher/attendance" element={<TeacherAttendanceQrPage />} />
       <Route path="/dashboard/teacher/schedule" element={<TeacherScheduleApprovalsPage />} />
       <Route path="/dashboard/teacher/notifications" element={<TeacherNotifications />} />
+      <Route path="/dashboard/teacher/substitute-requests/:inviteId" element={<TeacherSubstituteInviteReviewPage />} />
       <Route path="/dashboard/teacher/payroll" element={<TeacherPayrollPage />} />
       <Route path="/dashboard/teacher/payroll/submissions" element={<TeacherPayrollSubmissionsPage />} />
       <Route path="/dashboard/teacher/settings" element={<TeacherPlaceholder />} />

@@ -14,6 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  hasPayrollProofFile,
+  payrollProofKey,
+  usePayrollProofMap,
+} from "@/features/admin/data/adminPayrollProofStore";
+import { formatThousandsInText } from "@/lib/utils";
 import { useInstructorPayrollRequests } from "@/features/teacher/data/instructorPayrollRequestStore";
 
 function formatRelativeTime(iso: string): string {
@@ -57,6 +63,7 @@ export default function TeacherPayrollSubmissionsPage() {
   }, []);
 
   const all = useInstructorPayrollRequests();
+  const proofMap = usePayrollProofMap();
 
   const mine = useMemo(() => {
     return all.filter((r) => {
@@ -117,7 +124,8 @@ export default function TeacherPayrollSubmissionsPage() {
             <div>
               <h1 className="text-2xl font-bold text-foreground tracking-tight">Payroll submissions</h1>
               <p className="text-foreground/60 text-sm mt-1">
-                Track your monthly submissions (pending / approved / not approved).
+                Track your monthly submissions (pending / approved / not approved). After admin records a bank transfer,{" "}
+                <span className="text-foreground/75">Transfer proof</span> shows here and you get a notification.
               </p>
             </div>
             <Button asChild variant="outline" className="rounded-full">
@@ -174,12 +182,15 @@ export default function TeacherPayrollSubmissionsPage() {
                     <TableHead>Period</TableHead>
                     <TableHead>Requested</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Transfer proof</TableHead>
                     <TableHead>Submitted</TableHead>
                     <TableHead>Admin note</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sorted.map((r) => (
+                  {sorted.map((r) => {
+                    const proofOnFile = hasPayrollProofFile(proofMap[payrollProofKey(r.classSection, r.course)]);
+                    return (
                     <TableRow key={r.id}>
                       <TableCell className="font-medium text-slate-900">
                         <div className="min-w-0">
@@ -188,16 +199,32 @@ export default function TeacherPayrollSubmissionsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-700">{r.periodLabel || "—"}</TableCell>
-                      <TableCell className="text-slate-700 tabular-nums">{r.requestedPayout || "—"}</TableCell>
+                      <TableCell className="text-slate-700 tabular-nums">
+                        {r.requestedPayout ? formatThousandsInText(r.requestedPayout) : "—"}
+                      </TableCell>
                       <TableCell>
                         <StatusPill status={r.status} />
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        {proofOnFile ? (
+                          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-900">
+                            On file
+                          </span>
+                        ) : r.status === "approved" ? (
+                          <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                            Awaiting admin
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-slate-600">{formatRelativeTime(r.submittedAt)}</TableCell>
                       <TableCell className="text-slate-600">
                         <span className="line-clamp-2">{r.adminNote?.trim() || "—"}</span>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

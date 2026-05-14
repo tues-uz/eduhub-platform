@@ -8,18 +8,64 @@ export type StoredAttendanceMeeting = {
   name: string;
 };
 
+/** Check-in stays open for this long after the QR is generated (class start). */
+export const ATTENDANCE_SESSION_MAX_MS = 2 * 60 * 60 * 1000 + 15 * 60 * 1000;
+
 const MEETINGS_STORAGE_PREFIX = "eduhub_teacher_attendance_meetings_v1:";
 export const MAX_STORED_MEETINGS = 48;
 
 /** Same-tab listeners use this; `storage` fires only for other tabs. */
 export const ATTENDANCE_MEETINGS_CHANGED = "eduhub-attendance-meetings-changed";
 
+/** Same-tab: roster schedule filter asks the overview QR picker to jump to a session. */
+export const ATTENDANCE_OVERVIEW_SESSION_SYNC = "eduhub-attendance-overview-sync-session";
+
+export function pickStoredMeetingForScheduleSlot(
+  meetings: StoredAttendanceMeeting[],
+  slotLabel: string,
+  slotDateIso?: string,
+): StoredAttendanceMeeting | null {
+  if (!meetings.length) return null;
+  const label = slotLabel.trim().toLowerCase();
+  if (label) {
+    for (const m of meetings) {
+      const name = m.name.trim().toLowerCase();
+      const combined = formatMeetingOptionLabel(m).toLowerCase();
+      if (name && (name === label || name.includes(label) || label.includes(name))) return m;
+      if (combined.includes(label)) return m;
+    }
+  }
+  const raw = slotDateIso?.trim();
+  if (raw) {
+    const d = new Date(raw);
+    if (!Number.isNaN(d.getTime())) {
+      const monthDay = d.toLocaleDateString(undefined, { month: "short", day: "numeric" }).toLowerCase();
+      const ymd = d.toISOString().slice(0, 10);
+      for (const m of meetings) {
+        const opt = formatMeetingOptionLabel(m).toLowerCase();
+        if (opt.includes(monthDay) || opt.includes(ymd)) return m;
+      }
+    }
+  }
+  return null;
+}
+
 export function meetingsStorageKey(courseId: string): string {
   return `${MEETINGS_STORAGE_PREFIX}${courseId}`;
 }
 
-export function buildAttendanceJoinUrl(courseId: string, sessionId: string): string {
-  const path = `/dashboard/attendance/join?courseId=${encodeURIComponent(courseId)}&session=${encodeURIComponent(sessionId)}`;
+export function buildAttendanceJoinUrl(
+  courseId: string,
+  sessionId: string,
+  /** When set, embedded in the link/QR so student check-in can enforce the same time window on any device. */
+  sessionStartedAt?: string,
+): string {
+  const params = new URLSearchParams({
+    courseId,
+    session: sessionId,
+  });
+  if (sessionStartedAt) params.set("startedAt", sessionStartedAt);
+  const path = `/dashboard/attendance/join?${params.toString()}`;
   return `${typeof window !== "undefined" ? window.location.origin : ""}${path}`;
 }
 

@@ -4,8 +4,8 @@ export type EnrollmentApplicationStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export type EnrollmentPaymentPlan = "FULL" | "DOWN_PAYMENT";
 
-/** Payment schedule option chosen with down payment (2 / 4 / 6 / 8). */
-export type EnrollmentInstallmentCount = 2 | 4 | 6 | 8;
+/** Payment schedule option chosen with down payment (1 / 2 / 4 / 6 / 8). */
+export type EnrollmentInstallmentCount = 1 | 2 | 4 | 6 | 8;
 
 export interface EnrollmentApplicationRecord {
   id: string;
@@ -27,7 +27,7 @@ export interface EnrollmentApplicationRecord {
   downPaymentAmount?: number;
   /** ISO currency code for formatting down payment (from course pricing at submit time). */
   priceCurrency?: string;
-  /** Chosen when paymentPlan is DOWN_PAYMENT (2, 4, 6, or 8). */
+  /** Chosen when paymentPlan is DOWN_PAYMENT (1, 2, 4, 6, or 8). */
   installmentCount?: EnrollmentInstallmentCount;
   status: EnrollmentApplicationStatus;
   submittedAt: string;

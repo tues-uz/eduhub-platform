@@ -234,30 +234,8 @@ const Footer = () => {
               </div>
             )}
 
-            {/* Column 2 - Menu Links */}
-            <div className={isEduHubPage ? "lg:col-span-4" : "lg:col-span-6"}>
-              <p className="text-sm font-medium mb-4" style={{ color: cream }}>
-                Menu Links
-              </p>
-              <ul className="space-y-2">
-                {Object.values(processedFooterLinks).map((section) =>
-                  section.links.map((link) => (
-                    <li key={link}>
-                      <a
-                        href="#"
-                        className="text-sm transition-colors hover:opacity-90"
-                        style={{ color: creamMuted }}
-                      >
-                        {link}
-                      </a>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
-
-            {/* Column 3 - Contact + Social */}
-            <div className={isEduHubPage ? "lg:col-span-4" : "lg:col-span-6"}>
+            {/* Column 2 - Contact + Social (narrower so menu can widen) */}
+            <div className={isEduHubPage ? "lg:col-span-3" : "lg:col-span-5"}>
               <p className="text-sm font-medium mb-4" style={{ color: cream }}>
                 Contact
               </p>
@@ -303,6 +281,28 @@ const Footer = () => {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Column 3 - Menu Links (wider grid for single-line labels) */}
+            <div className={isEduHubPage ? "lg:col-span-5" : "lg:col-span-7"}>
+              <p className="text-sm font-medium mb-4" style={{ color: cream }}>
+                Menu Links
+              </p>
+              <ul className="grid grid-cols-3 gap-x-3 gap-y-2.5 sm:gap-x-6 lg:gap-x-10 list-none p-0 m-0 text-left [grid-template-columns:minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                {Object.values(processedFooterLinks).map((section) =>
+                  section.links.map((link) => (
+                    <li key={`${section.title}-${link}`} className="min-w-0">
+                      <a
+                        href="#"
+                        className="text-sm transition-colors hover:opacity-90 whitespace-nowrap block"
+                        style={{ color: creamMuted }}
+                      >
+                        {link}
+                      </a>
+                    </li>
+                  )),
+                )}
+              </ul>
             </div>
           </div>
 

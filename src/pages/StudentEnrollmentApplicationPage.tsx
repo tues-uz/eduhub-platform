@@ -21,13 +21,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthSession } from "@/features/auth/context";
 import { eduhubCourses, eduhubUploadFile, eduhubEnrollmentApplications } from "@/api/eduhubClient";
@@ -37,14 +30,45 @@ import {
   enrollmentRecordToPdfData,
   type EnrollmentApplicationPdfData,
 } from "@/features/enrollment/enrollmentApplicationPdf";
-import type { EnrollmentInstallmentCount, EnrollmentPaymentPlan } from "@/api/eduhubTypes";
+import type { EnrollmentInstallmentCount } from "@/api/eduhubTypes";
+import { cn } from "@/lib/utils";
+
+import {
+  payNowForPlanMonths,
+  tuitionThirds,
+  type TuitionPlanMonths,
+} from "@/features/enrollment/enrollmentTuitionThirds";
+
+type MonthlyPlanMonthCount = TuitionPlanMonths;
+
+const MONTH_PLAN_OPTIONS: { months: MonthlyPlanMonthCount; label: string }[] = [
+  { months: 1, label: "1 month" },
+  { months: 2, label: "2 months" },
+  { months: 3, label: "3 months" },
+];
 
 const ENROLL_SUCCESS_SESSION_PREFIX = "eduhub_enrollment_success_pdf__";
+
+function formatPrice(price: number | undefined, currency = "USD"): string {
+  if (price == null || price <= 0) return "Free";
+  return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
+}
+
+/** One-line “due now” amount on each plan card (⅓, ⅔, or full of listed tuition). */
+function planCardPriceSubtitle(
+  total: number | undefined,
+  planMonths: MonthlyPlanMonthCount,
+  currency: string,
+): string | null {
+  if (total == null || total <= 0) return null;
+  const now = payNowForPlanMonths(planMonths, total);
+  if (now == null) return null;
+  return formatPrice(now, currency);
+}
 
 function enrollSuccessSessionKey(courseId: string, emailNorm: string): string {
   return `${ENROLL_SUCCESS_SESSION_PREFIX}${encodeURIComponent(courseId)}__${emailNorm}`;
 }
-import { cn } from "@/lib/utils";
 
 function EnrollmentFormGroup({
   step,
@@ -69,11 +93,6 @@ function EnrollmentFormGroup({
   );
 }
 
-function formatPrice(price: number | undefined, currency = "USD"): string {
-  if (price == null || price <= 0) return "Free";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
-}
-
 /** Title-case each word; words are split by spaces or hyphens. Not applied to raw course IDs. */
 function capitalizeCourseTitleWords(raw: string): string {
   return raw
@@ -83,13 +102,6 @@ function capitalizeCourseTitleWords(raw: string): string {
       return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
     })
     .join("");
-}
-
-function parseAmountInput(raw: string): number | null {
-  const t = raw.replace(/,/g, "").trim();
-  if (!t) return null;
-  const n = Number(t);
-  return Number.isFinite(n) ? n : null;
 }
 
 /** Transfer proof upload limit */
@@ -157,9 +169,8 @@ const StudentEnrollmentApplicationPage = () => {
   const [courseThumbnailUrl, setCourseThumbnailUrl] = useState<string | undefined>(() =>
     resolveCourseThumbnail(courseId),
   );
-  const [paymentPlan, setPaymentPlan] = useState<EnrollmentPaymentPlan>("FULL");
-  const [installmentCount, setInstallmentCount] = useState<EnrollmentInstallmentCount>(2);
-  const [downPaymentRaw, setDownPaymentRaw] = useState("");
+  /** Total calendar months (1 = pay full tuition with this application). */
+  const [monthlyPlanMonths, setMonthlyPlanMonths] = useState<MonthlyPlanMonthCount>(3);
   const [phoneSecondary, setPhoneSecondary] = useState("");
 
   const primaryPhone = useMemo(
@@ -170,34 +181,27 @@ const StudentEnrollmentApplicationPage = () => {
   const readonlyProfileClass =
     "rounded-xl border-zinc-200 bg-zinc-50 text-zinc-900 cursor-not-allowed selection:bg-zinc-100 focus-visible:ring-0 focus-visible:ring-offset-0";
 
-  const downPaymentSummary = useMemo(() => {
-    if (paymentPlan !== "DOWN_PAYMENT") return null;
+  const monthlyPaySummary = useMemo(() => {
     const total = coursePriceAmount;
-    const down = parseAmountInput(downPaymentRaw);
-    const n = installmentCount;
-    if (total == null || total <= 0) {
-      return { kind: "noPrice" as const };
-    }
-    if (down == null || down <= 0) {
-      return { kind: "needDown" as const, total, n };
-    }
-    if (down > total) {
-      return { kind: "downExceeds" as const, total, down, n };
-    }
-    const remaining = total - down;
-    if (remaining <= 0) {
-      return { kind: "fullyCovered" as const, total, down, n };
-    }
-    const perInstalment = Math.round(remaining / n);
+    if (total == null || total <= 0) return { kind: "noPrice" as const };
+    const thirds = tuitionThirds(total);
+    if (!thirds) return { kind: "noPrice" as const };
+    const plan = monthlyPlanMonths;
+    const payNow = payNowForPlanMonths(plan, total);
+    if (payNow == null) return { kind: "noPrice" as const };
+    const remaining = total - payNow;
+    const apiInstallmentCount: EnrollmentInstallmentCount | undefined =
+      plan === 3 ? undefined : plan === 2 ? 1 : 2;
     return {
-      kind: "schedule" as const,
+      kind: "ok" as const,
       total,
-      down,
+      thirds,
+      planMonths: plan,
+      payNow,
       remaining,
-      n,
-      perInstalment,
+      apiInstallmentCount,
     };
-  }, [paymentPlan, coursePriceAmount, downPaymentRaw, installmentCount]);
+  }, [coursePriceAmount, monthlyPlanMonths]);
 
   const [address, setAddress] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -295,10 +299,6 @@ const StudentEnrollmentApplicationPage = () => {
       });
   }, [courseId, user.email, navigate, priceDisplay]);
 
-  useEffect(() => {
-    if (paymentPlan === "FULL") setInstallmentCount(2);
-  }, [paymentPlan]);
-
   const trySetProofFile = (next: File | null) => {
     if (!next) {
       setFile(null);
@@ -351,15 +351,9 @@ const StudentEnrollmentApplicationPage = () => {
       toast.error("ID document must be 2 MB or smaller.");
       return;
     }
-    let downAmount: number | undefined;
-    if (paymentPlan === "DOWN_PAYMENT") {
-      const parsed = parseAmountInput(downPaymentRaw);
-      if (parsed == null || parsed <= 0) {
-        toast.error("Enter a valid down payment amount (greater than zero).");
-        return;
-      }
-      downAmount = parsed;
-    }
+    const hasPricedPlan = monthlyPaySummary.kind === "ok";
+    const submitsDownPaymentPlan = hasPricedPlan && (monthlyPlanMonths === 1 || monthlyPlanMonths === 2);
+    const downAmount = submitsDownPaymentPlan ? monthlyPaySummary.payNow : undefined;
 
     setSubmitting(true);
 
@@ -373,43 +367,34 @@ const StudentEnrollmentApplicationPage = () => {
       toast.dismiss("enrollment-upload");
 
       const paymentDetailLines: string[] = [];
-      paymentDetailLines.push(
-        paymentPlan === "FULL"
-          ? "Payment plan: Full payment"
-          : "Payment plan: Down payment (instalments apply to remaining balance where offered)",
-      );
-      paymentDetailLines.push(`Tuition shown: ${priceDisplay || "—"}`);
-      if (paymentPlan === "DOWN_PAYMENT") {
-        paymentDetailLines.push(`Instalment count selected: ${installmentCount}`);
-        const rawDown = downPaymentRaw.trim();
-        if (rawDown) {
-          paymentDetailLines.push(`Down payment amount (entered): ${rawDown} (${priceCurrency})`);
-        }
-        const dps = downPaymentSummary;
-        if (dps?.kind === "needDown" || dps?.kind === "noPrice") {
+      if (hasPricedPlan && monthlyPaySummary.kind === "ok") {
+        const { total, thirds, payNow, remaining, planMonths } = monthlyPaySummary;
+        const [a, b, c] = thirds;
+        paymentDetailLines.push(
+          `Tuition in 3 equal parts (whole amounts, sum to listed price): ${formatPrice(a, priceCurrency)} + ${formatPrice(b, priceCurrency)} + ${formatPrice(c, priceCurrency)} = ${formatPrice(total, priceCurrency)}`,
+        );
+        if (planMonths === 1) {
           paymentDetailLines.push(
-            "Note: Instalment amounts will follow school policy once your payment is verified.",
+            "Payment plan: 1 month — pay the first part (⅓ of tuition) with this application; two further instalments for the rest.",
           );
-        }
-        if (dps?.kind === "downExceeds") {
+          paymentDetailLines.push(`Pay now: ${formatPrice(payNow, priceCurrency)} · Remaining: ${formatPrice(remaining, priceCurrency)} (2 instalments).`);
+        } else if (planMonths === 2) {
           paymentDetailLines.push(
-            "Note: Entered down payment exceeds the listed tuition — an administrator will review.",
+            "Payment plan: 2 months — pay the first two parts (⅔ of tuition) with this application; one further instalment for the final third.",
           );
-        }
-        if (dps?.kind === "fullyCovered") {
+          paymentDetailLines.push(`Pay now: ${formatPrice(payNow, priceCurrency)} · Remaining: ${formatPrice(remaining, priceCurrency)} (1 instalment).`);
+        } else {
           paymentDetailLines.push(
-            "Down payment covers the full listed tuition; no further tuition instalments for that amount.",
+            "Payment plan: 3 months — full tuition (all three parts) in one payment with this application.",
           );
+          paymentDetailLines.push(`Amount: ${formatPrice(total, priceCurrency)}`);
         }
-        if (dps?.kind === "schedule") {
-          paymentDetailLines.push(
-            `Remaining balance after down payment: ${formatPrice(dps.remaining, priceCurrency)}`,
-          );
-          paymentDetailLines.push(
-            `Each of ${dps.n} instalments (estimated): ${formatPrice(dps.perInstalment, priceCurrency)}`,
-          );
-        }
+      } else {
+        paymentDetailLines.push(
+          "Payment plan: Tuition not split in this form — school will confirm schedule (listed price unavailable or free).",
+        );
       }
+      paymentDetailLines.push(`Tuition shown: ${priceDisplay || "—"}`);
 
       // Submit application to API
       await eduhubEnrollmentApplications.submit({
@@ -421,10 +406,13 @@ const StudentEnrollmentApplicationPage = () => {
         address: address.trim(),
         paymentProofUrl: proofResult.url,
         idCardUrl: idResult.url,
-        paymentPlan,
+        paymentPlan: submitsDownPaymentPlan ? "DOWN_PAYMENT" : "FULL",
         downPaymentAmount: downAmount,
         priceCurrency,
-        installmentCount: paymentPlan === "DOWN_PAYMENT" ? installmentCount : undefined,
+        installmentCount:
+          submitsDownPaymentPlan && monthlyPaySummary.kind === "ok"
+            ? monthlyPaySummary.apiInstallmentCount
+            : undefined,
       });
 
       const pdfData: EnrollmentApplicationPdfData = {
@@ -574,7 +562,7 @@ const StudentEnrollmentApplicationPage = () => {
                         </div>
                       )}
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 min-h-[38%] bg-gradient-to-t from-black/80 via-black/40 via-45% to-transparent px-4 pb-4 pt-16 sm:px-5 sm:pb-5 sm:pt-24 lg:pt-32">
-                        <div className="pointer-events-auto mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+                        <div className="pointer-events-auto mb-6 flex flex-col items-end gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
                           <div className="min-w-0">
                             <p className="text-xs font-medium text-white/80">Course</p>
                             <p className="mt-0.5 text-xl font-semibold leading-snug tracking-tight text-white drop-shadow-sm sm:text-2xl lg:text-3xl lg:leading-tight">
@@ -587,9 +575,16 @@ const StudentEnrollmentApplicationPage = () => {
                               )}
                             </p>
                           </div>
-                          <div className="flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3.5 py-2 text-sm font-semibold tabular-nums text-white backdrop-blur-sm">
-                            <DollarSign className="h-4 w-4 text-white/80" aria-hidden />
-                            {loadingCourse && !priceDisplay ? "…" : priceDisplay || "—"}
+                          <div className="flex shrink-0 flex-col items-end gap-1.5">
+                            <div className="flex w-fit items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3.5 py-2 text-sm font-semibold tabular-nums text-white backdrop-blur-sm">
+                              <DollarSign className="h-4 w-4 text-white/80" aria-hidden />
+                              {loadingCourse && !priceDisplay ? "…" : priceDisplay || "—"}
+                            </div>
+                            {monthlyPaySummary.kind === "ok" ? (
+                              <div className="rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-xs font-semibold tabular-nums text-white/95 backdrop-blur-sm">
+                                Due now: {formatPrice(monthlyPaySummary.payNow, priceCurrency)}
+                              </div>
+                            ) : null}
                           </div>
                         </div>
                       </div>
@@ -703,149 +698,107 @@ const StudentEnrollmentApplicationPage = () => {
 
             <EnrollmentFormGroup
               step="Step 2"
-              title="Payment plan"
-              description="Choose full tuition or a down payment with instalments where your school offers them."
+              title="Tuition payments"
+              description="Listed tuition is split into three equal whole parts (like a 3-month fee). 1 month = pay one part now; 2 months = pay two parts now; 3 months = pay all three (full tuition) in one transfer."
             >
               <fieldset className="min-w-0 border-0 p-0 shadow-none">
-                <legend className="sr-only">Payment plan</legend>
+                <legend className="sr-only">Monthly payment</legend>
                 <p className="text-xs text-zinc-500">
-                  Choose how you&apos;re paying for this class.
+                  When a price is shown, each card shows how much to pay with this application. Your transfer proof should
+                  match that &quot;due now&quot; amount.
                 </p>
+                <p className="mt-4 text-xs font-medium text-zinc-700">Pay over</p>
                 <RadioGroup
-                  value={paymentPlan}
-                  onValueChange={(v) => setPaymentPlan(v as EnrollmentPaymentPlan)}
-                  className="mt-4 grid gap-2 sm:grid-cols-2"
+                  value={String(monthlyPlanMonths)}
+                  onValueChange={(v) => setMonthlyPlanMonths(Number(v) as MonthlyPlanMonthCount)}
+                  className="mt-2 grid gap-2 sm:grid-cols-3"
                 >
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50/40 px-4 py-3 transition-colors hover:bg-zinc-50 has-[[data-state=checked]]:border-[#3954d0]/40 has-[[data-state=checked]]:bg-[#3954d0]/[0.06]">
-                    <RadioGroupItem value="FULL" id="pay-full" />
-                    <span className="text-sm font-medium text-zinc-900">Full payment</span>
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50/40 px-4 py-3 transition-colors hover:bg-zinc-50 has-[[data-state=checked]]:border-[#3954d0]/40 has-[[data-state=checked]]:bg-[#3954d0]/[0.06]">
-                    <RadioGroupItem value="DOWN_PAYMENT" id="pay-down" />
-                    <span className="text-sm font-medium text-zinc-900">Down payment</span>
-                  </label>
-                </RadioGroup>
-                {paymentPlan === "DOWN_PAYMENT" ? (
-                  <div className="mt-5 pt-5 border-t border-zinc-100">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-4">
-                      <div className="min-w-0 flex-1">
-                        <Label htmlFor="downPayment" className="text-zinc-700">
-                          Down payment ({priceCurrency})
-                        </Label>
-                        <Input
-                          id="downPayment"
-                          inputMode="decimal"
-                          autoComplete="off"
-                          className={inputEditClass}
-                          placeholder="Amount on your transfer"
-                          value={downPaymentRaw}
-                          onChange={(e) => setDownPaymentRaw(e.target.value)}
-                        />
-                        <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-                          Must match your proof. Any remaining balance follows school policy.
-                        </p>
-                      </div>
-                      <div className="w-full shrink-0 sm:w-16 sm:min-w-0">
-                        <Label htmlFor="installments" className="text-[11px] font-medium leading-tight text-zinc-600 sm:text-xs">
-                          Instalments
-                        </Label>
-                        <Select
-                          value={String(installmentCount)}
-                          onValueChange={(v) => setInstallmentCount(Number(v) as EnrollmentInstallmentCount)}
+                  {MONTH_PLAN_OPTIONS.map(({ months, label }) => {
+                    const priceLine = planCardPriceSubtitle(coursePriceAmount, months, priceCurrency);
+                    return (
+                    <label
+                      key={months}
+                      htmlFor={`pay-months-${months}`}
+                      className="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50/40 px-4 py-3 transition-colors hover:bg-zinc-50 has-[[data-state=checked]]:border-[#3954d0]/40 has-[[data-state=checked]]:bg-[#3954d0]/[0.06]"
+                    >
+                      <RadioGroupItem value={String(months)} id={`pay-months-${months}`} className="mt-0.5 shrink-0" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium text-zinc-900">{label}</span>
+                        <span className="mt-0.5 block text-[11px] font-medium text-zinc-500">Due now</span>
+                        <span
+                          className={cn(
+                            "mt-0.5 block text-xs font-semibold tabular-nums tracking-tight",
+                            priceLine ? "text-[#3954d0]" : "font-medium text-zinc-400",
+                          )}
                         >
-                          <SelectTrigger id="installments" className="mt-1.5 h-11 w-full min-w-0 rounded-xl border-zinc-200 px-1.5 text-sm [&>svg]:h-3 [&>svg]:w-3 [&>svg]:shrink-0">
-                            <SelectValue placeholder="2" />
-                          </SelectTrigger>
-                          <SelectContent
-                            position="popper"
-                            className="min-w-0 w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)] p-0"
-                          >
-                            <SelectItem value="2" className="justify-center py-2 pl-2 pr-2 text-center text-sm">
-                              2
-                            </SelectItem>
-                            <SelectItem value="4" className="justify-center py-2 pl-2 pr-2 text-center text-sm">
-                              4
-                            </SelectItem>
-                            <SelectItem value="6" className="justify-center py-2 pl-2 pr-2 text-center text-sm">
-                              6
-                            </SelectItem>
-                            <SelectItem value="8" className="justify-center py-2 pl-2 pr-2 text-center text-sm">
-                              8
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    {downPaymentSummary ? (
-                      <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-800">
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-600">Summary</p>
-                        {downPaymentSummary.kind === "noPrice" && (
-                          <p className="text-zinc-600">
-                            Class price is unavailable or free — instalment amounts can&apos;t be calculated here.
-                          </p>
-                        )}
-                        {downPaymentSummary.kind === "needDown" && (
-                          <div className="space-y-1.5 text-zinc-700">
-                            <p>
-                              <span className="text-zinc-500">Class price:</span>{" "}
-                              <span className="font-semibold text-zinc-900">
-                                {formatPrice(downPaymentSummary.total, priceCurrency)}
-                              </span>
-                            </p>
-                            <p className="text-zinc-600">
-                              Enter your down payment amount to see the remaining balance split across {downPaymentSummary.n}{" "}
-                              instalments.
-                            </p>
-                          </div>
-                        )}
-                        {downPaymentSummary.kind === "downExceeds" && (
-                          <p className="text-amber-800">
-                            Down payment ({formatPrice(downPaymentSummary.down, priceCurrency)}) is higher than the class price (
-                            {formatPrice(downPaymentSummary.total, priceCurrency)}). Please correct the amount.
-                          </p>
-                        )}
-                        {downPaymentSummary.kind === "fullyCovered" && (
-                          <p className="text-zinc-700">
-                            Your down payment covers the full class price ({formatPrice(downPaymentSummary.total, priceCurrency)}
-                            ). No further instalments are needed for tuition.
-                          </p>
-                        )}
-                        {downPaymentSummary.kind === "schedule" && (
-                          <ul className="space-y-2 text-zinc-800">
-                            <li className="flex flex-wrap justify-between gap-x-4 gap-y-0.5">
-                              <span className="text-zinc-500">Class price</span>
-                              <span className="font-medium tabular-nums text-zinc-900">
-                                {formatPrice(downPaymentSummary.total, priceCurrency)}
-                              </span>
-                            </li>
-                            <li className="flex flex-wrap justify-between gap-x-4 gap-y-0.5">
-                              <span className="text-zinc-500">Down payment (this transfer)</span>
-                              <span className="font-medium tabular-nums text-zinc-900">
-                                {formatPrice(downPaymentSummary.down, priceCurrency)}
-                              </span>
-                            </li>
-                            <li className="flex flex-wrap justify-between gap-x-4 gap-y-0.5 border-t border-zinc-200/90 pt-2">
-                              <span className="text-zinc-500">Remaining balance</span>
-                              <span className="font-semibold tabular-nums text-zinc-900">
-                                {formatPrice(downPaymentSummary.remaining, priceCurrency)}
-                              </span>
-                            </li>
-                            <li className="pt-0.5 text-zinc-900">
-                              <span className="text-zinc-500">Each of {downPaymentSummary.n} instalments</span>
-                              <span className="mx-1.5 text-zinc-300">·</span>
-                              <span className="font-semibold tabular-nums">
-                                {formatPrice(downPaymentSummary.perInstalment, priceCurrency)}
-                              </span>
-                              <span className="mt-1 block text-xs font-normal text-zinc-500">
-                                Remaining balance divided equally ({downPaymentSummary.n} payments). Final dates follow school policy.
-                              </span>
-                            </li>
-                          </ul>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
+                          {priceLine ?? (loadingCourse ? "Loading…" : "Price not listed")}
+                        </span>
+                      </span>
+                    </label>
+                    );
+                  })}
+                </RadioGroup>
+                <p className="mt-3 text-[11px] leading-relaxed text-zinc-500">
+                  {monthlyPlanMonths === 1
+                    ? "1 month: pay the first third of listed tuition now; the school schedules two further instalments for the other two thirds."
+                    : monthlyPlanMonths === 2
+                      ? "2 months: pay two thirds of listed tuition now; one further instalment covers the last third."
+                      : "3 months: pay the full listed tuition in one transfer (all three parts together)."}
+                </p>
+                <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-800">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-600">Schedule</p>
+                  {monthlyPaySummary.kind === "noPrice" ? (
+                    <p className="text-zinc-600">
+                      No listed class price here (or the class is free). The school will confirm how much to pay and when.
+                      You can still submit your application and proof of any transfer they asked you to make.
+                    </p>
+                  ) : (
+                    <ul className="space-y-2 text-zinc-800">
+                      <li className="flex flex-wrap justify-between gap-x-4 gap-y-0.5">
+                        <span className="text-zinc-500">Total tuition</span>
+                        <span className="font-semibold tabular-nums text-zinc-900">
+                          {formatPrice(monthlyPaySummary.total, priceCurrency)}
+                        </span>
+                      </li>
+                      <li className="border-t border-zinc-200/90 pt-2 text-zinc-700">
+                        <span className="text-zinc-500">Three equal parts</span>
+                        <span className="mx-1.5 text-zinc-300">·</span>
+                        <span className="font-medium tabular-nums text-zinc-900">
+                          {(() => {
+                            const [x, y, z] = monthlyPaySummary.thirds;
+                            return `${formatPrice(x, priceCurrency)} + ${formatPrice(y, priceCurrency)} + ${formatPrice(z, priceCurrency)}`;
+                          })()}
+                        </span>
+                        <span className="mt-1 block text-xs font-normal text-zinc-500">
+                          Each part is one third of the total (rounded to whole currency so the three still add up exactly).
+                        </span>
+                      </li>
+                      <li className="flex flex-wrap justify-between gap-x-4 gap-y-0.5 border-t border-zinc-200/90 pt-2">
+                        <span className="text-zinc-500">Due with this application</span>
+                        <span className="font-semibold tabular-nums text-zinc-900">
+                          {formatPrice(monthlyPaySummary.payNow, priceCurrency)}
+                        </span>
+                      </li>
+                      {monthlyPaySummary.remaining > 0 ? (
+                        <li className="flex flex-wrap justify-between gap-x-4 gap-y-0.5">
+                          <span className="text-zinc-500">Remaining after this transfer</span>
+                          <span className="font-semibold tabular-nums text-zinc-900">
+                            {formatPrice(monthlyPaySummary.remaining, priceCurrency)}
+                            <span className="ml-1.5 text-xs font-normal text-zinc-500">
+                              (
+                              {monthlyPaySummary.apiInstallmentCount === 2 ? "2 instalments" : "1 instalment"}
+                              )
+                            </span>
+                          </span>
+                        </li>
+                      ) : (
+                        <li className="border-t border-zinc-200/90 pt-2 text-xs text-zinc-600">
+                          No remaining tuition on this plan — full amount is paid with this application.
+                        </li>
+                      )}
+                    </ul>
+                  )}
+                </div>
               </fieldset>
             </EnrollmentFormGroup>
 
@@ -1032,11 +985,23 @@ const StudentEnrollmentApplicationPage = () => {
                 <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
               </Link>
             </div>
-            <div className="flex min-w-0 justify-center lg:justify-end">
+            <div className="flex min-w-0 flex-col items-center justify-center gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-4 lg:justify-end">
+              <div className="min-w-0 max-w-full text-center sm:max-w-[min(100%,14rem)] sm:text-right">
+                <p className="truncate text-sm font-semibold text-zinc-900">
+                  {MONTH_PLAN_OPTIONS.find((o) => o.months === monthlyPlanMonths)?.label ?? "Plan"}
+                </p>
+                <p className="mt-1 text-base font-bold tabular-nums tracking-tight text-[#3954d0]">
+                  {monthlyPaySummary.kind === "ok"
+                    ? formatPrice(monthlyPaySummary.payNow, priceCurrency)
+                    : loadingCourse
+                      ? "…"
+                      : "—"}
+                </p>
+              </div>
               <Button
                 type="submit"
                 form="enrollment-application-form"
-                className="h-12 w-full max-w-[200px] rounded-xl text-[15px] font-semibold shadow-sm transition-opacity disabled:opacity-60 sm:max-w-[220px]"
+                className="h-12 w-full max-w-[200px] shrink-0 rounded-xl text-[15px] font-semibold shadow-sm transition-opacity disabled:opacity-60 sm:max-w-[220px]"
                 style={{ backgroundColor: "#3954d0" }}
                 disabled={submitting}
               >

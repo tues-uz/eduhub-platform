@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuthSession } from "@/features/auth/context";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import { createPortal } from "react-dom";
@@ -7,25 +7,30 @@ import {
   ArrowLeft,
   BookOpen,
   CalendarDays,
+  Clock,
   Images,
   Loader2,
   Star,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLayoutContext } from "@/features/layout/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { cn } from "@/lib/utils";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import type { TeacherCourse } from "@/features/teacher/types";
-import { eduhubCourses, eduhubLessons, eduhubModules } from "@/api/eduhubClient";
-import type { CourseResponse } from "@/api/eduhubTypes";
+import { eduhubCourses, eduhubLessons, eduhubModules, eduhubSchedule } from "@/api/eduhubClient";
+import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import {
   boundsFromMeetingSlots,
   mergeScheduleDisplayForAdminReview,
   resolvedSessionsSixMonths,
+  useAdminCourseLocalDataVersion,
 } from "@/features/admin/utils/adminCourseScheduleDisplay";
+import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
+import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
 
 const TEACHER_PREFIX = "teacher_";
 const MAX_CLASS_PHOTOS = 8;
@@ -57,6 +62,150 @@ function formatClassDateLabel(iso: string | undefined): string | null {
   const d = new Date(iso.trim());
   if (Number.isNaN(d.getTime())) return null;
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+type SessionSlotLike = { title: string; sessionDate: string; sessionTime: string };
+
+function sessionDateMs(iso: string | undefined): number {
+  if (!iso?.trim()) return NaN;
+  const t = new Date(iso.trim()).getTime();
+  return Number.isNaN(t) ? NaN : t;
+}
+
+/** `YYYY-MM` for grouping, or null if missing/invalid. */
+function yearMonthKey(sessionDate: string | undefined): string | null {
+  if (!sessionDate?.trim()) return null;
+  const d = new Date(sessionDate.trim());
+  if (Number.isNaN(d.getTime())) return null;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function formatMonthHeading(ymKey: string): string {
+  const [y, m] = ymKey.split("-").map(Number);
+  if (!y || !m) return ymKey;
+  const d = new Date(y, m - 1, 1);
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "long" });
+}
+
+const SCHEDULE_MONTH_TAB_DEFS: readonly { value: string; tabLabel: string }[] = [
+  { value: "m1", tabLabel: "1 month" },
+  { value: "m2", tabLabel: "2nd month" },
+  { value: "m3", tabLabel: "3rd month" },
+];
+
+function scheduleMonthSubtitle(tabIndex: number, keysOrdered: string[]): string {
+  if (keysOrdered.length === 0) {
+    return tabIndex === 0 ? "Dates to be confirmed" : "No dates yet";
+  }
+  if (tabIndex === 0) return formatMonthHeading(keysOrdered[0]);
+  if (tabIndex === 1) {
+    return keysOrdered.length >= 2 ? formatMonthHeading(keysOrdered[1]) : "No dates yet";
+  }
+  if (keysOrdered.length > 3) {
+    return `${formatMonthHeading(keysOrdered[2])} onward`;
+  }
+  if (keysOrdered.length === 3) return formatMonthHeading(keysOrdered[2]);
+  return "No dates yet";
+}
+
+type ScheduleMonthTab = {
+  value: string;
+  tabLabel: string;
+  monthLine: string;
+  slots: SessionSlotLike[];
+};
+
+/**
+ * Always three tabs (1 month / 2nd month / 3rd month): first two distinct calendar months,
+ * third tab is the third month plus any later months. Undated rows go on the 3rd tab.
+ * Empty tabs stay visible so students see the full three-month layout.
+ */
+function buildScheduleMonthTabs(slots: SessionSlotLike[]): ScheduleMonthTab[] {
+  if (!slots.length) return [];
+
+  const sortByDate = (a: SessionSlotLike, b: SessionSlotLike) => {
+    const na = sessionDateMs(a.sessionDate);
+    const nb = sessionDateMs(b.sessionDate);
+    if (Number.isNaN(na) && Number.isNaN(nb)) return 0;
+    if (Number.isNaN(na)) return 1;
+    if (Number.isNaN(nb)) return -1;
+    return na - nb;
+  };
+
+  const dated: SessionSlotLike[] = [];
+  const undated: SessionSlotLike[] = [];
+  for (const s of slots) {
+    if (yearMonthKey(s.sessionDate)) dated.push(s);
+    else undated.push(s);
+  }
+  dated.sort(sortByDate);
+
+  const keysOrdered: string[] = [];
+  const seen = new Set<string>();
+  for (const s of dated) {
+    const k = yearMonthKey(s.sessionDate);
+    if (k && !seen.has(k)) {
+      seen.add(k);
+      keysOrdered.push(k);
+    }
+  }
+
+  const buckets: [SessionSlotLike[], SessionSlotLike[], SessionSlotLike[]] = [[], [], []];
+
+  if (keysOrdered.length === 0) {
+    buckets[0] = [...undated].sort(sortByDate);
+  } else {
+    for (const s of dated) {
+      const k = yearMonthKey(s.sessionDate)!;
+      const monthIndex = keysOrdered.indexOf(k);
+      if (monthIndex <= 0) buckets[0].push(s);
+      else if (monthIndex === 1) buckets[1].push(s);
+      else buckets[2].push(s);
+    }
+    buckets[0].sort(sortByDate);
+    buckets[1].sort(sortByDate);
+    buckets[2].sort(sortByDate);
+    if (undated.length) {
+      buckets[2].push(...undated);
+      buckets[2].sort(sortByDate);
+    }
+  }
+
+  return SCHEDULE_MONTH_TAB_DEFS.map((def, i) => ({
+    value: def.value,
+    tabLabel: def.tabLabel,
+    monthLine: scheduleMonthSubtitle(i, keysOrdered),
+    slots: buckets[i],
+  }));
+}
+
+/** Same resolution order as enrolled student course detail: API proposal → approved local → course slots. */
+function resolvePreviewSessionSlots(
+  courseId: string,
+  apiDetail: CourseResponse | null,
+  scheduleProposal: ScheduleProposalResponse | null,
+  isApiCourse: boolean,
+  tc: TeacherCourse | null,
+): SessionSlotLike[] {
+  if (isApiCourse && apiDetail) {
+    if (scheduleProposal?.sessions.length) {
+      return scheduleProposal.sessions.map((s) => ({
+        title: s.title,
+        sessionDate: s.sessionDate ?? "",
+        sessionTime: s.sessionTime ?? "",
+      }));
+    }
+    const wf = courseScheduleWorkflowStore.get(courseId);
+    const useProposal = wf?.status === "approved";
+    if (useProposal) {
+      const p = courseScheduleProposalStore.get(courseId);
+      if (p?.classMeetingSlots?.length) return p.classMeetingSlots;
+    }
+    if (apiDetail.classMeetingSlots?.length) return apiDetail.classMeetingSlots;
+    return [];
+  }
+  if (tc?.classMeetingSlots?.length) return tc.classMeetingSlots;
+  return [];
 }
 
 type LessonPreview = { id: string; title: string };
@@ -116,12 +265,14 @@ const StudentAvailableCourseDetailPage = () => {
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const { isSidebarCollapsed } = useLayoutContext();
   const [, setEnrollmentStoreTick] = useState(0);
+  const scheduleLocalTick = useAdminCourseLocalDataVersion();
 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [teacherCourse, setTeacherCourse] = useState<TeacherCourse | null>(null);
   const [apiCourse, setApiCourse] = useState<CourseResponse | null>(null);
   const [lessonRows, setLessonRows] = useState<LessonPreview[]>([]);
+  const [scheduleProposal, setScheduleProposal] = useState<ScheduleProposalResponse | null>(null);
 
   const isTeacher = linkId.startsWith(TEACHER_PREFIX);
   const teacherId = isTeacher ? linkId.slice(TEACHER_PREFIX.length) : null;
@@ -155,6 +306,7 @@ const StudentAvailableCourseDetailPage = () => {
     setTeacherCourse(null);
     setApiCourse(null);
     setLessonRows([]);
+    setScheduleProposal(null);
 
     if (isTeacher && teacherId) {
       const tc = teacherCoursesStore.getById(teacherId);
@@ -184,6 +336,14 @@ const StudentAvailableCourseDetailPage = () => {
         .then((c) => {
           if (cancelled) return null;
           setApiCourse(c);
+          void eduhubSchedule
+            .getProposal(linkId)
+            .then((p) => {
+              if (!cancelled) setScheduleProposal(p);
+            })
+            .catch(() => {
+              if (!cancelled) setScheduleProposal(null);
+            });
           return eduhubModules
             .getByCourse(linkId)
             .then((modules) =>
@@ -231,8 +391,59 @@ const StudentAvailableCourseDetailPage = () => {
   const category = apiCourse?.category ?? "Class";
   const description = apiCourse?.description ?? teacherCourse?.description ?? "";
   const thumbnailUrl = apiCourse?.thumbnailUrl?.trim() || teacherCourse?.thumbnailUrl?.trim();
-  const scheduleMerged =
-    apiCourse && isUuid(linkId) ? mergeScheduleDisplayForAdminReview(linkId, apiCourse) : null;
+  const scheduleMerged = useMemo(() => {
+    void scheduleLocalTick;
+    if (!apiCourse || !isUuid(linkId) || isTeacher) return null;
+    const wf = courseScheduleWorkflowStore.get(linkId);
+    return mergeScheduleDisplayForAdminReview(linkId, apiCourse, {
+      useLocalProposalSnapshot: wf?.status === "approved",
+    });
+  }, [apiCourse, linkId, isTeacher, scheduleLocalTick]);
+
+  const sessionSlotsPreview = useMemo(() => {
+    void scheduleLocalTick;
+    const isApiCourse = Boolean(apiCourse && linkId && isUuid(linkId) && !isTeacher);
+    const raw = resolvePreviewSessionSlots(linkId, apiCourse, scheduleProposal, isApiCourse, teacherCourse);
+    const decorated = raw.map((slot, i) => ({ slot, i, ms: sessionDateMs(slot.sessionDate) }));
+    decorated.sort((a, b) => {
+      const na = Number.isNaN(a.ms) ? Infinity : a.ms;
+      const nb = Number.isNaN(b.ms) ? Infinity : b.ms;
+      if (na !== nb) return na - nb;
+      return a.i - b.i;
+    });
+    return decorated.map((x) => x.slot);
+  }, [apiCourse, linkId, isTeacher, scheduleProposal, teacherCourse, scheduleLocalTick]);
+
+  const scheduleMonthTabs = useMemo(
+    () => buildScheduleMonthTabs(sessionSlotsPreview),
+    [sessionSlotsPreview],
+  );
+
+  const scheduleStatusHint = useMemo(() => {
+    void scheduleLocalTick;
+    if (!linkId || !isUuid(linkId) || isTeacher || !apiCourse) return null;
+    if (scheduleProposal?.sessions.length) {
+      return "Published class schedule from the school.";
+    }
+    const wf = courseScheduleWorkflowStore.get(linkId);
+    if (wf?.status === "pending_instructor") {
+      return "The proposed schedule is awaiting instructor confirmation—session dates are not finalized yet.";
+    }
+    if (wf?.status === "instructor_rejected") {
+      return "The last proposed schedule was sent back for changes; a new plan may be published later.";
+    }
+    if (wf?.status === "approved" && sessionSlotsPreview.length) {
+      return "Instructor-approved plan (shown here for preview before you enroll).";
+    }
+    return null;
+  }, [
+    apiCourse,
+    linkId,
+    isTeacher,
+    scheduleProposal,
+    sessionSlotsPreview.length,
+    scheduleLocalTick,
+  ]);
 
   const meetings =
     apiCourse?.classMeetingsInSixMonths ??
@@ -433,6 +644,91 @@ const StudentAvailableCourseDetailPage = () => {
                         </dd>
                       </div>
                     </dl>
+                  </div>
+
+                  <div className="mt-6 rounded-2xl border border-zinc-200/80 bg-white p-5 ring-1 ring-zinc-100/80">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+                          <Clock className="h-5 w-5 shrink-0 text-[#3954d0]/80" aria-hidden />
+                          Class schedule
+                        </h2>
+                        <p className="mt-1.5 text-sm leading-relaxed text-zinc-600">
+                          Planned live sessions (date and time). Review this before you enroll so you know when
+                          class meets.
+                        </p>
+                        {scheduleStatusHint ? (
+                          <p className="mt-2 text-xs leading-relaxed text-zinc-500">{scheduleStatusHint}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                    {sessionSlotsPreview.length > 0 ? (
+                      <Tabs
+                        key={scheduleMonthTabs.map((t) => `${t.value}:${t.slots.length}`).join("|")}
+                        defaultValue={scheduleMonthTabs[0]?.value ?? "m1"}
+                        className="mt-5 border-t border-zinc-100 pt-4"
+                      >
+                        <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-xl border border-zinc-200/80 bg-zinc-100/90 p-1.5 text-zinc-600">
+                          {scheduleMonthTabs.map((t) => (
+                            <TabsTrigger
+                              key={t.value}
+                              value={t.value}
+                              className="flex min-h-[3.25rem] flex-col gap-0.5 whitespace-normal rounded-lg px-2 py-2 text-center data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm"
+                            >
+                              <span className="text-sm font-semibold leading-tight text-zinc-800">
+                                {t.tabLabel}
+                              </span>
+                              {t.monthLine ? (
+                                <span className="text-[10px] font-normal leading-snug text-zinc-500">
+                                  {t.monthLine}
+                                </span>
+                              ) : null}
+                            </TabsTrigger>
+                          ))}
+                        </TabsList>
+                        {scheduleMonthTabs.map((t) => (
+                          <TabsContent
+                            key={t.value}
+                            value={t.value}
+                            className="mt-4 focus-visible:outline-none focus-visible:ring-0"
+                          >
+                            {t.slots.length > 0 ? (
+                              <ul className="divide-y divide-zinc-100">
+                                {t.slots.map((row, idx) => {
+                                  const dateLabel = formatClassDateLabel(row.sessionDate) ?? "Date TBA";
+                                  const timeLabel = row.sessionTime?.trim() || "—";
+                                  const title = row.title?.trim() || `Session ${idx + 1}`;
+                                  return (
+                                    <li
+                                      key={`${t.value}-${row.sessionDate}-${idx}-${title}`}
+                                      className="flex flex-col gap-1 py-3 first:pt-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+                                    >
+                                      <div className="min-w-0">
+                                        <p className="text-sm font-medium text-zinc-900">{title}</p>
+                                        <p className="mt-0.5 text-xs tabular-nums text-zinc-500 sm:hidden">
+                                          {dateLabel} · {timeLabel}
+                                        </p>
+                                      </div>
+                                      <div className="hidden shrink-0 text-right text-sm tabular-nums text-zinc-700 sm:block">
+                                        <p className="font-medium">{dateLabel}</p>
+                                        <p className="mt-0.5 text-xs text-zinc-500">{timeLabel}</p>
+                                      </div>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            ) : (
+                              <p className="text-sm text-zinc-500">No sessions in this period.</p>
+                            )}
+                          </TabsContent>
+                        ))}
+                      </Tabs>
+                    ) : (
+                      <p className="mt-4 border-t border-zinc-100 pt-4 text-sm leading-relaxed text-zinc-500">
+                        No session dates are listed yet. Check back after the school publishes the schedule, or ask
+                        the school before you enroll.
+                      </p>
+                    )}
                   </div>
 
                   {description.trim() ? (
