@@ -32,20 +32,19 @@ export default function StudentQuiz() {
       const enrollments = await eduhubEnrollments.getMy();
       const courseIds = Array.from(new Set(enrollments.map(e => e.course.id)));
 
-      // 2. Fetch quizzes for each enrolled course
-      let allQuizzes: QuizResponseForStudent[] = [];
+      // 2. Fetch quizzes for all enrolled courses in parallel
       const targetCourseIds = filterCourseId ? [filterCourseId] : courseIds;
-      
-      for (const cid of targetCourseIds) {
-        try {
-          const courseQuizzes = await eduhubCourseQuizzes.listForStudent(cid);
-          allQuizzes = [...allQuizzes, ...courseQuizzes];
-        } catch (e) {
-          console.warn(`Failed to fetch quizzes for course ${cid}`, e);
-        }
-      }
-      setQuizzes(allQuizzes);
-
+      const courseQuizResults = await Promise.all(
+        targetCourseIds.map(async (cid) => {
+          try {
+            return await eduhubCourseQuizzes.listForStudent(cid);
+          } catch (e) {
+            console.warn(`Failed to fetch quizzes for course ${cid}`, e);
+            return [];
+          }
+        })
+      );
+      const allQuizzes: QuizResponseForStudent[] = courseQuizResults.flat();
       setQuizzes(allQuizzes);
       
       // 3. Check which quizzes have been completed by the student using the new batch endpoint

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ClassMeetingSlot } from "@/features/teacher/types";
 import { Link, useMatch, useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CalendarDays, FileText, Image as ImageIcon, X } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, CalendarDays, FileText, Image as ImageIcon, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -16,10 +16,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { eduhubCourses } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubClassResumes, eduhubUploadFile, eduhubSchedule } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
-import { getClassResumeById, saveClassResume, deleteClassResume } from "@/features/courses/classResumeStorage";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { substituteInviteWorkflowStore } from "@/features/teacher/data/substituteInviteWorkflowStore";
 import { resolveClassScheduleFormState } from "@/features/teacher/pages/teacherCourseFormHelpers";
@@ -72,6 +71,18 @@ export default function TeacherCourseResumeEditPage() {
   const apiCourseQuery = useQuery({
     queryKey: ["teacher", "roster", "course", courseId],
     queryFn: () => eduhubCourses.getById(courseId),
+    enabled: Boolean(courseId) && isUuid(courseId),
+  });
+
+  const scheduleProposalQuery = useQuery({
+    queryKey: ["teacher", "resume", "scheduleProposal", courseId],
+    queryFn: async () => {
+      try {
+        return await eduhubSchedule.getProposal(courseId);
+      } catch {
+        return null;
+      }
+    },
     enabled: Boolean(courseId) && isUuid(courseId),
   });
 
@@ -148,8 +159,22 @@ export default function TeacherCourseResumeEditPage() {
 
   const scheduleSlotOptions = useMemo(() => {
     if (!courseId) return [];
-    const resolved = resolveClassScheduleFormState(scheduleSourceCourse ?? {}, courseId);
-    return resolved.slots
+
+    const proposal = scheduleProposalQuery.data;
+    let slots: { title: string; sessionDate: string; sessionTime: string }[] = [];
+
+    if (proposal?.sessions?.length) {
+      slots = proposal.sessions.map((s) => ({
+        title: s.title ?? "",
+        sessionDate: s.sessionDate ?? "",
+        sessionTime: s.sessionTime ?? "",
+      }));
+    } else {
+      const resolved = resolveClassScheduleFormState(scheduleSourceCourse ?? {}, courseId);
+      slots = resolved.slots;
+    }
+
+    return slots
       .map((slot, index) => ({ slot, index }))
       .filter(({ slot }) =>
         Boolean(slot.title?.trim() || slot.sessionDate?.trim() || slot.sessionTime?.trim()),
@@ -158,7 +183,7 @@ export default function TeacherCourseResumeEditPage() {
         value: `slot-${index}`,
         label: formatClassMeetingSlotLabel(slot, index),
       }));
-  }, [courseId, scheduleSourceCourse]);
+  }, [courseId, scheduleSourceCourse, scheduleProposalQuery.data]);
 
   /** Substitutes only see the session(s) the course lead picked on the cover request (+ whole class in the UI). */
   const resumeSessionSelectOptions = useMemo(() => {
@@ -177,11 +202,13 @@ export default function TeacherCourseResumeEditPage() {
     substituteNewResumeSessionDefaultedRef.current = false;
   }, [courseId, isNew]);
 
+  const existingResumeQuery = useQuery({
+    queryKey: ["teacher", "roster", "resume", courseId, editingResumeId],
+    queryFn: () => eduhubClassResumes.get(courseId, editingResumeId!),
+    enabled: Boolean(courseId) && isUuid(courseId) && Boolean(editingResumeId) && !isNew,
+  });
+
   useEffect(() => {
-    if (!courseMeta?.id) {
-      setLoaded(false);
-      return;
-    }
     if (isNew) {
       setBodyDraft("");
       setThumbnailDraft("");
@@ -189,21 +216,16 @@ export default function TeacherCourseResumeEditPage() {
       setLoaded(true);
       return;
     }
-    if (!editingResumeId) {
+    if (existingResumeQuery.data) {
+      setBodyDraft(existingResumeQuery.data.body);
+      setSessionKeyDraft(existingResumeQuery.data.sessionSlotKey ?? "");
+      setThumbnailDraft(existingResumeQuery.data.thumbnailUrl ?? "");
       setLoaded(true);
-      return;
-    }
-    const rec = getClassResumeById(courseMeta.id, editingResumeId);
-    if (rec) {
-      setBodyDraft(rec.body);
-      setSessionKeyDraft(rec.sessionSlotKey ?? "");
-      setThumbnailDraft(rec.thumbnailUrl ?? "");
-    } else {
+    } else if (existingResumeQuery.isError) {
       toast.error("Resume not found");
       void navigate(`/dashboard/teacher/courses/${courseId}?tab=resume`, { replace: true });
     }
-    setLoaded(true);
-  }, [courseMeta?.id, isNew, editingResumeId, courseId, navigate]);
+  }, [isNew, existingResumeQuery.data, existingResumeQuery.isError, courseId, navigate]);
 
   /** New resume + substitute: default session from invite once schedule rows exist (does not fight refetches). */
   useEffect(() => {
@@ -226,8 +248,43 @@ export default function TeacherCourseResumeEditPage() {
 
   const backHref = `/dashboard/teacher/courses/${courseId}?tab=resume`;
 
+  const queryClient = useQueryClient();
+  const resumeQueryKey = ["teacher", "roster", "resumes", courseId];
+
+  const createResumeMutation = useMutation({
+    mutationFn: (body: { body: string; sessionSlotKey?: string; sessionLabel?: string; thumbnailUrl?: string }) =>
+      eduhubClassResumes.create(courseId, body),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: resumeQueryKey });
+      toast.success("Resume created", { description: "Students can read it on the class Resume tab." });
+      void navigate(backHref, { replace: true });
+    },
+    onError: () => toast.error("Could not save."),
+  });
+
+  const updateResumeMutation = useMutation({
+    mutationFn: (body: { body: string; sessionSlotKey?: string; sessionLabel?: string; thumbnailUrl?: string }) =>
+      eduhubClassResumes.update(courseId, editingResumeId!, body),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: resumeQueryKey });
+      toast.success("Resume updated", { description: "Students can read it on the class Resume tab." });
+      void navigate(backHref, { replace: true });
+    },
+    onError: () => toast.error("Could not save."),
+  });
+
+  const deleteResumeMutation = useMutation({
+    mutationFn: () => eduhubClassResumes.delete(courseId, editingResumeId!),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: resumeQueryKey });
+      setDeleteOpen(false);
+      toast.message("Resume deleted");
+      void navigate(backHref, { replace: true });
+    },
+    onError: () => toast.error("Could not delete resume."),
+  });
+
   const handleSave = () => {
-    if (!courseMeta?.id) return;
     const trimmed = bodyDraft.trim();
     if (!trimmed) {
       toast.error("Write something before saving.");
@@ -236,55 +293,41 @@ export default function TeacherCourseResumeEditPage() {
     const opt = (isSubstituteViewer ? resumeSessionSelectOptions : scheduleSlotOptions).find(
       (o) => o.value === sessionKeyDraft,
     );
-    const savedId = saveClassResume(courseMeta.id, {
-      id: editingResumeId,
+    const payload = {
       body: trimmed,
-      session:
-        sessionKeyDraft && opt ? { slotKey: opt.value, label: opt.label } : undefined,
+      sessionSlotKey: sessionKeyDraft && opt ? opt.value : undefined,
+      sessionLabel: sessionKeyDraft && opt ? opt.label : undefined,
       thumbnailUrl: thumbnailDraft || undefined,
-    });
-    if (!savedId) {
-      toast.error("Could not save.");
-      return;
+    };
+    if (isNew) {
+      createResumeMutation.mutate(payload);
+    } else {
+      updateResumeMutation.mutate(payload);
     }
-    toast.success(isNew ? "Resume created" : "Resume updated", {
-      description: "Students can read it on the class Resume tab.",
-    });
-    void navigate(backHref, { replace: true });
   };
 
-  const onThumbnailPicked = (file: File | null) => {
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+
+  const onThumbnailPicked = async (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Please pick an image file.");
       return;
     }
-    const maxBytes = 900_000;
-    if (file.size > maxBytes) {
-      toast.error("Image is too large for this demo.", {
-        description: "Use a smaller image (under ~900KB) to avoid localStorage limits.",
-      });
-      return;
+    setUploadingThumbnail(true);
+    try {
+      const { url } = await eduhubUploadFile(file, "resumes");
+      setThumbnailDraft(url);
+    } catch {
+      toast.error("Could not upload image.");
+    } finally {
+      setUploadingThumbnail(false);
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const v = typeof reader.result === "string" ? reader.result : "";
-      if (!v.startsWith("data:image/")) {
-        toast.error("Could not read that image.");
-        return;
-      }
-      setThumbnailDraft(v);
-    };
-    reader.onerror = () => toast.error("Could not read that image.");
-    reader.readAsDataURL(file);
   };
 
   const handleDelete = () => {
-    if (!courseMeta?.id || !editingResumeId) return;
-    deleteClassResume(courseMeta.id, editingResumeId);
-    setDeleteOpen(false);
-    toast.message("Resume deleted");
-    void navigate(backHref, { replace: true });
+    if (!editingResumeId) return;
+    deleteResumeMutation.mutate();
   };
 
   if (!courseId) {
@@ -359,8 +402,7 @@ export default function TeacherCourseResumeEditPage() {
                 </span>
               </p>
               <p className="text-sky-950/85">
-                You can add or edit resumes for students. Deleting an existing resume stays with the course lead in this
-                demo.
+                You can add or edit resumes for students. Deleting an existing resume stays with the course lead.
               </p>
             </div>
           ) : null}
@@ -368,7 +410,7 @@ export default function TeacherCourseResumeEditPage() {
             <div className="mb-6 rounded-xl border border-emerald-200/90 bg-emerald-50/90 px-4 py-3 text-sm text-emerald-950 leading-relaxed">
               <span className="font-semibold">You are the course lead.</span> Substitute{" "}
               <span className="font-mono font-medium">{approvedCoverAsPrimaryRow.substituteEmailNorm}</span> can also
-              edit resumes here (demo).
+              edit resumes here.
             </div>
           ) : null}
           <div className="mb-6 flex items-start gap-3">
@@ -386,8 +428,7 @@ export default function TeacherCourseResumeEditPage() {
           <Card className="overflow-hidden rounded-xl border border-gray-100 bg-white">
             <CardContent className="space-y-5 pt-6">
               <p className="text-sm text-foreground/60">
-                Recaps and reminders appear on students&apos; class page under the Resume tab (browser-local demo until an
-                API exists).
+                Recaps and reminders appear on students&apos; class page under the Resume tab.
               </p>
 
               <div className="space-y-2">
@@ -400,9 +441,15 @@ export default function TeacherCourseResumeEditPage() {
                     id="resume-thumb"
                     type="file"
                     accept="image/*"
-                    className="block w-full max-w-md text-sm file:mr-4 file:rounded-full file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-900 hover:file:bg-slate-200"
-                    onChange={(e) => onThumbnailPicked(e.target.files?.[0] ?? null)}
+                    disabled={uploadingThumbnail}
+                    className="block w-full max-w-md text-sm file:mr-4 file:rounded-full file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-900 hover:file:bg-slate-200 disabled:opacity-50"
+                    onChange={(e) => void onThumbnailPicked(e.target.files?.[0] ?? null)}
                   />
+                  {uploadingThumbnail ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-foreground/60">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Uploading…
+                    </span>
+                  ) : null}
                   {thumbnailDraft ? (
                     <Button
                       type="button"
@@ -427,7 +474,7 @@ export default function TeacherCourseResumeEditPage() {
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Shows on the resume cards as a cover image. Stored in your browser for this demo.
+                    Shows on the resume cards as a cover image.
                   </p>
                 )}
               </div>
@@ -517,7 +564,7 @@ export default function TeacherCourseResumeEditPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this resume?</AlertDialogTitle>
             <AlertDialogDescription>
-              Students will no longer see it on their class page. This cannot be undone in this demo.
+              Students will no longer see it on their class page. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

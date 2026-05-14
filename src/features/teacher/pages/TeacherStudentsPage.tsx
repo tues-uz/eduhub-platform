@@ -42,24 +42,23 @@ const TeacherStudentsPage = () => {
       setLoading(true);
       try {
         const coursesRes = await eduhubCourses.getByLecturer(user.id, { page: 0, size: 100 });
-        const allStudents: StudentRow[] = [];
-        for (const course of coursesRes || []) {
-          try {
-            const studentsData = await eduhubCourses.getEnrolledStudents(course.id, 0, 100);
-            for (const s of studentsData || []) {
-              allStudents.push({
+        const courseStudentResults = await Promise.all(
+          (coursesRes || []).map(async (course) => {
+            try {
+              const studentsData = await eduhubCourses.getEnrolledStudents(course.id, 0, 100);
+              return (studentsData || []).map((s) => ({
                 id: s.id,
                 name: s.fullName,
                 email: s.email,
                 course: course.title,
                 enrolledDate: course.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
-              });
+              }));
+            } catch {
+              return [];
             }
-          } catch {
-            // Skip courses that fail
-          }
-        }
-        setStudents(allStudents);
+          })
+        );
+        setStudents(courseStudentResults.flat());
       } catch {
         setStudents([]);
       }

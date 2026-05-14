@@ -1,12 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bell, AlertCircle, Clock, CheckCircle2 } from "lucide-react";
+import { useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Bell, AlertCircle, Clock, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuthSession } from "@/features/auth/context";
-import {
-  appNotificationStore,
-  APP_NOTIFICATIONS_CHANGE_EVENT,
-  type AppNotification,
-} from "@/features/notifications/appNotificationStore";
+import { eduhubNotifications } from "@/api/eduhubClient";
+import type { NotificationResponse } from "@/api/eduhubTypes";
 
 function formatRelativeTime(iso: string): string {
   const t = new Date(iso).getTime();
@@ -22,48 +19,60 @@ function formatRelativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { dateStyle: "medium" });
 }
 
-function getIcon(kind: AppNotification["kind"]) {
+function getIcon(kind: string) {
   switch (kind) {
     case "enrollment_approved":
       return <CheckCircle2 className="h-5 w-5 text-green-600" />;
     case "enrollment_rejected":
+    case "course_rejected":
       return <AlertCircle className="h-5 w-5 text-red-500" />;
-    case "admin_enrollment_action":
-      return <Bell className="h-5 w-5 text-slate-600" />;
     default:
       return <Bell className="h-5 w-5 text-foreground/60" />;
   }
 }
 
 const StudentNotifications = () => {
-  const { user } = useAuthSession();
-  const emailNorm = user.email.trim().toLowerCase();
-  const [tick, setTick] = useState(0);
+  const queryClient = useQueryClient();
+  const queryKey = ["notifications"];
 
-  const bump = useCallback(() => setTick((x) => x + 1), []);
-
-  useEffect(() => {
-    window.addEventListener(APP_NOTIFICATIONS_CHANGE_EVENT, bump);
-    return () => window.removeEventListener(APP_NOTIFICATIONS_CHANGE_EVENT, bump);
-  }, [bump]);
-
-  const notifications = useMemo(
-    () =>
-      [...appNotificationStore.listForStudent(emailNorm)].sort((a, b) =>
-        b.createdAt.localeCompare(a.createdAt),
-      ),
-    [emailNorm, tick],
-  );
+  const { data: notifications = [], isLoading } = useQuery({
+    queryKey,
+    queryFn: () => eduhubNotifications.list(),
+  });
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
-  const onMarkAllRead = () => {
-    appNotificationStore.markAllReadForStudent(emailNorm);
-  };
+  const markReadMutation = useMutation({
+    mutationFn: (id: string) => eduhubNotifications.markRead(id),
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey });
+      const prev = queryClient.getQueryData<NotificationResponse[]>(queryKey);
+      queryClient.setQueryData<NotificationResponse[]>(queryKey, (old) =>
+        (old ?? []).map((n) => (n.id === id ? { ...n, read: true } : n)),
+      );
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(queryKey, ctx.prev);
+    },
+    onSettled: () => void queryClient.invalidateQueries({ queryKey }),
+  });
 
-  const onRowClick = (id: string) => {
-    appNotificationStore.markRead(id);
-  };
+  const markAllReadMutation = useMutation({
+    mutationFn: () => eduhubNotifications.markAllRead(),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey });
+      const prev = queryClient.getQueryData<NotificationResponse[]>(queryKey);
+      queryClient.setQueryData<NotificationResponse[]>(queryKey, (old) =>
+        (old ?? []).map((n) => ({ ...n, read: true })),
+      );
+      return { prev };
+    },
+    onError: (_err, _ctx, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(queryKey, ctx.prev);
+    },
+    onSettled: () => void queryClient.invalidateQueries({ queryKey }),
+  });
 
   return (
     <div
@@ -81,59 +90,76 @@ const StudentNotifications = () => {
             {unreadCount} unread
           </span>
           {unreadCount > 0 ? (
-            <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={onMarkAllRead}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={() => markAllReadMutation.mutate()}
+              disabled={markAllReadMutation.isPending}
+            >
               Mark all as read
             </Button>
           ) : null}
         </div>
       </div>
 
-      <div className="space-y-2">
-        {notifications.map((notification) => (
-          <button
-            key={notification.id}
-            type="button"
-            onClick={() => onRowClick(notification.id)}
-            className={`w-full rounded-xl border p-5 text-left transition-colors ${
-              notification.read
-                ? "border-gray-200/50 bg-white/80 hover:bg-gray-50/50"
-                : "border-blue-200/50 bg-blue-50/50 hover:bg-blue-50"
-            }`}
-          >
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
-                {getIcon(notification.kind)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <p
-                    className={`text-sm font-semibold ${
-                      notification.read ? "text-foreground/80" : "text-foreground"
-                    }`}
-                  >
-                    {notification.title}
-                  </p>
-                  {!notification.read && <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />}
-                </div>
-                <p className="mt-1 text-sm text-foreground/60">{notification.body}</p>
-                <p className="mt-2 flex items-center gap-1.5 text-xs text-foreground/50">
-                  <Clock className="h-3.5 w-3.5" />
-                  {formatRelativeTime(notification.createdAt)}
-                </p>
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {notifications.length === 0 && (
-        <div className="rounded-xl border border-gray-200/50 bg-white/50 py-16 text-center">
-          <Bell className="mx-auto mb-4 h-12 w-12 text-foreground/30" />
-          <p className="font-medium text-foreground/70">No notifications yet.</p>
-          <p className="mt-1 text-sm text-foreground/50">
-            Enrollment decisions and other updates will appear here.
-          </p>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading notifications…
         </div>
+      ) : (
+        <>
+          <div className="space-y-2">
+            {notifications.map((notification) => (
+              <button
+                key={notification.id}
+                type="button"
+                onClick={() => {
+                  if (!notification.read) markReadMutation.mutate(notification.id);
+                }}
+                className={`w-full rounded-xl border p-5 text-left transition-colors ${
+                  notification.read
+                    ? "border-gray-200/50 bg-white/80 hover:bg-gray-50/50"
+                    : "border-blue-200/50 bg-blue-50/50 hover:bg-blue-50"
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
+                    {getIcon(notification.kind)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p
+                        className={`text-sm font-semibold ${
+                          notification.read ? "text-foreground/80" : "text-foreground"
+                        }`}
+                      >
+                        {notification.title}
+                      </p>
+                      {!notification.read && <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />}
+                    </div>
+                    <p className="mt-1 text-sm text-foreground/60">{notification.body}</p>
+                    <p className="mt-2 flex items-center gap-1.5 text-xs text-foreground/50">
+                      <Clock className="h-3.5 w-3.5" />
+                      {formatRelativeTime(notification.createdAt)}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {notifications.length === 0 && (
+            <div className="rounded-xl border border-gray-200/50 bg-white/50 py-16 text-center">
+              <Bell className="mx-auto mb-4 h-12 w-12 text-foreground/30" />
+              <p className="font-medium text-foreground/70">No notifications yet.</p>
+              <p className="mt-1 text-sm text-foreground/50">
+                Enrollment decisions and other updates will appear here.
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

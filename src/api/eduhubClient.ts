@@ -22,6 +22,10 @@ import type {
   ApiResponse,
   ScheduleProposalRequest,
   ScheduleProposalResponse,
+  TeacherResponse,
+  ClassResumeResponse,
+  ClassResumeRequest,
+  NotificationResponse,
 } from "./eduhubTypes";
 
 const BASE = EDUHUB_API_BASE_URL + EDUHUB_API_PREFIX;
@@ -649,6 +653,9 @@ export const eduhubAdmin = {
   setUserStatus: (id: string, enabled: boolean) =>
     request<UserResponse>(`/admin/users/${id}/status`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
 
+  listTeachers: () =>
+    request<TeacherResponse[]>("/admin/teachers"),
+
   proposeSchedule: (courseId: string, body: ScheduleProposalRequest) =>
     request<ScheduleProposalResponse>(`/admin/courses/${courseId}/schedule`, { method: "POST", body: JSON.stringify(body) }),
 };
@@ -666,6 +673,43 @@ export const eduhubSchedule = {
       method: "PATCH",
       body: JSON.stringify({ rejectionNote }),
     }),
+};
+
+/** Class Resumes */
+export const eduhubClassResumes = {
+  list: (courseId: string) =>
+    request<ClassResumeResponse[]>(`/courses/${courseId}/resumes`),
+
+  get: (courseId: string, resumeId: string) =>
+    request<ClassResumeResponse>(`/courses/${courseId}/resumes/${resumeId}`),
+
+  create: (courseId: string, body: ClassResumeRequest) =>
+    request<ClassResumeResponse>(`/courses/${courseId}/resumes`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  update: (courseId: string, resumeId: string, body: ClassResumeRequest) =>
+    request<ClassResumeResponse>(`/courses/${courseId}/resumes/${resumeId}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
+  delete: (courseId: string, resumeId: string) =>
+    request<void>(`/courses/${courseId}/resumes/${resumeId}`, { method: "DELETE" }),
+};
+
+/** Notifications */
+export const eduhubNotifications = {
+  list: () => request<NotificationResponse[]>("/notifications"),
+
+  unreadCount: () => request<{ count: number }>("/notifications/unread-count"),
+
+  markRead: (id: string) =>
+    request<void>(`/notifications/${id}/read`, { method: "PATCH" }),
+
+  markAllRead: () =>
+    request<void>("/notifications/read-all", { method: "PATCH" }),
 };
 
 /** Assignments */

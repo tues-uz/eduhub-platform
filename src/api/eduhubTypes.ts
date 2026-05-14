@@ -10,6 +10,28 @@ export interface UserResponse {
   avatarUrl?: string;
   bio?: string;
   phoneNumber?: string;
+  enabled?: boolean;
+  createdAt?: string;
+  coursesCount?: number;
+}
+
+export interface TeacherCourseRef {
+  id: string;
+  title: string;
+  enrolled: number;
+  capacity: number;
+}
+
+export interface TeacherResponse {
+  id: string;
+  fullName: string;
+  email: string;
+  phoneNumber?: string;
+  avatarUrl?: string;
+  enabled: boolean;
+  createdAt: string;
+  courses: TeacherCourseRef[];
+  totalStudents: number;
 }
 
 export interface AuthResponse {
@@ -303,4 +325,38 @@ export interface EnrollmentApplicationResponse {
 
 export interface EnrollmentApplicationReviewRequest {
   adminNote?: string;
+}
+
+// Class Resume Types
+
+export interface ClassResumeResponse {
+  id: string;
+  courseId: string;
+  body: string;
+  sessionSlotKey?: string;
+  sessionLabel?: string;
+  thumbnailUrl?: string;
+  authorName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClassResumeRequest {
+  body: string;
+  sessionSlotKey?: string;
+  sessionLabel?: string;
+  thumbnailUrl?: string;
+}
+
+// Notification Types
+
+export interface NotificationResponse {
+  id: string;
+  kind: string;
+  title: string;
+  body: string;
+  href?: string;
+  refId?: string;
+  read: boolean;
+  createdAt: string;
 }

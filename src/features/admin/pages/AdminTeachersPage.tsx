@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { mockAdminTeachers, type AdminTeacherRow } from "@/features/admin/data/adminOperationalMock";
-import { adminTeachersStore } from "@/features/admin/data/adminTeachersStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,40 +30,47 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { eduhubAdmin } from "@/api/eduhubClient";
+import type { TeacherResponse, TeacherCourseRef } from "@/api/eduhubTypes";
 
 export default function AdminTeachersPage() {
-  const [profileTeacher, setProfileTeacher] = useState<AdminTeacherRow | null>(null);
+  const [profileTeacher, setProfileTeacher] = useState<TeacherResponse | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loadFilter, setLoadFilter] = useState<string>("all");
+  const [teachers, setTeachers] = useState<TeacherResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const teachers = useMemo(() => {
-    const fromStore = adminTeachersStore.getAll();
-    const map = new Map<string, AdminTeacherRow>();
-    // Prefer locally-created entries over mocks if emails collide.
-    [...mockAdminTeachers, ...fromStore].forEach((t) => {
-      const key = t.email.trim().toLowerCase();
-      if (!key) return;
-      map.set(key, t);
-    });
-    return Array.from(map.values());
+  useEffect(() => {
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const res = await eduhubAdmin.listTeachers();
+        setTeachers(Array.isArray(res) ? res : []);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to load teachers");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
   }, []);
 
   const filteredTeachers = useMemo(() => {
     const q = search.trim().toLowerCase();
     return teachers.filter((t) => {
-      if (statusFilter === "active" && t.status !== "Active") return false;
-      if (statusFilter === "inactive" && t.status !== "Inactive") return false;
-      if (loadFilter === "with_courses" && t.coursesTaught.length <= 0) return false;
-      if (loadFilter === "no_courses" && t.coursesTaught.length > 0) return false;
+      if (statusFilter === "active" && !t.enabled) return false;
+      if (statusFilter === "inactive" && t.enabled) return false;
+      if (loadFilter === "with_courses" && t.courses.length <= 0) return false;
+      if (loadFilter === "no_courses" && t.courses.length > 0) return false;
       if (!q) return true;
       const haystack = [
-        t.name,
+        t.fullName,
         t.email,
-        String(t.coursesTaught.length),
+        String(t.courses.length),
         String(t.totalStudents),
-        t.status,
-        t.coursesTaught.map((c) => c.title).join(" "),
+        t.enabled ? "Active" : "Inactive",
+        t.courses.map((c) => c.title).join(" "),
       ]
         .join(" ")
         .toLowerCase();
@@ -83,7 +89,7 @@ export default function AdminTeachersPage() {
           Back to dashboard
         </Link>
 
-        <AdminPageHeader title="Teachers" description="Lecturer accounts and class load (demo data until admin user API exists)." />
+        <AdminPageHeader title="Teachers" description="Lecturer accounts and class load." />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
@@ -142,7 +148,13 @@ export default function AdminTeachersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTeachers.length === 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center text-slate-500">
+                    Loading...
+                  </TableCell>
+                </TableRow>
+              ) : filteredTeachers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center text-slate-500">
                     No teachers match your search or filters.
@@ -151,12 +163,12 @@ export default function AdminTeachersPage() {
               ) : (
                 filteredTeachers.map((t) => (
                   <TableRow key={t.id}>
-                    <TableCell className="font-medium text-slate-900">{t.name}</TableCell>
+                    <TableCell className="font-medium text-slate-900">{t.fullName}</TableCell>
                     <TableCell>{t.email}</TableCell>
-                    <TableCell>{t.coursesTaught.length}</TableCell>
+                    <TableCell>{t.courses.length}</TableCell>
                     <TableCell className="text-right tabular-nums text-slate-800">{t.totalStudents}</TableCell>
                     <TableCell>
-                      {t.status === "Active" ? (
+                      {t.enabled ? (
                         <Badge variant="outline" className="text-emerald-800 border-emerald-200 bg-emerald-50/50">
                           Active
                         </Badge>
@@ -189,7 +201,7 @@ export default function AdminTeachersPage() {
                 <div className="rounded-md border border-slate-200 bg-slate-50 p-3 space-y-2">
                   <div className="flex justify-between gap-4">
                     <span className="text-slate-500">Name</span>
-                    <span className="font-medium text-slate-900 text-right">{profileTeacher.name}</span>
+                    <span className="font-medium text-slate-900 text-right">{profileTeacher.fullName}</span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-slate-500">Email</span>
@@ -197,7 +209,7 @@ export default function AdminTeachersPage() {
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-slate-500">Assigned courses</span>
-                    <span className="text-slate-800">{profileTeacher.coursesTaught.length}</span>
+                    <span className="text-slate-800">{profileTeacher.courses.length}</span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-slate-500">Total students</span>
@@ -205,7 +217,7 @@ export default function AdminTeachersPage() {
                   </div>
                   <div className="flex justify-between gap-4 items-center">
                     <span className="text-slate-500">Status</span>
-                    {profileTeacher.status === "Active" ? (
+                    {profileTeacher.enabled ? (
                       <Badge variant="outline" className="text-emerald-800 border-emerald-200 bg-emerald-50/50">
                         Active
                       </Badge>
@@ -217,13 +229,13 @@ export default function AdminTeachersPage() {
 
                 <div>
                   <p className="text-xs font-medium text-slate-700 uppercase tracking-wide mb-2">Classes taught</p>
-                  {profileTeacher.coursesTaught.length === 0 ? (
+                  {profileTeacher.courses.length === 0 ? (
                     <p className="text-sm text-slate-500 rounded-md border border-dashed border-slate-200 bg-slate-50/80 px-3 py-2">
                       No classes assigned.
                     </p>
                   ) : (
                     <ul className="rounded-md border border-slate-200 divide-y divide-slate-200 max-h-56 overflow-y-auto">
-                      {profileTeacher.coursesTaught.map((course) => (
+                      {profileTeacher.courses.map((course: TeacherCourseRef) => (
                         <li
                           key={`${profileTeacher.id}-${course.id}`}
                           className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm"
@@ -251,10 +263,6 @@ export default function AdminTeachersPage() {
                     </ul>
                   )}
                 </div>
-
-                <p className="text-xs text-slate-500">
-                  Full bio, contracts, and payroll integrate here when the lecturer admin API is available.
-                </p>
               </div>
             ) : null}
             <DialogFooter>
