@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
-import { eduhubCourses, eduhubLessons, eduhubModules } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubLessons } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
@@ -129,36 +129,29 @@ const StudentLessonPage = () => {
           );
         }).catch(() => setApiLesson(null)).finally(() => setApiLoading(false));
       } else {
-        eduhubCourses.getById(courseId).then((c) => {
+        Promise.all([
+          eduhubCourses.getById(courseId),
+          eduhubCourses.getAllLessons(courseId),
+        ]).then(([c, allLessons]) => {
           setApiCourse({ title: c.title, instructor: c.lecturer?.fullName ?? "—" });
-          return eduhubModules.getByCourse(courseId);
-        }).then((modules) => {
-          const findLesson = (i: number): Promise<void> => {
-            if (i >= modules.length) {
-              setApiLoading(false);
-              return Promise.resolve();
-            }
-            return eduhubLessons.getByModule(courseId!, modules[i].id).then((lessons) => {
-              const l = lessons.find((le) => le.id === lessonId);
-              if (l) {
-                return eduhubLessons.getContent(courseId!, modules[i].id, lessonId!).then((content) => {
-                  const d = content.durationMinutes ? (content.type === "DOCUMENT" ? `${content.durationMinutes} min read` : `${content.durationMinutes} min`) : "—";
-                  setApiLesson({ title: content.title, duration: d, type: content.type, contentUrl: content.contentUrl });
-                  setApiLessons(
-                    lessons.map((le) => ({
-                      id: le.id,
-                      title: le.title,
-                      duration: le.durationMinutes ? (le.type === "DOCUMENT" ? `${le.durationMinutes} min read` : `${le.durationMinutes} min`) : "—",
-                      moduleId: modules[i].id,
-                    }))
-                  );
-                });
-              }
-              return findLesson(i + 1);
+          const found = allLessons.find((l) => l.id === lessonId);
+          if (found) {
+            return eduhubLessons.getContent(courseId!, found.moduleId, lessonId!).then((content) => {
+              const d = content.durationMinutes ? (content.type === "DOCUMENT" ? `${content.durationMinutes} min read` : `${content.durationMinutes} min`) : "—";
+              setApiLesson({ title: content.title, duration: d, type: content.type, contentUrl: content.contentUrl });
+              const moduleLessons = allLessons.filter((l) => l.moduleId === found.moduleId);
+              setApiLessons(
+                moduleLessons.map((l) => ({
+                  id: l.id,
+                  title: l.title,
+                  duration: l.durationMinutes ? (l.type === "DOCUMENT" ? `${l.durationMinutes} min read` : `${l.durationMinutes} min`) : "—",
+                  moduleId: l.moduleId,
+                }))
+              );
             });
-          };
-          return findLesson(0);
-        }).catch(() => setApiLoading(false));
+          }
+          return Promise.resolve();
+        }).catch(() => setApiLesson(null)).finally(() => setApiLoading(false));
       }
     }
   }, [isApiCourse, courseId, lessonId, moduleIdParam]);

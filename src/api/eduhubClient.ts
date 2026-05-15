@@ -309,6 +309,9 @@ export const eduhubCourses = {
     );
   },
 
+  getAllLessons: (courseId: string) =>
+    request<LessonResponse[]>(`/courses/${courseId}/all-lessons`),
+
 };
 
 /** Modules */
@@ -621,6 +624,11 @@ export const eduhubLecturer = {
   getEnrolledStudents: (courseId: string, page = 0, size = 20) =>
     request<{ id: string; fullName: string; email: string; avatarUrl?: string }[]>(
       `/courses/${courseId}/students?page=${page}&size=${size}`
+    ),
+
+  getAllStudents: (lecturerId: string) =>
+    request<{ id: string; fullName: string; email: string; courseTitle: string; enrolledAt: string }[]>(
+      `/lecturers/${lecturerId}/all-students`
     ),
 };
 

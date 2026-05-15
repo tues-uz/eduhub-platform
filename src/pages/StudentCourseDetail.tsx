@@ -33,8 +33,6 @@ import type { TeacherCourse } from "@/features/teacher/types";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
 import {
   eduhubCourses,
-  eduhubModules,
-  eduhubLessons,
   eduhubSchedule,
   eduhubCourseQuizzes,
   eduhubClassResumes,
@@ -449,12 +447,14 @@ const StudentCourseDetail = () => {
       setApiLoading(true);
       setApiCourseDetail(null);
       setApiScheduleProposal(null);
-      eduhubCourses.getById(courseId).then((c) => {
+
+      Promise.all([
+        eduhubCourses.getById(courseId),
+        eduhubCourses.getAllLessons(courseId).catch(() => []),
+        eduhubSchedule.getProposal(courseId).catch(() => null),
+      ]).then(([c, allLessons, scheduleProposal]) => {
         setApiCourseDetail(c);
-        void eduhubSchedule
-          .getProposal(courseId)
-          .then(setApiScheduleProposal)
-          .catch(() => setApiScheduleProposal(null));
+        setApiScheduleProposal(scheduleProposal);
         const amount = c.pricing?.discountedAmount ?? c.pricing?.amount;
         setApiCourse({
           id: c.id,
@@ -473,23 +473,13 @@ const StudentCourseDetail = () => {
           classStartDate: c.classStartDate,
           classEndDate: c.classEndDate,
         });
-        return eduhubModules.getByCourse(courseId!);
-      }).then((modules) => {
-        return Promise.all(
-          modules.map((m) =>
-            eduhubLessons.getByModule(courseId!, m.id).then((lessons) =>
-              lessons.map((l) => ({
-                id: l.id,
-                title: l.title,
-                duration: l.durationMinutes ? `${l.durationMinutes} min` : "—",
-                completed: false,
-                moduleId: m.id,
-              }))
-            )
-          )
-        );
-      }).then((arrays) => {
-        const flat = arrays.flat();
+        const flat = allLessons.map((l) => ({
+          id: l.id,
+          title: l.title,
+          duration: l.durationMinutes ? `${l.durationMinutes} min` : "—",
+          completed: false,
+          moduleId: l.moduleId,
+        }));
         setApiLessons(flat);
         setApiCourse((prev) => prev ? { ...prev, modules: flat.length } : null);
       }).catch(() => {

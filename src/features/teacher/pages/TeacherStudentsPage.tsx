@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
-import { eduhubCourses, eduhubLecturer } from "@/api/eduhubClient";
+import { eduhubLecturer } from "@/api/eduhubClient";
 import { useAuthSession } from "@/features/auth/context";
 import {
   Table,
@@ -41,24 +41,16 @@ const TeacherStudentsPage = () => {
       if (!user.id) return;
       setLoading(true);
       try {
-        const coursesRes = await eduhubCourses.getByLecturer(user.id, { page: 0, size: 100 });
-        const courseStudentResults = await Promise.all(
-          (coursesRes || []).map(async (course) => {
-            try {
-              const studentsData = await eduhubCourses.getEnrolledStudents(course.id, 0, 100);
-              return (studentsData || []).map((s) => ({
-                id: s.id,
-                name: s.fullName,
-                email: s.email,
-                course: course.title,
-                enrolledDate: course.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
-              }));
-            } catch {
-              return [];
-            }
-          })
+        const studentsData = await eduhubLecturer.getAllStudents(user.id);
+        setStudents(
+          (studentsData || []).map((s) => ({
+            id: String(s.id),
+            name: s.fullName,
+            email: s.email,
+            course: s.courseTitle,
+            enrolledDate: s.enrolledAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+          }))
         );
-        setStudents(courseStudentResults.flat());
       } catch {
         setStudents([]);
       }

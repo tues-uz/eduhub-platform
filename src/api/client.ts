@@ -15,7 +15,7 @@ import type { LucideIcon } from "lucide-react";
 import { Users, GraduationCap, BookOpen, TrendingUp } from "lucide-react";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
-import { getAccessToken, eduhubEnrollments, eduhubAdmin, eduhubCourses } from "./eduhubClient";
+import { getAccessToken, eduhubAdmin, eduhubEnrollments } from "./eduhubClient";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 
 /** Admin dashboard stat row — `icon` must be a component (JSON APIs send strings; we resolve those below). */
@@ -212,20 +212,29 @@ function normalizeAdminOverviewPayload(data: unknown): {
     Array.isArray(d.recentUsers) && d.recentUsers.length > 0
       ? normalizeAdminRecentUsersArray(d.recentUsers)
       : [];
+
+  let stats = normalizeAdminStatsArray(d.stats);
+
+  // Apply live counts from the enriched backend response
+  const totalUsers = typeof d.totalUsers === "number" ? d.totalUsers : undefined;
+  const totalStudents = typeof d.totalStudents === "number" ? d.totalStudents : undefined;
+  const totalCourses = typeof d.totalCourses === "number" ? d.totalCourses : undefined;
+  if (totalUsers !== undefined || totalStudents !== undefined || totalCourses !== undefined) {
+    stats = applyLiveCountsToAdminStats(stats, {
+      totalUsers,
+      students: totalStudents,
+      classes: totalCourses,
+    });
+  }
+
   return {
-    stats: normalizeAdminStatsArray(d.stats),
+    stats,
     recentUsers,
     systemActivity:
       Array.isArray(d.systemActivity) && d.systemActivity.length > 0
         ? (d.systemActivity as typeof adminSystemActivity)
         : adminSystemActivity,
   };
-}
-
-function readPageTotalElements(page: unknown): number | undefined {
-  if (!page || typeof page !== "object") return undefined;
-  const n = (page as { totalElements?: unknown }).totalElements;
-  return typeof n === "number" && Number.isFinite(n) ? n : undefined;
 }
 
 /** Prefer label-based match so API order can differ from the default four cards. */
@@ -243,41 +252,6 @@ function applyLiveCountsToAdminStats(
   setByLabel(/^students?$/i, counts.students);
   setByLabel(/classes?|courses?/i, counts.classes);
   return next;
-}
-
-async function enrichAdminOverviewWithLiveCounts(base: {
-  stats: AdminDashboardStat[];
-  recentUsers: AdminRecentUserRow[];
-  systemActivity: typeof adminSystemActivity;
-}) {
-  try {
-    const [usersPage, studentsPage, courses] = await Promise.all([
-      eduhubAdmin.listUsers({ page: 0, size: 25 }),
-      eduhubAdmin.listUsers({ role: "STUDENT", page: 0, size: 1 }),
-      eduhubCourses.getAll({ page: 0, size: 500 }),
-    ]);
-    const totalUsers = readPageTotalElements(usersPage);
-    const students = readPageTotalElements(studentsPage);
-    const classes = Array.isArray(courses) ? courses.length : undefined;
-
-    const recentFromList: AdminRecentUserRow[] = [];
-    const content = usersPage && typeof usersPage === "object" ? (usersPage as { content?: unknown }).content : undefined;
-    if (Array.isArray(content)) {
-      for (const row of content) {
-        if (!row || typeof row !== "object") continue;
-        const mapped = mapApiUserToAdminRecentUser(row as Record<string, unknown>);
-        if (mapped) recentFromList.push(mapped);
-      }
-    }
-
-    return {
-      ...base,
-      stats: applyLiveCountsToAdminStats(base.stats, { totalUsers, students, classes }),
-      recentUsers: recentFromList.length > 0 ? recentFromList : base.recentUsers,
-    };
-  } catch {
-    return base;
-  }
 }
 
 /** Student course list item (id can be number for mock or string for teacher/API courses) */
@@ -345,8 +319,7 @@ export const dashboardApi = {
 
     try {
       const raw = await eduhubAdmin.getOverview();
-      const normalized = normalizeAdminOverviewPayload(raw);
-      return await enrichAdminOverviewWithLiveCounts(normalized);
+      return normalizeAdminOverviewPayload(raw);
     } catch (e) {
       console.error("Failed to fetch admin overview, falling back to mock data", e);
       return fallback;

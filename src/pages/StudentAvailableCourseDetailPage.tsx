@@ -20,7 +20,7 @@ import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueri
 import { cn } from "@/lib/utils";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import type { TeacherCourse } from "@/features/teacher/types";
-import { eduhubCourses, eduhubLessons, eduhubModules, eduhubSchedule } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import {
@@ -331,38 +331,16 @@ const StudentAvailableCourseDetailPage = () => {
     }
 
     if (isUuid(linkId)) {
-      eduhubCourses
-        .getById(linkId)
-        .then((c) => {
-          if (cancelled) return null;
-          setApiCourse(c);
-          void eduhubSchedule
-            .getProposal(linkId)
-            .then((p) => {
-              if (!cancelled) setScheduleProposal(p);
-            })
-            .catch(() => {
-              if (!cancelled) setScheduleProposal(null);
-            });
-          return eduhubModules
-            .getByCourse(linkId)
-            .then((modules) =>
-              Promise.all(
-                modules.map((m) =>
-                  eduhubLessons
-                    .getByModule(linkId, m.id)
-                    .then((lessons) => lessons.map((l) => ({ id: l.id, title: l.title })))
-                    .catch(() => [] as LessonPreview[])
-                )
-              )
-            )
-            .catch(() => [] as LessonPreview[][]);
-        })
-        .then((arrays) => {
+      Promise.all([
+        eduhubCourses.getById(linkId),
+        eduhubCourses.getAllLessons(linkId).catch(() => [] as LessonPreview[]),
+        eduhubSchedule.getProposal(linkId).catch(() => null),
+      ])
+        .then(([c, allLessons, proposal]) => {
           if (cancelled) return;
-          if (Array.isArray(arrays)) {
-            setLessonRows(arrays.flat());
-          }
+          setApiCourse(c);
+          setScheduleProposal(proposal);
+          setLessonRows(allLessons.map((l) => ({ id: l.id, title: l.title })));
         })
         .catch(() => {
           if (!cancelled) setNotFound(true);
