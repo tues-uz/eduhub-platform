@@ -14,7 +14,6 @@ import DashboardSidebar from "@/components/DashboardSidebar";
 import { useAuthSession } from "@/features/auth/context";
 import { teacherCoursesStore } from "../data/teacherCoursesStore";
 import { eduhubCourses } from "@/api/eduhubClient";
-import { isUuid } from "@/api/utils";
 import type { TeacherCourse } from "../types";
 import { TeacherAttendanceSessionPanel } from "@/features/teacher/components/TeacherAttendanceSessionPanel";
 
@@ -49,45 +48,13 @@ const TeacherCoursesPage = () => {
             instructorName: c.lecturerName,
             thumbnailUrl: c.thumbnailUrl,
             enrollmentCount: c.enrollmentCount,
-            classMeetingsInSixMonths: c.classMeetingsInSixMonths,
-            classMeetingSlots: c.classMeetingSlots,
             lessons: [],
             createdAt: c.createdAt,
             updatedAt: c.createdAt,
             status: c.status,
           }));
           const merged = [...apiCourses, ...local];
-          // Lecturer list sometimes omits thumbnailUrl or enrollmentCount; GET /courses/{id} fills gaps.
-          const enriched = await Promise.all(
-            merged.map(async (c) => {
-              if (!isUuid(c.id)) return c;
-              const hasThumb = !!c.thumbnailUrl?.trim();
-              const hasEnrollment = typeof c.enrollmentCount === "number";
-              const hasMeetings = typeof c.classMeetingsInSixMonths === "number";
-              const hasSlots = Array.isArray(c.classMeetingSlots) && c.classMeetingSlots.length > 0;
-              if (hasThumb && hasEnrollment && hasMeetings) return c;
-              try {
-                const full = await eduhubCourses.getById(c.id);
-                let next = { ...c };
-                if (!hasThumb && full.thumbnailUrl?.trim()) {
-                  next = { ...next, thumbnailUrl: full.thumbnailUrl };
-                }
-                if (!hasEnrollment && typeof full.enrollmentCount === "number") {
-                  next = { ...next, enrollmentCount: full.enrollmentCount };
-                }
-                if (!hasMeetings && typeof full.classMeetingsInSixMonths === "number") {
-                  next = { ...next, classMeetingsInSixMonths: full.classMeetingsInSixMonths };
-                }
-                if (!hasSlots && Array.isArray(full.classMeetingSlots) && full.classMeetingSlots.length > 0) {
-                  next = { ...next, classMeetingSlots: full.classMeetingSlots };
-                }
-                return next;
-              } catch {
-                return c;
-              }
-            }),
-          );
-          if (!cancelled) setCourses(enriched);
+          if (!cancelled) setCourses(merged);
         } catch {
           if (!cancelled) setCourses(local);
         }
