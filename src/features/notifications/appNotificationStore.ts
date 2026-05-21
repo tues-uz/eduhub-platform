@@ -9,6 +9,7 @@ export const APP_NOTIFICATIONS_CHANGE_EVENT = "eduhub-app-notifications-changed"
 export type AppNotificationKind =
   | "enrollment_approved"
   | "enrollment_rejected"
+  | "enrollment_receipt_ready"
   | "admin_enrollment_action"
   | "instructor_payroll_paid"
   | "admin_instructor_payroll_request"
@@ -94,26 +95,39 @@ export function notifyEnrollmentDecision(opts: {
   studentEmailNorm: string;
   decision: "approved" | "rejected";
   adminNote?: string;
+  applicationId?: string;
+  receiptNumber?: string;
+  invoiceNumber?: string;
 }): void {
   const now = new Date().toISOString();
   const norm = opts.studentEmailNorm.trim().toLowerCase();
+  const paymentHref = opts.applicationId
+    ? `/dashboard/payment?applicationId=${encodeURIComponent(opts.applicationId)}`
+    : "/dashboard/payment";
 
   const studentTitle =
-    opts.decision === "approved" ? "Enrollment approved" : "Enrollment not approved";
+    opts.decision === "approved" ? "Enrollment approved — receipt ready" : "Enrollment not approved";
+  const receiptRef =
+    opts.receiptNumber && opts.invoiceNumber
+      ? ` Receipt ${opts.receiptNumber} (invoice ${opts.invoiceNumber}).`
+      : opts.receiptNumber
+        ? ` Receipt ${opts.receiptNumber}.`
+        : "";
   const studentBody =
     opts.decision === "approved"
-      ? `You can now access "${opts.courseTitle}". Open My Class to start learning.`
+      ? `You can now access "${opts.courseTitle}".${receiptRef} Download your invoice and receipt from Payment history.`
       : `Your enrollment request for "${opts.courseTitle}" was not approved.${opts.adminNote ? ` Note: ${opts.adminNote}` : ""}`;
 
   pushNotification({
     id: crypto.randomUUID(),
-    kind: opts.decision === "approved" ? "enrollment_approved" : "enrollment_rejected",
+    kind: opts.decision === "approved" ? "enrollment_receipt_ready" : "enrollment_rejected",
     audience: "student",
     studentEmailNorm: norm,
     title: studentTitle,
     body: studentBody,
     createdAt: now,
     read: false,
+    href: opts.decision === "approved" ? paymentHref : undefined,
   });
 
   pushNotification({

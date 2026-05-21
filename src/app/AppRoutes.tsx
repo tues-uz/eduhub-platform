@@ -74,6 +74,8 @@ import NotFound from "@/pages/NotFound";
 import StudentAttendanceJoin from "@/pages/StudentAttendanceJoin";
 import StudentEnrollmentApplicationPage from "@/pages/StudentEnrollmentApplicationPage";
 import StudentEnrollmentSuccessPage from "@/pages/StudentEnrollmentSuccessPage";
+import StudentCourseCompletionPage from "@/pages/StudentCourseCompletionPage";
+import StudentCourseResumePage from "@/pages/StudentCourseResumePage";
 import { appRoutes } from "@/app/routes";
 
 export function AppRoutes() {
@@ -163,12 +165,17 @@ export function AppRoutes() {
       <Route path="/dashboard/available-courses/enroll/:courseId/success" element={<StudentEnrollmentSuccessPage />} />
       <Route path="/dashboard/available-courses/enroll/:courseId" element={<StudentEnrollmentApplicationPage />} />
 
+      {/* Full-page congrats (not inside dashboard sidebar shell) */}
+      <Route path="/dashboard/congrats-preview" element={<StudentCourseCompletionPage />} />
+      <Route path="/dashboard/courses/:courseId/congrats" element={<StudentCourseCompletionPage />} />
+
       <Route element={<StudentDashboardLayout />}>
         <Route path="/dashboard/courses" element={<StudentCoursesPage />} />
         <Route path="/dashboard/available-courses" element={<StudentAvailableCourses />} />
         <Route path="/dashboard/available-courses/class/:courseId" element={<StudentAvailableCourseDetailPage />} />
         <Route path="/dashboard/payment" element={<StudentPaymentInfo />} />
         <Route path="/dashboard/courses/:courseId" element={<StudentCourseDetail />} />
+        <Route path="/dashboard/courses/:courseId/resume/:resumeId" element={<StudentCourseResumePage />} />
         <Route path="/dashboard/courses/:courseId/lessons/:lessonId" element={<StudentLessonPage />} />
         <Route path="/dashboard/assignments" element={<StudentAssignments />} />
         <Route path="/dashboard/certificates" element={<StudentCertificates />} />

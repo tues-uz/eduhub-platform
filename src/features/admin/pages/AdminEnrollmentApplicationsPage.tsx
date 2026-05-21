@@ -14,36 +14,13 @@ import {
 } from "@/components/ui/table";
 import { eduhubAdminEnrollmentApplications } from "@/api/eduhubClient";
 import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
-import { inferTuitionPlanMonths } from "@/features/enrollment/enrollmentTuitionThirds";
+import { formatPaymentMethodLabel } from "@/features/enrollment/enrollmentDocumentConfig";
+import {
+  enrollmentPaymentListSummary,
+  enrollmentPaymentPlanLabel,
+  formatEnrollmentMoney,
+} from "@/features/enrollment/enrollmentPaymentDisplay";
 
-function formatMoney(price: number | undefined, currency = "USD"): string {
-  if (price == null || price <= 0) return "—";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
-}
-
-function paymentListCell(r: EnrollmentApplicationResponse) {
-  const plan = inferTuitionPlanMonths(r);
-  const cur = r.priceCurrency ?? "USD";
-  if (plan === 3) {
-    return <span className="text-sm text-slate-800">Full tuition (3 mo)</span>;
-  }
-  if (plan === 1 || plan === 2) {
-    return (
-      <div className="text-sm leading-snug">
-        <span className="font-medium text-slate-900">{plan} mo</span>
-        <span className="mt-0.5 block text-xs tabular-nums text-slate-600">
-          Due now: {formatMoney(r.downPaymentAmount, cur)}
-        </span>
-      </div>
-    );
-  }
-  return (
-    <span className="text-xs text-slate-500">
-      {r.paymentPlan}
-      {r.installmentCount != null ? ` · ${r.installmentCount} inst.` : ""}
-    </span>
-  );
-}
 function formatDate(iso: string) {
   try {
     return new Date(iso).toLocaleString(undefined, {
@@ -53,6 +30,35 @@ function formatDate(iso: string) {
   } catch {
     return iso;
   }
+}
+
+function paymentListCell(r: EnrollmentApplicationResponse) {
+  const cur = r.priceCurrency ?? "USD";
+  return (
+    <div className="text-sm leading-snug">
+      {r.paymentMethod ? (
+        <span className="block text-xs font-medium text-slate-700">
+          {formatPaymentMethodLabel(r.paymentMethod)}
+        </span>
+      ) : null}
+      <span className="font-medium text-slate-900">{enrollmentPaymentPlanLabel(r.paymentPlan)}</span>
+      {r.downPaymentAmount != null && r.downPaymentAmount > 0 ? (
+        <span className="mt-0.5 block text-xs tabular-nums text-slate-600">
+          {formatEnrollmentMoney(r.downPaymentAmount, cur)}
+        </span>
+      ) : null}
+      {r.paymentPlan === "DOWN_PAYMENT" && r.installmentCount != null ? (
+        <span className="mt-0.5 block text-xs text-slate-500">{r.installmentCount} further instalments</span>
+      ) : null}
+      {r.scheduleSessionCount != null && r.scheduleSessionCount > 0 ? (
+        <span className="mt-0.5 block text-xs text-slate-500">
+          {r.joinFromSessionNumber != null && r.joinFromSessionNumber > 1
+            ? `From meeting ${r.joinFromSessionNumber} of ${r.scheduleSessionCount}`
+            : `${r.scheduleSessionCount} meetings`}
+        </span>
+      ) : null}
+    </div>
+  );
 }
 
 export default function AdminEnrollmentApplicationsPage() {
@@ -86,7 +92,7 @@ export default function AdminEnrollmentApplicationsPage() {
 
         <AdminPageHeader
           title="Enrollment applications"
-          description="Review student enrollment applications. Approve to create enrollments or reject with feedback."
+          description="Review student requests (full or down payment, schedule-based tuition). Approve to enroll or reject with feedback."
         />
 
         {pending.length > 0 ? (
@@ -149,8 +155,13 @@ export default function AdminEnrollmentApplicationsPage() {
                       </TableCell>
                       <TableCell className="align-middle">
                         <span className="font-medium text-slate-900">{r.fullName}</span>
+                        <span className="mt-0.5 block text-xs text-slate-500 truncate max-w-[200px]" title={r.email}>
+                          {r.email}
+                        </span>
                       </TableCell>
-                      <TableCell className="align-middle max-w-[200px]">{paymentListCell(r)}</TableCell>
+                      <TableCell className="align-middle max-w-[220px]" title={enrollmentPaymentListSummary(r)}>
+                        {paymentListCell(r)}
+                      </TableCell>
                       <TableCell className="align-middle">
                         <span
                           className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${

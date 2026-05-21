@@ -115,10 +115,41 @@ const StudentCourses = () => {
             {filteredCourses.map((course) => (
               <div
                 key={course.id}
-                className="flex flex-col rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm backdrop-blur-sm transition-all hover:border-gray-300/50 hover:shadow-md"
+                className="flex flex-col overflow-hidden rounded-xl border border-gray-200/50 bg-white/80 shadow-sm backdrop-blur-sm transition-all hover:border-gray-300/50 hover:shadow-md"
               >
-                <div className="mb-4 flex items-start gap-4">
-                  <div className="min-w-0 flex-1">
+                <div className="relative h-40 w-full shrink-0 bg-gray-200 sm:h-44">
+                  {course.thumbnailUrl ? (
+                    <img
+                      src={course.thumbnailUrl}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center" aria-hidden>
+                      <BookOpen className="h-10 w-10 text-gray-400/90" />
+                    </div>
+                  )}
+                  <div
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent"
+                    aria-hidden
+                  />
+                  <span
+                    className={`absolute right-2 top-2 rounded-full px-3 py-1.5 text-xs font-medium shadow-sm ${
+                      course.status === "Completed"
+                        ? "bg-green-100 text-green-700"
+                        : course.status === "Almost Complete"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {course.status}
+                  </span>
+                </div>
+
+                <div className="flex flex-1 flex-col p-4 sm:p-5">
+                <div className="mb-4 min-w-0">
                     {course.category && (
                       <span className="text-xs font-medium uppercase tracking-wide text-foreground/60">
                         {course.category}
@@ -131,18 +162,6 @@ const StudentCourses = () => {
                       <User className="h-3.5 w-3.5 flex-shrink-0" />
                       <span>{course.instructor}</span>
                     </div>
-                  </div>
-                  <span
-                    className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${
-                      course.status === "Completed"
-                        ? "bg-green-100 text-green-700"
-                        : course.status === "Almost Complete"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-amber-100 text-amber-700"
-                    }`}
-                  >
-                    {course.status}
-                  </span>
                 </div>
 
                 {/* Class info */}
@@ -180,6 +199,7 @@ const StudentCourses = () => {
                       {course.status === "Completed" ? "Review" : "Continue"}
                     </Button>
                   </Link>
+                </div>
                 </div>
               </div>
             ))}

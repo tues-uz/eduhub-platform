@@ -22,7 +22,17 @@ import {
 import { useAuthSession } from "@/features/auth/context";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import type { TeacherCourse } from "@/features/teacher/types";
-import { eduhubCourses } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
+import { isUuid } from "@/api/utils";
+import {
+  buildCourseScheduleSlots,
+  toApprovedScheduleSlotOptions,
+} from "@/features/courses/courseScheduleSlots";
+import {
+  markScheduleSlotActive,
+  markScheduleSlotHeld,
+  scheduleSlotKeyFromParts,
+} from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 import {
   notifyAttendanceQrGenerated,
   notifyAttendanceSessionCompleted,
@@ -122,13 +132,79 @@ export function TeacherAttendanceSessionPanel({
   const [manuallyStoppedSessionIds, setManuallyStoppedSessionIds] = useState<string[]>([]);
   /** Roster: saved meeting id chosen in overview picker (drives attendance table). */
   const [rosterOverviewSessionId, setRosterOverviewSessionId] = useState<string | null>(null);
-  /** Roster: planned schedule row chosen with no matching QR yet — enables Generate using that label. */
+  /** Planned schedule row chosen with no matching QR yet — enables Generate using that label. */
   const [rosterScheduleSlotIntent, setRosterScheduleSlotIntent] = useState<ApprovedScheduleSlotOption | null>(null);
+  const [loadedScheduleSlots, setLoadedScheduleSlots] = useState<ApprovedScheduleSlotOption[]>([]);
+
+  const approvedScheduleSlots =
+    rosterAttendanceOverviewPicker?.approvedScheduleSlots ?? loadedScheduleSlots;
+  const useSchedulePicker = approvedScheduleSlots.length > 0;
 
   useEffect(() => {
     setRosterOverviewSessionId(null);
     setRosterScheduleSlotIntent(null);
   }, [courseId]);
+
+  useEffect(() => {
+    if (rosterAttendanceOverviewPicker?.approvedScheduleSlots?.length) {
+      setLoadedScheduleSlots([]);
+      return;
+    }
+    if (!courseId || !isUuid(courseId)) {
+      setLoadedScheduleSlots([]);
+      return;
+    }
+    let cancelled = false;
+    Promise.all([
+      eduhubCourses.getById(courseId),
+      eduhubSchedule.getProposal(courseId).catch(() => null),
+    ])
+      .then(([course, proposal]) => {
+        if (cancelled) return;
+        const slots = buildCourseScheduleSlots(course, proposal, courseId);
+        setLoadedScheduleSlots(toApprovedScheduleSlotOptions(slots));
+      })
+      .catch(() => {
+        if (!cancelled) setLoadedScheduleSlots([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId, rosterAttendanceOverviewPicker?.approvedScheduleSlots?.length]);
+
+  const slotKeyForScheduleOption = useCallback((slot: ApprovedScheduleSlotOption | null | undefined) => {
+    if (!slot) return undefined;
+    return scheduleSlotKeyFromParts({
+      sessionDate: slot.sessionDate,
+      sessionTime: slot.sessionTime,
+      title: slot.title,
+    });
+  }, []);
+
+  const resolveMeetingSlotKey = useCallback(
+    (m: StoredAttendanceMeeting | undefined): string | undefined => {
+      if (!m) return undefined;
+      const stored = m.scheduleSlotKey?.trim();
+      if (stored) return stored;
+      if (m.scheduleSlotIndex != null) {
+        const opt = approvedScheduleSlots.find((s) => s.index === m.scheduleSlotIndex);
+        return slotKeyForScheduleOption(opt);
+      }
+      const byName = approvedScheduleSlots.find((s) => s.label.trim() === m.name.trim());
+      return slotKeyForScheduleOption(byName);
+    },
+    [approvedScheduleSlots, slotKeyForScheduleOption],
+  );
+
+  const markHeldForEndedSession = useCallback(
+    (endedSessionId: string, meetings: StoredAttendanceMeeting[]) => {
+      if (!courseId) return;
+      const m = meetings.find((x) => x.sessionId === endedSessionId);
+      const key = resolveMeetingSlotKey(m);
+      if (key) markScheduleSlotHeld(courseId, key);
+    },
+    [courseId, resolveMeetingSlotKey],
+  );
 
   useEffect(() => {
     if (fixedCourse) {
@@ -250,10 +326,12 @@ export function TeacherAttendanceSessionPanel({
     [rosterAttendanceOverviewPicker],
   );
 
+  const scheduleSlotForGenerate = rosterScheduleSlotIntent;
+
   const generateSession = useCallback(() => {
     if (!courseId) return;
-    const name = rosterAttendanceOverviewPicker
-      ? (rosterScheduleSlotIntent?.label.trim() ||
+    const name = useSchedulePicker
+      ? (scheduleSlotForGenerate?.label.trim() ||
           suggestedMeetingName?.trim() ||
           defaultAutoCheckInMeetingLabel())
       : nextMeetingName.trim();
@@ -269,21 +347,29 @@ export function TeacherAttendanceSessionPanel({
         endReason: "new_session",
       });
       if (ended) notifyAttendanceSessionCompleted(ended);
+      markHeldForEndedSession(prevSessionId, storedMeetings);
     }
 
+    const slotIndex = scheduleSlotForGenerate?.index;
+    const scheduleSlotKey = slotKeyForScheduleOption(scheduleSlotForGenerate);
     const next: StoredAttendanceMeeting = {
       sessionId: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
       modality: "online",
       name,
+      ...(typeof slotIndex === "number" && slotIndex >= 0 ? { scheduleSlotIndex: slotIndex } : {}),
+      ...(scheduleSlotKey ? { scheduleSlotKey } : {}),
     };
+    if (scheduleSlotKey) {
+      markScheduleSlotActive(courseId, scheduleSlotKey);
+    }
     setStoredMeetings((prev) => {
       const merged = [next, ...prev.filter((p) => p.sessionId !== next.sessionId)].slice(0, MAX_STORED_MEETINGS);
       persistMeetings(courseId, merged);
       return merged;
     });
     setSessionId(next.sessionId);
-    setNextMeetingName(rosterAttendanceOverviewPicker ? "" : (suggestedMeetingName?.trim() ?? ""));
+    setNextMeetingName(useSchedulePicker ? "" : (suggestedMeetingName?.trim() ?? ""));
 
     const log = startSessionLog({
       courseId,
@@ -295,17 +381,20 @@ export function TeacherAttendanceSessionPanel({
       instructorName: user.name ?? "",
     });
     notifyAttendanceQrGenerated(log);
-    if (rosterAttendanceOverviewPicker) {
+    if (useSchedulePicker) {
       setRosterScheduleSlotIntent(null);
     }
   }, [
     courseId,
+    markHeldForEndedSession,
     nextMeetingName,
-    rosterAttendanceOverviewPicker,
-    rosterScheduleSlotIntent,
+    scheduleSlotForGenerate,
+    slotKeyForScheduleOption,
     sessionId,
     selectedCourse?.title,
+    storedMeetings,
     suggestedMeetingName,
+    useSchedulePicker,
     user.email,
     user.id,
     user.name,
@@ -321,6 +410,13 @@ export function TeacherAttendanceSessionPanel({
     () => storedMeetings.find((m) => m.sessionId === sessionId),
     [storedMeetings, sessionId],
   );
+
+  useEffect(() => {
+    if (!courseId || !sessionId || !activeMeeting) return;
+    if (manuallyStoppedSessionIds.includes(sessionId)) return;
+    const key = resolveMeetingSlotKey(activeMeeting);
+    if (key) markScheduleSlotActive(courseId, key);
+  }, [courseId, sessionId, activeMeeting, manuallyStoppedSessionIds, resolveMeetingSlotKey]);
 
   useEffect(() => {
     if (!projectorMode) return;
@@ -375,6 +471,7 @@ export function TeacherAttendanceSessionPanel({
     if (finalizedMaxDurationRef.current.has(sid)) return;
     const courseTitle = selectedCourse?.title?.trim() || "Class";
     let ended = finalizeSessionLog({ courseId, sessionId: sid, endReason: "max_duration" });
+    markHeldForEndedSession(sid, storedMeetings);
     if (!ended) {
       ended = backfillCompletedSessionLog({
         courseId,
@@ -400,6 +497,8 @@ export function TeacherAttendanceSessionPanel({
     sessionElapsedMs,
     selectedCourse?.title,
     user.email,
+    markHeldForEndedSession,
+    storedMeetings,
     user.id,
     user.name,
   ]);
@@ -412,6 +511,7 @@ export function TeacherAttendanceSessionPanel({
 
     const courseTitle = selectedCourse?.title?.trim() || "Class";
     let ended = finalizeSessionLog({ courseId, sessionId, endReason: "manual_stop" });
+    markHeldForEndedSession(sessionId, storedMeetings);
     if (!ended) {
       ended = backfillCompletedSessionLog({
         courseId,
@@ -429,7 +529,17 @@ export function TeacherAttendanceSessionPanel({
       notifyAttendanceSessionCompleted(ended);
     }
     setManuallyStoppedSessionIds((prev) => (prev.includes(sessionId) ? prev : [...prev, sessionId]));
-  }, [courseId, sessionId, activeMeeting, selectedCourse?.title, user.email, user.id, user.name]);
+  }, [
+    courseId,
+    sessionId,
+    activeMeeting,
+    markHeldForEndedSession,
+    selectedCourse?.title,
+    storedMeetings,
+    user.email,
+    user.id,
+    user.name,
+  ]);
 
   const instructorEmailNorm = user.email.trim().toLowerCase();
   const courseSessionLogs = useMemo(() => {
@@ -447,10 +557,12 @@ export function TeacherAttendanceSessionPanel({
           </CardTitle>
           <CardDescription>
             {fixedCourse
-              ? "Generate a QR (or share the link) and use projector mode when you need it. Pick which saved meeting the attendance table uses, then generate—the meeting name comes from your schedule when set, otherwise a time-stamped label."
-              : embedded
-                ? "Name the meeting, then generate. Share the link or show the QR. Older meetings stay in this browser."
-                : "Generate a check-in code for each session; recent meetings are kept on this device."}
+              ? "Pick the planned session from your class schedule, then generate the QR. Stopping the session marks that meeting as held for enrollment."
+              : useSchedulePicker
+                ? "Pick the planned session from your class schedule, then generate the QR. When you stop the session, that meeting is marked held for enrollment."
+                : embedded
+                  ? "Name the meeting, then generate. Share the link or show the QR. Older meetings stay in this browser."
+                  : "Generate a check-in code for each session; recent meetings are kept on this device."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -495,7 +607,7 @@ export function TeacherAttendanceSessionPanel({
                 </div>
               ) : null}
 
-              {!rosterAttendanceOverviewPicker ? (
+              {!useSchedulePicker ? (
                 <div className="space-y-2">
                   <Label htmlFor={embedded ? "attendance-meeting-name-embedded" : "attendance-meeting-name"}>
                     Name this class meeting
@@ -522,16 +634,16 @@ export function TeacherAttendanceSessionPanel({
                 </div>
               ) : null}
 
-              {fixedCourse && rosterAttendanceOverviewPicker ? (
+              {useSchedulePicker && courseId ? (
                 <AttendanceOverviewQrPicker
-                  courseId={fixedCourse.id}
+                  courseId={courseId}
                   className="mb-0"
                   generateQrBelow
                   deferAutoSelectFirstMeeting
-                  approvedScheduleSlots={rosterAttendanceOverviewPicker.approvedScheduleSlots}
+                  approvedScheduleSlots={approvedScheduleSlots}
                   onSelectionChange={(id) => {
                     setRosterOverviewSessionId(id);
-                    rosterAttendanceOverviewPicker.onSelectionChange?.(id);
+                    rosterAttendanceOverviewPicker?.onSelectionChange?.(id);
                   }}
                   onScheduleSlotIntent={handleRosterScheduleSlotIntent}
                 />
@@ -544,16 +656,12 @@ export function TeacherAttendanceSessionPanel({
                   onClick={generateSession}
                   disabled={
                     !courseId ||
-                    (!rosterAttendanceOverviewPicker && !nextMeetingName.trim()) ||
-                    (Boolean(rosterAttendanceOverviewPicker) &&
-                      !rosterOverviewSessionId &&
-                      !rosterScheduleSlotIntent)
+                    (!useSchedulePicker && !nextMeetingName.trim()) ||
+                    (useSchedulePicker && !rosterOverviewSessionId && !rosterScheduleSlotIntent)
                   }
                   title={
-                    rosterAttendanceOverviewPicker &&
-                    !rosterOverviewSessionId &&
-                    !rosterScheduleSlotIntent
-                      ? "Choose a planned session or saved meeting in the dropdown above first."
+                    useSchedulePicker && !rosterOverviewSessionId && !rosterScheduleSlotIntent
+                      ? "Choose a planned session from the schedule dropdown above first."
                       : undefined
                   }
                 >

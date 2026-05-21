@@ -14,7 +14,10 @@ export type SubstituteInviteRecord = {
   id: string;
   courseId: string;
   courseTitle: string;
+  /** Display label for the scheduled session (e.g. "Session 2 · 2026-05-20 10:00"). */
   sessionNote: string;
+  /** Stable key from class schedule (`slot-0`, `slot-1`, …) when a specific session was requested. */
+  sessionSlotKey?: string;
   message: string;
   primaryInstructorName: string;
   primaryInstructorEmailNorm: string;
@@ -49,15 +52,22 @@ function saveAll(rows: SubstituteInviteRecord[]) {
   notifyWorkflowChanged();
 }
 
+function inviteHasAssignedSession(invite: SubstituteInviteRecord): boolean {
+  return Boolean(invite.sessionSlotKey?.trim() || invite.sessionNote?.trim());
+}
+
 function lookupApprovedSubstituteInvite(
   courseId: string,
   substituteEmailNorm: string,
 ): SubstituteInviteRecord | undefined {
   const norm = substituteEmailNorm.trim().toLowerCase();
   if (!norm || !courseId) return undefined;
-  return loadAll().find(
+  const approved = loadAll().filter(
     (r) => r.courseId === courseId && r.status === "approved" && r.substituteEmailNorm === norm,
   );
+  if (!approved.length) return undefined;
+  const withSession = approved.find((r) => inviteHasAssignedSession(r));
+  return withSession ?? approved[0];
 }
 
 function lookupApprovedPrimaryInvite(

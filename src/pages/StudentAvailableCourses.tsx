@@ -3,11 +3,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { BookOpen, Search, User, Clock, Layers, DollarSign, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuthSession } from "@/features/auth/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { eduhubCourses } from "@/api/eduhubClient";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
+import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
+import {
+  resolveStudentCourseEnrollmentDisplayStatus,
+  type StudentCourseEnrollmentDisplayStatus,
+} from "@/features/enrollment/studentCourseEnrollmentStatus";
+import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
 
 type AvailableCourseItem = {
   id: string;
@@ -20,7 +26,7 @@ type AvailableCourseItem = {
   modules: number;
   price: number | undefined;
   currency?: string;
-  enrolled: boolean;
+  enrollmentStatus: StudentCourseEnrollmentDisplayStatus;
   progress?: number;
   status?: string;
   nextLesson?: string;
@@ -35,7 +41,10 @@ function formatPrice(price: number | undefined, currency = "USD"): string {
 
 const StudentAvailableCourses = () => {
   const navigate = useNavigate();
+  const { user } = useAuthSession();
+  const emailNorm = user.email.trim().toLowerCase();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
+  const { byCourse: applicationsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
   const [searchQuery, setSearchQuery] = useState("");
   const [courses, setCourses] = useState<AvailableCourseItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,18 +62,22 @@ const StudentAvailableCourses = () => {
 
   useEffect(() => {
     let cancelled = false;
-    const emailNorm = (localStorage.getItem("userEmail") ?? "").trim().toLowerCase();
-    const isApprovedLocally = (courseId: string) =>
-      emailNorm ? enrollmentApplicationStore.isApprovedForCourse(courseId, emailNorm) : false;
     const enrolledIds = new Set(enrolledCourses.map((c) => String(c.id)));
     const enrolledByLinkId = new Map(enrolledCourses.map((c) => [String(c.id), c]));
+
+    const enrollmentStatusFor = (linkId: string): StudentCourseEnrollmentDisplayStatus =>
+      resolveStudentCourseEnrollmentDisplayStatus(
+        linkId,
+        emailNorm,
+        enrolledIds.has(linkId),
+        applicationsByCourse.get(linkId),
+      );
 
     async function load() {
       setLoading(true);
       const localTeacher = teacherCoursesStore.getAll();
       const localItems: AvailableCourseItem[] = localTeacher.map((c) => {
         const linkId = `teacher_${c.id}`;
-        const enrolled = enrolledIds.has(linkId) || isApprovedLocally(linkId);
         const enrolledData = enrolledByLinkId.get(linkId);
         const moduleCount = c.lessons?.length ?? 0;
         const duration = moduleCount ? `${moduleCount} lessons` : "—";
@@ -78,7 +91,7 @@ const StudentAvailableCourses = () => {
           modules: moduleCount,
           price: c.price,
           thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
-          enrolled,
+          enrollmentStatus: enrollmentStatusFor(linkId),
           progress: enrolledData?.progress,
           status: enrolledData?.status,
           nextLesson: enrolledData?.nextLesson,
@@ -86,7 +99,6 @@ const StudentAvailableCourses = () => {
       });
 
       const mapApiToItem = (c: CourseSummaryResponse) => {
-        const enrolled = enrolledIds.has(c.id) || isApprovedLocally(c.id);
         const enrolledData = enrolledByLinkId.get(c.id);
         const price = c.pricing?.discountedAmount ?? c.pricing?.amount;
         return {
@@ -100,7 +112,7 @@ const StudentAvailableCourses = () => {
           price: price as number | undefined,
           currency: c.pricing?.currency,
           thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
-          enrolled,
+          enrollmentStatus: enrollmentStatusFor(c.id),
           progress: enrolledData?.progress,
           status: enrolledData?.status,
           nextLesson: enrolledData?.nextLesson,
@@ -135,7 +147,7 @@ const StudentAvailableCourses = () => {
     }
     load();
     return () => { cancelled = true; };
-  }, [enrolledCourses, enrollmentStoreTick]);
+  }, [enrolledCourses, enrollmentStoreTick, emailNorm, applicationsByCourse]);
 
   // Show all courses (API + teacher-created) so students can see and take teacher courses
   const filteredCourses = courses.filter((course) => {
@@ -218,11 +230,10 @@ const StudentAvailableCourses = () => {
                         className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent"
                         aria-hidden
                       />
-                      {course.enrolled ? (
-                        <span className="absolute right-2 top-2 rounded-full bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 shadow-sm">
-                          Enrolled
-                        </span>
-                      ) : null}
+                      <EnrollmentStatusBadge
+                        status={course.enrollmentStatus}
+                        className="absolute right-2 top-2"
+                      />
                     </div>
 
                     <div className="flex flex-1 flex-col p-4">
@@ -263,7 +274,7 @@ const StudentAvailableCourses = () => {
                     </div>
 
                     <div className="mt-auto border-t border-gray-100 pt-4">
-                      {course.enrolled ? (
+                      {course.enrollmentStatus === "enrolled" ? (
                         <Link
                           to={`/dashboard/courses/${course.linkId}`}
                           className="block"
@@ -277,6 +288,20 @@ const StudentAvailableCourses = () => {
                             Continue
                           </Button>
                         </Link>
+                      ) : course.enrollmentStatus === "pending_review" ? (
+                        <Link
+                          to={`/dashboard/available-courses/enroll/${encodeURIComponent(course.linkId)}/success`}
+                          className="block"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full rounded-full border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                          >
+                            View application
+                          </Button>
+                        </Link>
                       ) : (
                         <Link
                           to={`/dashboard/available-courses/enroll/${encodeURIComponent(course.linkId)}`}
@@ -288,7 +313,7 @@ const StudentAvailableCourses = () => {
                             className="w-full rounded-full"
                             style={{ backgroundColor: "#3954d0" }}
                           >
-                            Join Class
+                            {course.enrollmentStatus === "rejected" ? "Apply again" : "Join Class"}
                           </Button>
                         </Link>
                       )}

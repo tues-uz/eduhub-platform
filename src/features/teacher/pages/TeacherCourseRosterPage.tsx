@@ -15,6 +15,7 @@ import {
   Loader2,
   Pencil,
   Plus,
+  GraduationCap,
   QrCode,
   Trash2,
   UserPlus,
@@ -80,8 +81,10 @@ import {
 import { isAdminRegisteredLecturerEmail } from "@/features/teacher/data/knownLecturerEmails";
 import { useAuthSession } from "@/features/auth/context";
 import { TeacherAttendanceSessionPanel } from "@/features/teacher/components/TeacherAttendanceSessionPanel";
+import { TeacherCourseGradesPanel } from "@/features/teacher/components/TeacherCourseGradesPanel";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import {
+  buildCourseScheduleSlotsForPicker,
   padMeetingSlotsForCourse,
   parseOptionalPositiveInt,
   resolveClassScheduleFormState,
@@ -233,11 +236,18 @@ const QUIZ_TAB_DUMMY_EXAMPLES: {
   { id: "__demo_quiz_3", title: "Session wrap-up", kind: "quiz", published: false, questions: 5 },
 ];
 
-const TEACHER_COURSE_TABS = ["roster", "schedule", "resume", "quiz", "attendance"] as const;
+const TEACHER_COURSE_TABS = ["roster", "schedule", "resume", "quiz", "attendance", "grades"] as const;
 type TeacherCourseTab = (typeof TEACHER_COURSE_TABS)[number];
 
 function isTeacherCourseTab(t: string | null): t is TeacherCourseTab {
-  return t === "roster" || t === "schedule" || t === "resume" || t === "quiz" || t === "attendance";
+  return (
+    t === "roster" ||
+    t === "schedule" ||
+    t === "resume" ||
+    t === "quiz" ||
+    t === "attendance" ||
+    t === "grades"
+  );
 }
 
 function isCourseQuizListPermissionError(message: string): boolean {
@@ -420,17 +430,16 @@ export default function TeacherCourseRosterPage() {
 
   const substituteScheduleSlotOptions = useMemo(() => {
     if (!courseId) return [];
-    const resolved = resolveClassScheduleFormState(scheduleSourceCourse ?? {}, courseId);
-    return resolved.slots
-      .map((slot, index) => ({ slot, index }))
-      .filter(({ slot }) =>
-        Boolean(slot.title?.trim() || slot.sessionDate?.trim() || slot.sessionTime?.trim()),
-      )
-      .map(({ slot, index }) => ({
-        value: `slot-${index}`,
-        label: formatClassMeetingSlotLabel(slot, index),
-      }));
-  }, [courseId, scheduleSourceCourse]);
+    const slots = buildCourseScheduleSlotsForPicker(
+      courseId,
+      scheduleSourceCourse ?? {},
+      scheduleProposalQuery.data,
+    );
+    return slots.map((slot, index) => ({
+      value: `slot-${index}`,
+      label: formatClassMeetingSlotLabel(slot, index),
+    }));
+  }, [courseId, scheduleSourceCourse, scheduleProposalQuery.data]);
 
   const rosterScheduleView = useMemo(() => {
     const proposal = scheduleProposalQuery.data;
@@ -521,21 +530,34 @@ export default function TeacherCourseRosterPage() {
       );
     if (!invites.length) return { kind: "empty" };
 
-    const whole = invites.filter((i) => !i.sessionNote?.trim());
-    if (whole.length) {
-      const inv = pickHighestSubstituteInvite(whole);
-      return inv ? { kind: "whole", invite: inv } : { kind: "empty" };
-    }
-
+    const sessionInvites = invites.filter(
+      (i) => i.sessionSlotKey?.trim() || i.sessionNote?.trim(),
+    );
     const slots = rosterScheduleView.slots;
     const rowMap = new Map<number, ClassMeetingSlot>();
-    for (const inv of invites) {
-      const note = inv.sessionNote.trim();
+    for (const inv of sessionInvites) {
+      const slotKey = inv.sessionSlotKey?.trim();
+      if (slotKey?.startsWith("slot-")) {
+        const idx = Number.parseInt(slotKey.slice("slot-".length), 10);
+        if (!Number.isNaN(idx) && slots[idx]) {
+          rowMap.set(idx, slots[idx]);
+          continue;
+        }
+      }
+      const note = inv.sessionNote?.trim();
+      if (!note) continue;
       slots.forEach((slot, idx) => {
         if (formatClassMeetingSlotLabel(slot, idx).trim() === note) {
           rowMap.set(idx, slot);
         }
       });
+    }
+    if (!rowMap.size) {
+      const whole = invites.filter((i) => !i.sessionSlotKey?.trim() && !i.sessionNote?.trim());
+      if (whole.length) {
+        const inv = pickHighestSubstituteInvite(whole);
+        return inv ? { kind: "whole", invite: inv } : { kind: "empty" };
+      }
     }
     const rows = [...rowMap.entries()]
       .sort((a, b) => a[0] - b[0])
@@ -762,13 +784,24 @@ export default function TeacherCourseRosterPage() {
       return;
     }
 
+    if (substituteScheduleSlotOptions.length > 0 && !substituteSessionSlotKey.trim()) {
+      toast.error("Select the scheduled session this substitute will cover.");
+      return;
+    }
+
+    const scheduleSlots = buildCourseScheduleSlotsForPicker(
+      courseId,
+      scheduleSourceCourse ?? {},
+      scheduleProposalQuery.data,
+    );
+
     let sessionNoteFromSchedule = "";
+    let sessionSlotKeyToSave: string | undefined;
     if (substituteSessionSlotKey.startsWith("slot-")) {
       const idx = Number.parseInt(substituteSessionSlotKey.slice("slot-".length), 10);
-      if (!Number.isNaN(idx)) {
-        const resolved = resolveClassScheduleFormState(scheduleSourceCourse ?? {}, courseId);
-        const slot = resolved.slots[idx];
-        if (slot) sessionNoteFromSchedule = formatClassMeetingSlotLabel(slot, idx);
+      if (!Number.isNaN(idx) && scheduleSlots[idx]) {
+        sessionNoteFromSchedule = formatClassMeetingSlotLabel(scheduleSlots[idx], idx);
+        sessionSlotKeyToSave = substituteSessionSlotKey;
       }
     }
 
@@ -776,6 +809,7 @@ export default function TeacherCourseRosterPage() {
       courseId: courseMeta.id,
       courseTitle: courseMeta.title,
       sessionNote: sessionNoteFromSchedule,
+      sessionSlotKey: sessionSlotKeyToSave,
       message: substituteMessage.trim(),
       primaryInstructorName: user.name?.trim() || "Instructor",
       primaryInstructorEmailNorm: inviterEmailNorm,
@@ -1042,6 +1076,13 @@ export default function TeacherCourseRosterPage() {
                   >
                     <QrCode className="h-4 w-4 shrink-0 opacity-70" />
                     Attendance
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="grades"
+                    className="rounded-lg px-4 gap-2 data-[state=active]:shadow-sm"
+                  >
+                    <GraduationCap className="h-4 w-4 shrink-0 opacity-70" />
+                    Grades
                   </TabsTrigger>
                 </TabsList>
 
@@ -1805,6 +1846,21 @@ export default function TeacherCourseRosterPage() {
                   )}
                 </TabsContent>
 
+                <TabsContent value="grades" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                  <TeacherCourseGradesPanel
+                    courseId={courseMeta.id}
+                    courseTitle={courseMeta.title}
+                    students={studentsQuery.data ?? []}
+                    instructorEmail={user.email}
+                    instructorName={courseLeadDisplayName}
+                    isSubstituteViewer={isSubstituteViewer}
+                    isApiCourse={isUuid(courseId)}
+                    isLoading={studentsQuery.isLoading}
+                    isError={studentsQuery.isError}
+                    plannedSessions={apiCourseQuery.data?.classMeetingsInSixMonths ?? null}
+                  />
+                </TabsContent>
+
                 <TabsContent value="attendance" className="mt-0 space-y-8 focus-visible:outline-none focus-visible:ring-0">
                   <section>
                     <h2 className="text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
@@ -1830,6 +1886,8 @@ export default function TeacherCourseRosterPage() {
                           index: i,
                           label: formatClassMeetingSlotLabel(slot, i),
                           sessionDate: slot.sessionDate?.trim() || undefined,
+                          sessionTime: slot.sessionTime?.trim() || undefined,
+                          title: slot.title?.trim() || undefined,
                         })),
                       }}
                     />
@@ -2116,7 +2174,9 @@ export default function TeacherCourseRosterPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="substitute-session">Scheduled session (optional)</Label>
+              <Label htmlFor="substitute-session">
+                Scheduled session{substituteScheduleSlotOptions.length > 0 ? "" : " (optional)"}
+              </Label>
               {substituteScheduleSlotOptions.length > 0 ? (
                 <Select value={substituteSessionSlotKey || undefined} onValueChange={setSubstituteSessionSlotKey}>
                   <SelectTrigger id="substitute-session" className="bg-white">

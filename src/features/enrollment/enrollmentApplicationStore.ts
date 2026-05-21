@@ -18,9 +18,10 @@ export interface EnrollmentApplicationRecord {
   phone: string;
   phoneSecondary?: string;
   address: string;
-  paymentProofUrl: string;
+  paymentProofUrl?: string;
   /** Government ID or student ID — optional on legacy stored rows. */
   idCardUrl?: string;
+  paymentMethod?: string;
   /** Full tuition vs partial — omit on legacy stored rows (treated as full payment). */
   paymentPlan?: EnrollmentPaymentPlan;
   /** Amount student paid toward down payment; only when paymentPlan is DOWN_PAYMENT. */
@@ -33,6 +34,11 @@ export interface EnrollmentApplicationRecord {
   submittedAt: string;
   reviewedAt?: string;
   adminNote?: string;
+  invoiceNumber?: string;
+  receiptNumber?: string;
+  invoiceIssuedAt?: string;
+  receiptIssuedAt?: string;
+  amountPaid?: number;
 }
 
 function emitChanged() {
@@ -227,8 +233,9 @@ export const enrollmentApplicationStore = {
     phone: string;
     phoneSecondary?: string;
     address: string;
-    paymentProofUrl: string;
-    idCardUrl: string;
+    paymentProofUrl?: string;
+    idCardUrl?: string;
+    paymentMethod?: string;
     paymentPlan: EnrollmentPaymentPlan;
     downPaymentAmount?: number;
     priceCurrency?: string;
@@ -248,7 +255,21 @@ export const enrollmentApplicationStore = {
 
   update(
     id: string,
-    patch: Partial<Pick<EnrollmentApplicationRecord, "status" | "reviewedAt" | "adminNote" | "paymentProofUrl">>,
+    patch: Partial<
+      Pick<
+        EnrollmentApplicationRecord,
+        | "status"
+        | "reviewedAt"
+        | "adminNote"
+        | "paymentProofUrl"
+        | "invoiceNumber"
+        | "receiptNumber"
+        | "paymentMethod"
+        | "invoiceIssuedAt"
+        | "receiptIssuedAt"
+        | "amountPaid"
+      >
+    >,
   ): void {
     const all = load();
     const i = all.findIndex((a) => a.id === id);

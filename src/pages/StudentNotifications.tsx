@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bell, AlertCircle, Clock, CheckCircle2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Bell, AlertCircle, Clock, CheckCircle2, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
 import {
@@ -25,7 +26,8 @@ function formatRelativeTime(iso: string): string {
 function getIcon(kind: AppNotification["kind"]) {
   switch (kind) {
     case "enrollment_approved":
-      return <CheckCircle2 className="h-5 w-5 text-green-600" />;
+    case "enrollment_receipt_ready":
+      return <Receipt className="h-5 w-5 text-green-600" />;
     case "enrollment_rejected":
       return <AlertCircle className="h-5 w-5 text-red-500" />;
     case "admin_enrollment_action":
@@ -37,6 +39,7 @@ function getIcon(kind: AppNotification["kind"]) {
 
 const StudentNotifications = () => {
   const { user } = useAuthSession();
+  const navigate = useNavigate();
   const emailNorm = user.email.trim().toLowerCase();
   const [tick, setTick] = useState(0);
 
@@ -61,8 +64,11 @@ const StudentNotifications = () => {
     appNotificationStore.markAllReadForStudent(emailNorm);
   };
 
-  const onRowClick = (id: string) => {
-    appNotificationStore.markRead(id);
+  const onRowClick = (notification: AppNotification) => {
+    appNotificationStore.markRead(notification.id);
+    if (notification.href) {
+      navigate(notification.href);
+    }
   };
 
   return (
@@ -93,7 +99,7 @@ const StudentNotifications = () => {
           <button
             key={notification.id}
             type="button"
-            onClick={() => onRowClick(notification.id)}
+            onClick={() => onRowClick(notification)}
             className={`w-full rounded-xl border p-5 text-left transition-colors ${
               notification.read
                 ? "border-gray-200/50 bg-white/80 hover:bg-gray-50/50"

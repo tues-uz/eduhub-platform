@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { CourseResponse } from "@/api/eduhubTypes";
+import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
 import {
   COURSE_SCHEDULE_PROPOSAL_STORAGE_KEY,
   courseScheduleProposalStore,
@@ -18,6 +18,13 @@ export function resolvedSessionsSixMonths(c: CourseResponse): number | undefined
   return undefined;
 }
 
+/** Normalize API ISO strings to `YYYY-MM-DD` for date inputs. */
+export function toDateInputValue(iso?: string): string {
+  if (!iso?.trim()) return "";
+  const d = iso.trim().slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
+}
+
 export function boundsFromMeetingSlots(slots: { sessionDate?: string }[] | undefined): {
   start?: string;
   end?: string;
@@ -34,10 +41,25 @@ export function boundsFromMeetingSlots(slots: { sessionDate?: string }[] | undef
  * GET /courses/{id} often omits schedule scalars; admin schedule editor persists a local snapshot.
  * Fill display-only fields from API, slot-derived bounds, then that snapshot.
  */
+function boundsFromScheduleProposal(proposal?: ScheduleProposalResponse | null): {
+  start?: string;
+  end?: string;
+  sessionCount?: number;
+} {
+  if (!proposal) return {};
+  const slots = proposal.sessions?.map((s) => ({ sessionDate: s.sessionDate }));
+  const bounds = boundsFromMeetingSlots(slots);
+  const sessionCount =
+    typeof proposal.sessionCount === "number" && proposal.sessionCount > 0
+      ? proposal.sessionCount
+      : proposal.sessions?.length;
+  return { ...bounds, sessionCount: sessionCount && sessionCount > 0 ? sessionCount : undefined };
+}
+
 export function mergeScheduleDisplayForAdminReview(
   courseId: string,
   detail: CourseResponse,
-  options?: { useLocalProposalSnapshot?: boolean },
+  options?: { useLocalProposalSnapshot?: boolean; apiProposal?: ScheduleProposalResponse | null },
 ): {
   sessionsSixMo: number | undefined;
   classStartDate?: string;
@@ -45,25 +67,26 @@ export function mergeScheduleDisplayForAdminReview(
 } {
   const fromApi = resolvedSessionsSixMonths(detail);
   const fromApiSlots = boundsFromMeetingSlots(detail.classMeetingSlots);
-  const proposal =
+  const fromApiProposal = boundsFromScheduleProposal(options?.apiProposal);
+  const localProposal =
     options?.useLocalProposalSnapshot === false ? null : courseScheduleProposalStore.get(courseId);
-  const fromProposalSlots = boundsFromMeetingSlots(proposal?.classMeetingSlots);
+  const fromLocalProposalSlots = boundsFromMeetingSlots(localProposal?.classMeetingSlots);
 
-  let sessionsSixMo = fromApi;
-  if (sessionsSixMo == null && proposal) {
-    if (typeof proposal.classMeetingsInSixMonths === "number" && proposal.classMeetingsInSixMonths > 0) {
-      sessionsSixMo = proposal.classMeetingsInSixMonths;
-    } else if (proposal.classMeetingSlots?.length) {
-      sessionsSixMo = proposal.classMeetingSlots.length;
+  let sessionsSixMo = fromApiProposal.sessionCount ?? fromApi;
+  if (sessionsSixMo == null && localProposal) {
+    if (typeof localProposal.classMeetingsInSixMonths === "number" && localProposal.classMeetingsInSixMonths > 0) {
+      sessionsSixMo = localProposal.classMeetingsInSixMonths;
+    } else if (localProposal.classMeetingSlots?.length) {
+      sessionsSixMo = localProposal.classMeetingSlots.length;
     }
   }
 
   const startTrim = detail.classStartDate?.trim();
   const endTrim = detail.classEndDate?.trim();
-  let classStartDate = startTrim || fromApiSlots.start;
-  let classEndDate = endTrim || fromApiSlots.end;
-  if (!classStartDate) classStartDate = fromProposalSlots.start;
-  if (!classEndDate) classEndDate = fromProposalSlots.end;
+  let classStartDate = startTrim || fromApiSlots.start || fromApiProposal.start;
+  let classEndDate = endTrim || fromApiSlots.end || fromApiProposal.end;
+  if (!classStartDate) classStartDate = fromLocalProposalSlots.start;
+  if (!classEndDate) classEndDate = fromLocalProposalSlots.end;
 
   return {
     sessionsSixMo,

@@ -29,6 +29,20 @@ export function resolveStudentPageHeader(pathname: string): StudentPageHeaderRes
     segments[0] === "dashboard" &&
     segments[1] === "courses" &&
     segments[2] &&
+    segments[3] === "resume" &&
+    segments[4]
+  ) {
+    return { kind: "empty" };
+  }
+
+  if (pathname === "/dashboard/congrats-preview") {
+    return { kind: "empty" };
+  }
+
+  if (
+    segments[0] === "dashboard" &&
+    segments[1] === "courses" &&
+    segments[2] &&
     segments[3] === "lessons" &&
     segments[4]
   ) {

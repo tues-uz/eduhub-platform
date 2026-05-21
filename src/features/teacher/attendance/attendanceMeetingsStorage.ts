@@ -6,6 +6,10 @@ export type StoredAttendanceMeeting = {
   modality: MeetingModality;
   /** Instructor label, e.g. "Week 3 — Tuesday" */
   name: string;
+  /** 0-based row on the approved class schedule when QR was generated from the schedule dropdown. */
+  scheduleSlotIndex?: number;
+  /** Stable key for enrollment schedule row (date|time|title). */
+  scheduleSlotKey?: string;
 };
 
 /** Check-in stays open for this long after the QR is generated (class start). */
@@ -86,6 +90,11 @@ export function loadStoredMeetings(courseId: string): StoredAttendanceMeeting[] 
         createdAt: typeof x.createdAt === "string" ? x.createdAt : new Date().toISOString(),
         modality: x.modality === "in_person" ? "in_person" : "online",
         name: typeof x.name === "string" ? x.name.trim() : "",
+        scheduleSlotIndex:
+          typeof x.scheduleSlotIndex === "number" && x.scheduleSlotIndex >= 0
+            ? Math.floor(x.scheduleSlotIndex)
+            : undefined,
+        scheduleSlotKey: typeof x.scheduleSlotKey === "string" ? x.scheduleSlotKey.trim() : undefined,
       }))
       .slice(0, MAX_STORED_MEETINGS);
   } catch {

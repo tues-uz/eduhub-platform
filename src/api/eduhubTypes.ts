@@ -10,6 +10,23 @@ export interface UserResponse {
   avatarUrl?: string;
   bio?: string;
   phoneNumber?: string;
+  /** Parent or guardian contact from registration. */
+  parentPhoneNumber?: string;
+}
+
+export interface RegisterRequest {
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  parentPhoneNumber: string;
+  /** Student passport / ID document number from registration. */
+  passportNumber: string;
+  /** `YYYY-MM-DD` — used by admin to determine student age. */
+  dateOfBirth: string;
+  /** City where the student was born. */
+  birthCity: string;
+  password: string;
+  role: "STUDENT" | ApiRole;
 }
 
 export interface AuthResponse {
@@ -262,6 +279,9 @@ export type EnrollmentPaymentPlan = "FULL" | "DOWN_PAYMENT";
 /** After first payment; 1 = one remaining instalment (2-month plan). */
 export type EnrollmentInstallmentCount = 1 | 2 | 4 | 6 | 8;
 
+/** How the student pays: cash at school or bank transfer. */
+export type EnrollmentPaymentMethod = "CASH" | "BANK_TRANSFER";
+
 export interface EnrollmentApplicationRequest {
   courseId: string;
   fullName: string;
@@ -269,12 +289,18 @@ export interface EnrollmentApplicationRequest {
   phone: string;
   phoneSecondary?: string;
   address: string;
-  paymentProofUrl: string;
+  /** Omitted or placeholder when paymentMethod is CASH. */
+  paymentProofUrl?: string;
   idCardUrl?: string;
+  paymentMethod: EnrollmentPaymentMethod;
   paymentPlan: EnrollmentPaymentPlan;
   downPaymentAmount?: number;
   priceCurrency?: string;
   installmentCount?: EnrollmentInstallmentCount;
+  /** 1-based meeting number the student joins from (inclusive). Default 1 = full schedule. */
+  joinFromSessionNumber?: number;
+  /** Total class meetings on the published schedule at enrollment time. */
+  scheduleSessionCount?: number;
 }
 
 export interface EnrollmentApplicationResponse {
@@ -288,17 +314,30 @@ export interface EnrollmentApplicationResponse {
   phone: string;
   phoneSecondary?: string;
   address: string;
-  paymentProofUrl: string;
+  paymentProofUrl?: string;
   idCardUrl?: string;
+  paymentMethod?: EnrollmentPaymentMethod;
   paymentPlan: EnrollmentPaymentPlan;
   downPaymentAmount?: number;
   priceCurrency?: string;
   installmentCount?: EnrollmentInstallmentCount;
+  joinFromSessionNumber?: number;
+  scheduleSessionCount?: number;
   status: EnrollmentApplicationStatus;
   submittedAt: string;
   reviewedAt?: string;
   adminNote?: string;
   reviewedByName?: string;
+  /** Official invoice number (e.g. INV.EDUHUB.1125-0008). Set when admin approves. */
+  invoiceNumber?: string;
+  /** Official receipt number (e.g. REC.EDUHUB.1125-0008). Set when admin approves. */
+  receiptNumber?: string;
+  /** ISO timestamp when invoice was issued. */
+  invoiceIssuedAt?: string;
+  /** ISO timestamp when receipt was issued. */
+  receiptIssuedAt?: string;
+  /** Amount recorded on the receipt (listed tuition or down payment). */
+  amountPaid?: number;
 }
 
 export interface EnrollmentApplicationReviewRequest {

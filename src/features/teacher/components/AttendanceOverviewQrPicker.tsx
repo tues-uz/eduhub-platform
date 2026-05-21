@@ -30,6 +30,8 @@ export type ApprovedScheduleSlotOption = {
   index: number;
   label: string;
   sessionDate?: string;
+  sessionTime?: string;
+  title?: string;
 };
 
 type Props = {

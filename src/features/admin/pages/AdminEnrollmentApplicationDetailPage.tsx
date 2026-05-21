@@ -14,35 +14,22 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { eduhubAdminEnrollmentApplications, eduhubCourses } from "@/api/eduhubClient";
+import {
+  approveEnrollmentApplication,
+  notifyEnrollmentRejection,
+} from "@/features/enrollment/enrollmentApproval";
+import { enrichEnrollmentApplication } from "@/features/enrollment/enrollmentDocuments";
 import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import {
-  expectedPayNowForRecord,
-  inferTuitionPlanMonths,
-  payNowMatchesDeclared,
-  tuitionPlanTitle,
-  tuitionThirds,
-} from "@/features/enrollment/enrollmentTuitionThirds";
-
-function formatMoney(price: number | undefined, currency = "USD"): string {
-  if (price == null || price <= 0) return "—";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
-}
-
-function installmentLabel(count: number | undefined): string {
-  if (count == null) return "—";
-  return String(count);
-}
-
-function shortPaymentSummary(r: EnrollmentApplicationResponse): string {
-  const plan = inferTuitionPlanMonths(r);
-  const cur = r.priceCurrency ?? "USD";
-  if (plan === 3) return "Full (3 mo)";
-  if (plan === 1 || plan === 2) {
-    return `${tuitionPlanTitle(plan)} · ${formatMoney(r.downPaymentAmount, cur)}`;
-  }
-  return `${r.paymentPlan} · ${installmentLabel(r.installmentCount)} inst.`;
-}
+  enrollmentRequiresVerificationUploads,
+  formatPaymentMethodLabel,
+} from "@/features/enrollment/enrollmentDocumentConfig";
+import {
+  buildEnrollmentPaymentDisplay,
+  enrollmentPaymentListSummary,
+  formatEnrollmentMoney,
+} from "@/features/enrollment/enrollmentPaymentDisplay";
 
 function formatDate(iso: string) {
   try {
@@ -111,9 +98,15 @@ export default function AdminEnrollmentApplicationDetailPage() {
     if (!record || record.status !== "PENDING") return;
     setBusy(true);
     try {
-      await eduhubAdminEnrollmentApplications.approve(record.id);
+      await approveEnrollmentApplication(record.id, {
+        listedTuition: listedTuition ?? undefined,
+        courseTitle: record.courseTitle,
+        studentName: record.fullName,
+        studentEmailNorm: record.applicantEmailNorm,
+        courseId: record.courseId,
+      });
       toast.success("Approved", {
-        description: "Student enrolled successfully. They can now access this class.",
+        description: "Student enrolled. Invoice and receipt are available in their Payment history.",
       });
       navigate("/dashboard/admin/enrollment-applications");
     } catch (e) {
@@ -129,6 +122,13 @@ export default function AdminEnrollmentApplicationDetailPage() {
     setBusy(true);
     try {
       await eduhubAdminEnrollmentApplications.reject(record.id, {
+        adminNote: rejectNote.trim() || undefined,
+      });
+      notifyEnrollmentRejection({
+        courseTitle: record.courseTitle ?? record.courseId,
+        courseId: record.courseId,
+        studentName: record.fullName,
+        studentEmailNorm: record.applicantEmailNorm,
         adminNote: rejectNote.trim() || undefined,
       });
       toast.message("Application rejected", {
@@ -167,6 +167,8 @@ export default function AdminEnrollmentApplicationDetailPage() {
       </AdminLayout>
     );
   }
+
+  const displayRecord = record ? enrichEnrollmentApplication(record) : null;
 
   if (!record) {
     return (
@@ -208,7 +210,8 @@ export default function AdminEnrollmentApplicationDetailPage() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Enrollment application</p>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Review submission</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Verify contact details, payment choice, and open proof / ID before approving or rejecting.
+            Verify contact details, full or down payment (schedule-based tuition), and open proof / ID before
+            approving or rejecting.
           </p>
         </div>
 
@@ -252,113 +255,159 @@ export default function AdminEnrollmentApplicationDetailPage() {
               <p className="mt-2 text-slate-700 whitespace-pre-wrap">{record.address}</p>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Payment schedule</p>
-              <p className="mt-2 text-sm font-medium text-slate-900">
-                {tuitionPlanTitle(inferTuitionPlanMonths(record))}
-              </p>
-              <p className="mt-1 text-xs text-slate-600">
-                Raw fields: {record.paymentPlan}
-                {record.installmentCount != null ? ` · ${record.installmentCount} further instalment(s)` : ""}
-                {record.downPaymentAmount != null
-                  ? ` · Declared first payment: ${formatMoney(record.downPaymentAmount, record.priceCurrency ?? "USD")}`
-                  : record.paymentPlan === "FULL"
-                    ? " · No separate down payment (full plan)"
-                    : ""}
-              </p>
-
-              {coursePriceLoading ? (
-                <p className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                  Loading listed course price to verify thirds…
+            {displayRecord?.invoiceNumber || displayRecord?.receiptNumber ? (
+              <div className="rounded-lg border border-emerald-100 bg-emerald-50/80 px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-800">
+                  Official documents
                 </p>
-              ) : listedTuition != null && listedTuition > 0 ? (
-                <div className="mt-3 space-y-2 border-t border-slate-100 pt-3 text-sm">
-                  <p className="text-slate-600">
-                    Listed tuition (course today):{" "}
-                    <span className="font-semibold tabular-nums text-slate-900">
-                      {formatMoney(listedTuition, listedCurrency)}
-                    </span>
+                {displayRecord.invoiceNumber ? (
+                  <p className="mt-1 font-mono text-xs text-slate-900">Invoice: {displayRecord.invoiceNumber}</p>
+                ) : null}
+                {displayRecord.receiptNumber ? (
+                  <p className="mt-0.5 font-mono text-xs text-slate-900">Receipt: {displayRecord.receiptNumber}</p>
+                ) : null}
+                {displayRecord.paymentMethod ? (
+                  <p className="mt-1 text-xs text-slate-600">
+                    Method: {formatPaymentMethodLabel(displayRecord.paymentMethod)}
                   </p>
-                  {(() => {
-                    const thirds = tuitionThirds(listedTuition);
-                    if (!thirds) return null;
-                    const [a, b, c] = thirds;
-                    const expected = expectedPayNowForRecord(record, listedTuition);
-                    const match = payNowMatchesDeclared(record, listedTuition);
-                    return (
-                      <>
+                ) : null}
+              </div>
+            ) : null}
+
+            {(() => {
+              const pay = buildEnrollmentPaymentDisplay(record, listedTuition);
+              const moneyCur = pay.listedTuition != null ? listedCurrency : pay.currency;
+              return (
+                <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 space-y-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Payment</p>
+                  <dl className="grid gap-2 text-sm sm:grid-cols-2">
+                    <div>
+                      <dt className="text-xs text-slate-500">Payment method</dt>
+                      <dd className="font-medium text-slate-900">{pay.methodLabel}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-slate-500">Plan</dt>
+                      <dd className="font-medium text-slate-900">{pay.planLabel}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-slate-500">
+                        {enrollmentRequiresVerificationUploads(record.paymentMethod)
+                          ? "Amount on transfer"
+                          : "Amount"}
+                      </dt>
+                      <dd className="font-semibold tabular-nums text-slate-900">
+                        {pay.declaredAmount != null && pay.declaredAmount > 0
+                          ? formatEnrollmentMoney(pay.declaredAmount, pay.currency)
+                          : "—"}
+                      </dd>
+                    </div>
+                    {pay.installmentCount != null ? (
+                      <div>
+                        <dt className="text-xs text-slate-500">Further instalments</dt>
+                        <dd className="text-slate-900">{pay.installmentCount} payments (school policy)</dd>
+                      </div>
+                    ) : null}
+                    {pay.scheduleScope ? (
+                      <div className={pay.installmentCount != null ? "" : "sm:col-span-2"}>
+                        <dt className="text-xs text-slate-500">Schedule</dt>
+                        <dd className="text-slate-900">{pay.scheduleScope}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+
+                  {coursePriceLoading ? (
+                    <p className="flex items-center gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                      Loading listed class price…
+                    </p>
+                  ) : pay.listedTuition != null ? (
+                    <div className="border-t border-slate-100 pt-3 space-y-2 text-sm">
+                      <p className="text-slate-600">
+                        Listed class price:{" "}
+                        <span className="font-semibold tabular-nums text-slate-900">
+                          {formatEnrollmentMoney(pay.listedTuition, moneyCur)}
+                        </span>
+                      </p>
+                      {pay.proratedTuition != null ? (
                         <p className="text-slate-700">
-                          Three equal parts:{" "}
-                          <span className="font-medium tabular-nums text-slate-900">
-                            {formatMoney(a, listedCurrency)} + {formatMoney(b, listedCurrency)} +{" "}
-                            {formatMoney(c, listedCurrency)}
+                          Student tuition (prorated):{" "}
+                          <span className="font-semibold tabular-nums text-slate-900">
+                            {formatEnrollmentMoney(pay.proratedTuition, moneyCur)}
                           </span>
                         </p>
-                        {expected != null ? (
-                          <p className="text-slate-700">
-                            Expected pay with application:{" "}
-                            <span className="font-semibold tabular-nums text-slate-900">
-                              {formatMoney(expected, listedCurrency)}
-                            </span>
-                          </p>
-                        ) : null}
-                        {match === false ? (
-                          <p className="rounded-md bg-amber-50 px-2 py-1.5 text-xs font-medium text-amber-950">
-                            Declared first payment does not match the listed tuition split for this plan — double-check
-                            the proof amount and course price.
-                          </p>
-                        ) : match === true ? (
-                          <p className="text-xs font-medium text-emerald-800">Declared amount matches this split.</p>
-                        ) : (
-                          <p className="text-xs text-slate-500">
-                            Could not verify amount (plan type or price unavailable).
-                          </p>
-                        )}
-                      </>
-                    );
-                  })()}
+                      ) : null}
+                      {pay.expectedTransfer != null &&
+                      pay.declaredAmount != null &&
+                      pay.declaredAmount !== pay.expectedTransfer ? (
+                        <p className="text-slate-600">
+                          Expected for this plan:{" "}
+                          <span className="font-medium tabular-nums">
+                            {formatEnrollmentMoney(pay.expectedTransfer, moneyCur)}
+                          </span>
+                        </p>
+                      ) : null}
+                      {pay.amountMatches === false ? (
+                        <p className="rounded-md bg-amber-50 px-2 py-1.5 text-xs font-medium text-amber-950">
+                          Transfer amount does not match expected tuition for this plan — check the payment proof.
+                        </p>
+                      ) : pay.amountMatches === true ? (
+                        <p className="text-xs font-medium text-emerald-800">
+                          Transfer amount matches expected tuition.
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="border-t border-slate-100 pt-3 text-xs text-slate-500">
+                      Listed class price not available for this course. Summary:{" "}
+                      <span className="font-medium text-slate-700">{enrollmentPaymentListSummary(record)}</span>
+                    </p>
+                  )}
                 </div>
-              ) : (
-                <p className="mt-3 text-xs text-slate-500">
-                  Listed tuition not loaded (non-UUID course id or no price on course). Use payment proof and declared
-                  fields above; student chose: <span className="font-medium">{shortPaymentSummary(record)}</span>.
-                </p>
-              )}
-            </div>
+              );
+            })()}
 
-            <div className="flex flex-wrap gap-8 border-t border-slate-100 pt-6">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
-                  Payment proof
-                </p>
-                <a
-                  href={record.paymentProofUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline font-medium"
-                >
-                  Open proof in new tab
-                </a>
+            {enrollmentRequiresVerificationUploads(record.paymentMethod) ? (
+              <div className="flex flex-wrap gap-8 border-t border-slate-100 pt-6">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                    Payment proof
+                  </p>
+                  {record.paymentProofUrl && /^https?:\/\//i.test(record.paymentProofUrl) ? (
+                    <a
+                      href={record.paymentProofUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline font-medium"
+                    >
+                      Open proof in new tab
+                    </a>
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                    ID document
+                  </p>
+                  {record.idCardUrl && /^https?:\/\//i.test(record.idCardUrl) ? (
+                    <a
+                      href={record.idCardUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline font-medium"
+                    >
+                      Open ID in new tab
+                    </a>
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
-                  ID document
-                </p>
-                {record.idCardUrl ? (
-                  <a
-                    href={record.idCardUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline font-medium"
-                  >
-                    Open ID in new tab
-                  </a>
-                ) : (
-                  <span className="text-slate-400">—</span>
-                )}
-              </div>
-            </div>
+            ) : (
+              <p className="border-t border-slate-100 pt-4 text-sm text-slate-600">
+                {formatPaymentMethodLabel(record.paymentMethod)} — no transfer proof or ID upload required.
+              </p>
+            )}
 
             {record.adminNote ? (
               <div className="rounded-lg border border-red-100 bg-red-50/60 px-4 py-3">
