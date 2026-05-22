@@ -1,11 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Mail, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, Mail, MoreHorizontal, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { StudentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
-import { mockAdminStudents } from "@/features/admin/data/adminOperationalMock";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -30,21 +29,73 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { eduhubAdmin } from "@/api/eduhubClient";
+
+interface StudentRow {
+  id: string;
+  name: string;
+  email: string;
+  studentStatus: string;
+  enabled: boolean;
+  coursesCount: number;
+  registeredAt: string;
+}
 
 export default function AdminStudentsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [students, setStudents] = useState<StudentRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const res = await eduhubAdmin.listUsers({ role: "STUDENT", size: 100 });
+        const mapped: StudentRow[] = (res.content || []).map((u: any) => ({
+          id: u.id,
+          name: u.fullName,
+          email: u.email,
+          studentStatus: u.enabled ? "active" : "inactive",
+          enabled: u.enabled,
+          coursesCount: u.coursesCount ?? 0,
+          registeredAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—",
+        }));
+        setStudents(mapped);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to load students");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const handleToggleStatus = async (id: string, currentEnabled: boolean) => {
+    try {
+      await eduhubAdmin.setUserStatus(id, !currentEnabled);
+      setStudents((prev) =>
+        prev.map((s) =>
+          s.id === id
+            ? { ...s, enabled: !currentEnabled, studentStatus: !currentEnabled ? "active" : "inactive" }
+            : s
+        )
+      );
+      toast.success(currentEnabled ? "Student deactivated" : "Student activated");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update status");
+    }
+  };
 
   const rows = useMemo(() => {
-    return mockAdminStudents.filter((r) => {
+    return students.filter((r) => {
       const q = search.trim().toLowerCase();
       const matchSearch = !q || r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q);
       const matchStatus = statusFilter === "all" || r.studentStatus === statusFilter;
       return matchSearch && matchStatus;
     });
-  }, [search, statusFilter]);
+  }, [students, search, statusFilter]);
 
   const selectedIds = Object.keys(selected).filter((id) => selected[id]);
   const toggleAll = (checked: boolean) => {
@@ -63,7 +114,7 @@ export default function AdminStudentsPage() {
 
         <AdminPageHeader
           title="Students & registrations"
-          description="Directory, trial usage (1×), and flags such as unpaid but attending. Connects to enrollment and payment workflows."
+          description="Directory and status of enrolled students."
           actions={
             <>
               <Button
@@ -92,7 +143,6 @@ export default function AdminStudentsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="trial">Trial</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>
@@ -111,58 +161,72 @@ export default function AdminStudentsPage() {
                 </TableHead>
                 <TableHead>Student</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Trial used</TableHead>
                 <TableHead>Classes</TableHead>
                 <TableHead>Registered</TableHead>
-                <TableHead>Flags</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell>
-                    <Checkbox
-                      checked={!!selected[r.id]}
-                      onCheckedChange={(v) => setSelected((s) => ({ ...s, [r.id]: !!v }))}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium text-slate-900">{r.name}</div>
-                    <div className="text-sm text-slate-500">{r.email}</div>
-                  </TableCell>
-                  <TableCell>
-                    <StudentStatusBadge status={r.studentStatus} />
-                  </TableCell>
-                  <TableCell>{r.trialUsed ? "Yes" : "No"}</TableCell>
-                  <TableCell>{r.coursesCount}</TableCell>
-                  <TableCell className="text-slate-600">{r.registeredAt}</TableCell>
-                  <TableCell>
-                    {r.unpaidButAttending ? (
-                      <Badge variant="destructive" className="font-normal">
-                        Unpaid · attending
-                      </Badge>
-                    ) : (
-                      <span className="text-slate-400">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link to={`/dashboard/admin/enrollments?student=${r.id}`}>View enrollments</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => toast.message("Open student detail (demo)")}>View profile</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center text-slate-500">
+                    Loading...
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center text-slate-500">
+                    No students match your search or filters.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rows.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={!!selected[r.id]}
+                        onCheckedChange={(v) => setSelected((s) => ({ ...s, [r.id]: !!v }))}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-slate-900">{r.name}</div>
+                      <div className="text-sm text-slate-500">{r.email}</div>
+                    </TableCell>
+                    <TableCell>
+                      <StudentStatusBadge status={r.studentStatus} />
+                    </TableCell>
+                    <TableCell>{r.coursesCount}</TableCell>
+                    <TableCell className="text-slate-600">{r.registeredAt}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link to={`/dashboard/admin/enrollments?student=${r.id}`}>View enrollments</Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleToggleStatus(r.id, r.enabled)}>
+                            {r.enabled ? (
+                              <>
+                                <UserX className="h-4 w-4 mr-2" />
+                                Deactivate
+                              </>
+                            ) : (
+                              <>
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Activate
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>

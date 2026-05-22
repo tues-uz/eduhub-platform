@@ -31,18 +31,19 @@ const StudentAssignments = () => {
       const enrollments = await eduhubEnrollments.getMy();
       const courseIds = Array.from(new Set(enrollments.map(e => e.course.id)));
 
-      // 2. Fetch assignments for each enrolled course
-      let allAssignments: AssignmentResponse[] = [];
-      for (const cid of courseIds) {
-        try {
-          const res = await eduhubAssignments.getByCourse(cid);
-          // Only show published assignments
-          const published = res.filter(a => a.status === "PUBLISHED");
-          allAssignments = [...allAssignments, ...published];
-        } catch (e) {
-          console.warn(`Failed to fetch assignments for course ${cid}`, e);
-        }
-      }
+      // 2. Fetch assignments for all enrolled courses in parallel
+      const courseAssignmentResults = await Promise.all(
+        courseIds.map(async (cid) => {
+          try {
+            const res = await eduhubAssignments.getByCourse(cid);
+            return res.filter(a => a.status === "PUBLISHED");
+          } catch (e) {
+            console.warn(`Failed to fetch assignments for course ${cid}`, e);
+            return [];
+          }
+        })
+      );
+      const allAssignments: AssignmentResponse[] = courseAssignmentResults.flat();
 
       // 3. Enrich with submission status
       const enriched: EnrichedAssignment[] = await Promise.all(

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ClassMeetingSlot } from "@/features/teacher/types";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
   ArchiveRestore,
@@ -62,7 +62,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { eduhubCourseQuizzes, eduhubCourses, eduhubSchedule, type QuizResponse } from "@/api/eduhubClient";
+import { eduhubCourseQuizzes, eduhubCourses, eduhubClassResumes, eduhubSchedule, type QuizResponse } from "@/api/eduhubClient";
 import {
   isLocalOnlyQuizId,
   mergeCourseQuizListsWithLocal,
@@ -105,12 +105,7 @@ import {
   countSessionsStudentAttended,
   getPresentForStudent,
 } from "@/features/attendance/attendanceRollStorage";
-import {
-  CLASS_RESUME_CHANGED,
-  CLASS_RESUME_STORAGE_KEY,
-  deleteClassResume,
-  listClassResumes,
-} from "@/features/courses/classResumeStorage";
+import type { ClassResumeResponse } from "@/api/eduhubTypes";
 import { useTeacherClassChecklist } from "@/features/teacher/hooks/useTeacherClassChecklist";
 
 function formatClassMeetingSlotLabel(slot: ClassMeetingSlot, index: number): string {
@@ -593,8 +588,17 @@ export default function TeacherCourseRosterPage() {
   const [activeTab, setActiveTab] = useState<TeacherCourseTab>(() =>
     isTeacherCourseTab(tabFromUrl) ? tabFromUrl : "roster",
   );
-  const [resumeListTick, setResumeListTick] = useState(0);
   const [resumeDeleteId, setResumeDeleteId] = useState<string | null>(null);
+
+  const deleteResumeMutation = useMutation({
+    mutationFn: ({ resumeId }: { resumeId: string }) => eduhubClassResumes.delete(courseId, resumeId),
+    onSuccess: () => {
+      setResumeDeleteId(null);
+      void queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "resumes", courseId] });
+      toast.message("Resume deleted");
+    },
+    onError: () => toast.error("Could not delete resume."),
+  });
   const onOverviewSessionChange = useCallback((id: string | null) => {
     setOverviewSessionId(id);
   }, []);
@@ -650,24 +654,13 @@ export default function TeacherCourseRosterPage() {
     if (isTeacherCourseTab(tabFromUrl)) setActiveTab(tabFromUrl);
   }, [tabFromUrl]);
 
-  useEffect(() => {
-    if (!courseMeta?.id) return;
-    const bump = () => setResumeListTick((x) => x + 1);
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === CLASS_RESUME_STORAGE_KEY) bump();
-    };
-    window.addEventListener(CLASS_RESUME_CHANGED, bump);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(CLASS_RESUME_CHANGED, bump);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, [courseMeta?.id]);
+  const classResumesQuery = useQuery({
+    queryKey: ["teacher", "roster", "resumes", courseId],
+    queryFn: () => eduhubClassResumes.list(courseId),
+    enabled: Boolean(courseId) && isUuid(courseId),
+  });
 
-  const classResumes = useMemo(
-    () => (courseMeta?.id ? listClassResumes(courseMeta.id) : []),
-    [courseMeta?.id, resumeListTick],
-  );
+  const classResumes = classResumesQuery.data ?? [];
 
   const overviewMeetingLabel = useMemo(() => {
     if (!courseMeta?.id || !overviewSessionId) return null;
@@ -1479,8 +1472,7 @@ export default function TeacherCourseRosterPage() {
                         Class resumes
                       </h2>
                       <p className="mt-1 text-sm text-foreground/60 max-w-xl">
-                        Each card is a recap students can read on their class page (Resume tab). Create or edit on a
-                        dedicated page — data stays in this browser until a server API exists.
+                        Each card is a recap students can read on their class page (Resume tab). Create or edit on a dedicated page.
                       </p>
                     </div>
                     <Button
@@ -2121,7 +2113,7 @@ export default function TeacherCourseRosterPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this resume?</AlertDialogTitle>
             <AlertDialogDescription>
-              Students will no longer see this recap on their class page. This cannot be undone in this demo.
+              Students will no longer see this recap on their class page. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2129,10 +2121,8 @@ export default function TeacherCourseRosterPage() {
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={() => {
-                if (resumeDeleteId && courseMeta?.id) {
-                  deleteClassResume(courseMeta.id, resumeDeleteId);
-                  setResumeDeleteId(null);
-                  toast.message("Resume deleted");
+                if (resumeDeleteId && courseId) {
+                  deleteResumeMutation.mutate({ resumeId: resumeDeleteId });
                 }
               }}
             >

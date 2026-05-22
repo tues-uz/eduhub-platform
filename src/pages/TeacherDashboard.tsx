@@ -21,10 +21,10 @@ import {
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { useAuthSession } from "@/features/auth/context";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
-import { eduhubCourses, eduhubLecturer } from "@/api/eduhubClient";
 import type { TeacherCourse } from "@/features/teacher/types";
 import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
 import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock";
+import { useTeacherCoursesQuery, useTeacherStatsQuery } from "@/features/teacher/hooks/useTeacherQueries";
 
 /** Sum of (catalog tuition × enrolled students) per currency for dashboard. */
 /** Seat counts from course rows when lecturer stats API is unavailable. */
@@ -87,14 +87,15 @@ const TeacherDashboard = () => {
     const saved = localStorage.getItem("sidebarCollapsed");
     return saved === "true";
   });
-  const [courses, setCourses] = useState<TeacherCourse[]>([]);
-  const [coursesLoading, setCoursesLoading] = useState(true);
-  /** Null until `/lecturers/me/stats` responds — distinguishes “not loaded” from real zeros. */
-  const [lecturerStats, setLecturerStats] = useState<{
-    totalCourses: number;
-    totalStudents: number;
-    pendingGrading: number;
-  } | null>(null);
+
+  const { data: apiCourses = [], isLoading: apiCoursesLoading } = useTeacherCoursesQuery(user.id);
+  const { data: lecturerStats } = useTeacherStatsQuery();
+
+  const courses = useMemo(() => {
+    const local = teacherCoursesStore.getAll();
+    return [...apiCourses, ...local];
+  }, [apiCourses]);
+  const coursesLoading = apiCoursesLoading && apiCourses.length === 0;
 
   useEffect(() => {
     const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
@@ -102,68 +103,6 @@ const TeacherDashboard = () => {
     const id = setInterval(check, 100);
     return () => clearInterval(id);
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setCoursesLoading(true);
-      const local = teacherCoursesStore.getAll();
-      try {
-        if (user.id) {
-          try {
-            const [res, statsRes] = await Promise.all([
-              eduhubCourses.getByLecturer(user.id),
-              eduhubLecturer.getStats().catch(() => null),
-            ]);
-            const apiCourses: TeacherCourse[] = (res || []).map((c) => {
-              const unit = c.pricing?.discountedAmount ?? c.pricing?.amount;
-              return {
-                id: c.id,
-                title: c.title,
-                description: "",
-                instructorName: c.lecturerName,
-                thumbnailUrl: c.thumbnailUrl,
-                enrollmentCount: c.enrollmentCount,
-                lessons: [],
-                createdAt: c.createdAt,
-                updatedAt: c.createdAt,
-                status: c.status,
-                ...(unit != null && unit > 0
-                  ? { price: unit, priceCurrency: c.pricing?.currency }
-                  : {}),
-              };
-            });
-            if (!cancelled) {
-              setCourses([...apiCourses, ...local]);
-              if (statsRes) {
-                setLecturerStats({
-                  totalCourses: statsRes.totalCourses,
-                  totalStudents: statsRes.totalStudents,
-                  pendingGrading: statsRes.pendingGrading,
-                });
-              } else {
-                setLecturerStats(null);
-              }
-            }
-          } catch {
-            if (!cancelled) {
-              setCourses(local);
-              setLecturerStats(null);
-            }
-          }
-        } else if (!cancelled) {
-          setCourses(local);
-          setLecturerStats(null);
-        }
-      } finally {
-        if (!cancelled) setCoursesLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [user.id]);
 
   const courseCount = courses.length;
   const collectedPaymentsDisplay = useMemo(

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Link, Navigate, useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
   PlayCircle,
@@ -32,10 +33,9 @@ import type { TeacherCourse } from "@/features/teacher/types";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
 import {
   eduhubCourses,
-  eduhubModules,
-  eduhubLessons,
   eduhubSchedule,
   eduhubCourseQuizzes,
+  eduhubClassResumes,
   type QuizResponseForStudent,
 } from "@/api/eduhubClient";
 import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
@@ -418,7 +418,6 @@ const StudentCourseDetail = () => {
   const [apiScheduleProposal, setApiScheduleProposal] = useState<ScheduleProposalResponse | null>(null);
   const [apiLoading, setApiLoading] = useState(false);
   const scheduleLocalTick = useAdminCourseLocalDataVersion();
-  const [classResumeRev, setClassResumeRev] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState<string | null>(null);
   const [scannerStatus, setScannerStatus] = useState("Point the camera at attendance QR");
@@ -563,37 +562,27 @@ const StudentCourseDetail = () => {
     };
   }, [activeCourseTab, canLoadStudentQuizzes, courseId]);
 
-  useEffect(() => {
-    const bump = () => setClassResumeRev((r) => r + 1);
-    window.addEventListener(CLASS_RESUME_CHANGED, bump);
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === CLASS_RESUME_STORAGE_KEY) bump();
-    };
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(CLASS_RESUME_CHANGED, bump);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
+  const classResumesQuery = useQuery({
+    queryKey: ["student", "resumes", courseId],
+    queryFn: () => eduhubClassResumes.list(courseId!),
+    enabled: Boolean(courseId) && isUuid(courseId) && !isTeacherCourse && isEnrolled,
+  });
 
-  const classResumeStorageKey =
-    isTeacherCourse && teacherCourseId ? teacherCourseId : (courseId ?? "");
-  const classResumeList = useMemo(
-    () => (classResumeStorageKey ? listClassResumes(classResumeStorageKey) : []),
-    [classResumeStorageKey, classResumeRev],
-  );
+  const classResumeList = classResumesQuery.data ?? [];
 
   useEffect(() => {
     if (courseId && isUuid(courseId) && !isTeacherCourse) {
       setApiLoading(true);
       setApiCourseDetail(null);
       setApiScheduleProposal(null);
-      eduhubCourses.getById(courseId).then((c) => {
+
+      Promise.all([
+        eduhubCourses.getById(courseId),
+        eduhubCourses.getAllLessons(courseId).catch(() => []),
+        eduhubSchedule.getProposal(courseId).catch(() => null),
+      ]).then(([c, allLessons, scheduleProposal]) => {
         setApiCourseDetail(c);
-        void eduhubSchedule
-          .getProposal(courseId)
-          .then(setApiScheduleProposal)
-          .catch(() => setApiScheduleProposal(null));
+        setApiScheduleProposal(scheduleProposal);
         const amount = c.pricing?.discountedAmount ?? c.pricing?.amount;
         setApiCourse({
           id: c.id,
@@ -612,23 +601,13 @@ const StudentCourseDetail = () => {
           classStartDate: c.classStartDate,
           classEndDate: c.classEndDate,
         });
-        return eduhubModules.getByCourse(courseId!);
-      }).then((modules) => {
-        return Promise.all(
-          modules.map((m) =>
-            eduhubLessons.getByModule(courseId!, m.id).then((lessons) =>
-              lessons.map((l) => ({
-                id: l.id,
-                title: l.title,
-                duration: l.durationMinutes ? `${l.durationMinutes} min` : "—",
-                completed: false,
-                moduleId: m.id,
-              }))
-            )
-          )
-        );
-      }).then((arrays) => {
-        const flat = arrays.flat();
+        const flat = allLessons.map((l) => ({
+          id: l.id,
+          title: l.title,
+          duration: l.durationMinutes ? `${l.durationMinutes} min` : "—",
+          completed: false,
+          moduleId: l.moduleId,
+        }));
         setApiLessons(flat);
         setApiCourse((prev) => prev ? { ...prev, modules: flat.length } : null);
       }).catch(() => {
@@ -1379,8 +1358,7 @@ const StudentCourseDetail = () => {
               ) : classResumeList.length > 0 ? (
                 <div className="space-y-4">
                   <p className="text-xs text-foreground/55 leading-relaxed">
-                    Recaps from your instructor (newest first). Stored in your browser for this demo until a server sync
-                    exists.
+                    Recaps from your instructor (newest first).
                   </p>
                   <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 xl:grid-cols-3">
                     {classResumeList.map((r) => (
