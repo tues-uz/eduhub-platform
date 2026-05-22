@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 const AVAILABLE_CLASS_DETAIL_PATH = /^\/dashboard\/available-courses\/class\/[^/]+$/;
 /** My Class → single course (not lesson): hero strip flush under header. */
 const STUDENT_COURSE_ROOT_PATH = /^\/dashboard\/courses\/[^/]+$/;
+const STUDENT_COURSE_RESUME_PATH = /^\/dashboard\/courses\/[^/]+\/resume\/[^/]+$/;
 
 /**
  * Shared shell for student dashboard routes: sidebar, global page header (sidebar-aligned height), and content.
@@ -18,7 +19,9 @@ export default function StudentDashboardLayout() {
   const { pathname } = useLocation();
   const headerConfig = resolveStudentPageHeader(pathname);
   const flushContentBelowHeader =
-    AVAILABLE_CLASS_DETAIL_PATH.test(pathname) || STUDENT_COURSE_ROOT_PATH.test(pathname);
+    AVAILABLE_CLASS_DETAIL_PATH.test(pathname) ||
+    STUDENT_COURSE_ROOT_PATH.test(pathname) ||
+    STUDENT_COURSE_RESUME_PATH.test(pathname);
 
   return (
     <div className="min-h-dvh bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -29,11 +32,13 @@ export default function StudentDashboardLayout() {
           isSidebarCollapsed ? "lg:ml-20 lg:w-[calc(100%-5rem)]" : "lg:ml-64 lg:w-[calc(100%-16rem)]"
         }`}
       >
-        <DashboardPageHeader />
+        {!STUDENT_COURSE_RESUME_PATH.test(pathname) ? <DashboardPageHeader /> : null}
         <div
           className={cn(
-            "flex min-h-0 flex-1 flex-col px-6 pb-6 lg:overflow-y-auto lg:overscroll-y-contain",
-            flushContentBelowHeader ? "pt-0" : "pt-4",
+            "flex min-h-0 flex-1 flex-col lg:overflow-y-auto lg:overscroll-y-contain",
+            STUDENT_COURSE_RESUME_PATH.test(pathname)
+              ? "flex min-h-0 flex-1 flex-col p-0"
+              : cn("px-6 pb-6", flushContentBelowHeader ? "pt-0" : "pt-4"),
           )}
         >
           {headerConfig.kind === "title" ? (

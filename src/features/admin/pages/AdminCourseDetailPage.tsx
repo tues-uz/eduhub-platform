@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, ArrowLeft, Calendar, CheckCircle2, Clock3, FileText } from "lucide-react";
-import { eduhubCourses } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminCourseReviewDialog } from "@/features/admin/components/AdminCourseReviewDialog";
@@ -44,15 +44,23 @@ function DetailRow({ label, children }: { label: string; children: ReactNode }) 
 
 export default function AdminCourseDetailPage() {
   const { courseId = "" } = useParams<{ courseId: string }>();
-  const adminLocalDataVersion = useAdminCourseLocalDataVersion();
   const [reviewOpen, setReviewOpen] = useState(false);
+  const adminLocalDataVersion = useAdminCourseLocalDataVersion();
 
   const enabled = !!courseId && isUuid(courseId);
-  const { data: detail, isLoading, error } = useQuery({
-    queryKey: ["admin", "course-detail", courseId],
-    queryFn: () => eduhubCourses.getById(courseId),
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin", "course-detail", courseId, adminLocalDataVersion],
+    queryFn: async () => {
+      const [course, scheduleProposal] = await Promise.all([
+        eduhubCourses.getById(courseId),
+        eduhubSchedule.getProposal(courseId).catch(() => null),
+      ]);
+      return { course, scheduleProposal };
+    },
     enabled,
   });
+  const detail = data?.course;
+  const scheduleProposal = data?.scheduleProposal ?? null;
 
   const scheduleWorkflow = useMemo(
     () => (courseId && isUuid(courseId) ? courseScheduleWorkflowStore.get(courseId) : null),
@@ -61,8 +69,8 @@ export default function AdminCourseDetailPage() {
 
   const scheduleDisplay = useMemo(() => {
     if (!detail || !courseId || !isUuid(courseId)) return null;
-    return mergeScheduleDisplayForAdminReview(courseId, detail);
-  }, [detail, courseId, adminLocalDataVersion]);
+    return mergeScheduleDisplayForAdminReview(courseId, detail, { apiProposal: scheduleProposal });
+  }, [detail, courseId, scheduleProposal, adminLocalDataVersion]);
 
   if (!enabled) {
     return (

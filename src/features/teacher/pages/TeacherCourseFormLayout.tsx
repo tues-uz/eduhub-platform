@@ -69,6 +69,7 @@ const TeacherCourseFormLayout = () => {
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const [classMeetingSlots, setClassMeetingSlots] = useState<ClassMeetingSlot[]>([]);
 
+  /** When a YouTube/Vimeo URL is pasted, try to fill duration in the background (no spinner — use "Get from link" for explicit fetch + loading UI). */
   const videoUrlKey = lessons.map((l) => `${l.contentType}:${l.contentUrl ?? ""}`).join("|");
   useEffect(() => {
     const timeouts: ReturnType<typeof setTimeout>[] = [];
@@ -76,16 +77,12 @@ const TeacherCourseFormLayout = () => {
       if (lesson.contentType !== "video" || !lesson.contentUrl?.trim()) return;
       const url = lesson.contentUrl.trim();
       const t = setTimeout(() => {
-        setDurationLoadingIndex((prev) => (prev === null ? index : prev));
-        fetchVideoDurationFromUrl(url)
-          .then((formatted) => {
-            if (formatted) {
-              setLessons((prev) =>
-                prev.map((l, i) => (i === index ? { ...l, duration: formatted, order: i } : { ...l, order: i }))
-              );
-            }
-          })
-          .finally(() => setDurationLoadingIndex((prev) => (prev === index ? null : prev)));
+        void fetchVideoDurationFromUrl(url).then((formatted) => {
+          if (!formatted) return;
+          setLessons((prev) =>
+            prev.map((l, i) => (i === index ? { ...l, duration: formatted, order: i } : { ...l, order: i })),
+          );
+        });
       }, 1000);
       timeouts.push(t);
     });

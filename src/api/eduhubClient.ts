@@ -3,6 +3,7 @@ import type {
   AuthResponse,
   UserResponse,
   LoginRequest,
+  RegisterRequest,
   CourseRequest,
   CourseResponse,
   CourseSummaryResponse,
@@ -234,7 +235,7 @@ export const eduhubAuth = {
   login: (body: LoginRequest) =>
     request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify(body), skipAuth: true }),
 
-  register: (body: Record<string, any>) =>
+  register: (body: RegisterRequest) =>
     request<{ message: string }>("/auth/register", { method: "POST", body: JSON.stringify(body), skipAuth: true }),
 
   verifyEmail: (token: string) =>

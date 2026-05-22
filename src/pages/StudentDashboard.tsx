@@ -26,13 +26,14 @@ import { useAuthSession } from "@/features/auth/context";
 import { useLayoutContext } from "@/features/layout/context";
 import { studentStats } from "@/features/student/data/dashboardData";
 import { useStudentCoursesQuery, useStudentOverviewQuery } from "@/features/student/hooks/useStudentQueries";
+import { formatDisplayPersonName } from "@/lib/formatPersonName";
 
 const StudentDashboard = () => {
   const { user } = useAuthSession();
   const { isSidebarCollapsed } = useLayoutContext();
   const { data } = useStudentOverviewQuery();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
-  const userName = user.name;
+  const displayName = formatDisplayPersonName(user.name);
 
   const statCards = useMemo(() => {
     const base = (data?.stats ?? [...studentStats]).map((s) => ({ ...s }));
@@ -90,8 +91,11 @@ const StudentDashboard = () => {
           <div className="mb-8">
             <div className="mb-6 flex items-start justify-between">
               <div>
-                <h1 className="font-bold text-foreground mb-2" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px', fontSize: '32px' }}>
-                  Hi {userName}, Welcome Back
+                <h1
+                  className="mb-2 text-[32px] font-bold tracking-wide text-foreground"
+                  style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.5px" }}
+                >
+                  Hi {displayName}, Welcome Back
                 </h1>
                 <p className="text-foreground/70" style={{ fontSize: '14px' }}>Here's what's happening with your classes today</p>
               </div>

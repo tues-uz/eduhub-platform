@@ -201,10 +201,10 @@ const StudentEnrollmentSuccessPage = () => {
                 type="button"
                 variant="outline"
                 className="h-11 rounded-xl border-zinc-300 bg-white"
-                onClick={() => downloadEnrollmentApplicationPdf(d)}
+                onClick={() => void downloadEnrollmentApplicationPdf(d)}
               >
                 <FileDown className="mr-2 h-4 w-4" />
-                Download PDF summary
+                Download submission summary
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-xl border-zinc-300 bg-white" asChild>
                 <Link to="/dashboard/payment">

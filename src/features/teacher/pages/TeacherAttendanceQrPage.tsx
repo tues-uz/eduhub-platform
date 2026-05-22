@@ -34,8 +34,9 @@ export default function TeacherAttendanceQrPage() {
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-foreground tracking-tight">Attendance QR</h1>
             <p className="text-foreground/60 text-sm mt-1">
-              Name the class meeting, then generate a QR or share the link. Use projector view when you need it full screen.
-              Recent meetings are kept on this browser so you can reopen an older code. Students sign in to check in.
+              Select the class and the planned session from the schedule, then generate a QR. When you stop the session,
+              that meeting is marked held for student enrollment. Use projector view for full screen. Students sign in to
+              check in.
             </p>
           </div>
 

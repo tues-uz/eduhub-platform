@@ -266,6 +266,7 @@ export type StudentCourseListItem = {
   duration: string;
   modules: number;
   enrolledDate: string;
+  thumbnailUrl?: string;
 };
 
 function normalizeStoredStudentEmail(): string | null {
@@ -297,6 +298,7 @@ function getTeacherCoursesAsStudentList(): StudentCourseListItem[] {
       duration: totalLessons ? `${totalLessons} lessons` : "—",
       modules: totalLessons,
       enrolledDate: c.createdAt.slice(0, 10),
+      thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
     };
   });
 }
@@ -372,6 +374,7 @@ export const coursesApi = {
           duration: "—",
           modules: 0,
           enrolledDate: e.enrolledAt.slice(0, 10),
+          thumbnailUrl: e.course.thumbnailUrl?.trim() || undefined,
         }));
         // If the backend doesn't support admin approval yet, we still show locally-approved API courses
         // so the student can access the class UI immediately.
@@ -392,7 +395,7 @@ export const coursesApi = {
                   title: r.courseTitle ?? r.courseId,
                   instructor: "—",
                   progress: 0,
-                  status: "Enrolled",
+                  status: "In Progress",
                   nextLesson: "—",
                   category: "Class",
                   duration: "—",
@@ -401,7 +404,19 @@ export const coursesApi = {
                 }))
             : [];
 
-        return [...apiList, ...localApprovedApi, ...localTeacher];
+        const localApprovedWithThumbs = await Promise.all(
+          localApprovedApi.map(async (item) => {
+            try {
+              const course = await eduhubCourses.getById(String(item.id));
+              const thumb = course.thumbnailUrl?.trim();
+              return thumb ? { ...item, thumbnailUrl: thumb } : item;
+            } catch {
+              return item;
+            }
+          }),
+        );
+
+        return [...apiList, ...localApprovedWithThumbs, ...localTeacher];
       } catch {
         return [...enrolledCourses.map(enrichMockCourseProgress), ...localTeacher];
       }

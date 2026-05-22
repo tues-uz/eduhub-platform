@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ClassMeetingSlot } from "@/features/teacher/types";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useMatch, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CalendarDays, FileText, Image as ImageIcon, Loader2, X } from "lucide-react";
@@ -21,7 +20,11 @@ import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { substituteInviteWorkflowStore } from "@/features/teacher/data/substituteInviteWorkflowStore";
-import { resolveClassScheduleFormState } from "@/features/teacher/pages/teacherCourseFormHelpers";
+import {
+  buildCourseScheduleSlotsForPicker,
+  formatClassMeetingSlotLabel,
+  resolveSubstituteAssignedSessionFromInvite,
+} from "@/features/teacher/pages/teacherCourseFormHelpers";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,15 +36,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-function formatClassMeetingSlotLabel(slot: ClassMeetingSlot, index: number): string {
-  const title = slot.title?.trim() || `Session ${index + 1}`;
-  const date = slot.sessionDate?.trim();
-  const time = slot.sessionTime?.trim();
-  const tail = [date, time].filter(Boolean).join(" ");
-  return tail ? `${title} · ${tail}` : title;
-}
-
 const CLASS_RESUME_SESSION_ALL = "__class_resume_all__";
+
+type SessionSelectOption = { value: string; label: string };
 
 export default function TeacherCourseResumeEditPage() {
   const { courseId = "", resumeId } = useParams<{ courseId: string; resumeId?: string }>();
@@ -157,50 +154,71 @@ export default function TeacherCourseResumeEditPage() {
     return undefined;
   }, [courseId, apiCourseQuery.data]);
 
-  const scheduleSlotOptions = useMemo(() => {
+  const scheduleSlots = useMemo(() => {
     if (!courseId) return [];
-
-    const proposal = scheduleProposalQuery.data;
-    let slots: { title: string; sessionDate: string; sessionTime: string }[] = [];
-
-    if (proposal?.sessions?.length) {
-      slots = proposal.sessions.map((s) => ({
-        title: s.title ?? "",
-        sessionDate: s.sessionDate ?? "",
-        sessionTime: s.sessionTime ?? "",
-      }));
-    } else {
-      const resolved = resolveClassScheduleFormState(scheduleSourceCourse ?? {}, courseId);
-      slots = resolved.slots;
-    }
-
-    return slots
-      .map((slot, index) => ({ slot, index }))
-      .filter(({ slot }) =>
-        Boolean(slot.title?.trim() || slot.sessionDate?.trim() || slot.sessionTime?.trim()),
-      )
-      .map(({ slot, index }) => ({
-        value: `slot-${index}`,
-        label: formatClassMeetingSlotLabel(slot, index),
-      }));
+    return buildCourseScheduleSlotsForPicker(
+      courseId,
+      scheduleSourceCourse ?? {},
+      scheduleProposalQuery.data,
+    );
   }, [courseId, scheduleSourceCourse, scheduleProposalQuery.data]);
 
-  /** Substitutes only see the session(s) the course lead picked on the cover request (+ whole class in the UI). */
-  const resumeSessionSelectOptions = useMemo(() => {
-    if (!isSubstituteViewer) return scheduleSlotOptions;
-    const note = approvedSubstituteInviteRow?.sessionNote?.trim();
-    if (!note) return [];
-    const t = note.trim();
-    return scheduleSlotOptions.filter((o) => o.label.trim() === t);
-  }, [isSubstituteViewer, approvedSubstituteInviteRow?.sessionNote, scheduleSlotOptions]);
+  const scheduleSlotOptions = useMemo(() => {
+    return scheduleSlots.map((slot, index) => ({
+      value: `slot-${index}`,
+      label: formatClassMeetingSlotLabel(slot, index),
+    }));
+  }, [scheduleSlots]);
 
-  const showResumeSessionSelect = scheduleSlotOptions.length > 0 || isSubstituteViewer;
+  /** Session the course lead assigned on the substitute invite (substitutes cannot pick another). */
+  const substituteAssignedSession = useMemo((): SessionSelectOption | null => {
+    if (!isSubstituteViewer) return null;
+    return resolveSubstituteAssignedSessionFromInvite(approvedSubstituteInviteRow, scheduleSlots);
+  }, [isSubstituteViewer, approvedSubstituteInviteRow, scheduleSlots]);
 
-  /** One-shot: avoid re-applying invite default when schedule/query updates reset deps (would undo user’s pick). */
-  const substituteNewResumeSessionDefaultedRef = useRef(false);
+  const substituteSessionLocked = Boolean(substituteAssignedSession);
+  const substituteWholeClassCover =
+    isSubstituteViewer &&
+    !substituteAssignedSession &&
+    !approvedSubstituteInviteRow?.sessionSlotKey?.trim() &&
+    !approvedSubstituteInviteRow?.sessionNote?.trim();
+
+  const resumeSessionSelectOptions = useMemo((): SessionSelectOption[] => {
+    if (isSubstituteViewer) return [];
+    return scheduleSlotOptions;
+  }, [isSubstituteViewer, scheduleSlotOptions]);
+
+  const showResumeSessionSelect =
+    !isSubstituteViewer && (scheduleSlotOptions.length > 0 || isSubstituteViewer);
+
+  const resumeSessionSelectValue = useMemo(() => {
+    if (sessionKeyDraft === CLASS_RESUME_SESSION_ALL) return CLASS_RESUME_SESSION_ALL;
+    if (
+      sessionKeyDraft &&
+      resumeSessionSelectOptions.some((o) => o.value === sessionKeyDraft)
+    ) {
+      return sessionKeyDraft;
+    }
+    return CLASS_RESUME_SESSION_ALL;
+  }, [sessionKeyDraft, resumeSessionSelectOptions]);
+
+  /** Substitutes are always tied to the invite session (or whole-class cover when no session was specified). */
   useEffect(() => {
-    substituteNewResumeSessionDefaultedRef.current = false;
-  }, [courseId, isNew]);
+    if (!isSubstituteViewer || !loaded) return;
+    if (substituteAssignedSession) {
+      setSessionKeyDraft(substituteAssignedSession.value);
+      return;
+    }
+    if (substituteWholeClassCover) {
+      setSessionKeyDraft(CLASS_RESUME_SESSION_ALL);
+    }
+  }, [
+    isSubstituteViewer,
+    loaded,
+    substituteAssignedSession,
+    substituteWholeClassCover,
+    substituteAssignedSession?.value,
+  ]);
 
   const existingResumeQuery = useQuery({
     queryKey: ["teacher", "roster", "resume", courseId, editingResumeId],
@@ -212,7 +230,7 @@ export default function TeacherCourseResumeEditPage() {
     if (isNew) {
       setBodyDraft("");
       setThumbnailDraft("");
-      setSessionKeyDraft("");
+      setSessionKeyDraft(CLASS_RESUME_SESSION_ALL);
       setLoaded(true);
       return;
     }
@@ -226,25 +244,6 @@ export default function TeacherCourseResumeEditPage() {
       void navigate(`/dashboard/teacher/courses/${courseId}?tab=resume`, { replace: true });
     }
   }, [isNew, existingResumeQuery.data, existingResumeQuery.isError, courseId, navigate]);
-
-  /** New resume + substitute: default session from invite once schedule rows exist (does not fight refetches). */
-  useEffect(() => {
-    if (!isNew || !isSubstituteViewer || substituteNewResumeSessionDefaultedRef.current) return;
-    const note = approvedSubstituteInviteRow?.sessionNote?.trim();
-    if (!note) {
-      substituteNewResumeSessionDefaultedRef.current = true;
-      return;
-    }
-    const opt = resumeSessionSelectOptions[0];
-    if (!opt) {
-      if (note && scheduleSlotOptions.length > 0 && resumeSessionSelectOptions.length === 0) {
-        substituteNewResumeSessionDefaultedRef.current = true;
-      }
-      return;
-    }
-    setSessionKeyDraft(opt.value);
-    substituteNewResumeSessionDefaultedRef.current = true;
-  }, [isNew, isSubstituteViewer, approvedSubstituteInviteRow?.sessionNote, scheduleSlotOptions, resumeSessionSelectOptions]);
 
   const backHref = `/dashboard/teacher/courses/${courseId}?tab=resume`;
 
@@ -290,13 +289,27 @@ export default function TeacherCourseResumeEditPage() {
       toast.error("Write something before saving.");
       return;
     }
-    const opt = (isSubstituteViewer ? resumeSessionSelectOptions : scheduleSlotOptions).find(
-      (o) => o.value === sessionKeyDraft,
-    );
+    let sessionSlotKey: string | undefined;
+    let sessionLabel: string | undefined;
+    if (isSubstituteViewer && substituteAssignedSession) {
+      sessionSlotKey = substituteAssignedSession.value;
+      sessionLabel = substituteAssignedSession.label;
+    } else if (isSubstituteViewer && substituteWholeClassCover) {
+      sessionSlotKey = undefined;
+      sessionLabel = undefined;
+    } else {
+      const keyForSave =
+        resumeSessionSelectValue === CLASS_RESUME_SESSION_ALL ? "" : resumeSessionSelectValue;
+      const opt = scheduleSlotOptions.find((o) => o.value === keyForSave);
+      if (keyForSave && opt) {
+        sessionSlotKey = opt.value;
+        sessionLabel = opt.label;
+      }
+    }
     const payload = {
       body: trimmed,
-      sessionSlotKey: sessionKeyDraft && opt ? opt.value : undefined,
-      sessionLabel: sessionKeyDraft && opt ? opt.label : undefined,
+      sessionSlotKey,
+      sessionLabel,
       thumbnailUrl: thumbnailDraft || undefined,
     };
     if (isNew) {
@@ -485,24 +498,58 @@ export default function TeacherCourseResumeEditPage() {
                   className="flex items-center gap-2 text-sm font-medium text-foreground"
                 >
                   <CalendarDays className="h-4 w-4 shrink-0 text-[#1e40af]/80" aria-hidden />
-                  Scheduled session (from admin / class schedule)
+                  Link to a scheduled session
                 </Label>
-                {isSubstituteViewer && approvedSubstituteInviteRow?.sessionNote?.trim() ? (
-                  <p className="text-xs text-sky-900/80 leading-relaxed">
-                    Only the session your course lead selected on the substitute request is listed here (you can still
-                    choose a whole-class recap).
+                {!isSubstituteViewer ? (
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Sessions come from the class schedule (admin proposal and dates you approved on the Schedule tab).
+                    Pick one session or leave as a whole-class recap.
                   </p>
                 ) : null}
-                {showResumeSessionSelect ? (
+                {isUuid(courseId) && scheduleProposalQuery.isLoading && isSubstituteViewer ? (
+                  <p className="text-xs text-muted-foreground">Loading assigned session…</p>
+                ) : null}
+                {substituteSessionLocked ? (
+                  <>
+                    <p className="text-xs text-sky-900/80 leading-relaxed">
+                      Locked to the session requested by{" "}
+                      <span className="font-medium text-sky-950">{courseLeadDisplayName}</span>
+                      {courseLeadEmail ? (
+                        <span className="text-sky-950/85"> ({courseLeadEmail})</span>
+                      ) : null}
+                      . Substitute instructors cannot choose a different session.
+                    </p>
+                    <div
+                      id="resume-session"
+                      className="max-w-xl rounded-md border border-sky-200/90 bg-sky-50/50 px-3 py-2.5"
+                      aria-readonly="true"
+                    >
+                      <p className="text-sm font-medium text-sky-950">{substituteAssignedSession.label}</p>
+                    </div>
+                  </>
+                ) : substituteWholeClassCover ? (
+                  <>
+                    <p className="text-xs text-amber-900/90 leading-relaxed">
+                      Your approved substitute invite from{" "}
+                      <span className="font-medium text-amber-950">{courseLeadDisplayName}</span>
+                      {courseLeadEmail ? (
+                        <span className="text-amber-950/85"> ({courseLeadEmail})</span>
+                      ) : null}{" "}
+                      did not name a specific session. Ask them to send a new invite and pick a session on the
+                      schedule, or use a whole-class recap below.
+                    </p>
+                    <div
+                      id="resume-session"
+                      className="max-w-xl rounded-md border border-sky-200/90 bg-sky-50/50 px-3 py-2.5 text-sm font-medium text-sky-950"
+                      aria-readonly="true"
+                    >
+                      Whole class — general recap
+                    </div>
+                  </>
+                ) : showResumeSessionSelect ? (
                   <Select
-                    value={
-                      sessionKeyDraft && resumeSessionSelectOptions.some((o) => o.value === sessionKeyDraft)
-                        ? sessionKeyDraft
-                        : CLASS_RESUME_SESSION_ALL
-                    }
-                    onValueChange={(v) =>
-                      setSessionKeyDraft(v === CLASS_RESUME_SESSION_ALL ? "" : v)
-                    }
+                    value={resumeSessionSelectValue}
+                    onValueChange={(v) => setSessionKeyDraft(v)}
                   >
                     <SelectTrigger id="resume-session" className="max-w-xl bg-white">
                       <SelectValue placeholder="Whole class or one session…" />
@@ -518,8 +565,8 @@ export default function TeacherCourseResumeEditPage() {
                   </Select>
                 ) : (
                   <p className="text-sm text-muted-foreground rounded-md border border-dashed border-amber-200/90 bg-amber-50/60 px-3 py-2.5 leading-relaxed">
-                    No schedule rows yet. You can still save a general recap; session-specific labels will appear when the
-                    schedule exists.
+                    No sessions on the schedule yet. Ask your admin to propose a schedule, then approve it on the class
+                    Schedule tab. You can still save a whole-class recap now.
                   </p>
                 )}
               </div>

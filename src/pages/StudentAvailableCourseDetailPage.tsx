@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuthSession } from "@/features/auth/context";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
+import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
+import { resolveStudentCourseEnrollmentDisplayStatus } from "@/features/enrollment/studentCourseEnrollmentStatus";
+import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
 import { createPortal } from "react-dom";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -288,10 +290,19 @@ const StudentAvailableCourseDetailPage = () => {
   }, []);
 
   const emailNorm = user.email.trim().toLowerCase();
-  const isApprovedLocally =
-    linkId && emailNorm ? enrollmentApplicationStore.isApprovedForCourse(linkId, emailNorm) : false;
-  const isEnrolled =
-    enrolledCourses.some((c) => String(c.id) === linkId) || isApprovedLocally;
+  const { byCourse: applicationsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
+  const enrollmentStatus = useMemo(
+    () =>
+      resolveStudentCourseEnrollmentDisplayStatus(
+        linkId,
+        emailNorm,
+        enrolledCourses.some((c) => String(c.id) === linkId),
+        applicationsByCourse.get(linkId),
+      ),
+    [linkId, emailNorm, enrolledCourses, applicationsByCourse],
+  );
+  const isEnrolled = enrollmentStatus === "enrolled";
+  const enrollSuccessPath = `/dashboard/available-courses/enroll/${encodeURIComponent(linkId)}/success`;
 
   useEffect(() => {
     if (!linkId) {
@@ -492,11 +503,7 @@ const StudentAvailableCourseDetailPage = () => {
                 className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"
                 aria-hidden
               />
-              {isEnrolled ? (
-                <span className="absolute right-3 top-3 rounded-full bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 shadow-sm">
-                  Enrolled
-                </span>
-              ) : null}
+              <EnrollmentStatusBadge status={enrollmentStatus} className="absolute right-3 top-3" />
             </div>
 
             <div className="p-6 pb-28 sm:p-8 sm:pb-32">
@@ -511,9 +518,12 @@ const StudentAvailableCourseDetailPage = () => {
                   </h1>
                 </div>
                 <div
-                  className="flex shrink-0 flex-row flex-wrap items-end justify-end gap-x-6 gap-y-2 sm:gap-x-8 sm:text-right"
-                  aria-label="Class start and end dates"
+                  className="flex min-w-0 shrink-0 flex-col gap-4 sm:max-w-md sm:items-end sm:text-right"
                 >
+                  <div
+                    className="flex flex-row flex-wrap items-end justify-end gap-x-6 gap-y-2 sm:gap-x-8"
+                    aria-label="Class start and end dates"
+                  >
                   <div className="min-w-0 text-right">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
                       Class start
@@ -533,6 +543,7 @@ const StudentAvailableCourseDetailPage = () => {
                         <span className="font-normal text-foreground/45">To be announced</span>
                       )}
                     </p>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -861,7 +872,7 @@ const StudentAvailableCourseDetailPage = () => {
                   </Link>
                 </div>
                 <div className="order-first flex min-w-0 justify-center lg:order-2 lg:justify-end">
-                  {isEnrolled ? (
+                  {enrollmentStatus === "enrolled" ? (
                     <Button
                       asChild
                       className="h-10 w-auto shrink-0 rounded-xl border-0 px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#2f47b3] hover:text-white"
@@ -869,13 +880,23 @@ const StudentAvailableCourseDetailPage = () => {
                     >
                       <Link to={workspacePath}>Continue to Class</Link>
                     </Button>
+                  ) : enrollmentStatus === "pending_review" ? (
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="h-10 w-full max-w-[180px] rounded-xl border-amber-300 bg-amber-50 text-sm font-semibold text-amber-900 shadow-sm hover:bg-amber-100 sm:max-w-[200px]"
+                    >
+                      <Link to={enrollSuccessPath}>View application</Link>
+                    </Button>
                   ) : (
                     <Button
                       asChild
                       className="h-10 w-full max-w-[140px] rounded-xl border-0 text-sm font-semibold text-white shadow-sm hover:bg-[#2f47b3] hover:text-white sm:max-w-[160px]"
                       style={{ backgroundColor: "#3954d0" }}
                     >
-                      <Link to={enrollPath}>Join Class</Link>
+                      <Link to={enrollPath}>
+                        {enrollmentStatus === "rejected" ? "Apply again" : "Join Class"}
+                      </Link>
                     </Button>
                   )}
                 </div>

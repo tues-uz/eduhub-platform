@@ -1,0 +1,9 @@
+@import "../../docs/varcss.css";
+
+.student-dashboard-ov {
+  font-family: var(--font-inter);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--color-pitch-black);
+  background-color: var(--color-soft-off-white);
+}

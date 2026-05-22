@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
@@ -22,6 +22,12 @@ import { parseOptionalPositiveInt } from "./teacherCourseFormHelpers";
 import { isUuid } from "@/api/utils";
 import type { ScheduleProposalResponse } from "@/api/eduhubTypes";
 import type { CourseStatus } from "@/api/eduhubTypes";
+import { toDateInputValue } from "@/features/admin/utils/adminCourseScheduleDisplay";
+import {
+  distributeSessionsIntoThreeMonths,
+  padScheduleSlots,
+  TEACHER_SCHEDULE_MONTH_SECTIONS,
+} from "@/features/courses/scheduleThreeMonthBuckets";
 
 function statusBadge(status: CourseStatus) {
   switch (status) {
@@ -34,6 +40,33 @@ function statusBadge(status: CourseStatus) {
     default:
       return null;
   }
+}
+
+function ReadOnlySessionRow({
+  sessionNum,
+  slot,
+}: {
+  sessionNum: number;
+  slot: { title?: string; sessionDate?: string; sessionTime?: string };
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-3 sm:flex-row sm:items-end sm:gap-3">
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Session {sessionNum}</p>
+        <Input readOnly value={slot.title ?? ""} placeholder="—" className="h-11 rounded-xl bg-white" />
+      </div>
+      <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-end sm:gap-2">
+        <div className="w-full space-y-1.5 sm:w-[10.5rem]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Date</p>
+          <Input readOnly type="date" value={slot.sessionDate ?? ""} className="h-11 rounded-xl bg-white" />
+        </div>
+        <div className="w-full space-y-1.5 sm:w-[8.5rem]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Time</p>
+          <Input readOnly type="time" value={slot.sessionTime ?? ""} className="h-11 rounded-xl bg-white" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function TeacherCourseFormSchedulePage() {
@@ -54,11 +87,19 @@ export default function TeacherCourseFormSchedulePage() {
     setClassMeetingsInSixMonths,
     classMeetingSlots,
     setClassMeetingSlots,
-    updateMeetingSlot,
     error,
     setError,
     validateScheduleStep,
   } = useTeacherCourseForm();
+
+  const mapProposalSession = useCallback(
+    (s: { title?: string; sessionDate?: string; sessionTime?: string }) => ({
+      title: s.title ?? "",
+      sessionDate: toDateInputValue(s.sessionDate),
+      sessionTime: s.sessionTime ?? "",
+    }),
+    [],
+  );
 
   const loadScheduleData = useCallback(() => {
     if (!courseId || !isUuid(courseId)) return;
@@ -75,22 +116,16 @@ export default function TeacherCourseFormSchedulePage() {
           setProposal(proposalData);
           const count = proposalData.sessionCount;
           setClassMeetingsInSixMonths(String(count));
-          setClassMeetingSlots(
-            proposalData.sessions.map((s) => ({
-              title: s.title,
-              sessionDate: s.sessionDate ?? "",
-              sessionTime: s.sessionTime ?? "",
-            }))
-          );
+          setClassMeetingSlots(proposalData.sessions.map(mapProposalSession));
         } else {
           const count = course.classMeetingsInSixMonths ?? 0;
           setClassMeetingsInSixMonths(count > 0 ? String(count) : "");
           setClassMeetingSlots(
             course.classMeetingSlots?.map((s) => ({
               title: s.title ?? "",
-              sessionDate: s.sessionDate ?? "",
+              sessionDate: toDateInputValue(s.sessionDate),
               sessionTime: s.sessionTime ?? "",
-            })) ?? []
+            })) ?? [],
           );
         }
       })
@@ -98,7 +133,7 @@ export default function TeacherCourseFormSchedulePage() {
         /* layout may already show error */
       })
       .finally(() => setLoading(false));
-  }, [courseId, setClassMeetingsInSixMonths, setClassMeetingSlots]);
+  }, [courseId, mapProposalSession, setClassMeetingsInSixMonths, setClassMeetingSlots]);
 
   useEffect(() => {
     if (!isEdit || !courseId || !isUuid(courseId)) return;
@@ -106,16 +141,18 @@ export default function TeacherCourseFormSchedulePage() {
   }, [isEdit, courseId, loadScheduleData]);
 
   const formSessionsCount = parseOptionalPositiveInt(classMeetingsInSixMonths.trim());
-  const proposalSessions = proposal?.sessions.map((s) => ({
-    title: s.title,
-    sessionDate: s.sessionDate ?? "",
-    sessionTime: s.sessionTime ?? "",
-  }));
+  const proposalSessions = proposal?.sessions.map(mapProposalSession);
   const sessionsCount = proposal
     ? Math.max(proposal.sessionCount, proposalSessions?.length ?? 0)
     : formSessionsCount;
-  const displaySlots = proposal ? proposalSessions ?? [] : classMeetingSlots;
+  const displaySlots = proposal ? (proposalSessions ?? []) : classMeetingSlots;
   const apiCourse = Boolean(courseId && isUuid(courseId));
+
+  const threeMonthPlan = useMemo(() => {
+    if (!proposal || sessionsCount == null || sessionsCount < 1) return null;
+    const flat = padScheduleSlots(sessionsCount, displaySlots);
+    return distributeSessionsIntoThreeMonths(flat);
+  }, [proposal, sessionsCount, displaySlots]);
 
   const continueToLessons = () => {
     setError("");
@@ -192,17 +229,21 @@ export default function TeacherCourseFormSchedulePage() {
         ) : null}
 
         {isEdit && apiCourse ? (
-          <Card className="w-full overflow-hidden rounded-2xl border-slate-200/90 shadow-sm">
-            <CardContent className="space-y-6 p-0 px-4 pb-4 pt-4">
-              {loading ? (
-                <p className="text-sm text-slate-600">Loading schedule…</p>
-              ) : !proposal ? (
-                <p className="text-sm text-slate-600">
-                  When an admin proposes a schedule for this class, it will appear here for your approval.
-                </p>
-              ) : (
-                <>
-                  <section className="space-y-2">
+          <>
+            {loading ? (
+              <p className="text-sm text-slate-600">Loading schedule…</p>
+            ) : !proposal ? (
+              <Card className="w-full overflow-hidden rounded-2xl border-slate-200/90 shadow-sm">
+                <CardContent className="p-6">
+                  <p className="text-sm text-slate-600">
+                    When an admin proposes a schedule for this class, it will appear here for your approval.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                <Card className="w-full overflow-hidden rounded-2xl border-slate-200/90 shadow-sm">
+                  <CardContent className="space-y-2 p-0 px-4 pb-4 pt-4">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                       Sessions in 6 months
                     </p>
@@ -211,75 +252,92 @@ export default function TeacherCourseFormSchedulePage() {
                     </p>
                     <p className="max-w-lg text-xs leading-relaxed text-slate-500">
                       Proposed by {proposal.proposedByName}. Student attendance expectations are based on this plan.
+                      Sessions below are grouped into the first three months, matching how admin entered the schedule.
                     </p>
-                  </section>
+                  </CardContent>
+                </Card>
 
-                  {sessionsCount != null && sessionsCount >= 1 ? (
-                    <div className="space-y-3 border-t border-slate-100 pt-5">
-                      <div className="space-y-1">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-                          Per-session details
-                        </p>
-                      </div>
-                      <div className="space-y-3">
-                        {Array.from({ length: sessionsCount }, (_, i) => {
-                          const slot = displaySlots[i] ?? { title: "", sessionDate: "", sessionTime: "" };
-                          return (
-                            <div
-                              key={i}
-                              className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-3 sm:flex-row sm:items-end sm:gap-3"
-                            >
-                              <div className="min-w-0 flex-1 space-y-1.5">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-                                  Session {i + 1}
-                                </p>
-                                <Input readOnly value={slot.title ?? ""} placeholder="—" className="h-11 rounded-xl bg-white" />
-                              </div>
-                              <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-end sm:gap-2">
-                                <div className="w-full space-y-1.5 sm:w-[10.5rem]">
-                                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Date</p>
-                                  <Input readOnly type="date" value={slot.sessionDate ?? ""} className="h-11 rounded-xl bg-white" />
-                                </div>
-                                <div className="w-full space-y-1.5 sm:w-[8.5rem]">
-                                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Time</p>
-                                  <Input readOnly type="time" value={slot.sessionTime ?? ""} className="h-11 rounded-xl bg-white" />
-                                </div>
+                {threeMonthPlan && threeMonthPlan.counts.some((c) => c > 0) ? (
+                  TEACHER_SCHEDULE_MONTH_SECTIONS.map((section, monthIdx) => {
+                    const m = monthIdx as 0 | 1 | 2;
+                    const monthCount = threeMonthPlan.counts[m];
+                    const n0 = threeMonthPlan.counts[0];
+                    const n1 = threeMonthPlan.counts[1];
+                    const sessionLabelOffset = m === 0 ? 0 : m === 1 ? n0 : n0 + n1;
+
+                    if (monthCount < 1) return null;
+
+                    return (
+                      <Card key={section.heading} className="w-full overflow-hidden rounded-2xl border-slate-200/90 shadow-sm">
+                        <CardContent className="space-y-4 p-0 px-4 pb-4 pt-4">
+                          <section className="space-y-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                              {section.heading}
+                            </p>
+                            <p className="text-2xl font-semibold tabular-nums text-slate-900">{monthCount}</p>
+                            <p className="max-w-lg text-xs leading-relaxed text-slate-500">{section.blurb}</p>
+
+                            <div className="mt-5 space-y-3 border-t border-slate-100 pt-5">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                Per-session details
+                              </p>
+                              <div className="space-y-3">
+                                {Array.from({ length: monthCount }, (_, i) => {
+                                  const slot = threeMonthPlan.buckets[m][i] ?? {
+                                    title: "",
+                                    sessionDate: "",
+                                    sessionTime: "",
+                                  };
+                                  return (
+                                    <ReadOnlySessionRow
+                                      key={`${m}-${i}`}
+                                      sessionNum={sessionLabelOffset + i + 1}
+                                      slot={slot}
+                                    />
+                                  );
+                                })}
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-slate-500">No session rows yet — waiting for admin.</p>
-                  )}
+                          </section>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                ) : (
+                  <Card className="w-full overflow-hidden rounded-2xl border-slate-200/90 shadow-sm">
+                    <CardContent className="p-6">
+                      <p className="text-sm text-slate-500">No session rows yet — waiting for admin.</p>
+                    </CardContent>
+                  </Card>
+                )}
 
-                  {courseStatus === "SCHEDULE_PENDING" ? (
-                    <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-5">
-                      <Button
-                        type="button"
-                        className="rounded-full bg-emerald-700 hover:bg-emerald-800"
-                        disabled={approveSaving}
-                        onClick={() => void handleApprove()}
-                      >
-                        {approveSaving ? "Saving…" : "Approve schedule"}
-                      </Button>
-                      <Button type="button" variant="outline" className="rounded-full" onClick={() => setRejectOpen(true)}>
-                        Request changes
-                      </Button>
-                    </div>
-                  ) : null}
-                  {courseStatus === "SCHEDULE_APPROVED" ? (
-                    <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-5">
-                      <p className="w-full text-xs text-slate-600 sm:w-auto sm:flex-1">
+                <Card className="w-full overflow-hidden rounded-2xl border-slate-200/90 shadow-sm">
+                  <CardContent className="p-0 px-4 pb-4 pt-4">
+                    {courseStatus === "SCHEDULE_PENDING" ? (
+                      <div className="flex flex-wrap gap-3 pt-2">
+                        <Button
+                          type="button"
+                          className="rounded-full bg-emerald-700 hover:bg-emerald-800"
+                          disabled={approveSaving}
+                          onClick={() => void handleApprove()}
+                        >
+                          {approveSaving ? "Saving…" : "Approve schedule"}
+                        </Button>
+                        <Button type="button" variant="outline" className="rounded-full" onClick={() => setRejectOpen(true)}>
+                          Request changes
+                        </Button>
+                      </div>
+                    ) : null}
+                    {courseStatus === "SCHEDULE_APPROVED" ? (
+                      <p className="pt-2 text-xs text-slate-600">
                         Schedule approved. The admin can now set pricing and publish the class.
                       </p>
-                    </div>
-                  ) : null}
-                </>
-              )}
-            </CardContent>
-          </Card>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </>
         ) : null}
 
         <div className="mt-6 flex w-full flex-wrap items-center justify-between gap-3">

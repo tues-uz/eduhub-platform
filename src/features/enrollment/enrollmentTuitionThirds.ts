@@ -19,19 +19,87 @@ export function tuitionThirds(total: number): [number, number, number] | null {
   return [p[0]!, p[1]!, p[2]!];
 }
 
-/** Amount due with the application: 1 → first ⅓, 2 → first ⅔, 3 → full tuition. */
-export function payNowForPlanMonths(planMonths: TuitionPlanMonths, total: number): number | null {
-  const t = tuitionThirds(total);
-  if (!t) return null;
-  if (planMonths === 1) return t[0];
-  if (planMonths === 2) return t[0] + t[1];
-  return t[0] + t[1] + t[2];
+export type TuitionMonthWeights = readonly [number, number, number];
+
+/** Split tuition across three months by session counts (or other weights); whole amounts sum to `total`. */
+export function splitTuitionByMonthWeights(
+  total: number,
+  weights: TuitionMonthWeights,
+): [number, number, number] | null {
+  const [w0, w1, w2] = weights;
+  const sum = w0 + w1 + w2;
+  if (!Number.isFinite(total) || total <= 0 || sum <= 0) return null;
+
+  const raw = [w0, w1, w2].map((w) => (total * w) / sum);
+  const floors = raw.map((x) => Math.floor(x)) as [number, number, number];
+  let remainder = total - floors[0] - floors[1] - floors[2];
+  const order = raw
+    .map((x, i) => ({ i, frac: x - floors[i] }))
+    .sort((a, b) => b.frac - a.frac);
+  const parts: [number, number, number] = [...floors];
+  for (let k = 0; k < remainder; k++) {
+    parts[order[k % 3]!.i]++;
+  }
+  return parts;
+}
+
+/** Three month tuition shares: by schedule session counts when provided, else equal thirds. */
+export function tuitionPartsForSchedule(
+  total: number,
+  scheduleMonthSessionCounts?: TuitionMonthWeights,
+): { parts: [number, number, number]; usesScheduleSplit: boolean } | null {
+  const counts = scheduleMonthSessionCounts;
+  const sessionTotal = counts ? counts[0] + counts[1] + counts[2] : 0;
+  if (counts && sessionTotal > 0) {
+    const parts = splitTuitionByMonthWeights(total, counts);
+    if (parts) return { parts, usesScheduleSplit: true };
+  }
+  const parts = tuitionThirds(total);
+  if (!parts) return null;
+  return { parts, usesScheduleSplit: false };
+}
+
+/** Sum equal third-shares for individually selected calendar months (1, 2, and/or 3). */
+export function payNowForSelectedCalendarMonths(
+  total: number,
+  selectedMonths: ReadonlySet<TuitionPlanMonths> | Iterable<TuitionPlanMonths>,
+): { payNow: number; parts: [number, number, number] } | null {
+  const parts = tuitionThirds(total);
+  if (!parts) return null;
+  let payNow = 0;
+  for (const m of selectedMonths) {
+    if (m === 1) payNow += parts[0];
+    else if (m === 2) payNow += parts[1];
+    else if (m === 3) payNow += parts[2];
+  }
+  return { payNow, parts };
+}
+
+/** Amount due now: sum of month 1 (and 2, 3) shares — schedule-weighted when counts are provided. */
+export function payNowForPlanMonths(
+  planMonths: TuitionPlanMonths,
+  total: number,
+  scheduleMonthSessionCounts?: TuitionMonthWeights,
+): number | null {
+  const split = tuitionPartsForSchedule(total, scheduleMonthSessionCounts);
+  if (!split) return null;
+  const [a, b, c] = split.parts;
+  if (planMonths === 1) return a;
+  if (planMonths === 2) return a + b;
+  return a + b + c;
 }
 
 /** Infer 1 / 2 / 3-month tuition schedule from stored payment fields (current enrollment form mapping). */
 export type InferredTuitionPlan = TuitionPlanMonths | "other";
 
-export function inferTuitionPlanMonths(r: EnrollmentApplicationResponse): InferredTuitionPlan {
+export type EnrollmentPaymentFields = Pick<
+  EnrollmentApplicationResponse,
+  "paymentPlan" | "installmentCount"
+>;
+
+export function inferTuitionPlanMonths(
+  r: EnrollmentApplicationResponse | EnrollmentPaymentFields,
+): InferredTuitionPlan {
   if (r.paymentPlan === "FULL") return 3;
   if (r.paymentPlan === "DOWN_PAYMENT") {
     if (r.installmentCount === 2) return 1;
@@ -40,9 +108,29 @@ export function inferTuitionPlanMonths(r: EnrollmentApplicationResponse): Inferr
   return "other";
 }
 
+/** Calendar months (1–3) covered by an approved enrollment's first payment plan. */
+export function paidTuitionMonthsFromPaymentFields(
+  r: EnrollmentPaymentFields | undefined | null,
+): Set<TuitionPlanMonths> | null {
+  if (!r) return null;
+  const plan = inferTuitionPlanMonths(r);
+  if (plan === 3) return new Set([1, 2, 3]);
+  if (plan === 2) return new Set([1, 2]);
+  if (plan === 1) return new Set([1]);
+  return new Set([1, 2, 3]);
+}
+
+export function isTuitionMonthPaid(
+  month: TuitionPlanMonths,
+  paidMonths: ReadonlySet<TuitionPlanMonths> | null | undefined,
+): boolean {
+  if (!paidMonths) return false;
+  return paidMonths.has(month);
+}
+
 export function tuitionPlanTitle(plan: InferredTuitionPlan): string {
-  if (plan === 1) return "1 month (⅓ due now)";
-  if (plan === 2) return "2 months (⅔ due now)";
+  if (plan === 1) return "1 month (first schedule month due now)";
+  if (plan === 2) return "2 months (first two schedule months due now)";
   if (plan === 3) return "3 months (full tuition)";
   return "Other / legacy instalment plan";
 }

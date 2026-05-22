@@ -1,6 +1,7 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bell, AlertCircle, Clock, CheckCircle2, Loader2 } from "lucide-react";
+import { Bell, AlertCircle, Clock, CheckCircle2, Receipt, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { eduhubNotifications } from "@/api/eduhubClient";
 import type { NotificationResponse } from "@/api/eduhubTypes";
@@ -22,7 +23,8 @@ function formatRelativeTime(iso: string): string {
 function getIcon(kind: string) {
   switch (kind) {
     case "enrollment_approved":
-      return <CheckCircle2 className="h-5 w-5 text-green-600" />;
+    case "enrollment_receipt_ready":
+      return <Receipt className="h-5 w-5 text-green-600" />;
     case "enrollment_rejected":
     case "course_rejected":
       return <AlertCircle className="h-5 w-5 text-red-500" />;
@@ -32,6 +34,7 @@ function getIcon(kind: string) {
 }
 
 const StudentNotifications = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const queryKey = ["notifications"];
 
@@ -74,6 +77,11 @@ const StudentNotifications = () => {
     onSettled: () => void queryClient.invalidateQueries({ queryKey }),
   });
 
+  const onRowClick = (notification: NotificationResponse) => {
+    if (!notification.read) markReadMutation.mutate(notification.id);
+    if (notification.href) navigate(notification.href);
+  };
+
   return (
     <div
       className="mx-auto box-border w-full max-w-3xl"
@@ -115,9 +123,7 @@ const StudentNotifications = () => {
               <button
                 key={notification.id}
                 type="button"
-                onClick={() => {
-                  if (!notification.read) markReadMutation.mutate(notification.id);
-                }}
+                onClick={() => onRowClick(notification)}
                 className={`w-full rounded-xl border p-5 text-left transition-colors ${
                   notification.read
                     ? "border-gray-200/50 bg-white/80 hover:bg-gray-50/50"

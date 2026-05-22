@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
@@ -47,10 +47,38 @@ import {
 } from "@/features/admin/utils/adminCourseScheduleDisplay";
 import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
 import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
+import {
+  classScheduleStatusHint,
+  formatSessionTimeLabel,
+  resolveEnrollmentSessionTimingStatus,
+  resolveSessionTimingStatus,
+} from "@/features/courses/classSchedulePreview";
+import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
+import {
+  getScheduleAttendanceState,
+  HELD_SCHEDULE_MEETINGS_CHANGED,
+} from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
+import {
+  StudentCourseScheduleMonthSelect,
+  type ScheduleMonthSelectAccess,
+} from "@/features/courses/StudentCourseScheduleMonthSelect";
+import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
+import {
+  paidTuitionMonthsFromPaymentFields,
+  type TuitionPlanMonths,
+} from "@/features/enrollment/enrollmentTuitionThirds";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
+import { formatDisplayPersonName } from "@/lib/formatPersonName";
 import { cn } from "@/lib/utils";
 import { useAuthSession } from "@/features/auth/context";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
+import {
+  CLASS_RESUME_CHANGED,
+  CLASS_RESUME_STORAGE_KEY,
+  listClassResumes,
+} from "@/features/courses/classResumeStorage";
+import { isCourseScheduleFinished } from "@/features/courses/courseScheduleCompletion";
+import { hasSeenCourseCongrats } from "@/features/student/courseCongratsSeenStorage";
 
 function nameInitials(name: string, max = 2): string {
   const t = name.trim();
@@ -217,17 +245,33 @@ function sessionSlotStudentLabel(slot: SessionSlotLike, indexZeroBased: number):
 function StudentSessionScheduleCard({
   slot,
   indexZeroBased,
+  heldSlotKeys,
+  activeSlotKeys,
 }: {
   slot: SessionSlotLike;
   indexZeroBased: number;
+  heldSlotKeys?: ReadonlySet<string>;
+  activeSlotKeys?: ReadonlySet<string>;
 }) {
   const rawDate = slot.sessionDate?.trim();
   const timeRaw = slot.sessionTime?.trim();
   const label = sessionSlotStudentLabel(slot, indexZeroBased);
+  const slotWhen = {
+    sessionDate: slot.sessionDate ?? "",
+    sessionTime: slot.sessionTime ?? "",
+  };
+  const timingStatus =
+    heldSlotKeys != null || activeSlotKeys != null
+      ? resolveEnrollmentSessionTimingStatus(
+          { ...slotWhen, title: slot.title ?? label },
+          heldSlotKeys ?? new Set(),
+          activeSlotKeys ?? new Set(),
+        )
+      : resolveSessionTimingStatus(slotWhen);
 
   let weekdayLong: string | null = null;
   let dateValue: string | null = null;
-  const timeValue = timeRaw ? timeRaw.trim() : null;
+  const timeValue = formatSessionTimeLabel(timeRaw ?? undefined);
 
   if (rawDate) {
     const d = new Date(rawDate);
@@ -246,8 +290,16 @@ function StudentSessionScheduleCard({
   const hasAnyWhen = Boolean(dateValue || timeValue);
 
   return (
-    <div className="rounded-xl border border-zinc-100/90 bg-zinc-50/80 px-3 py-2.5">
-      <p className="text-sm font-semibold leading-snug text-zinc-900">{label}</p>
+    <div
+      className={cn(
+        "rounded-xl border border-zinc-100/90 bg-zinc-50/80 px-3 py-2.5",
+        timingStatus === "finished" && "opacity-75",
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 text-sm font-semibold leading-snug text-zinc-900">{label}</p>
+        <SessionTimingChip status={timingStatus} />
+      </div>
 
       {hasAnyWhen ? (
         <div className="mt-2.5 space-y-2 border-t border-zinc-200/70 pt-2.5">
@@ -379,6 +431,9 @@ const StudentCourseDetail = () => {
   const [completedStudentQuizIds, setCompletedStudentQuizIds] = useState<Set<string>>(() => new Set());
 
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
+  const emailNorm = user.email.trim().toLowerCase();
+  const { byCourse: enrollmentAppsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
+  const [enrollmentStoreTick, setEnrollmentStoreTick] = useState(0);
   const isTeacherCourse = courseId?.startsWith(TEACHER_PREFIX);
   const teacherCourseId = isTeacherCourse ? courseId!.slice(TEACHER_PREFIX.length) : null;
   const teacherCourse = teacherCourseId ? teacherCoursesStore.getById(teacherCourseId) : null;
@@ -386,6 +441,79 @@ const StudentCourseDetail = () => {
   const id = courseId && !isTeacherCourse && !isUuid(courseId ?? "") ? parseInt(courseId, 10) : NaN;
 
   const isEnrolled = courseId ? enrolledCourses.some((c) => c.id === courseId || c.id === courseId) : false;
+
+  useEffect(() => {
+    const bump = () => setEnrollmentStoreTick((n) => n + 1);
+    window.addEventListener("eduhub-enrollment-applications-changed", bump);
+    window.addEventListener("storage", bump);
+    return () => {
+      window.removeEventListener("eduhub-enrollment-applications-changed", bump);
+      window.removeEventListener("storage", bump);
+    };
+  }, []);
+
+  const scheduleMonthAccess = useMemo((): ScheduleMonthSelectAccess => {
+    void enrollmentStoreTick;
+    if (!courseId) return "enrollment_required";
+    if (
+      isEnrolled ||
+      (emailNorm && enrollmentApplicationStore.isApprovedForCourse(courseId, emailNorm))
+    ) {
+      return "full";
+    }
+    const apiApp = enrollmentAppsByCourse.get(courseId);
+    if (
+      apiApp?.status === "PENDING" ||
+      (emailNorm && enrollmentApplicationStore.findPendingForCourseAndEmail(courseId, emailNorm))
+    ) {
+      return "pending_review";
+    }
+    if (
+      apiApp?.status === "REJECTED" ||
+      (emailNorm &&
+        enrollmentApplicationStore.findLatestForCourseAndEmail(courseId, emailNorm)?.status ===
+          "REJECTED")
+    ) {
+      return "rejected";
+    }
+    return "enrollment_required";
+  }, [courseId, emailNorm, isEnrolled, enrollmentAppsByCourse, enrollmentStoreTick]);
+
+  const enrollApplicationHref = courseId
+    ? `/dashboard/available-courses/enroll/${encodeURIComponent(courseId)}`
+    : undefined;
+
+  const paidTuitionMonths = useMemo((): ReadonlySet<TuitionPlanMonths> | null => {
+    void enrollmentStoreTick;
+    if (scheduleMonthAccess !== "full" || !courseId) return null;
+    const apiApp = enrollmentAppsByCourse.get(courseId);
+    const localLatest = emailNorm
+      ? enrollmentApplicationStore.findLatestForCourseAndEmail(courseId, emailNorm)
+      : undefined;
+    const approved =
+      apiApp?.status === "APPROVED"
+        ? apiApp
+        : localLatest?.status === "APPROVED"
+          ? localLatest
+          : undefined;
+    if (approved) {
+      return paidTuitionMonthsFromPaymentFields(approved);
+    }
+    if (
+      isEnrolled ||
+      (emailNorm && enrollmentApplicationStore.isApprovedForCourse(courseId, emailNorm))
+    ) {
+      return new Set<TuitionPlanMonths>([1, 2, 3]);
+    }
+    return null;
+  }, [
+    scheduleMonthAccess,
+    courseId,
+    emailNorm,
+    isEnrolled,
+    enrollmentAppsByCourse,
+    enrollmentStoreTick,
+  ]);
 
   const tabRaw = searchParams.get("tab");
   const activeCourseTab =
@@ -531,12 +659,11 @@ const StudentCourseDetail = () => {
     return null;
   }, [courseId, apiCourseDetail, apiScheduleProposal, isTeacherCourse, teacherCourse, scheduleLocalTick]);
 
-  const sessionSlotsForSidebar = useMemo(() => {
+  const allSessionSlots = useMemo(() => {
     void scheduleLocalTick;
     const isApi =
       Boolean(apiCourseDetail && courseId && isUuid(courseId) && !isTeacherCourse);
     const raw = resolveStudentSessionSlots(courseId, apiCourseDetail, apiScheduleProposal, isApi, teacherCourse);
-    const now = Date.now();
     const decorated = raw.map((slot, i) => ({ slot, i, ms: sessionDateMs(slot.sessionDate) }));
     decorated.sort((a, b) => {
       const na = Number.isNaN(a.ms) ? Infinity : a.ms;
@@ -544,11 +671,41 @@ const StudentCourseDetail = () => {
       if (na !== nb) return na - nb;
       return a.i - b.i;
     });
-    const upcoming = decorated.filter(
-      (x) => Number.isNaN(x.ms) || x.ms >= now - 86400000,
-    );
-    return upcoming.slice(0, 8).map((x) => x.slot);
+    return decorated.map((x) => x.slot);
   }, [courseId, apiCourseDetail, apiScheduleProposal, isTeacherCourse, teacherCourse, scheduleLocalTick]);
+
+  const [heldMeetingsTick, setHeldMeetingsTick] = useState(0);
+
+  const scheduleAttendance = useMemo(() => {
+    void heldMeetingsTick;
+    if (!courseId) {
+      return { heldSlotKeys: new Set<string>(), activeSlotKeys: new Set<string>() };
+    }
+    return getScheduleAttendanceState(courseId);
+  }, [courseId, heldMeetingsTick]);
+
+  useEffect(() => {
+    if (!courseId) return;
+    const bump = () => setHeldMeetingsTick((t) => t + 1);
+    const onHeld = (e: Event) => {
+      const ce = e as CustomEvent<{ courseId?: string }>;
+      if (!ce.detail?.courseId || ce.detail.courseId === courseId) bump();
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key?.includes(courseId)) bump();
+    };
+    window.addEventListener(HELD_SCHEDULE_MEETINGS_CHANGED, onHeld);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(HELD_SCHEDULE_MEETINGS_CHANGED, onHeld);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [courseId]);
+
+  const scheduleStatusHint = useMemo(() => {
+    const isApi = Boolean(apiCourseDetail && courseId && isUuid(courseId) && !isTeacherCourse);
+    return classScheduleStatusHint(courseId, isApi, apiScheduleProposal, allSessionSlots.length > 0);
+  }, [courseId, apiCourseDetail, apiScheduleProposal, isTeacherCourse, allSessionSlots.length]);
 
   const lessonsFromApi = apiLessons.map((l) => ({
     ...l,
@@ -831,10 +988,36 @@ const StudentCourseDetail = () => {
   const hasScheduleSummary =
     hasClassDateRange ||
     (meetings != null && meetings > 0) ||
-    sessionSlotsForSidebar.length > 0;
+    allSessionSlots.length > 0;
 
   const coverThumbnailUrl =
     apiCourse?.thumbnailUrl?.trim() || teacherCourse?.thumbnailUrl?.trim() || undefined;
+
+  const classEndForCompletion = resolvedSchedule?.classEndDate ?? course.classEndDate;
+  const shouldRedirectToCongrats =
+    scheduleMonthAccess === "full" &&
+    Boolean(courseId) &&
+    Boolean(emailNorm) &&
+    !hasSeenCourseCongrats(courseId!, emailNorm) &&
+    isCourseScheduleFinished({
+      slots: allSessionSlots,
+      heldSlotKeys: scheduleAttendance.heldSlotKeys,
+      activeSlotKeys: scheduleAttendance.activeSlotKeys,
+      classEndDate: classEndForCompletion,
+    });
+
+  if (shouldRedirectToCongrats) {
+    return (
+      <Navigate
+        to={`/dashboard/courses/${encodeURIComponent(courseId!)}/congrats`}
+        replace
+        state={{
+          courseTitle: course.title,
+          instructor: course.instructor,
+        }}
+      />
+    );
+  }
 
   return (
     <>
@@ -932,7 +1115,7 @@ const StudentCourseDetail = () => {
                           Taught by
                         </p>
                         <p className="mt-1 truncate text-base font-semibold leading-snug text-zinc-900">
-                          {course.instructor}
+                          {formatDisplayPersonName(course.instructor)}
                         </p>
                       </div>
                     </div>
@@ -1179,48 +1362,52 @@ const StudentCourseDetail = () => {
                   </p>
                   <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 xl:grid-cols-3">
                     {classResumeList.map((r) => (
-                      <li
-                        key={r.id}
-                        className="flex h-full flex-col rounded-xl border border-violet-200/90 bg-violet-50/60 p-5 shadow-sm ring-1 ring-violet-900/[0.04]"
-                      >
-                        {r.thumbnailUrl ? (
-                          <div className="mb-4 overflow-hidden rounded-lg border border-violet-200 bg-white">
-                            <img
-                              src={r.thumbnailUrl}
-                              alt="Resume thumbnail"
-                              className="h-40 w-full object-cover"
-                              loading="lazy"
-                            />
-                          </div>
-                        ) : null}
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="min-w-0 space-y-1">
-                            <h3 className="font-semibold text-violet-950 flex items-center gap-2">
-                              <FileText className="h-5 w-5 shrink-0 text-violet-700" aria-hidden />
-                              Class resume
-                            </h3>
-                            {r.sessionLabel ? (
-                              <p className="text-sm font-medium text-violet-900/85">{r.sessionLabel}</p>
-                            ) : (
-                              <p className="text-sm text-violet-900/75">General recap</p>
-                            )}
-                          </div>
-                          {r.updatedAt ? (
-                            <p className="text-xs text-violet-900/70 tabular-nums shrink-0">
-                              Updated{" "}
-                              {new Date(r.updatedAt).toLocaleString(undefined, {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                                hour: "numeric",
-                                minute: "2-digit",
-                              })}
-                            </p>
+                      <li key={r.id}>
+                        <Link
+                          to={`/dashboard/courses/${encodeURIComponent(courseId ?? "")}/resume/${encodeURIComponent(r.id)}`}
+                          className="group flex h-full flex-col rounded-xl border border-zinc-200/90 bg-white p-2 shadow-sm ring-1 ring-zinc-100/80 transition-colors hover:border-zinc-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
+                        >
+                          {r.thumbnailUrl ? (
+                            <div className="mb-2 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
+                              <img
+                                src={r.thumbnailUrl}
+                                alt="Resume thumbnail"
+                                className="h-40 w-full object-cover transition-transform group-hover:scale-[1.02]"
+                                loading="lazy"
+                              />
+                            </div>
                           ) : null}
-                        </div>
-                        <p className="mt-3 border-t border-violet-200/70 pt-3 text-sm leading-relaxed text-violet-950/90 whitespace-pre-wrap">
-                          {r.body}
-                        </p>
+                          <div className="flex flex-1 flex-col gap-2 px-1 pb-1">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div className="min-w-0 space-y-1">
+                                <h3 className="flex items-center gap-2 font-semibold text-zinc-900 group-hover:text-zinc-950">
+                                  <FileText className="h-5 w-5 shrink-0 text-zinc-500" aria-hidden />
+                                  Class resume
+                                </h3>
+                                {r.sessionLabel ? (
+                                  <p className="text-sm font-medium text-zinc-700">{r.sessionLabel}</p>
+                                ) : (
+                                  <p className="text-sm text-zinc-600">General recap</p>
+                                )}
+                              </div>
+                              {r.updatedAt ? (
+                                <p className="shrink-0 text-xs tabular-nums text-zinc-500">
+                                  Updated{" "}
+                                  {new Date(r.updatedAt).toLocaleString(undefined, {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                  })}
+                                </p>
+                              ) : null}
+                            </div>
+                            {r.body ? (
+                              <p className="line-clamp-3 text-sm leading-relaxed text-zinc-600">{r.body}</p>
+                            ) : null}
+                          </div>
+                        </Link>
                       </li>
                     ))}
                   </ul>
@@ -1389,7 +1576,9 @@ const StudentCourseDetail = () => {
                                   </p>
                                 </TableCell>
                                 <TableCell className="border-0 py-4 px-3 align-top text-slate-700">
-                                  <p className="max-w-[200px] leading-snug line-clamp-2">{course.instructor}</p>
+                                  <p className="max-w-[200px] leading-snug line-clamp-2">
+                                    {formatDisplayPersonName(course.instructor)}
+                                  </p>
                                 </TableCell>
                                 <TableCell className="border-0 py-4 px-3 align-middle">
                                   <div className="flex items-start gap-3">
@@ -1442,7 +1631,8 @@ const StudentCourseDetail = () => {
                         <p className="text-xs text-foreground/55">This class</p>
                       </div>
                       <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-                        Key dates and what&apos;s next. Times follow your instructor unless noted.
+                        Class period and the school&apos;s three-month schedule. Pick a month below to see every
+                        session planned for that part of the term.
                       </p>
 
                       {hasScheduleSummary ? (
@@ -1473,20 +1663,23 @@ const StudentCourseDetail = () => {
                               </p>
                             </div>
                           ) : null}
-                          {sessionSlotsForSidebar.length > 0 ? (
-                            <div className="space-y-3">
-                              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
-                                Upcoming sessions
-                              </p>
-                              {sessionSlotsForSidebar.map((slot, idx) => (
-                                <StudentSessionScheduleCard
-                                  key={`${slot.sessionDate ?? "d"}-${slot.sessionTime ?? ""}-${idx}`}
-                                  slot={slot}
-                                  indexZeroBased={idx}
-                                />
-                              ))}
-                            </div>
-                          ) : null}
+                          <StudentCourseScheduleMonthSelect
+                            slots={allSessionSlots}
+                            statusHint={scheduleStatusHint}
+                            className="border-t border-zinc-100 pt-3"
+                            access={scheduleMonthAccess}
+                            enrollHref={enrollApplicationHref}
+                            paidTuitionMonths={paidTuitionMonths}
+                            paymentHref="/dashboard/payment"
+                            renderSession={(slot, idx) => (
+                              <StudentSessionScheduleCard
+                                slot={slot}
+                                indexZeroBased={idx}
+                                heldSlotKeys={scheduleAttendance.heldSlotKeys}
+                                activeSlotKeys={scheduleAttendance.activeSlotKeys}
+                              />
+                            )}
+                          />
                         </div>
                       ) : null}
 

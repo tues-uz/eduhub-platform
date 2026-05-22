@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, User, Phone } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, Phone, IdCard, Calendar, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { eduhubAuth } from "@/api/eduhubClient";
+import { saveRegistrationPhones } from "@/features/auth/registrationPhoneStorage";
 import EduHubHeader from "@/components/EduHubHeader";
 
 const SignUp = () => {
@@ -15,6 +16,10 @@ const SignUp = () => {
     fullName: "",
     email: "",
     phoneNumber: "",
+    parentPhoneNumber: "",
+    passportNumber: "",
+    dateOfBirth: "",
+    birthCity: "",
     password: "",
     confirmPassword: "",
   });
@@ -40,13 +45,19 @@ const SignUp = () => {
         fullName: formData.fullName,
         email: formData.email,
         phoneNumber: formData.phoneNumber,
+        parentPhoneNumber: formData.parentPhoneNumber,
+        passportNumber: formData.passportNumber,
+        dateOfBirth: formData.dateOfBirth,
         password: formData.password,
-        role: "STUDENT"
+        role: "STUDENT",
       });
-      localStorage.setItem(
-        `eduhub_registration_phone_${formData.email.trim().toLowerCase()}`,
-        formData.phoneNumber.trim(),
-      );
+      saveRegistrationPhones(formData.email, {
+        phoneNumber: formData.phoneNumber,
+        parentPhoneNumber: formData.parentPhoneNumber,
+        passportNumber: formData.passportNumber,
+        dateOfBirth: formData.dateOfBirth,
+        birthCity: formData.birthCity,
+      });
       setIsSuccess(true);
       toast({ title: "Registration successful", description: "Please check your email to verify your account." });
     } catch (err: any) {
@@ -153,7 +164,7 @@ const SignUp = () => {
                     {/* Phone Number Field */}
                     <div className="space-y-2">
                       <Label htmlFor="phoneNumber" className="text-sm font-medium text-foreground">
-                        Phone Number
+                        Your phone number
                       </Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
@@ -166,6 +177,92 @@ const SignUp = () => {
                           onChange={handleChange}
                           className="pl-10 h-12 rounded-lg border-gray-200 focus:border-primary focus:ring-primary"
                           required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Parent phone */}
+                    <div className="space-y-2">
+                      <Label htmlFor="parentPhoneNumber" className="text-sm font-medium text-foreground">
+                        Parent phone number
+                      </Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
+                        <Input
+                          id="parentPhoneNumber"
+                          name="parentPhoneNumber"
+                          type="tel"
+                          placeholder="Parent or guardian contact number"
+                          value={formData.parentPhoneNumber}
+                          onChange={handleChange}
+                          className="pl-10 h-12 rounded-lg border-gray-200 focus:border-primary focus:ring-primary"
+                          required
+                          autoComplete="tel"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Passport number */}
+                    <div className="space-y-2">
+                      <Label htmlFor="passportNumber" className="text-sm font-medium text-foreground">
+                        Passport number
+                      </Label>
+                      <div className="relative">
+                        <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
+                        <Input
+                          id="passportNumber"
+                          name="passportNumber"
+                          type="text"
+                          placeholder="Enter your passport number"
+                          value={formData.passportNumber}
+                          onChange={handleChange}
+                          className="pl-10 h-12 rounded-lg border-gray-200 focus:border-primary focus:ring-primary"
+                          required
+                          autoComplete="off"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Date of birth */}
+                    <div className="space-y-2">
+                      <Label htmlFor="dateOfBirth" className="text-sm font-medium text-foreground">
+                        Date of birth
+                      </Label>
+                      <p className="text-xs text-foreground/60">
+                        So admin can verify your age for enrollment and programs.
+                      </p>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40 pointer-events-none" />
+                        <Input
+                          id="dateOfBirth"
+                          name="dateOfBirth"
+                          type="date"
+                          value={formData.dateOfBirth}
+                          onChange={handleChange}
+                          max={new Date().toISOString().slice(0, 10)}
+                          className="pl-10 h-12 rounded-lg border-gray-200 focus:border-primary focus:ring-primary"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Born city */}
+                    <div className="space-y-2">
+                      <Label htmlFor="birthCity" className="text-sm font-medium text-foreground">
+                        Born city
+                      </Label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
+                        <Input
+                          id="birthCity"
+                          name="birthCity"
+                          type="text"
+                          placeholder="City where you were born"
+                          value={formData.birthCity}
+                          onChange={handleChange}
+                          className="pl-10 h-12 rounded-lg border-gray-200 focus:border-primary focus:ring-primary"
+                          required
+                          autoComplete="address-level2"
                         />
                       </div>
                     </div>

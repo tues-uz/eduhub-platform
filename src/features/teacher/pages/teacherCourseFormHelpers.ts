@@ -1,5 +1,6 @@
 // Worker for PDF.js (used for reading-time estimation). Vite resolves ?url in app code.
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import type { ScheduleProposalResponse } from "@/api/eduhubTypes";
 import type { ClassMeetingSlot } from "../types";
 import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
 
@@ -160,6 +161,78 @@ export function resolveClassScheduleFormState(
   return fromApi;
 }
 
+type CourseScheduleSource = {
+  classMeetingsInSixMonths?: number | null;
+  classMeetingSlots?: ClassMeetingSlot[];
+  classMeetingTitles?: string[];
+};
+
+/**
+ * Planned sessions for pickers (resume, attendance, substitutes) — prefers live schedule proposal from API,
+ * then approved course fields / admin proposal cached in this browser.
+ */
+export function formatClassMeetingSlotLabel(slot: ClassMeetingSlot, index: number): string {
+  const title = slot.title?.trim() || `Session ${index + 1}`;
+  const date = slot.sessionDate?.trim();
+  const time = slot.sessionTime?.trim();
+  const tail = [date, time].filter(Boolean).join(" ");
+  return tail ? `${title} · ${tail}` : title;
+}
+
+const SUBSTITUTE_INVITE_SESSION_VALUE = "__substitute_invite_session__";
+
+export type ScheduleSessionSelectOption = { value: string; label: string };
+
+/** Resolve the session a substitute was approved to cover from invite + current schedule rows. */
+export function resolveSubstituteAssignedSessionFromInvite(
+  invite: { sessionSlotKey?: string; sessionNote?: string } | null | undefined,
+  scheduleSlots: ClassMeetingSlot[],
+): ScheduleSessionSelectOption | null {
+  if (!invite) return null;
+
+  const slotKey = invite.sessionSlotKey?.trim();
+  if (slotKey?.startsWith("slot-")) {
+    const idx = Number.parseInt(slotKey.slice("slot-".length), 10);
+    if (!Number.isNaN(idx) && scheduleSlots[idx]) {
+      return { value: slotKey, label: formatClassMeetingSlotLabel(scheduleSlots[idx], idx) };
+    }
+  }
+
+  const note = invite.sessionNote?.trim();
+  if (!note) return null;
+
+  for (let i = 0; i < scheduleSlots.length; i++) {
+    const label = formatClassMeetingSlotLabel(scheduleSlots[i], i);
+    if (label.trim() === note) {
+      return { value: `slot-${i}`, label };
+    }
+  }
+
+  return { value: SUBSTITUTE_INVITE_SESSION_VALUE, label: note };
+}
+
+export function buildCourseScheduleSlotsForPicker(
+  courseId: string,
+  course: CourseScheduleSource,
+  apiProposal?: ScheduleProposalResponse | null,
+): ClassMeetingSlot[] {
+  if (apiProposal?.sessions?.length) {
+    const rawSlots = apiProposal.sessions.map((s) => ({
+      title: s.title ?? "",
+      sessionDate: s.sessionDate ?? "",
+      sessionTime: s.sessionTime ?? "",
+    }));
+    const n = Math.max(apiProposal.sessionCount, rawSlots.length);
+    return padMeetingSlotsForCourse(n, rawSlots);
+  }
+
+  const resolved = resolveClassScheduleFormState(course, courseId);
+  const fromStr = parseOptionalPositiveInt(resolved.meetingsSixMonthsStr);
+  const fromCourse = typeof course.classMeetingsInSixMonths === "number" ? course.classMeetingsInSixMonths : 0;
+  const n = Math.max(fromStr ?? 0, fromCourse, resolved.slots.length);
+  return padMeetingSlotsForCourse(n, resolved.slots);
+}
+
 /** Fetch PDF bytes from URL; try direct fetch then CORS proxy. */
 async function fetchPdfAsArrayBuffer(docUrl: string): Promise<ArrayBuffer | null> {
   try {
@@ -256,46 +329,84 @@ async function getYouTubeDurationSeconds(videoId: string): Promise<number | null
   if (!YT?.Player) return null;
 
   return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value: number | null) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
+
     const container = document.createElement("div");
     container.style.cssText = "position:fixed;left:-9999px;width:1px;height:1px;";
     document.body.appendChild(container);
 
-    const player = new YT.Player(container, {
-      videoId,
-      width: 1,
-      height: 1,
-      events: {
-        onReady(ev: { target: YTPlayer }) {
-          const target = ev.target;
-          let attempts = 0;
-          const maxAttempts = 50; // 5 seconds
-          const interval = setInterval(() => {
-            const sec = target.getDuration?.() ?? 0;
-            if (sec > 0 || attempts >= maxAttempts) {
-              clearInterval(interval);
-              try {
-                target.destroy?.();
-              } catch {
-                // ignore
-              }
-              container.remove();
-              resolve(sec > 0 ? Math.round(sec) : null);
-            }
-            attempts++;
-          }, 100);
-        },
-      },
-    });
+    const hardOut = window.setTimeout(() => {
+      try {
+        container.remove();
+      } catch {
+        // ignore
+      }
+      finish(null);
+    }, 10_000);
 
-    setTimeout(() => {
-      if (container.parentNode) {
+    let player: YTPlayer | undefined;
+    try {
+      player = new YT.Player(container, {
+        videoId,
+        width: 1,
+        height: 1,
+        events: {
+          onReady(ev: { target: YTPlayer }) {
+            const target = ev.target;
+            let attempts = 0;
+            const maxAttempts = 50; // 5 seconds
+            const interval = setInterval(() => {
+              const sec = target.getDuration?.() ?? 0;
+              if (sec > 0 || attempts >= maxAttempts) {
+                clearInterval(interval);
+                window.clearTimeout(hardOut);
+                try {
+                  target.destroy?.();
+                } catch {
+                  // ignore
+                }
+                try {
+                  container.remove();
+                } catch {
+                  // ignore
+                }
+                finish(sec > 0 ? Math.round(sec) : null);
+              }
+              attempts++;
+            }, 100);
+          },
+        },
+      }) as unknown as YTPlayer;
+    } catch {
+      window.clearTimeout(hardOut);
+      try {
+        container.remove();
+      } catch {
+        // ignore
+      }
+      finish(null);
+      return;
+    }
+
+    window.setTimeout(() => {
+      if (!settled && container.parentNode) {
+        window.clearTimeout(hardOut);
         try {
-          (player as YTPlayer).destroy?.();
+          player?.destroy?.();
         } catch {
           // ignore
         }
-        container.remove();
-        resolve(null);
+        try {
+          container.remove();
+        } catch {
+          // ignore
+        }
+        finish(null);
       }
     }, 6000);
   });
