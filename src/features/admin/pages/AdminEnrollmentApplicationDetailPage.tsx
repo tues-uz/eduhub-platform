@@ -13,8 +13,16 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { eduhubAdminEnrollmentApplications } from "@/api/eduhubClient";
+import { eduhubAdminEnrollmentApplications, eduhubCourses } from "@/api/eduhubClient";
 import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
+import { isUuid } from "@/api/utils";
+import {
+  expectedPayNowForRecord,
+  inferTuitionPlanMonths,
+  payNowMatchesDeclared,
+  tuitionPlanTitle,
+  tuitionThirds,
+} from "@/features/enrollment/enrollmentTuitionThirds";
 
 function formatMoney(price: number | undefined, currency = "USD"): string {
   if (price == null || price <= 0) return "—";
@@ -24,6 +32,16 @@ function formatMoney(price: number | undefined, currency = "USD"): string {
 function installmentLabel(count: number | undefined): string {
   if (count == null) return "—";
   return String(count);
+}
+
+function shortPaymentSummary(r: EnrollmentApplicationResponse): string {
+  const plan = inferTuitionPlanMonths(r);
+  const cur = r.priceCurrency ?? "USD";
+  if (plan === 3) return "Full (3 mo)";
+  if (plan === 1 || plan === 2) {
+    return `${tuitionPlanTitle(plan)} · ${formatMoney(r.downPaymentAmount, cur)}`;
+  }
+  return `${r.paymentPlan} · ${installmentLabel(r.installmentCount)} inst.`;
 }
 
 function formatDate(iso: string) {
@@ -45,6 +63,9 @@ export default function AdminEnrollmentApplicationDetailPage() {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [listedTuition, setListedTuition] = useState<number | null>(null);
+  const [listedCurrency, setListedCurrency] = useState("USD");
+  const [coursePriceLoading, setCoursePriceLoading] = useState(false);
 
   const fetchRecord = useCallback(() => {
     if (!applicationId) {
@@ -66,6 +87,25 @@ export default function AdminEnrollmentApplicationDetailPage() {
   useEffect(() => {
     fetchRecord();
   }, [fetchRecord]);
+
+  useEffect(() => {
+    if (!record?.courseId || !isUuid(record.courseId)) {
+      setListedTuition(null);
+      setCoursePriceLoading(false);
+      return;
+    }
+    setCoursePriceLoading(true);
+    eduhubCourses
+      .getById(record.courseId)
+      .then((c) => {
+        const amt = c.pricing?.discountedAmount ?? c.pricing?.amount;
+        const cur = c.pricing?.currency ?? "USD";
+        setListedCurrency(cur);
+        setListedTuition(amt != null && amt > 0 ? amt : null);
+      })
+      .catch(() => setListedTuition(null))
+      .finally(() => setCoursePriceLoading(false));
+  }, [record?.courseId]);
 
   const approve = async () => {
     if (!record || record.status !== "PENDING") return;
@@ -212,18 +252,78 @@ export default function AdminEnrollmentApplicationDetailPage() {
               <p className="mt-2 text-slate-700 whitespace-pre-wrap">{record.address}</p>
             </div>
 
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Payment</p>
-              {record.paymentPlan === "DOWN_PAYMENT" ? (
-                <div className="mt-1 space-y-1">
-                  <p className="font-medium text-slate-900">Down payment</p>
-                  <p className="text-slate-600">Instalments: {installmentLabel(record.installmentCount)}</p>
-                  <p className="text-slate-900">
-                    {formatMoney(record.downPaymentAmount, record.priceCurrency ?? "USD")}
+            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Payment schedule</p>
+              <p className="mt-2 text-sm font-medium text-slate-900">
+                {tuitionPlanTitle(inferTuitionPlanMonths(record))}
+              </p>
+              <p className="mt-1 text-xs text-slate-600">
+                Raw fields: {record.paymentPlan}
+                {record.installmentCount != null ? ` · ${record.installmentCount} further instalment(s)` : ""}
+                {record.downPaymentAmount != null
+                  ? ` · Declared first payment: ${formatMoney(record.downPaymentAmount, record.priceCurrency ?? "USD")}`
+                  : record.paymentPlan === "FULL"
+                    ? " · No separate down payment (full plan)"
+                    : ""}
+              </p>
+
+              {coursePriceLoading ? (
+                <p className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                  Loading listed course price to verify thirds…
+                </p>
+              ) : listedTuition != null && listedTuition > 0 ? (
+                <div className="mt-3 space-y-2 border-t border-slate-100 pt-3 text-sm">
+                  <p className="text-slate-600">
+                    Listed tuition (course today):{" "}
+                    <span className="font-semibold tabular-nums text-slate-900">
+                      {formatMoney(listedTuition, listedCurrency)}
+                    </span>
                   </p>
+                  {(() => {
+                    const thirds = tuitionThirds(listedTuition);
+                    if (!thirds) return null;
+                    const [a, b, c] = thirds;
+                    const expected = expectedPayNowForRecord(record, listedTuition);
+                    const match = payNowMatchesDeclared(record, listedTuition);
+                    return (
+                      <>
+                        <p className="text-slate-700">
+                          Three equal parts:{" "}
+                          <span className="font-medium tabular-nums text-slate-900">
+                            {formatMoney(a, listedCurrency)} + {formatMoney(b, listedCurrency)} +{" "}
+                            {formatMoney(c, listedCurrency)}
+                          </span>
+                        </p>
+                        {expected != null ? (
+                          <p className="text-slate-700">
+                            Expected pay with application:{" "}
+                            <span className="font-semibold tabular-nums text-slate-900">
+                              {formatMoney(expected, listedCurrency)}
+                            </span>
+                          </p>
+                        ) : null}
+                        {match === false ? (
+                          <p className="rounded-md bg-amber-50 px-2 py-1.5 text-xs font-medium text-amber-950">
+                            Declared first payment does not match the listed tuition split for this plan — double-check
+                            the proof amount and course price.
+                          </p>
+                        ) : match === true ? (
+                          <p className="text-xs font-medium text-emerald-800">Declared amount matches this split.</p>
+                        ) : (
+                          <p className="text-xs text-slate-500">
+                            Could not verify amount (plan type or price unavailable).
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               ) : (
-                <p className="mt-1 text-slate-800">Full payment</p>
+                <p className="mt-3 text-xs text-slate-500">
+                  Listed tuition not loaded (non-UUID course id or no price on course). Use payment proof and declared
+                  fields above; student chose: <span className="font-medium">{shortPaymentSummary(record)}</span>.
+                </p>
               )}
             </div>
 

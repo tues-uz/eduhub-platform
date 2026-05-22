@@ -53,12 +53,17 @@ export default function AdminPayrollSubmissionsPage() {
         </Link>
 
         <AdminPageHeader
-          title="Payroll submission log"
-          description="Recorded when an admin submits payout proof for a class (local browser storage until API replaces it)."
+          title="Payout proof log"
+          description="History of when an admin submitted bank transfer proof for a class (local browser storage until an API replaces it). Instructor figure approvals are on Instructor payroll requests."
           actions={
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/dashboard/admin/payroll">Payroll overview</Link>
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/dashboard/admin/payroll/instructor-requests">Instructor requests</Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/dashboard/admin/payroll">Payroll overview</Link>
+              </Button>
+            </div>
           }
         />
 

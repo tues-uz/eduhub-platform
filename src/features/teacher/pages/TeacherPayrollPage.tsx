@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/table";
 import { PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
 import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock";
+import { DEMO_TEACHER_PAYROLL_EMAIL, mockAdminPayments } from "@/features/admin/data/adminOperationalMock";
 import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { eduhubCourses } from "@/api/eduhubClient";
@@ -35,9 +36,12 @@ import {
   aggregatePaymentsByClass,
   buildPayrollSummaryText,
   currencyMapToFormattedLines,
+  estimateInstructorAndPlatformSplitLines,
   estimateInstructorPayoutLines,
   formatMoney,
   INSTRUCTOR_REVENUE_SHARE,
+  mergeCurrencyMaps,
+  PLATFORM_REVENUE_SHARE,
 } from "@/features/payroll/classPayrollAggregate";
 import {
   instructorPayrollRequestDedupeKey,
@@ -175,10 +179,31 @@ export default function TeacherPayrollPage() {
   const allPayments = useAdminPayments();
   const payrollRequests = useInstructorPayrollRequests();
 
-  const payments = useMemo(() => {
-    if (!emailNorm && !nameNorm) return [] as AdminPaymentRow[];
-    return allPayments.filter((p) => paymentMatchesInstructor(p, emailNorm, nameNorm));
-  }, [allPayments, emailNorm, nameNorm]);
+  const { payments, usingDemoPayrollFallback } = useMemo(() => {
+    const normE = emailNorm.trim().toLowerCase();
+    const normN = nameNorm.trim().toLowerCase();
+    const matched =
+      normE || normN ? allPayments.filter((p) => paymentMatchesInstructor(p, normE, normN)) : ([] as AdminPaymentRow[]);
+    if (matched.length > 0) {
+      return { payments: matched, usingDemoPayrollFallback: false };
+    }
+    if (user.role === "teacher") {
+      const fromStore = allPayments.filter(
+        (p) => (p.lecturerEmail ?? "").trim().toLowerCase() === DEMO_TEACHER_PAYROLL_EMAIL,
+      );
+      const demo =
+        fromStore.length > 0
+          ? fromStore
+          : mockAdminPayments.filter(
+              (p) => (p.lecturerEmail ?? "").trim().toLowerCase() === DEMO_TEACHER_PAYROLL_EMAIL,
+            );
+      return {
+        payments: demo,
+        usingDemoPayrollFallback: demo.length > 0,
+      };
+    }
+    return { payments: matched, usingDemoPayrollFallback: false };
+  }, [allPayments, emailNorm, nameNorm, user.role]);
 
   const filteredPayments = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -281,7 +306,7 @@ export default function TeacherPayrollPage() {
     setOpenSubmitKey(null);
   };
 
-  const missingProfile = !emailNorm && !nameNorm;
+  const missingProfile = !emailNorm && !nameNorm && user.role !== "teacher";
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -309,6 +334,12 @@ export default function TeacherPayrollPage() {
                 Your classes and student payments (demo data). Submit a payroll request per class for admin approval; after
                 approval, finance may record payout proof separately.
               </p>
+              {usingDemoPayrollFallback ? (
+                <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                  Showing sample tuition rows for this screen because none match your signed-in profile yet. After a
+                  billing API is connected, amounts will follow your classes. Payroll requests still use your account.
+                </p>
+              ) : null}
             </div>
             <Button asChild variant="outline" className="rounded-full w-full sm:w-auto">
               <Link to="/dashboard/teacher/payroll/submissions">My submissions</Link>
@@ -363,8 +394,17 @@ export default function TeacherPayrollPage() {
             <div className="grid gap-6 mb-12">
               {classCardModels.map((agg) => {
                 const ck = classCardKey(agg.className, agg.course);
-                const paidLines = currencyMapToFormattedLines(agg.paidByCurrency);
-                const outLines = currencyMapToFormattedLines(agg.outstandingByCurrency);
+                const rows = filteredPayments.filter((p) => p.className === agg.className && p.course === agg.course);
+                const totalStudents = new Set(
+                  rows.map((r) => {
+                    const e = r.studentEmail.trim().toLowerCase();
+                    return e || `name:${r.studentName.trim().toLowerCase()}`;
+                  }),
+                ).size;
+                const totalEnrolledMap = mergeCurrencyMaps(new Map(agg.paidByCurrency), new Map(agg.outstandingByCurrency));
+                const enrolledLines = currencyMapToFormattedLines(totalEnrolledMap);
+                const revenueSplit = estimateInstructorAndPlatformSplitLines(totalEnrolledMap);
+
                 const payoutLines = estimateInstructorPayoutLines(agg.paidByCurrency);
                 const summaryText = buildPayrollSummaryText(agg);
                 const suggestedPayout =
@@ -377,7 +417,6 @@ export default function TeacherPayrollPage() {
                   instructorLabel,
                 );
                 const hasPending = latest?.status === "pending";
-                const rows = filteredPayments.filter((p) => p.className === agg.className && p.course === agg.course);
 
                 let statusBadge: { label: string; className: string } | null = null;
                 if (hasPending) {
@@ -425,47 +464,76 @@ export default function TeacherPayrollPage() {
 
                       <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Collected</p>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            Total students
+                          </p>
                           <div className="mt-1 text-base font-semibold tabular-nums text-slate-900">
-                            {paidLines.length === 0 ? (
-                              <span className="text-slate-400">—</span>
-                            ) : (
-                              paidLines.map((l) => (
-                                <p key={l.currency} className="leading-snug">
-                                  {l.formatted}
-                                </p>
-                              ))
-                            )}
+                            <span>{rows.length === 0 ? 0 : totalStudents}</span>
                           </div>
+                          <p className="mt-1 text-[10px] text-slate-500 leading-snug">
+                            Unique students with a payment row (demo).
+                          </p>
                         </div>
                         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Outstanding</p>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            Total enrolled
+                          </p>
                           <div className="mt-1 text-base font-semibold tabular-nums text-slate-900">
-                            {outLines.length === 0 ? (
+                            {enrolledLines.length === 0 ? (
                               <span className="text-slate-400">—</span>
                             ) : (
-                              outLines.map((l) => (
+                              enrolledLines.map((l) => (
                                 <p key={l.currency} className="leading-snug">
                                   {l.formatted}
                                 </p>
                               ))
                             )}
                           </div>
+                          <p className="mt-1 text-[10px] text-slate-500 leading-snug">
+                            Sum of all student tuition rows (paid + outstanding).
+                          </p>
                         </div>
                         <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-                            Est. payout ({Math.round(INSTRUCTOR_REVENUE_SHARE * 100)}%)
+                            Revenue split
                           </p>
-                          <div className="mt-1 text-base font-semibold tabular-nums text-slate-900">
-                            {payoutLines.length === 0 ? (
-                              <span className="text-slate-400">—</span>
-                            ) : (
-                              payoutLines.map((l) => (
-                                <p key={l.currency} className="leading-snug">
-                                  {l.formatted}
-                                </p>
-                              ))
-                            )}
+                          <p className="text-[10px] text-slate-500 mt-0.5">
+                            {Math.round(INSTRUCTOR_REVENUE_SHARE * 100)}% instructor ·{" "}
+                            {Math.round(PLATFORM_REVENUE_SHARE * 100)}% platform (of total enrolled)
+                          </p>
+                          <div className="mt-2 space-y-2 text-sm">
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+                                Instructor
+                              </p>
+                              <div className="font-semibold tabular-nums text-slate-900">
+                                {revenueSplit.instructorLines.length === 0 ? (
+                                  <span className="text-slate-400">—</span>
+                                ) : (
+                                  revenueSplit.instructorLines.map((l) => (
+                                    <p key={l.currency} className="leading-snug">
+                                      {l.formatted}
+                                    </p>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                                Platform
+                              </p>
+                              <div className="font-semibold tabular-nums text-slate-900">
+                                {revenueSplit.platformLines.length === 0 ? (
+                                  <span className="text-slate-400">—</span>
+                                ) : (
+                                  revenueSplit.platformLines.map((l) => (
+                                    <p key={l.currency} className="leading-snug">
+                                      {l.formatted}
+                                    </p>
+                                  ))
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>

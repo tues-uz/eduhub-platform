@@ -6,6 +6,7 @@ import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { PayrollInstructorProofPanel } from "@/features/admin/components/PayrollInstructorProofPanel";
 import { Button } from "@/components/ui/button";
 import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
+import { aggregatePaymentsByClass, buildPayrollSummaryText } from "@/features/payroll/classPayrollAggregate";
 
 function decodeParam(v: string | null): string {
   if (v == null || v === "") return "";
@@ -16,12 +17,6 @@ function decodeParam(v: string | null): string {
   }
 }
 
-const INSTRUCTOR_SHARE = 0.7;
-
-function formatMoney(amount: number, currency: string) {
-  return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
-}
-
 export default function AdminPayrollProofPage() {
   const [searchParams] = useSearchParams();
   const section = decodeParam(searchParams.get("section"));
@@ -30,6 +25,7 @@ export default function AdminPayrollProofPage() {
   const instructorEmail = decodeParam(searchParams.get("instructorEmail"));
 
   const payments = useAdminPayments();
+  const valid = section.length > 0 && course.length > 0;
 
   const sectionPayments = useMemo(
     () => payments.filter((p) => p.className === section && p.course === course),
@@ -37,30 +33,14 @@ export default function AdminPayrollProofPage() {
   );
 
   const payrollSummary = useMemo(() => {
-    if (sectionPayments.length === 0) {
+    if (!valid) return "";
+    const aggs = aggregatePaymentsByClass(sectionPayments);
+    const agg = aggs[0];
+    if (!agg || agg.paymentCount === 0) {
       return "No tuition rows for this class in the current payment list.";
     }
-    const collected = new Map<string, number>();
-    const outstanding = new Map<string, number>();
-    for (const p of sectionPayments) {
-      if (p.status === "paid") {
-        collected.set(p.currency, (collected.get(p.currency) ?? 0) + p.amount);
-      } else {
-        outstanding.set(p.currency, (outstanding.get(p.currency) ?? 0) + p.amount);
-      }
-    }
-    const lines = (m: Map<string, number>) =>
-      Array.from(m.entries())
-        .map(([c, a]) => formatMoney(a, c))
-        .join(", ") || "—";
-    const payout =
-      Array.from(collected.entries())
-        .map(([c, a]) => formatMoney(Math.round(a * INSTRUCTOR_SHARE), c))
-        .join(", ") || "—";
-    return `Collected ${lines(collected)}. Outstanding ${lines(outstanding)}. Est. instructor share (${Math.round(INSTRUCTOR_SHARE * 100)}% of collected) ${payout}.`;
-  }, [sectionPayments]);
-
-  const valid = section.length > 0 && course.length > 0;
+    return buildPayrollSummaryText(agg);
+  }, [sectionPayments, valid]);
 
   return (
     <AdminLayout>

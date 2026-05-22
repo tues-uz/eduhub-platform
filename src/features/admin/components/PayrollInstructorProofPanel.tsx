@@ -115,20 +115,20 @@ export function PayrollInstructorProofPanel({
       summary: payrollSummary ?? "—",
       notesPreview: notesDraft.trim() ? notesDraft.trim().slice(0, 160) : undefined,
     });
-    if (instructorEmail?.trim()) {
-      notifyInstructorPayrollSubmitted({
-        instructorEmailNorm: instructorEmail.trim(),
-        instructorName: instructorName ?? "Instructor",
-        classSection: className,
-        course,
-        summary: payrollSummary ?? "",
-        adminNote: notesDraft.trim() || undefined,
-      });
-    }
+    notifyInstructorPayrollSubmitted({
+      instructorEmailNorm: instructorEmail?.trim() ?? "",
+      instructorName: (instructorName ?? "").trim(),
+      classSection: className,
+      course,
+      summary: payrollSummary ?? "",
+      adminNote: notesDraft.trim() || undefined,
+    });
+    const canRouteNotify =
+      Boolean(instructorEmail?.trim()) || Boolean((instructorName ?? "").trim());
     toast.success("Payout proof submitted and approved.", {
-      description: instructorEmail?.trim()
+      description: canRouteNotify
         ? "Instructor notified in-app (demo: same browser storage)."
-        : "No lecturer email on file — notification skipped. Add lecturer email to payment rows.",
+        : "No instructor email or name on this page — notification skipped. Open proof from a class card or payroll request so instructor context is set.",
     });
   };
 

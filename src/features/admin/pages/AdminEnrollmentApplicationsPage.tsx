@@ -14,7 +14,36 @@ import {
 } from "@/components/ui/table";
 import { eduhubAdminEnrollmentApplications } from "@/api/eduhubClient";
 import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
+import { inferTuitionPlanMonths } from "@/features/enrollment/enrollmentTuitionThirds";
 
+function formatMoney(price: number | undefined, currency = "USD"): string {
+  if (price == null || price <= 0) return "—";
+  return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
+}
+
+function paymentListCell(r: EnrollmentApplicationResponse) {
+  const plan = inferTuitionPlanMonths(r);
+  const cur = r.priceCurrency ?? "USD";
+  if (plan === 3) {
+    return <span className="text-sm text-slate-800">Full tuition (3 mo)</span>;
+  }
+  if (plan === 1 || plan === 2) {
+    return (
+      <div className="text-sm leading-snug">
+        <span className="font-medium text-slate-900">{plan} mo</span>
+        <span className="mt-0.5 block text-xs tabular-nums text-slate-600">
+          Due now: {formatMoney(r.downPaymentAmount, cur)}
+        </span>
+      </div>
+    );
+  }
+  return (
+    <span className="text-xs text-slate-500">
+      {r.paymentPlan}
+      {r.installmentCount != null ? ` · ${r.installmentCount} inst.` : ""}
+    </span>
+  );
+}
 function formatDate(iso: string) {
   try {
     return new Date(iso).toLocaleString(undefined, {
@@ -99,6 +128,7 @@ export default function AdminEnrollmentApplicationsPage() {
                   <TableHead>Submitted</TableHead>
                   <TableHead>Class</TableHead>
                   <TableHead>Student</TableHead>
+                  <TableHead>Payment</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right w-[140px]">Actions</TableHead>
                 </TableRow>
@@ -106,7 +136,7 @@ export default function AdminEnrollmentApplicationsPage() {
               <TableBody>
                 {rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-slate-500 py-12">
+                    <TableCell colSpan={6} className="text-center text-slate-500 py-12">
                       No applications yet. Students submit from Available Classes → Request enrollment.
                     </TableCell>
                   </TableRow>
@@ -120,6 +150,7 @@ export default function AdminEnrollmentApplicationsPage() {
                       <TableCell className="align-middle">
                         <span className="font-medium text-slate-900">{r.fullName}</span>
                       </TableCell>
+                      <TableCell className="align-middle max-w-[200px]">{paymentListCell(r)}</TableCell>
                       <TableCell className="align-middle">
                         <span
                           className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${

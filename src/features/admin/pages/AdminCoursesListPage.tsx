@@ -26,13 +26,10 @@ import {
 } from "@/components/ui/table";
 
 async function fetchMergedAdminCourses(): Promise<CourseSummaryResponse[]> {
-  const main = await eduhubCourses.getAll({ page: 0, size: 100 });
-  let drafts: CourseSummaryResponse[] = [];
-  try {
-    drafts = await eduhubCourses.getAll({ page: 0, size: 100, status: "DRAFT" });
-  } catch {
-    drafts = [];
-  }
+  const [main, drafts] = await Promise.all([
+    eduhubCourses.getAll({ page: 0, size: 100 }),
+    eduhubCourses.getAll({ page: 0, size: 100, status: "DRAFT" }).catch(() => [] as CourseSummaryResponse[]),
+  ]);
   const byId = new Map<string, CourseSummaryResponse>();
   for (const c of [...main, ...drafts]) {
     byId.set(c.id, c);

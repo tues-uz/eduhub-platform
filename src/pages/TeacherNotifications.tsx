@@ -1,13 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Bell, CheckCircle2, Clock, CreditCard } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AlertCircle, Bell, CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
-import {
-  appNotificationStore,
-  APP_NOTIFICATIONS_CHANGE_EVENT,
-  type AppNotification,
-} from "@/features/notifications/appNotificationStore";
+import { eduhubNotifications } from "@/api/eduhubClient";
+import type { NotificationResponse } from "@/api/eduhubTypes";
 import DashboardSidebar from "@/components/DashboardSidebar";
 
 function formatRelativeTime(iso: string): string {
@@ -24,50 +22,86 @@ function formatRelativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { dateStyle: "medium" });
 }
 
-function getIcon(kind: AppNotification["kind"]) {
+function formatNotificationReceivedClock(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function getIcon(kind: string) {
   switch (kind) {
-    case "instructor_payroll_paid":
-      return <CreditCard className="h-5 w-5 text-[#3954d0]" />;
-    case "instructor_payroll_request_approved":
+    case "schedule_proposed":
+      return <Clock className="h-5 w-5 text-[#3954d0]" />;
+    case "course_published":
       return <CheckCircle2 className="h-5 w-5 text-green-600" />;
-    case "instructor_payroll_request_rejected":
-      return <AlertCircle className="h-5 w-5 text-red-500" />;
+    case "course_rejected":
+      return <XCircle className="h-5 w-5 text-red-500" />;
     default:
       return <Bell className="h-5 w-5 text-foreground/60" />;
   }
 }
 
+function ctaLabel(href: string): string {
+  const base = href.trim().split("?")[0].replace(/\/$/, "") || href;
+  if (/^\/dashboard\/teacher\/courses\/[^/]+$/.test(base)) return "Open this class page";
+  if (base === "/dashboard/teacher/courses") return "View my classes";
+  return "Go to linked page";
+}
+
 export default function TeacherNotifications() {
   const { user } = useAuthSession();
-  const emailNorm = user.email.trim().toLowerCase();
-  const [tick, setTick] = useState(0);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const queryKey = ["notifications"];
+
+  const [isSidebarCollapsed] = useState(
     () => localStorage.getItem("sidebarCollapsed") === "true",
   );
 
-  const bump = useCallback(() => setTick((x) => x + 1), []);
-
-  useEffect(() => {
-    window.addEventListener(APP_NOTIFICATIONS_CHANGE_EVENT, bump);
-    return () => window.removeEventListener(APP_NOTIFICATIONS_CHANGE_EVENT, bump);
-  }, [bump]);
-
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    check();
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
-
-  const notifications = useMemo(
-    () =>
-      [...appNotificationStore.listForInstructor(emailNorm, user.name)].sort((a, b) =>
-        b.createdAt.localeCompare(a.createdAt),
-      ),
-    [emailNorm, user.name, tick],
-  );
+  const { data: notifications = [], isLoading } = useQuery({
+    queryKey,
+    queryFn: () => eduhubNotifications.list(),
+  });
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
+
+  const markReadMutation = useMutation({
+    mutationFn: (id: string) => eduhubNotifications.markRead(id),
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey });
+      const prev = queryClient.getQueryData<NotificationResponse[]>(queryKey);
+      queryClient.setQueryData<NotificationResponse[]>(queryKey, (old) =>
+        (old ?? []).map((n) => (n.id === id ? { ...n, read: true } : n)),
+      );
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(queryKey, ctx.prev);
+    },
+    onSettled: () => void queryClient.invalidateQueries({ queryKey }),
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: () => eduhubNotifications.markAllRead(),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey });
+      const prev = queryClient.getQueryData<NotificationResponse[]>(queryKey);
+      queryClient.setQueryData<NotificationResponse[]>(queryKey, (old) =>
+        (old ?? []).map((n) => ({ ...n, read: true })),
+      );
+      return { prev };
+    },
+    onError: (_err, _ctx, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(queryKey, ctx.prev);
+    },
+    onSettled: () => void queryClient.invalidateQueries({ queryKey }),
+  });
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -93,7 +127,9 @@ export default function TeacherNotifications() {
 
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-foreground tracking-tight">Notifications</h1>
-            <p className="text-foreground/70 text-sm mt-1">Payroll and other instructor updates (in-app, local demo).</p>
+            <p className="text-foreground/70 text-sm mt-1">
+              Class schedule, publishing, and other updates.
+            </p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <span className="rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
                 {unreadCount} unread
@@ -104,7 +140,8 @@ export default function TeacherNotifications() {
                   variant="outline"
                   size="sm"
                   className="rounded-full"
-                  onClick={() => appNotificationStore.markAllReadForInstructor(emailNorm, user.name)}
+                  onClick={() => markAllReadMutation.mutate()}
+                  disabled={markAllReadMutation.isPending}
                 >
                   Mark all as read
                 </Button>
@@ -112,55 +149,99 @@ export default function TeacherNotifications() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            {notifications.map((notification) => (
-              <button
-                key={notification.id}
-                type="button"
-                onClick={() => appNotificationStore.markRead(notification.id)}
-                className={`w-full rounded-xl border p-5 text-left transition-colors ${
-                  notification.read
-                    ? "border-gray-200/50 bg-white/80 hover:bg-gray-50/50"
-                    : "border-blue-200/50 bg-blue-50/50 hover:bg-blue-50"
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
-                    {getIcon(notification.kind)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p
-                        className={`text-sm font-semibold ${
-                          notification.read ? "text-foreground/80" : "text-foreground"
-                        }`}
-                      >
-                        {notification.title}
-                      </p>
-                      {!notification.read && <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />}
-                    </div>
-                    <p className="mt-1 text-sm text-foreground/60 whitespace-pre-wrap">{notification.body}</p>
-                    <p className="mt-2 flex items-center gap-1.5 text-xs text-foreground/50">
-                      <Clock className="h-3.5 w-3.5" />
-                      {formatRelativeTime(notification.createdAt)}
-                    </p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {notifications.length === 0 && (
-            <div className="rounded-xl border border-gray-200/50 bg-white/50 py-16 text-center">
-              <Bell className="mx-auto mb-4 h-12 w-12 text-foreground/30" />
-              <p className="font-medium text-foreground/70">No notifications yet.</p>
-              <p className="mt-1 text-sm text-foreground/50">
-                When finance submits a payroll payout for your class, details will appear here.
-              </p>
-              <Button type="button" variant="outline" size="sm" className="mt-6" asChild>
-                <Link to="/dashboard/teacher/payroll">View payroll</Link>
-              </Button>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading notifications…
             </div>
+          ) : (
+            <>
+              <div className="space-y-3">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`w-full rounded-xl border p-5 text-left transition-colors ${
+                      notification.read
+                        ? "border-gray-200/50 bg-white/80"
+                        : "border-blue-200/50 bg-blue-50/50"
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5">
+                        {getIcon(notification.kind)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <p
+                            className={`text-sm font-semibold leading-snug ${
+                              notification.read ? "text-foreground/80" : "text-foreground"
+                            }`}
+                          >
+                            {notification.title}
+                          </p>
+                          {!notification.read ? (
+                            <button
+                              type="button"
+                              className="text-xs font-medium text-blue-600 hover:underline shrink-0"
+                              onClick={() => markReadMutation.mutate(notification.id)}
+                            >
+                              Mark read
+                            </button>
+                          ) : null}
+                        </div>
+
+                        <p className="mt-2 text-sm leading-relaxed text-foreground/65 whitespace-pre-wrap">
+                          {notification.body}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                          <Clock className="h-3.5 w-3.5 shrink-0 text-foreground/50" aria-hidden />
+                          <p className="min-w-0 text-foreground/70">
+                            <span className="text-foreground/50">Received </span>
+                            <span className="font-medium text-foreground/85">{formatRelativeTime(notification.createdAt)}</span>
+                            {formatNotificationReceivedClock(notification.createdAt) ? (
+                              <>
+                                <span className="text-foreground/35"> · </span>
+                                <time
+                                  dateTime={notification.createdAt}
+                                  className="tabular-nums text-foreground/60"
+                                >
+                                  {formatNotificationReceivedClock(notification.createdAt)}
+                                </time>
+                              </>
+                            ) : null}
+                          </p>
+                        </div>
+
+                        {notification.href ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="mt-3 rounded-full border-[#3954d0]/35 text-[#3954d0] hover:bg-[#3954d0]/10"
+                            onClick={() => {
+                              if (!notification.read) markReadMutation.mutate(notification.id);
+                              navigate(notification.href!);
+                            }}
+                          >
+                            {ctaLabel(notification.href)}
+                          </Button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {notifications.length === 0 && (
+                <div className="rounded-xl border border-gray-200/50 bg-white/50 py-16 text-center">
+                  <Bell className="mx-auto mb-4 h-12 w-12 text-foreground/30" />
+                  <p className="font-medium text-foreground/70">No notifications yet.</p>
+                  <p className="mt-1 text-sm text-foreground/50">
+                    Schedule proposals, class publishing updates, and other notifications will appear here.
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

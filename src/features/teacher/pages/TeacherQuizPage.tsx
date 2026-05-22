@@ -1,17 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { format, startOfDay } from "date-fns";
 import {
   ArrowLeft,
   Plus,
   Trash2,
-  ClipboardList,
   GripVertical,
   ChevronDown,
   ChevronUp,
   CalendarClock,
-  BarChart2,
-  Rocket,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,6 +38,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { eduhubCourseQuizzes, eduhubCourses, type QuizResponse, type QuizCreateRequest } from "@/api/eduhubClient";
+import {
+  buildClientOnlyQuizResponse,
+  getLocalCourseQuiz,
+  upsertLocalCourseQuiz,
+} from "@/features/teacher/data/localCourseQuizzesStorage";
 import {
   type QuizQuestion,
   type QuizType,
@@ -217,14 +221,15 @@ function MediaUploadBox({ questionIndex, image, onImageChange }: MediaUploadBoxP
 }
 
 const TeacherQuizPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
-  const [quizzes, setQuizzes] = useState<QuizResponse[]>([]);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
-  const [listLoading, setListLoading] = useState(true);
-  const [listError, setListError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [screen, setScreen] = useState<"list" | "form">("list");
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
+  const [editingSourceCourseId, setEditingSourceCourseId] = useState("");
   const [title, setTitle] = useState("");
   const [quizType, setQuizType] = useState<QuizType>("quiz");
   const [releaseDate, setReleaseDate] = useState("");
@@ -233,71 +238,35 @@ const TeacherQuizPage = () => {
   const [courseId, setCourseId] = useState("");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [error, setError] = useState("");
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [questionToRemoveIndex, setQuestionToRemoveIndex] = useState<number | null>(null);
   const [collapsedQuestions, setCollapsedQuestions] = useState<Set<number>>(new Set());
-  const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [editLinkLoading, setEditLinkLoading] = useState(() =>
+    typeof window !== "undefined" ? Boolean(new URLSearchParams(window.location.search).get("edit")?.trim()) : false,
+  );
 
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    check();
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
+  const createQuizFromQueryRef = useRef(false);
+  const editQuizFromQueryRef = useRef(false);
 
-  // Load courses for the dropdown
-  useEffect(() => {
-    eduhubCourses.getAll().then((res) => {
-      setCourses(res.map((c) => ({ id: c.id, title: c.title })));
-    }).catch(() => {
-      setCourses([]);
-    });
-  }, []);
+  const goBackToClassQuizTab = useCallback(() => {
+    const cid = courseId.trim();
+    if (cid) void navigate(`/dashboard/teacher/courses/${cid}?tab=quiz`, { replace: true });
+    else void navigate("/dashboard/teacher/courses", { replace: true });
+  }, [courseId, navigate]);
 
-  // Load quizzes: if courseId selected, load from backend; otherwise show all from all courses
-  const loadQuizzes = useCallback(async (forCourseId?: string) => {
-    try {
-      setListLoading(true);
-      setListError(null);
-      if (forCourseId) {
-        const data = await eduhubCourseQuizzes.list(forCourseId);
-        setQuizzes(data);
-      } else {
-        const allQuizzes = await eduhubCourseQuizzes.listAll();
-        // Sort by newest first
-        allQuizzes.sort((a, b) => {
-          const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          return tB - tA;
-        });
-        setQuizzes(allQuizzes);
-      }
-    } catch (e) {
-      setQuizzes([]);
-      setListError(e instanceof Error ? e.message : "Could not load quizzes.");
-    } finally {
-      setListLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Load quizzes for selected course
-    loadQuizzes(courseId || undefined);
-  }, [courseId, loadQuizzes]);
-
-  const startNew = () => {
+  const startNew = useCallback(() => {
     setEditingQuizId(null);
+    setEditingSourceCourseId("");
     setTitle("");
     setQuizType("quiz");
     setReleaseDate("");
     setReleaseTime("");
     setQuestions([createEmptyQuestion(randomId())]);
     setError("");
-    setScreen("form");
-  };
+  }, []);
 
-  const startEdit = (quiz: QuizResponse) => {
+  const startEdit = useCallback((quiz: QuizResponse) => {
     setEditingQuizId(quiz.id);
+    setEditingSourceCourseId(quiz.courseId ?? "");
     setTitle(quiz.title);
     const qt = quiz.quizType === "PLACEMENT_TEST" ? "placement-test" : "quiz";
     setQuizType(qt as QuizType);
@@ -311,13 +280,127 @@ const TeacherQuizPage = () => {
           question: q.question,
           image: q.imageUrl,
           timeLimitSeconds: q.timeLimitSeconds ?? 30,
-          options: q.options.map((o) => ({ letter: o.letter as "A" | "B" | "C" | "D", text: o.text, correct: o.isCorrect })),
-        }))
-        : [createEmptyQuestion(randomId())]
+            options: q.options.map((o) => ({
+              letter: o.letter as "A" | "B" | "C" | "D",
+              text: o.text,
+              correct: o.isCorrect,
+            })),
+          }))
+        : [createEmptyQuestion(randomId())],
     );
     setError("");
-    setScreen("form");
-  };
+  }, []);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("courseId")?.trim();
+    const wantNew = searchParams.get("new") === "1";
+    const editId = searchParams.get("edit")?.trim();
+
+    if (fromUrl) setCourseId(fromUrl);
+
+    if (!wantNew && !editId) {
+      createQuizFromQueryRef.current = false;
+      editQuizFromQueryRef.current = false;
+      return;
+    }
+
+    if (wantNew) {
+      if (createQuizFromQueryRef.current) return;
+      createQuizFromQueryRef.current = true;
+      startNew();
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("new");
+          return next;
+        },
+        { replace: true },
+      );
+      return;
+    }
+
+    if (editId && fromUrl) {
+      if (editQuizFromQueryRef.current) return;
+      editQuizFromQueryRef.current = true;
+      setEditLinkLoading(true);
+      void eduhubCourseQuizzes
+        .get(fromUrl, editId)
+        .then((quiz) => {
+          startEdit(quiz);
+          setSearchParams(
+            (prev) => {
+              const next = new URLSearchParams(prev);
+              next.delete("edit");
+              return next;
+            },
+            { replace: true },
+          );
+        })
+        .catch(() => {
+          const local = getLocalCourseQuiz(fromUrl, editId);
+          if (local) {
+            startEdit(local);
+            setSearchParams(
+              (prev) => {
+                const next = new URLSearchParams(prev);
+                next.delete("edit");
+                return next;
+              },
+              { replace: true },
+            );
+          } else {
+            setError("Could not load that quiz for editing.");
+          }
+        })
+        .finally(() => setEditLinkLoading(false));
+    }
+  }, [searchParams, setSearchParams, startNew, startEdit]);
+
+  useEffect(() => {
+    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
+    check();
+    const id = setInterval(check, 100);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    eduhubCourses.getAll().then((res) => {
+      setCourses(res.map((c) => ({ id: c.id, title: c.title })));
+    }).catch(() => {
+      setCourses([]);
+    });
+  }, []);
+
+  const [lockedClassLabel, setLockedClassLabel] = useState("");
+
+  useEffect(() => {
+    const cid = courseId.trim();
+    if (!cid) {
+      setLockedClassLabel("");
+      return;
+    }
+    const fromList = courses.find((c) => c.id === cid)?.title?.trim();
+    if (fromList) {
+      setLockedClassLabel(fromList);
+      return;
+    }
+    let cancelled = false;
+    setLockedClassLabel("");
+    void eduhubCourses
+      .getById(cid)
+      .then((c) => {
+        if (!cancelled) setLockedClassLabel(c.title?.trim() || cid);
+      })
+      .catch(() => {
+        if (!cancelled) setLockedClassLabel(cid);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId, courses]);
+
+  /** Quiz is always created in a class context from the roster (courseId in URL); no class picker needed. */
+  const classFieldLocked = Boolean(courseId.trim());
 
   const addQuestion = () => {
     setQuestions((prev) => [...prev, createEmptyQuestion(randomId())]);
@@ -366,16 +449,10 @@ const TeacherQuizPage = () => {
     setError("");
 
     const apiQuizType = quizType === "placement-test" ? "PLACEMENT_TEST" : "QUIZ";
-    const editingQuiz = editingQuizId ? quizzes.find((q) => q.id === editingQuizId) : null;
-    const quizCourseId = editingQuiz?.courseId || courseId;
+    const quizCourseId = courseId.trim();
     
-    if (!courseId.trim()) {
-      setError("Please select a class to associate this quiz with.");
-      return;
-    }
-
     if (!quizCourseId) {
-      setError("Quiz is not associated with any class. Please contact support.");
+      setError("Please select a class to associate this quiz with.");
       return;
     }
 
@@ -395,22 +472,38 @@ const TeacherQuizPage = () => {
       })),
     };
 
-    if (editingQuizId && courseId !== quizCourseId) {
+    if (editingQuizId && courseId.trim() !== editingSourceCourseId.trim()) {
       payload.courseId = courseId;
     }
 
     try {
       setLoading(true);
+      let saved: QuizResponse;
       if (editingQuizId) {
-        await eduhubCourseQuizzes.update(quizCourseId, editingQuizId, payload);
+        saved = await eduhubCourseQuizzes.update(quizCourseId, editingQuizId, payload);
       } else {
-        await eduhubCourseQuizzes.create(courseId, payload);
+        saved = await eduhubCourseQuizzes.create(courseId.trim(), payload);
       }
-      setCourseId("");
-      await loadQuizzes();
-      setScreen("list");
+      upsertLocalCourseQuiz(quizCourseId, { ...saved, courseId: saved.courseId ?? quizCourseId });
+      await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", quizCourseId] });
+      void navigate(`/dashboard/teacher/courses/${quizCourseId}?tab=quiz`, { replace: true });
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : "Failed to save quiz.";
+      const noLocalFallback =
+        errorMessage.includes("does not belong to the specified course") ||
+        errorMessage.includes("permission") ||
+        /forbidden/i.test(errorMessage);
+      if (!noLocalFallback) {
+        const built = buildClientOnlyQuizResponse(quizCourseId, payload, editingQuizId ?? undefined);
+        upsertLocalCourseQuiz(quizCourseId, built);
+        await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", quizCourseId] });
+        toast.info("Saved on this device only", {
+          description:
+            "This browser keeps a copy of your quiz on the class roster. The server did not confirm the save.",
+        });
+        void navigate(`/dashboard/teacher/courses/${quizCourseId}?tab=quiz`, { replace: true });
+        return;
+      }
       if (errorMessage.includes("does not belong to the specified course")) {
         setError("Unable to move quiz to the selected class. Please ensure you have permission for that class.");
       } else if (errorMessage.includes("permission")) {
@@ -423,32 +516,25 @@ const TeacherQuizPage = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    const quiz = quizzes.find((q) => q.id === id);
-    const qCourseId = quiz?.courseId ?? courseId;
-    if (!qCourseId) return;
-    try {
-      await eduhubCourseQuizzes.delete(qCourseId, id);
-      setQuizzes((prev) => prev.filter((q) => q.id !== id));
-    } catch {
-      // ignore
-    }
-    setDeleteId(null);
-  };
+  if (!searchParams.toString()) {
+    return <Navigate to="/dashboard/teacher/courses" replace />;
+  }
 
-  const handlePublish = async (courseId: string, quizId: string) => {
-    try {
-      setPublishingId(quizId);
-      await eduhubCourseQuizzes.publish(courseId, quizId);
-      setQuizzes((prev) =>
-        prev.map((q) => (q.id === quizId ? { ...q, isPublished: true } : q))
-      );
-    } catch {
-      // ignore
-    } finally {
-      setPublishingId(null);
-    }
-  };
+  if (editLinkLoading) {
+    return (
+      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <DashboardSidebar />
+        <main
+          className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
+        >
+          <div className="container mx-auto flex max-w-3xl flex-col items-center justify-center px-6 py-24">
+            <Loader2 className="h-9 w-9 animate-spin text-[#1e40af]/70" aria-hidden />
+            <p className="mt-4 text-sm text-muted-foreground">Loading quiz…</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -457,189 +543,24 @@ const TeacherQuizPage = () => {
         className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
       >
         <div className="container mx-auto px-6 max-w-3xl">
+          {courseId.trim() ? (
           <Link
-            to="/dashboard/teacher"
+              to={`/dashboard/teacher/courses/${courseId.trim()}?tab=quiz`}
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Teacher Dashboard
+              Back to class quizzes
           </Link>
-
-          {screen === "list" && (
-            <>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-                <div>
-                  <h1
-                    className="text-2xl font-bold text-foreground"
-                    style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
-                  >
-                    Placement test / Quiz
-                  </h1>
-                  <p className="text-foreground/60 text-sm mt-1">
-                    Create multiple choice quizzes for students (A, B, C, D).
-                  </p>
-                </div>
-                <Button onClick={startNew} className="rounded-full shrink-0" style={{ backgroundColor: "#1e40af" }}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Create Quiz/Placement Test
-                </Button>
-              </div>
-
-              {listLoading ? (
-                <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-gray-200 bg-gray-50/40 py-20">
-                  <Loader2 className="h-9 w-9 animate-spin text-[#1e40af]/70" aria-hidden />
-                  <p className="text-sm text-muted-foreground">Loading quizzes…</p>
-                </div>
-              ) : listError ? (
-                <Card className="border-red-200 bg-red-50/40">
-                  <CardContent className="flex flex-col items-center justify-center gap-4 py-12 text-center sm:flex-row sm:text-left">
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <p className="text-sm font-semibold text-red-900">Could not load quizzes</p>
-                      <p className="text-sm text-red-800/90 break-words">{listError}</p>
-                      <p className="text-xs text-red-800/70">
-                        This is usually a network issue, a slow API, or the backend being unavailable—not necessarily a bug in this page.
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="shrink-0 border-red-200 bg-white"
-                      onClick={() => loadQuizzes(courseId || undefined)}
-                    >
-                      Try again
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : quizzes.length === 0 ? (
-                <Card className="border-dashed border-2">
-                  <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                    <ClipboardList className="h-14 w-14 text-foreground/30 mb-4" />
-                    <h3 className="text-lg font-semibold text-foreground mb-1">No quizzes yet</h3>
-                    <p className="text-sm text-foreground/60 mb-6 max-w-sm">
-                      Create a multiple choice quiz and assign it as a placement test or practice.
-                    </p>
-                    <Button onClick={startNew} className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Create your first quiz
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {quizzes.map((quiz) => {
-                    const isPlacement = (quiz.quizType ?? "QUIZ") === "PLACEMENT_TEST";
-                    const metaLine = [
-                      isPlacement ? "Placement test" : "Quiz",
-                      quiz.isPublished ? "Published" : "Draft",
-                      `${quiz.questions.length} question${quiz.questions.length === 1 ? "" : "s"}`,
-                      quiz.courseId ? "Linked to class" : "No class",
-                    ].join(" · ");
-
-                    return (
-                      <Card
-                        key={quiz.id}
-                        className="overflow-hidden rounded-2xl border border-gray-200/60 bg-white shadow-sm ring-1 ring-gray-950/[0.03] transition-[box-shadow,transform] duration-200 hover:shadow-md hover:ring-gray-950/[0.05] sm:hover:-translate-y-[1px]"
-                      >
-                        <div className="flex flex-col lg:flex-row lg:items-stretch">
-                          {/* Main block */}
-                          <div className="flex min-w-0 flex-1 gap-4 p-5 sm:gap-5 sm:p-6">
-                            <div
-                              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200/80 bg-gray-50 text-gray-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
-                              aria-hidden
-                            >
-                              <ClipboardList className="h-6 w-6" strokeWidth={1.5} />
-                            </div>
-                            <div className="min-w-0 flex-1 space-y-3">
-                              <div className="flex flex-wrap items-start justify-between gap-3">
-                                <CardTitle className="text-[1.05rem] font-semibold leading-snug tracking-tight text-gray-900 sm:text-lg">
-                                  {quiz.title}
-                                </CardTitle>
-                                <div className="flex shrink-0 items-center gap-2">
-                                  <span
-                                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${isPlacement
-                                      ? "bg-amber-50 text-amber-800 ring-1 ring-amber-200/50"
-                                      : "bg-sky-50 text-sky-800 ring-1 ring-sky-200/50"
-                                      }`}
-                                  >
-                                    {isPlacement ? "Placement" : "Quiz"}
-                                  </span>
-                                  <span
-                                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${quiz.isPublished
-                                      ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/50"
-                                      : "bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200/70"
-                                      }`}
-                                  >
-                                    {quiz.isPublished ? "Published" : "Draft"}
-                                  </span>
-                                </div>
-                              </div>
-                              <p className="text-sm leading-relaxed text-gray-500">{metaLine}</p>
-                            </div>
-                          </div>
-
-                          {/* Action rail: horizontal below lg breakpoint; vertical sidebar on large screens */}
-                          <div className="flex flex-col gap-2 border-t border-gray-100 bg-gradient-to-b from-gray-50/80 to-gray-50/30 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2 lg:w-[252px] lg:shrink-0 lg:flex-col lg:items-stretch lg:justify-center lg:gap-2 lg:border-l lg:border-t-0 lg:px-4 lg:py-5">
-                            {!quiz.isPublished && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-9 w-full justify-center rounded-xl border-emerald-200/90 bg-white px-4 text-emerald-800 shadow-sm hover:bg-emerald-50 sm:w-auto"
-                                onClick={() => handlePublish(quiz.courseId!, quiz.id)}
-                                disabled={!!publishingId}
-                              >
-                                {publishingId === quiz.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <>
-                                    <Rocket className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-                                    Publish
-                                  </>
-                                )}
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-9 w-full justify-center rounded-xl border-gray-200/90 bg-white px-4 shadow-sm sm:w-auto"
-                              asChild
-                            >
+          ) : (
                               <Link
-                                to={`/dashboard/teacher/placement-test/${quiz.courseId}/${quiz.id}/results`}
-                                title="View results"
+              to="/dashboard/teacher"
+              className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
                               >
-                                <BarChart2 className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-                                Results
+              <ArrowLeft className="h-4 w-4" />
+              Back to Teacher Dashboard
                               </Link>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-9 w-full justify-center rounded-xl border-gray-200/90 bg-white px-4 shadow-sm sm:w-auto"
-                              onClick={() => startEdit(quiz)}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-9 w-full justify-center rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 sm:w-auto"
-                              onClick={() => setDeleteId(quiz.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-1.5 shrink-0" />
-                              Remove
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-
-            </>
           )}
 
-          {screen === "form" && (
             <>
               <h1
                 className="text-2xl font-bold text-foreground mb-6"
@@ -687,6 +608,17 @@ const TeacherQuizPage = () => {
                       </div>
                       <div className="space-y-2">
                         <Label>Class</Label>
+                        {classFieldLocked ? (
+                          <>
+                            <div className="flex min-h-10 items-center rounded-lg border border-input bg-muted/40 px-3 py-2 text-sm font-medium text-foreground">
+                              {lockedClassLabel || courseId.trim() || "Loading…"}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              This quiz is saved for the class you opened from My Class (no need to pick a class again).
+                            </p>
+                          </>
+                        ) : (
+                          <>
                         <Select value={courseId || "none"} onValueChange={(v) => setCourseId(v === "none" ? "" : v)}>
                           <SelectTrigger className="rounded-lg w-full">
                             <SelectValue placeholder="Select class" />
@@ -703,6 +635,8 @@ const TeacherQuizPage = () => {
                         <p className="text-xs text-muted-foreground">
                           Link to one of your classes from My Class.
                         </p>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -914,35 +848,14 @@ const TeacherQuizPage = () => {
                   <Button type="submit" disabled={loading} className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
                     {editingQuizId ? "Save changes" : "Create quiz"}
                   </Button>
-                  <Button type="button" variant="outline" className="rounded-full" onClick={() => setScreen("list")}>
+                  <Button type="button" variant="outline" className="rounded-full" onClick={goBackToClassQuizTab}>
                     Cancel
                   </Button>
                 </div>
               </form>
             </>
-          )}
         </div>
       </main>
-
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this quiz?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently remove the quiz. Students will no longer see it.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
-              onClick={() => deleteId && handleDelete(deleteId)}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <AlertDialog open={questionToRemoveIndex !== null} onOpenChange={(open) => !open && setQuestionToRemoveIndex(null)}>
         <AlertDialogContent>

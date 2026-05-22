@@ -9,7 +9,10 @@ import { eduhubCourses, getAccessToken } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
 import { recordAttendanceCheckIn } from "@/features/attendance/attendanceRollStorage";
-import { loadStoredMeetings } from "@/features/teacher/attendance/attendanceMeetingsStorage";
+import {
+  ATTENDANCE_SESSION_MAX_MS,
+  loadStoredMeetings,
+} from "@/features/teacher/attendance/attendanceMeetingsStorage";
 
 function parseStoredAttendanceValue(raw: string): string {
   try {
@@ -35,16 +38,40 @@ export default function StudentAttendanceJoin() {
   const [searchParams] = useSearchParams();
   const courseId = searchParams.get("courseId") ?? "";
   const session = searchParams.get("session") ?? "";
+  const startedAtParam = searchParams.get("startedAt") ?? "";
   const { user } = useAuthSession();
   const [courseTitle, setCourseTitle] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [joinClock, setJoinClock] = useState(() => Date.now());
+
+  const sessionStartedMs = useMemo(() => {
+    if (!startedAtParam) return NaN;
+    const t = Date.parse(startedAtParam);
+    return Number.isFinite(t) ? t : NaN;
+  }, [startedAtParam]);
+
+  const checkInExpired =
+    Boolean(startedAtParam) && Number.isFinite(sessionStartedMs) && joinClock - sessionStartedMs >= ATTENDANCE_SESSION_MAX_MS;
+
+  useEffect(() => {
+    if (!startedAtParam || !Number.isFinite(sessionStartedMs)) return;
+    const tick = () => setJoinClock(Date.now());
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [startedAtParam, sessionStartedMs]);
+
   const validParams = Boolean(courseId && session);
   const hasToken = Boolean(getAccessToken());
-  const joinPath = useMemo(
-    () => `/dashboard/attendance/join?courseId=${encodeURIComponent(courseId)}&session=${encodeURIComponent(session)}`,
-    [courseId, session],
-  );
+  const joinPath = useMemo(() => {
+    const params = new URLSearchParams({
+      courseId,
+      session,
+    });
+    if (startedAtParam) params.set("startedAt", startedAtParam);
+    return `/dashboard/attendance/join?${params.toString()}`;
+  }, [courseId, session, startedAtParam]);
   const signInLink = `${appRoutes.signIn}?redirect=${encodeURIComponent(joinPath)}`;
 
   useEffect(() => {
@@ -71,9 +98,17 @@ export default function StudentAttendanceJoin() {
     [courseId, session, validParams],
   );
 
+  const hasStoredCheckIn =
+    typeof sessionStorage !== "undefined" && storageKey ? Boolean(sessionStorage.getItem(storageKey)) : false;
+
   useEffect(() => {
     if (!validParams || !storageKey || !hasToken) return;
     if (user.role !== "student") return;
+
+    const sessionClosed =
+      Number.isFinite(sessionStartedMs) &&
+      Date.now() - sessionStartedMs >= ATTENDANCE_SESSION_MAX_MS;
+    if (sessionClosed && !sessionStorage.getItem(storageKey)) return;
 
     const already = sessionStorage.getItem(storageKey);
     const studentKey = user.id ?? `email:${user.email.trim().toLowerCase()}`;
@@ -93,7 +128,18 @@ export default function StudentAttendanceJoin() {
       description:
         "Saved on this device’s browser only. Your teacher’s roster table updates if they use this same browser (or another tab here); scanning on a different device won’t show up on their laptop yet.",
     });
-  }, [validParams, storageKey, user.role, hasToken, courseId, session, user.id, user.email, user.name]);
+  }, [
+    validParams,
+    storageKey,
+    user.role,
+    hasToken,
+    courseId,
+    session,
+    user.id,
+    user.email,
+    user.name,
+    sessionStartedMs,
+  ]);
 
   return (
     <div className="flex min-h-[min(70dvh,calc(100dvh-12rem))] items-center justify-center bg-slate-50 py-8">
@@ -109,6 +155,21 @@ export default function StudentAttendanceJoin() {
               <CardContent>
                 <Button asChild variant="outline">
                   <Link to="/dashboard">Go to dashboard</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : checkInExpired && !hasStoredCheckIn ? (
+            <Card className="border-amber-100 shadow-sm">
+              <CardHeader>
+                <CardTitle>Check-in closed</CardTitle>
+                <CardDescription>
+                  This QR link stayed open for 2 hours and 15 minutes after your instructor started the session. Ask them
+                  to generate a new attendance QR if check-in is still available.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild variant="outline" className="rounded-full">
+                  <Link to="/dashboard">Back to dashboard</Link>
                 </Button>
               </CardContent>
             </Card>

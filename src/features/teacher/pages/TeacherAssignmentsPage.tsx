@@ -51,16 +51,16 @@ const TeacherAssignmentsPage = () => {
     setLoading(true);
     try {
       const coursesRes = await eduhubCourses.getByLecturer(user.id, { page: 0, size: 100 });
-      const allAssignments: AssignmentResponse[] = [];
-      for (const course of coursesRes || []) {
-        try {
-          const assignmentsData = await eduhubAssignments.getByCourse(course.id, 0, 100);
-          allAssignments.push(...(assignmentsData || []));
-        } catch {
-          // Skip courses that fail
-        }
-      }
-      setAssignments(allAssignments);
+      const courseAssignmentResults = await Promise.all(
+        (coursesRes || []).map(async (course) => {
+          try {
+            return await eduhubAssignments.getByCourse(course.id, 0, 100);
+          } catch {
+            return [];
+          }
+        })
+      );
+      setAssignments(courseAssignmentResults.flat());
     } catch {
       setAssignments([]);
     }

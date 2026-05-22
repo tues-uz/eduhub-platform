@@ -6,7 +6,23 @@ import { ArrowLeft, BarChart2, FileSpreadsheet, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { eduhubQuizzes, eduhubCourseQuizzes, type QuizResultResponse, type QuizResponse } from "@/api/eduhubClient";
+import { getLocalCourseQuiz, isLocalOnlyQuizId } from "../data/localCourseQuizzesStorage";
+import { quizAttemptStore, type QuizAttempt } from "../data/quizAttemptStore";
 import { teacherQuizStore } from "../data/teacherQuizStore";
+
+function mapQuizAttemptsToResults(attempts: QuizAttempt[]): QuizResultResponse[] {
+  return attempts.map((a) => ({
+    id: a.id,
+    student: { id: a.studentId || "", fullName: a.studentName, email: a.studentEmail || "" },
+    score: a.scorePercent,
+    scorePercent: a.scorePercent,
+    correctAnswers: a.correctCount,
+    correctCount: a.correctCount,
+    totalQuestions: a.totalQuestions,
+    passed: a.scorePercent >= 70,
+    completedAt: a.completedAt,
+  }));
+}
 
 interface LocalQuiz {
   id: string;
@@ -61,6 +77,21 @@ export default function TeacherQuizResultsPage() {
       setLoading(true);
       setError(null);
 
+      if (courseId && quizId && isLocalOnlyQuizId(quizId)) {
+        const local = getLocalCourseQuiz(courseId, quizId);
+        if (local) {
+          setQuiz(local);
+          setResults(mapQuizAttemptsToResults(quizAttemptStore.getByQuizId(quizId)));
+          setUseLocalStorage(true);
+        } else {
+          setError(
+            "This quiz was saved only on this browser and is no longer in storage. Create it again or restore a backup if you use one.",
+          );
+        }
+        setLoading(false);
+        return;
+      }
+
       try {
         let quizPromise;
         let resultsPromise;
@@ -86,23 +117,19 @@ export default function TeacherQuizResultsPage() {
         }
         const localQuiz = teacherQuizStore.getById(fallbackId) as LocalQuiz | undefined;
         if (localQuiz) {
-          const { quizAttemptStore } = await import("../data/quizAttemptStore");
           const localAttempts = quizAttemptStore.getByQuizId(fallbackId);
           setQuiz(localQuiz);
-          setResults(
-            localAttempts.map((a) => ({
-              id: a.id,
-              student: { id: a.studentId || "", fullName: a.studentName, email: a.studentEmail || "" },
-              score: a.scorePercent,
-              scorePercent: a.scorePercent,
-              correctAnswers: a.correctCount,
-              correctCount: a.correctCount,
-              totalQuestions: a.totalQuestions,
-              passed: a.scorePercent >= 70,
-              completedAt: a.completedAt,
-            }))
-          );
+          setResults(mapQuizAttemptsToResults(localAttempts));
           setUseLocalStorage(true);
+        } else if (courseId && quizId) {
+          const courseLocal = getLocalCourseQuiz(courseId, quizId);
+          if (courseLocal) {
+            setQuiz(courseLocal);
+            setResults(mapQuizAttemptsToResults(quizAttemptStore.getByQuizId(quizId)));
+            setUseLocalStorage(true);
+          } else {
+            setError(err instanceof Error ? err.message : "Failed to load quiz results");
+          }
         } else {
           setError(err instanceof Error ? err.message : "Failed to load quiz results");
         }
@@ -115,7 +142,7 @@ export default function TeacherQuizResultsPage() {
   }, [courseId, moduleId, lessonId, quizId]);
 
   if (!courseId || (!quizId && (!moduleId || !lessonId))) {
-    return <Navigate to="/dashboard/teacher/placement-test" replace />;
+    return <Navigate to="/dashboard/teacher/courses" replace />;
   }
 
   if (loading) {
@@ -145,11 +172,11 @@ export default function TeacherQuizResultsPage() {
         >
           <div className="container mx-auto px-6 max-w-3xl">
             <Link
-              to="/dashboard/teacher/placement-test"
+              to={`/dashboard/teacher/courses/${courseId}?tab=quiz`}
               className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Placement test / Quiz
+              Back to class quizzes
             </Link>
             <div className="py-10 text-center">
               <p className="text-red-500">{error || "Quiz not found"}</p>
@@ -171,11 +198,11 @@ export default function TeacherQuizResultsPage() {
       >
         <div className="container mx-auto px-6 max-w-3xl">
           <Link
-            to="/dashboard/teacher/placement-test"
+            to={`/dashboard/teacher/courses/${courseId}?tab=quiz`}
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Placement test / Quiz
+            Back to class quizzes
           </Link>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
