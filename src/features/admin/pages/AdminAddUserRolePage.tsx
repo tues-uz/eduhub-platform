@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Check, Copy, Phone, User } from "lucide-react";
+import { ArrowLeft, Check, Phone, Square2Stack, User } from "@/lib/icons";
 import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
@@ -303,7 +303,7 @@ export default function AdminAddUserRolePage() {
                   aria-label="Temporary password"
                 />
                 <Button type="button" variant="outline" onClick={handleCopyTemporaryPassword} className="min-h-10 gap-2">
-                  {hasCopiedPassword ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+                  {hasCopiedPassword ? <Check className="h-4 w-4" aria-hidden="true" /> : <Square2Stack className="h-4 w-4" aria-hidden="true" />}
                   {hasCopiedPassword ? "Copied" : "Copy"}
                 </Button>
               </div>
