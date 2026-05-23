@@ -1,4 +1,4 @@
-import { Calendar, Clock, BookOpen, FileText } from "lucide-react";
+import { Calendar, Clock, BookOpen, FileText } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 
 const SCHEDULE_ITEMS = [

@@ -9,14 +9,20 @@ import {
   CheckCircle2,
   ClipboardList,
   Camera,
-  X,
+  QrCode,
   CalendarDays,
   CalendarRange,
   Users,
   FileText,
   Loader2,
-} from "lucide-react";
+} from "@/lib/icons";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -44,6 +50,7 @@ import { isUuid } from "@/api/utils";
 import {
   boundsFromMeetingSlots,
   mergeScheduleDisplayForAdminReview,
+  resolvedAdminScheduleSessionTotal,
   useAdminCourseLocalDataVersion,
 } from "@/features/admin/utils/adminCourseScheduleDisplay";
 import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
@@ -53,6 +60,7 @@ import {
   formatSessionTimeLabel,
   resolveEnrollmentSessionTimingStatus,
   resolveSessionTimingStatus,
+  scheduleMonthSessionCounts,
 } from "@/features/courses/classSchedulePreview";
 import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
 import {
@@ -235,12 +243,11 @@ function formatClassDateLabel(iso: string | undefined): string | null {
 
 type SessionSlotLike = { title?: string; sessionDate?: string; sessionTime?: string };
 
-/** Student-friendly label: numeric titles become "Session N". */
+/** Use the lecturer-provided title when set; otherwise show the session number only. */
 function sessionSlotStudentLabel(slot: SessionSlotLike, indexZeroBased: number): string {
   const t = slot.title?.trim();
-  if (!t) return `Session ${indexZeroBased + 1}`;
-  if (/^\d+$/.test(t)) return `Session ${t}`;
-  return t;
+  if (t) return t;
+  return String(indexZeroBased + 1);
 }
 
 function StudentSessionScheduleCard({
@@ -312,16 +319,16 @@ function StudentSessionScheduleCard({
               <dt className="shrink-0 pt-0.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-zinc-400">
                 Date
               </dt>
-              <dd className="min-w-0 max-w-[70%] text-right text-sm font-medium leading-snug text-zinc-900">
-                {dateValue ?? <span className="font-normal text-zinc-400">Not set</span>}
+              <dd className="min-w-0 max-w-[70%] text-right text-xs font-normal leading-snug text-zinc-600">
+                {dateValue ?? <span className="text-zinc-400">Not set</span>}
               </dd>
             </div>
             <div className="flex items-start justify-between gap-4">
               <dt className="shrink-0 pt-0.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-zinc-400">
                 Time
               </dt>
-              <dd className="text-right text-[0.9375rem] font-semibold tabular-nums leading-snug text-zinc-950">
-                {timeValue ?? <span className="text-sm font-normal text-zinc-400">Not set</span>}
+              <dd className="text-right text-xs font-medium tabular-nums leading-snug text-zinc-700">
+                {timeValue ?? <span className="font-normal text-zinc-400">Not set</span>}
               </dd>
             </div>
           </dl>
@@ -382,6 +389,38 @@ function meetingNameForSession(courseIdStr: string, sessionId: string): string {
   return "Class meeting";
 }
 
+/** e.g. "1. Basket · 2026-06-10 10:00:00" → "1. Basket · Jun 10, 2026 · 10:00 AM" */
+function formatStudentAttendanceMeetingLabel(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "Class meeting";
+
+  const segments = trimmed.split(" · ").map((s) => s.trim()).filter(Boolean);
+  if (segments.length < 2) return trimmed;
+
+  const last = segments[segments.length - 1];
+  if (last === "Online" || last === "In person") return trimmed;
+
+  const datetimeMatch = last.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2}(?::\d{2})?)$/);
+  if (datetimeMatch) {
+    const [, datePart, timePart] = datetimeMatch;
+    const dateLabel = formatClassDateLabel(datePart) ?? datePart;
+    const timeLabel = formatSessionTimeLabel(timePart) ?? timePart;
+    return [...segments.slice(0, -1), `${dateLabel} · ${timeLabel}`].join(" · ");
+  }
+
+  return trimmed;
+}
+
+function isScannerCameraBlocked(error: string | null): boolean {
+  if (!error) return false;
+  return (
+    error.includes("Camera") ||
+    error.includes("permission") ||
+    error.includes("unsupported") ||
+    error.includes("not supported")
+  );
+}
+
 const TEACHER_PREFIX = "teacher_";
 
 type LessonRow = { id: string; title: string; duration: string; completed: boolean; moduleId?: string };
@@ -421,7 +460,7 @@ const StudentCourseDetail = () => {
   const scheduleLocalTick = useAdminCourseLocalDataVersion();
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState<string | null>(null);
-  const [scannerStatus, setScannerStatus] = useState("Point the camera at attendance QR");
+  const [scannerStatus, setScannerStatus] = useState("Align the QR code in the frame");
   const scannerVideoRef = useRef<HTMLVideoElement | null>(null);
   const scannerStreamRef = useRef<MediaStream | null>(null);
   const scannerRafRef = useRef<number | null>(null);
@@ -714,6 +753,18 @@ const StudentCourseDetail = () => {
     return classScheduleStatusHint(courseId, isApi, apiScheduleProposal, allSessionSlots.length > 0);
   }, [courseId, apiCourseDetail, apiScheduleProposal, isTeacherCourse, allSessionSlots.length]);
 
+  /** Sum of sessions across admin month plans (`sessionCount` on propose). */
+  const adminScheduleSessionTotal = useMemo(() => {
+    void scheduleLocalTick;
+    if (!courseId || isTeacherCourse || !apiCourseDetail || !isUuid(courseId)) return undefined;
+    return resolvedAdminScheduleSessionTotal(courseId, apiCourseDetail, apiScheduleProposal);
+  }, [courseId, apiCourseDetail, apiScheduleProposal, isTeacherCourse, scheduleLocalTick]);
+
+  const adminScheduleMonthCount = useMemo(() => {
+    if (allSessionSlots.length === 0) return 0;
+    return scheduleMonthSessionCounts(allSessionSlots).filter((n) => n > 0).length;
+  }, [allSessionSlots]);
+
   const lessonsFromApi = apiLessons.map((l) => ({
     ...l,
     completed: lessonProgressStore.isComplete(courseId ?? "", l.id),
@@ -852,7 +903,7 @@ const StudentCourseDetail = () => {
           scannerVideoRef.current.srcObject = stream;
           await scannerVideoRef.current.play();
         }
-        setScannerStatus("Point the camera at attendance QR");
+        setScannerStatus("Align the QR code in the frame");
 
         const Detector = (
           window as Window & { BarcodeDetector?: BarcodeDetectorCtor }
@@ -1001,9 +1052,13 @@ const StudentCourseDetail = () => {
   const classEndLabel = formatClassDateLabel(resolvedSchedule?.classEndDate ?? course.classEndDate);
   const hasClassDateRange = Boolean(classStartLabel || classEndLabel);
   const meetings = resolvedSchedule?.sessionsSixMo ?? course.classMeetingsInSixMonths;
+  const totalSessionsCount =
+    adminScheduleSessionTotal ??
+    (allSessionSlots.length > 0 ? allSessionSlots.length : null) ??
+    (meetings != null && meetings > 0 ? meetings : null);
   const hasScheduleSummary =
     hasClassDateRange ||
-    (meetings != null && meetings > 0) ||
+    totalSessionsCount != null ||
     allSessionSlots.length > 0;
 
   const coverThumbnailUrl =
@@ -1034,6 +1089,8 @@ const StudentCourseDetail = () => {
       />
     );
   }
+
+  const scannerCameraBlocked = isScannerCameraBlocked(scannerError);
 
   return (
     <>
@@ -1074,7 +1131,7 @@ const StudentCourseDetail = () => {
                   {isEnrolled ? (
                     <span
                       className={cn(
-                        "rounded-md px-2 py-0.5 text-[11px] font-medium tracking-tight",
+                        "rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-tight",
                         course.status === "Completed"
                           ? "bg-emerald-100/90 text-emerald-900"
                           : course.status === "Almost Complete"
@@ -1156,88 +1213,82 @@ const StudentCourseDetail = () => {
                     )}
                   </div>
 
-                  <dl
-                    className={cn(
-                      "mt-6 grid gap-5 border-t border-zinc-100 pt-7 sm:gap-6",
-                      hasClassDateRange ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-2 sm:grid-cols-3",
-                    )}
-                  >
-                  <div className="min-w-0">
-                    <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                      <BookOpen className="size-3.5 shrink-0 text-[#3954d0]/65" aria-hidden />
-                      Lessons
-                    </dt>
-                    <dd className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">{lessons.length}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                      <Users className="size-3.5 shrink-0 text-[#3954d0]/65" aria-hidden />
-                      Students joined
-                    </dt>
-                    <dd className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">
-                      {course.enrollmentCount != null ? (
-                        course.enrollmentCount
-                      ) : (
-                        <span className="font-normal text-zinc-400">—</span>
-                      )}
-                    </dd>
-                  </div>
-                  <div className="col-span-2 min-w-0 sm:col-span-1">
-                    <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                      <CalendarDays className="size-3.5 shrink-0 text-[#3954d0]/65" aria-hidden />
-                      Total sessions
-                    </dt>
-                    <dd className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">
-                      {meetings != null && meetings > 0 ? (
-                        <>
-                          {meetings}
-                          <span className="font-normal text-zinc-500"> / 6 mo</span>
-                        </>
-                      ) : (
-                        <span className="font-normal text-zinc-400">—</span>
-                      )}
-                    </dd>
-                  </div>
-                  {hasClassDateRange ? (
-                    <div className="min-w-0 sm:col-span-2 lg:col-span-1">
-                      <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                        <CalendarRange className="size-3.5 shrink-0 text-[#3954d0]/65" aria-hidden />
-                        Schedule
+                  <dl className="mt-6 grid grid-cols-2 gap-5 border-t border-zinc-100 pt-7 sm:gap-6">
+                    <div className="min-w-0">
+                      <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                        <BookOpen className="size-5 shrink-0 text-[#3954d0]/65" aria-hidden />
+                        Lessons
                       </dt>
-                      <dd className="mt-1.5 text-sm font-semibold leading-snug text-zinc-900">
-                        {classStartLabel && classEndLabel ? (
-                          <>
-                            {classStartLabel}
-                            <span className="font-normal text-zinc-400"> → </span>
-                            {classEndLabel}
-                          </>
-                        ) : classStartLabel ? (
-                          <>Starts {classStartLabel}</>
-                        ) : classEndLabel ? (
-                          <>Ends {classEndLabel}</>
-                        ) : null}
+                      <dd className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">{lessons.length}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                        <Users className="size-5 shrink-0 text-[#3954d0]/65" aria-hidden />
+                        Students joined
+                      </dt>
+                      <dd className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">
+                        {course.enrollmentCount != null ? (
+                          course.enrollmentCount
+                        ) : (
+                          <span className="font-normal text-zinc-400">—</span>
+                        )}
                       </dd>
                     </div>
-                  ) : null}
+                    <div className="min-w-0">
+                      <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                        <CalendarDays className="size-5 shrink-0 text-[#3954d0]/65" aria-hidden />
+                        Total sessions
+                      </dt>
+                      <dd className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">
+                        {totalSessionsCount != null ? (
+                          totalSessionsCount
+                        ) : (
+                          <span className="font-normal text-zinc-400">—</span>
+                        )}
+                      </dd>
+                    </div>
+                    {hasClassDateRange ? (
+                      <div className="min-w-0">
+                        <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                          <CalendarRange className="size-5 shrink-0 text-[#3954d0]/65" aria-hidden />
+                          Schedule
+                        </dt>
+                        <dd className="mt-1.5 text-sm font-semibold leading-snug text-zinc-900">
+                          {classStartLabel && classEndLabel ? (
+                            <>
+                              {classStartLabel}
+                              <span className="font-normal text-zinc-400"> → </span>
+                              {classEndLabel}
+                            </>
+                          ) : classStartLabel ? (
+                            <>Starts {classStartLabel}</>
+                          ) : classEndLabel ? (
+                            <>Ends {classEndLabel}</>
+                          ) : null}
+                        </dd>
+                      </div>
+                    ) : null}
                   </dl>
                 </div>
 
                 <div className="mt-8 w-full min-w-0">
           <Tabs value={activeCourseTab} onValueChange={onCourseTabChange} className="w-full">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
-              <TabsList className="flex flex-wrap gap-1">
-                <TabsTrigger value="content" className="font-bold">
+              <TabsList className="flex h-auto min-h-10 flex-wrap gap-1 rounded-full p-1">
+                <TabsTrigger value="content" className="rounded-full font-bold">
                   Class Content
                 </TabsTrigger>
-                <TabsTrigger value="resume" className="gap-1.5">
+                <TabsTrigger value="resume" className="gap-1.5 rounded-full">
                   <FileText className="h-3.5 w-3.5 opacity-70" aria-hidden />
                   Resume
                 </TabsTrigger>
-                <TabsTrigger value="quiz" className="gap-1.5">
+                <TabsTrigger value="quiz" className="gap-1.5 rounded-full">
                   <ClipboardList className="h-3.5 w-3.5 opacity-70" aria-hidden />
                   Quiz
                 </TabsTrigger>
-                <TabsTrigger value="attendance">Attendance</TabsTrigger>
+                <TabsTrigger value="attendance" className="rounded-full">
+                  Attendance
+                </TabsTrigger>
               </TabsList>
               <Button
                 type="button"
@@ -1546,18 +1597,33 @@ const StudentCourseDetail = () => {
                   Enroll in this class first to access attendance records and session check-ins.
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-5">
-                    <h3 className="font-semibold text-blue-900">Attendance check-in</h3>
-                    <p className="mt-1 text-sm text-blue-800/90">
-                      Your instructor shows a QR code in class. Scan it to check in. Your records sync from the EduHub
-                      attendance API after check-in.
-                    </p>
+                <div className="space-y-5">
+                  <div className="flex items-start gap-3.5">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-zinc-200/80 bg-zinc-50 text-[#3954d0] ring-1 ring-zinc-100/80">
+                      <QrCode className="size-5" aria-hidden />
+                    </span>
+                    <div className="min-w-0 pt-0.5">
+                      <h2
+                        className="text-base font-semibold tracking-tight text-zinc-900"
+                        style={{ fontFamily: "'DM Sans', sans-serif" }}
+                      >
+                        Session check-ins
+                      </h2>
+                      <p className="mt-1 max-w-xl text-sm leading-relaxed text-zinc-600">
+                        When class starts, tap <span className="font-medium text-zinc-800">Scan QR</span> and point
+                        your camera at the code on screen. Your records sync from the EduHub attendance API after
+                        check-in.
+                      </p>
+                    </div>
                   </div>
 
                   {attendanceTableRows.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-6 text-sm text-foreground/65">
-                      No check-ins recorded for this class yet.
+                    <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 px-5 py-10 text-center">
+                      <QrCode className="mx-auto size-8 text-zinc-300" aria-hidden />
+                      <p className="mt-3 text-sm font-medium text-zinc-800">No check-ins yet</p>
+                      <p className="mt-1 text-sm text-zinc-500">
+                        Sessions you scan into will appear in the list below.
+                      </p>
                     </div>
                   ) : (
                     <div className="rounded-2xl border border-slate-200/90 bg-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06)] ring-1 ring-slate-900/[0.04] overflow-hidden">
@@ -1586,25 +1652,20 @@ const StudentCourseDetail = () => {
                                 key={row.key}
                                 className={`border-slate-100 transition-colors hover:bg-slate-50/70 ${idx === attendanceTableRows.length - 1 ? "border-0" : ""}`}
                               >
-                                <TableCell className="border-0 py-4 pl-5 pr-3 align-top">
+                                <TableCell className="border-0 py-4 pl-5 pr-3 align-middle">
                                   <p className="max-w-[220px] font-medium leading-snug text-slate-800 line-clamp-2">
                                     {course.title}
                                   </p>
                                 </TableCell>
-                                <TableCell className="border-0 py-4 px-3 align-top text-slate-700">
+                                <TableCell className="border-0 py-4 px-3 align-middle text-slate-700">
                                   <p className="max-w-[200px] leading-snug line-clamp-2">
                                     {formatDisplayPersonName(course.instructor)}
                                   </p>
                                 </TableCell>
                                 <TableCell className="border-0 py-4 px-3 align-middle">
-                                  <div className="flex items-start gap-3">
-                                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600/10 to-indigo-600/10 text-[#3954d0] ring-1 ring-blue-900/5">
-                                      <CalendarDays className="h-4 w-4" aria-hidden />
-                                    </span>
-                                    <div className="min-w-0 pt-0.5">
-                                      <p className="font-medium leading-snug text-slate-900">{row.meetingName}</p>
-                                    </div>
-                                  </div>
+                                  <p className="max-w-[200px] font-medium leading-snug text-slate-900 line-clamp-2">
+                                    {formatStudentAttendanceMeetingLabel(row.meetingName)}
+                                  </p>
                                 </TableCell>
                                 <TableCell className="border-0 py-4 pl-3 pr-5 align-middle text-right">
                                   <div className="flex flex-col items-end gap-0.5">
@@ -1643,7 +1704,7 @@ const StudentCourseDetail = () => {
                   <aside className="min-w-0 lg:col-span-4 lg:sticky lg:top-6 lg:z-10 lg:self-start lg:h-fit">
                     <div className="rounded-2xl border border-zinc-200/80 bg-white p-4 ring-1 ring-zinc-100/80">
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <h2 className="text-base font-semibold tracking-tight text-foreground">Upcoming schedule</h2>
+                        <h2 className="text-base font-semibold tracking-tight text-foreground">Upcoming Schedule</h2>
                         <p className="text-xs text-foreground/55">This class</p>
                       </div>
                       <p className="mt-2 text-xs leading-relaxed text-zinc-600">
@@ -1654,7 +1715,7 @@ const StudentCourseDetail = () => {
                       {hasScheduleSummary ? (
                         <div className="mt-4 space-y-3">
                           {hasClassDateRange ? (
-                            <div className="rounded-lg border border-zinc-100 bg-zinc-50/60 px-3 py-2.5">
+                            <div className="rounded-2xl border border-zinc-100 bg-zinc-50/60 px-3 py-2.5">
                               <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Class period</p>
                               <p className="mt-1 flex items-start gap-1.5 text-xs font-medium leading-snug text-zinc-900">
                                 <CalendarRange className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#3954d0]" aria-hidden />
@@ -1670,12 +1731,21 @@ const StudentCourseDetail = () => {
                               </p>
                             </div>
                           ) : null}
-                          {meetings != null && meetings > 0 ? (
-                            <div className="rounded-lg border border-zinc-100 bg-zinc-50/60 px-3 py-2.5">
-                              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Sessions (6 mo)</p>
+                          {totalSessionsCount != null ? (
+                            <div className="rounded-2xl border border-zinc-100 bg-zinc-50/60 px-3 py-2.5">
+                              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Scheduled sessions</p>
                               <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-zinc-900">
                                 <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#3954d0]" aria-hidden />
-                                {meetings} in the rolling window
+                                {totalSessionsCount}
+                                {adminScheduleMonthCount > 0 ? (
+                                  <span className="font-normal text-zinc-500">
+                                    {" "}
+                                    across {adminScheduleMonthCount} month
+                                    {adminScheduleMonthCount === 1 ? "" : "s"}
+                                  </span>
+                                ) : (
+                                  <span className="font-normal text-zinc-500"> on your schedule</span>
+                                )}
                               </p>
                             </div>
                           ) : null}
@@ -1723,34 +1793,111 @@ const StudentCourseDetail = () => {
           </header>
 
         </div>
-      {scannerOpen ? (
-        <div className="fixed inset-0 z-[120] bg-black/80 p-4 sm:p-6 flex items-center justify-center">
-          <div className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-semibold text-foreground">Scan attendance QR</h3>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="h-8 w-8 rounded-full"
-                onClick={() => setScannerOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+      <Dialog
+        open={scannerOpen}
+        onOpenChange={(open) => {
+          setScannerOpen(open);
+          if (!open) {
+            setScannerError(null);
+            setScannerStatus("Align the QR code in the frame");
+          }
+        }}
+      >
+        <DialogContent className="gap-0 overflow-hidden rounded-2xl border-zinc-200/80 p-0 shadow-xl sm:max-w-md sm:rounded-2xl [&>button]:right-4 [&>button]:top-4 [&>button]:rounded-full [&>button]:border [&>button]:border-zinc-200 [&>button]:bg-white/90">
+          <div className="border-b border-zinc-100 bg-gradient-to-b from-zinc-50/90 to-white px-6 pb-5 pt-6">
+            <div className="flex items-start gap-3.5 pr-8">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#3954d0]/10 text-[#3954d0] ring-1 ring-[#3954d0]/15">
+                <QrCode className="h-5 w-5" aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <DialogTitle className="text-left text-base font-semibold tracking-tight text-zinc-900">
+                  Check in with QR
+                </DialogTitle>
+                <DialogDescription className="mt-1.5 text-left text-sm leading-relaxed text-zinc-600">
+                  Scan the code your instructor shows in class to record attendance for this session.
+                </DialogDescription>
+              </div>
             </div>
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-black">
-              <video ref={scannerVideoRef} className="h-72 w-full object-cover" playsInline muted />
-            </div>
-            <p className="mt-3 text-xs text-foreground/65">{scannerStatus}</p>
-            {scannerError ? (
-              <p className="mt-2 text-xs text-red-600">{scannerError}</p>
-            ) : null}
-            <p className="mt-2 text-[11px] text-foreground/50">
-              Use HTTPS on phone browsers so camera access works.
-            </p>
           </div>
-        </div>
-      ) : null}
+
+          <div className="px-6 py-5">
+            <div className="relative overflow-hidden rounded-2xl bg-zinc-950 ring-1 ring-zinc-900/10">
+              <video
+                ref={scannerVideoRef}
+                className="aspect-[4/3] w-full rounded-2xl object-cover"
+                playsInline
+                muted
+              />
+              {!scannerCameraBlocked ? (
+                <div className="pointer-events-none absolute inset-0" aria-hidden>
+                  <div className="absolute inset-[10%] rounded-2xl border border-white/25 shadow-[inset_0_0_24px_rgba(0,0,0,0.35)]">
+                    <span className="absolute left-0 top-0 h-7 w-7 rounded-tl-2xl border-l-[3px] border-t-[3px] border-[#3954d0]" />
+                    <span className="absolute right-0 top-0 h-7 w-7 rounded-tr-2xl border-r-[3px] border-t-[3px] border-[#3954d0]" />
+                    <span className="absolute bottom-0 left-0 h-7 w-7 rounded-bl-2xl border-b-[3px] border-l-[3px] border-[#3954d0]" />
+                    <span className="absolute bottom-0 right-0 h-7 w-7 rounded-br-2xl border-b-[3px] border-r-[3px] border-[#3954d0]" />
+                  </div>
+                  {!scannerStatus.includes("Requesting") ? (
+                    <div className="absolute inset-x-[10%] top-[10%] h-[80%] overflow-hidden rounded-2xl opacity-70">
+                      <div className="absolute inset-x-6 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-[#3954d0] to-transparent motion-safe:animate-pulse" />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              {scannerCameraBlocked ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl bg-zinc-950/92 px-6 text-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/15 text-red-400 ring-1 ring-red-500/25">
+                    <Camera className="h-6 w-6" aria-hidden />
+                  </div>
+                  <p className="text-sm font-medium text-white">Couldn&apos;t start the camera</p>
+                  <p className="max-w-[240px] text-xs leading-relaxed text-zinc-400">{scannerError}</p>
+                </div>
+              ) : null}
+            </div>
+
+            <div
+              className={cn(
+                "mt-4 flex items-start gap-2.5 rounded-2xl px-3.5 py-3 text-sm leading-snug",
+                scannerError
+                  ? "bg-red-50 text-red-900 ring-1 ring-red-100"
+                  : scannerStatus.includes("Requesting")
+                    ? "bg-zinc-50 text-zinc-700 ring-1 ring-zinc-100"
+                    : scannerStatus.includes("detected")
+                      ? "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-100"
+                      : "bg-blue-50/80 text-blue-950 ring-1 ring-blue-100",
+              )}
+            >
+              {scannerStatus.includes("Requesting") ? (
+                <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-zinc-500" aria-hidden />
+              ) : (
+                <Camera className="mt-0.5 h-4 w-4 shrink-0 text-[#3954d0]" aria-hidden />
+              )}
+              <p>{scannerCameraBlocked ? scannerStatus : (scannerError ?? scannerStatus)}</p>
+            </div>
+
+            <ul className="mt-4 space-y-2.5 text-xs leading-relaxed text-zinc-500">
+              <li className="flex gap-2.5">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-300" aria-hidden />
+                Hold your phone steady and keep the QR inside the frame.
+              </li>
+              <li className="flex gap-2.5">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-300" aria-hidden />
+                On mobile, use Chrome or Safari over HTTPS so the camera can open.
+              </li>
+            </ul>
+          </div>
+
+          <div className="border-t border-zinc-100 bg-zinc-50/60 px-6 py-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full rounded-full border-zinc-200"
+              onClick={() => setScannerOpen(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

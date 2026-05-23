@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CalendarCheck, CalendarClock, ChevronRight } from "lucide-react";
+import { ArrowLeft, CalendarCheck, CalendarClock, ChevronRight } from "@/lib/icons";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { useAuthSession } from "@/features/auth/context";
 import { eduhubCourses } from "@/api/eduhubClient";

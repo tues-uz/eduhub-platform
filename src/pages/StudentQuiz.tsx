@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ClipboardList, CheckCircle2 } from "lucide-react";
+import { ClipboardList, CheckCircle2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
 import { eduhubCourseQuizzes, eduhubEnrollments, QuizResponseForStudent, QuizResultResponse } from "@/api/eduhubClient";
@@ -118,7 +118,7 @@ export default function StudentQuiz() {
   };
 
   return (
-    <div className="container mx-auto max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="w-full max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           {screen === "list" && (
             <>
               <div className="mb-8">

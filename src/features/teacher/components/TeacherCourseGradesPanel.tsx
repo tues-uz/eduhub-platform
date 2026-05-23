@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Award, Download, GraduationCap, Loader2, Star } from "lucide-react";
+import { Award, Download, GraduationCap, Loader2, Star } from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

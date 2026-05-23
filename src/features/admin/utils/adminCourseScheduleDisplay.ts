@@ -4,7 +4,10 @@ import {
   COURSE_SCHEDULE_PROPOSAL_STORAGE_KEY,
   courseScheduleProposalStore,
 } from "@/features/courses/courseScheduleProposalStore";
-import { COURSE_SCHEDULE_WORKFLOW_STORAGE_KEY } from "@/features/courses/courseScheduleWorkflowStore";
+import {
+  COURSE_SCHEDULE_WORKFLOW_STORAGE_KEY,
+  courseScheduleWorkflowStore,
+} from "@/features/courses/courseScheduleWorkflowStore";
 
 /** API sometimes omits `classMeetingsInSixMonths` but returns slots or titles arrays. */
 export function resolvedSessionsSixMonths(c: CourseResponse): number | undefined {
@@ -93,6 +96,31 @@ export function mergeScheduleDisplayForAdminReview(
     classStartDate: classStartDate || undefined,
     classEndDate: classEndDate || undefined,
   };
+}
+
+/**
+ * Total sessions from the admin month-by-month schedule (sum of month plan counts on propose).
+ * Prefer API `sessionCount`; else approved local snapshot / merged course display.
+ */
+export function resolvedAdminScheduleSessionTotal(
+  courseId: string,
+  detail: CourseResponse | null | undefined,
+  apiProposal?: ScheduleProposalResponse | null,
+): number | undefined {
+  if (!courseId) return undefined;
+  if (typeof apiProposal?.sessionCount === "number" && apiProposal.sessionCount > 0) {
+    return apiProposal.sessionCount;
+  }
+  const wf = courseScheduleWorkflowStore.get(courseId);
+  const useLocal = wf?.status === "approved";
+  const display = mergeScheduleDisplayForAdminReview(courseId, detail ?? ({ id: courseId } as CourseResponse), {
+    useLocalProposalSnapshot: useLocal,
+    apiProposal: apiProposal ?? null,
+  });
+  if (display.sessionsSixMo != null && display.sessionsSixMo > 0) {
+    return display.sessionsSixMo;
+  }
+  return undefined;
 }
 
 /** Bump when workflow or saved schedule snapshot changes (same tab or other tab). */

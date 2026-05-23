@@ -35,6 +35,10 @@ function parseSessionStartMs(sessionDate: string, sessionTime?: string): number 
   return Number.isNaN(d.getTime()) ? null : d.getTime();
 }
 
+export function sessionStartMs(sessionDate: string, sessionTime?: string): number | null {
+  return parseSessionStartMs(sessionDate, sessionTime);
+}
+
 /** Whether a session is upcoming, in progress, or finished (by date/time vs now). */
 export function resolveSessionTimingStatus(
   slot: Pick<SessionSlotLike, "sessionDate" | "sessionTime" | "durationMinutes">,

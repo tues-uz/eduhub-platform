@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, CreditCard, FileDown, Library } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CreditCard, FileDown, Library } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
 import {

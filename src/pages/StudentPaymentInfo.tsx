@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Loader2, Receipt } from "lucide-react";
+import { Loader2, Receipt, Search, ChevronDown } from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { StudentEnrollmentPaymentDetailDialog } from "@/features/enrollment/StudentEnrollmentPaymentDetailDialog";
 import {
   Table,
@@ -27,9 +33,19 @@ import {
 import { eduhubCourses, eduhubEnrollmentApplications, eduhubSchedule } from "@/api/eduhubClient";
 import { buildCourseScheduleSlots } from "@/features/courses/courseScheduleSlots";
 import type { SessionSlotLike } from "@/features/courses/classSchedulePreview";
-import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
+import type { EnrollmentApplicationResponse, EnrollmentApplicationStatus } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+
+type PaymentStatusFilter = "all" | EnrollmentApplicationStatus;
+
+const PAYMENT_STATUS_FILTER_OPTIONS: { value: PaymentStatusFilter; label: string }[] = [
+  { value: "all", label: "All statuses" },
+  { value: "PENDING", label: "Pending review" },
+  { value: "APPROVED", label: "Approved" },
+  { value: "REJECTED", label: "Rejected" },
+];
 
 function formatMoney(price: number | undefined, currency = "USD"): string {
   if (price == null || price <= 0) return "—";
@@ -137,7 +153,11 @@ const StudentPaymentInfo = () => {
   const [loading, setLoading] = useState(true);
   const [detailRecord, setDetailRecord] = useState<EnrollmentApplicationResponse | null>(null);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<PaymentStatusFilter>("all");
   const [receiptLoading, setReceiptLoading] = useState(false);
+
+  const statusFilterLabel =
+    PAYMENT_STATUS_FILTER_OPTIONS.find((option) => option.value === statusFilter)?.label ?? "All statuses";
 
   const loadRows = useCallback(() => {
     const emailNorm = user.email.trim().toLowerCase();
@@ -176,9 +196,13 @@ const StudentPaymentInfo = () => {
   }, [rows, searchParams, setSearchParams]);
 
   const filteredRows = useMemo(() => {
+    let list = rows;
+    if (statusFilter !== "all") {
+      list = list.filter((r) => r.status === statusFilter);
+    }
     const q = search.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r) => {
+    if (!q) return list;
+    return list.filter((r) => {
       const e = enrichEnrollmentApplication(r);
       return [
         e.courseTitle ?? e.courseId,
@@ -194,7 +218,7 @@ const StudentPaymentInfo = () => {
         .toLowerCase()
         .includes(q);
     });
-  }, [rows, search]);
+  }, [rows, search, statusFilter]);
 
   return (
     
@@ -232,18 +256,44 @@ const StudentPaymentInfo = () => {
           </div>
         ) : (
           <>
-            <div className="mb-4 flex items-center gap-3">
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search class, invoice, receipt, status…"
-                className="max-w-md bg-white"
-              />
-              {search.trim() ? (
-                <Button type="button" variant="ghost" className="text-zinc-600" onClick={() => setSearch("")}>
-                  Clear
-                </Button>
-              ) : null}
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="relative min-w-0 w-full max-w-md sm:w-auto sm:flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" aria-hidden />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search class, invoice, receipt, status…"
+                  className="h-10 rounded-xl bg-white pl-10"
+                />
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10 w-[160px] shrink-0 justify-between rounded-xl border-zinc-200 bg-white px-3 text-sm font-normal text-zinc-900 hover:bg-zinc-50 data-[state=open]:border-zinc-300 data-[state=open]:ring-2 data-[state=open]:ring-[#3954d0]/15"
+                  >
+                    <span className="truncate">{statusFilterLabel}</span>
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[160px] rounded-2xl border-zinc-200 p-2 shadow-lg">
+                  {PAYMENT_STATUS_FILTER_OPTIONS.map((option) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      className={cn(
+                        "cursor-pointer rounded-xl px-3 py-2 text-sm focus:bg-zinc-100",
+                        statusFilter === option.value && "bg-zinc-50 font-medium text-zinc-900",
+                      )}
+                      onClick={() => setStatusFilter(option.value)}
+                    >
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              </div>
             </div>
 
             <div className="w-full overflow-x-auto rounded-xl border border-zinc-200 bg-white">
@@ -271,7 +321,14 @@ const StudentPaymentInfo = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRows.map((raw) => {
+                  {filteredRows.length === 0 ? (
+                    <TableRow className="border-zinc-100 bg-white hover:bg-white">
+                      <TableCell colSpan={6} className="px-3 py-10 text-center text-sm text-zinc-500">
+                        No payments match your search or filter.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                  filteredRows.map((raw) => {
                     const r = enrichEnrollmentApplication(raw);
                     return (
                       <TableRow key={r.id} className="border-zinc-100 bg-white hover:bg-zinc-50/70">
@@ -306,7 +363,7 @@ const StudentPaymentInfo = () => {
                               type="button"
                               variant="outline"
                               size="sm"
-                              className="h-8 rounded-lg px-3 text-xs"
+                              className="h-8 rounded-xl px-3 text-xs"
                               onClick={() => setDetailRecord(r)}
                             >
                               Details
@@ -315,7 +372,8 @@ const StudentPaymentInfo = () => {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  })
+                  )}
                 </TableBody>
               </Table>
             </div>

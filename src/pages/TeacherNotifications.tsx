@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Bell, CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
+import { AlertCircle, Bell, CheckCircle2, Clock, Loader2, XCircle } from "@/lib/icons";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";

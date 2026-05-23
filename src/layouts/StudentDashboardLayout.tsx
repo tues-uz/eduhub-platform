@@ -35,10 +35,13 @@ export default function StudentDashboardLayout() {
         {!STUDENT_COURSE_RESUME_PATH.test(pathname) ? <DashboardPageHeader /> : null}
         <div
           className={cn(
-            "flex min-h-0 flex-1 flex-col lg:overflow-y-auto lg:overscroll-y-contain",
+            "min-h-0 flex-1 lg:overflow-y-auto lg:overscroll-y-contain",
             STUDENT_COURSE_RESUME_PATH.test(pathname)
-              ? "flex min-h-0 flex-1 flex-col p-0"
-              : cn("px-6 pb-6", flushContentBelowHeader ? "pt-0" : "pt-4"),
+              ? "p-0"
+              : cn(
+                  "px-6 pt-4 pb-12",
+                  flushContentBelowHeader && "pt-0",
+                ),
           )}
         >
           {headerConfig.kind === "title" ? (
@@ -50,6 +53,9 @@ export default function StudentDashboardLayout() {
             </h1>
           ) : null}
           <Outlet />
+          {!STUDENT_COURSE_RESUME_PATH.test(pathname) ? (
+            <div className="h-8 w-full shrink-0" aria-hidden />
+          ) : null}
         </div>
       </main>
     </div>

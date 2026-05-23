@@ -8,6 +8,7 @@ export type TeacherCourseFormContextValue = {
   basePath: string;
   title: string;
   setTitle: (v: string) => void;
+  category: string;
   description: string;
   setDescription: (v: string) => void;
   classMeetingsInSixMonths: string;

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import {
   Calendar,
   CheckCircle2,
@@ -13,8 +14,11 @@ import {
   Phone,
   User,
   XCircle,
-} from "lucide-react";
+} from "@/lib/icons";
 import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
+import { eduhubCourses } from "@/api/eduhubClient";
+import { isUuid } from "@/api/utils";
+import { InstructorAvatar } from "@/components/InstructorAvatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,6 +41,10 @@ import {
   formatEnrollmentMoney,
 } from "@/features/enrollment/enrollmentPaymentDisplay";
 import { cn } from "@/lib/utils";
+import { formatDisplayPersonName } from "@/lib/formatPersonName";
+import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
+
+const TEACHER_PREFIX = "teacher_";
 
 function formatDetailDate(iso: string): string {
   try {
@@ -92,7 +100,7 @@ function DetailRow({
 }) {
   return (
     <div className="flex gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500">
         <Icon className="h-4 w-4" aria-hidden />
       </div>
       <div className="min-w-0 flex-1">
@@ -136,7 +144,7 @@ function VerificationDocumentRow({
 }) {
   return (
     <div className="flex gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500">
         <Icon className="h-4 w-4" aria-hidden />
       </div>
       <div className="min-w-0 flex-1">
@@ -192,6 +200,53 @@ function PaymentDetailDialogBody({
     ? formatPaymentMethodLabel(enriched.paymentMethod)
     : null;
 
+  const [instructor, setInstructor] = useState<{ name: string; avatarUrl?: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const courseId = enriched.courseId;
+
+    async function loadInstructor() {
+      if (courseId.startsWith(TEACHER_PREFIX)) {
+        const tc = teacherCoursesStore.getById(courseId.slice(TEACHER_PREFIX.length));
+        if (!cancelled) {
+          setInstructor(
+            tc?.instructorName?.trim()
+              ? { name: tc.instructorName.trim(), avatarUrl: tc.instructorAvatarUrl?.trim() || undefined }
+              : null,
+          );
+        }
+        return;
+      }
+
+      if (!isUuid(courseId)) {
+        if (!cancelled) setInstructor(null);
+        return;
+      }
+
+      try {
+        const course = await eduhubCourses.getById(courseId);
+        const name = course.lecturer?.fullName?.trim();
+        if (!cancelled) {
+          setInstructor(
+            name
+              ? { name, avatarUrl: course.lecturer?.avatarUrl?.trim() || undefined }
+              : null,
+          );
+        }
+      } catch {
+        if (!cancelled) setInstructor(null);
+      }
+    }
+
+    void loadInstructor();
+    return () => {
+      cancelled = true;
+    };
+  }, [enriched.courseId]);
+
+  const showHeaderDivider = Boolean(amount || instructor);
+
   return (
       <DialogContent className="flex max-h-[calc(100dvh-64px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[440px]">
         <DialogHeader className="flex shrink-0 flex-col gap-4 border-b border-zinc-100 bg-zinc-50/80 px-6 pb-5 pt-6 text-left">
@@ -224,10 +279,30 @@ function PaymentDetailDialogBody({
                 </p>
               </div>
             ) : null}
+            {instructor ? (
+              <div
+                className={cn(
+                  "flex items-center gap-2.5",
+                  amount ? "border-t border-zinc-100 pt-4" : "",
+                )}
+              >
+                <InstructorAvatar
+                  name={instructor.name}
+                  avatarUrl={instructor.avatarUrl}
+                  className="h-8 w-8"
+                />
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium text-zinc-500">Instructor</p>
+                  <p className="mt-0.5 truncate text-sm font-medium text-zinc-900">
+                    {formatDisplayPersonName(instructor.name)}
+                  </p>
+                </div>
+              </div>
+            ) : null}
             <div
               className={cn(
                 "grid grid-cols-2 gap-4",
-                amount ? "border-t border-zinc-100 pt-4" : "",
+                showHeaderDivider ? "border-t border-zinc-100 pt-4" : "",
               )}
             >
               <div>

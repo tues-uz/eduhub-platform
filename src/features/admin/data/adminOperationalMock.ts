@@ -578,6 +578,8 @@ export type AdminTeacherRow = {
   id: string;
   name: string;
   email: string;
+  /** Teaching specialty when created from admin Add user role. */
+  category?: string;
   /** Courses this lecturer teaches; length is the assigned course count. */
   coursesTaught: AdminTeacherCourseRef[];
   /** Students enrolled across this lecturer's assigned courses (demo aggregate). */

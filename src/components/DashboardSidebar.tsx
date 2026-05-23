@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LogOut, Menu, X, User, Bell, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { LogOut, Menu, X, User, Bell, ChevronDown, ChevronLeft, ChevronRight } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ import {
 } from "@/features/layout/navigation";
 import { dashboardHomeByRole } from "@/app/routes";
 import { SIDEBAR_COLLAPSE_ENABLED } from "@/features/layout/hooks/useSidebarState";
+import { formatDisplayPersonName, profileInitials } from "@/lib/formatPersonName";
 
 const DashboardSidebar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,7 +27,7 @@ const DashboardSidebar = () => {
   const { isSidebarCollapsed: isCollapsed, toggleSidebar } = useLayoutContext();
   const location = useLocation();
   const navigate = useNavigate();
-  const userName = user.name;
+  const userName = formatDisplayPersonName(user.name);
   const userEmail = user.email;
   const userRole = user.role;
 
@@ -34,6 +35,12 @@ const DashboardSidebar = () => {
     userRole === "teacher" ? teacherMenuItems : userRole === "admin" ? adminMenuItems : null;
 
   const dashboardHome = dashboardHomeByRole(userRole);
+  const mobileNotificationsPath =
+    userRole === "admin"
+      ? "/dashboard/admin/notifications"
+      : userRole === "teacher"
+        ? "/dashboard/teacher/notifications"
+        : null;
 
   const handleLogout = () => {
     clearAuthTokens();
@@ -81,9 +88,18 @@ const DashboardSidebar = () => {
               />
             </Link>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className={`rounded-full ${isProfessionalRole ? "text-slate-300 hover:text-white hover:bg-slate-800" : ""}`}>
-                <Bell className="h-5 w-5" />
-              </Button>
+              {mobileNotificationsPath ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`rounded-full ${isProfessionalRole ? "text-slate-300 hover:text-white hover:bg-slate-800" : ""}`}
+                  asChild
+                >
+                  <Link to={mobileNotificationsPath} aria-label="Notifications">
+                    <Bell className="h-5 w-5" />
+                  </Link>
+                </Button>
+              ) : null}
               <Button
                 variant="ghost"
                 size="icon"
@@ -124,7 +140,7 @@ const DashboardSidebar = () => {
                   className={`${isCollapsed ? "h-8" : "h-10"} w-auto object-contain`}
                 />
                 {!isCollapsed && (
-                  <span className={`text-lg font-bold ${isProfessionalRole ? "text-white" : "text-foreground"}`} style={{ fontFamily: logoTextFont, fontWeight: isProfessionalRole ? 600 : 400, letterSpacing: isProfessionalRole ? '0' : '0.5px' }}>
+                  <span className={`text-lg font-bold ${isProfessionalRole ? "text-white" : "text-foreground"}`} style={{ fontFamily: logoTextFont, fontWeight: isProfessionalRole ? 600 : 700, letterSpacing: isProfessionalRole ? '0' : '0.5px' }}>
                     EduHub
                   </span>
                 )}
@@ -146,9 +162,15 @@ const DashboardSidebar = () => {
 
           {/* User Profile Section */}
           <div className="p-4">
-            <div className={`flex items-center gap-3 p-3 rounded-lg ${userCardBg} ${isCollapsed ? "justify-center" : ""}`}>
-              <div className={`${isCollapsed ? "w-8 h-8" : "w-10 h-10"} rounded-lg ${userAvatarBg} flex items-center justify-center text-white font-semibold flex-shrink-0`}>
-                <User className={isCollapsed ? "h-4 w-4" : "h-5 w-5"} />
+            <div className={`flex items-center gap-3 p-3 rounded-xl ${userCardBg} ${isCollapsed ? "justify-center" : ""}`}>
+              <div className={`${isCollapsed ? "w-8 h-8" : "w-10 h-10"} rounded-full ${userAvatarBg} flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden`}>
+                {user.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : userName ? (
+                  <span className="text-xs">{profileInitials(userName)}</span>
+                ) : (
+                  <User className={isCollapsed ? "h-4 w-4" : "h-5 w-5"} />
+                )}
               </div>
               {!isCollapsed && (
                 <div className="flex-1 min-w-0">
@@ -172,7 +194,7 @@ const DashboardSidebar = () => {
                           key={item.path}
                           to={item.path}
                           onClick={() => setIsMobileMenuOpen(false)}
-                          className={`flex items-center gap-3 px-4 py-2.5 rounded-md transition-all ${
+                          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
                             isCollapsed ? "justify-center" : ""
                           } ${
                             active
@@ -189,7 +211,7 @@ const DashboardSidebar = () => {
                     return (
                       <Collapsible key={item.label} defaultOpen={item.children.some((c) => isActive(c.path))} className="group/course">
                         <CollapsibleTrigger
-                          className={`flex w-full items-center gap-3 px-4 py-2.5 rounded-md transition-all ${
+                          className={`flex w-full items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
                             isCollapsed ? "justify-center" : ""
                           } ${inactiveText} ${inactiveHover}`}
                           title={isCollapsed ? item.label : undefined}
@@ -211,7 +233,7 @@ const DashboardSidebar = () => {
                                   key={sub.path}
                                   to={sub.path}
                                   onClick={() => setIsMobileMenuOpen(false)}
-                                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all ${
+                                  className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-all ${
                                     active ? `${activeBg} font-semibold` : `${inactiveText} ${inactiveHover}`
                                   }`}
                                 >
@@ -232,7 +254,7 @@ const DashboardSidebar = () => {
                         key={item.path}
                         to={item.path}
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-2.5 rounded-md transition-all ${
+                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
                           isCollapsed ? "justify-center" : ""
                         } ${
                           active
@@ -253,7 +275,7 @@ const DashboardSidebar = () => {
           <div className={`p-4 ${isProfessionalRole ? "border-t border-slate-800" : ""}`}>
             <Button
               variant="ghost"
-              className={`w-full ${isCollapsed ? "justify-center" : "justify-start"} ${isProfessionalRole ? "text-slate-300" : "text-foreground/70"} ${logoutHover}`}
+              className={`w-full rounded-xl ${isCollapsed ? "justify-center" : "justify-start"} ${isProfessionalRole ? "text-slate-300" : "text-foreground/70"} ${logoutHover}`}
               onClick={handleLogout}
               title={isCollapsed ? "Log Out" : undefined}
             >

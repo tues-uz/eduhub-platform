@@ -6,6 +6,12 @@ import { isUuid } from "@/api/utils";
 import type { CourseResponse } from "@/api/eduhubTypes";
 import { computeDiscountedPrice } from "@/features/admin/utils/adminCourseCatalog";
 import { CourseStatusBadge } from "@/features/admin/components/AdminStatusBadges";
+import {
+  AdminActionCodeField,
+  useAdminActionCodeState,
+} from "@/features/admin/components/AdminActionCodeField";
+import { courseReviewAuditStore } from "@/features/admin/courseReviewAuditStore";
+import { validateAdminActionCodeOrThrow } from "@/features/admin/adminStaffCode";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,6 +45,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
   const [referralInput, setReferralInput] = useState("");
   const [discountInput, setDiscountInput] = useState("");
   const [rejectionInput, setRejectionInput] = useState("");
+  const [adminActionCode, setAdminActionCode] = useAdminActionCodeState();
 
   const enabled = !!courseId && isUuid(courseId) && open;
   const { data: detail, isLoading } = useQuery({
@@ -87,10 +94,13 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
   const reviewMutation = useMutation({
     mutationFn: async (decision: "APPROVE" | "REJECT") => {
       if (!courseId || !isUuid(courseId)) throw new Error("Invalid class");
+      const code = validateAdminActionCodeOrThrow(adminActionCode);
       if (decision === "REJECT") {
         const rejectionReason = rejectionInput.trim();
         if (!rejectionReason) throw new Error("Enter a reason before rejecting this class.");
-        return eduhubAdmin.reviewCourse(courseId, { decision, rejectionReason });
+        const result = await eduhubAdmin.reviewCourse(courseId, { decision, rejectionReason, adminActionCode: code });
+        courseReviewAuditStore.record(courseId, decision, code);
+        return result;
       }
 
       if (needsScheduleFirst) {
@@ -110,13 +120,16 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
         throw new Error("Discount must be between 0 and 100%.");
       }
       const discountPercent = Math.round(dp);
-      return eduhubAdmin.reviewCourse(courseId, {
+      const result = await eduhubAdmin.reviewCourse(courseId, {
         decision,
         priceAmount: Math.round(n),
         currency: DEFAULT_CURRENCY,
         referralCode: referralInput.trim().slice(0, 64),
         discountPercent,
+        adminActionCode: code,
       });
+      courseReviewAuditStore.record(courseId, decision, code);
+      return result;
     },
     onSuccess: (_data, decision) => {
       if (decision === "REJECT") {
@@ -330,6 +343,14 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
         ) : (
           <p className="text-sm text-slate-600">Could not load class details.</p>
         )}
+
+        {(canReject || isReviewable) && detail ? (
+          <AdminActionCodeField
+            id="course-review-admin-code"
+            value={adminActionCode}
+            onChange={setAdminActionCode}
+          />
+        ) : null}
 
         <DialogFooter className="gap-2 sm:gap-0 flex-col sm:flex-row">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

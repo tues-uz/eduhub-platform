@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
-import { ArrowLeft, BarChart2, FileSpreadsheet, Loader2 } from "lucide-react";
+import { ArrowLeft, BarChart2, FileSpreadsheet, Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { eduhubQuizzes, eduhubCourseQuizzes, type QuizResultResponse, type QuizResponse } from "@/api/eduhubClient";

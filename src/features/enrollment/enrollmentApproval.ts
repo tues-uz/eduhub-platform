@@ -68,9 +68,12 @@ export async function approveEnrollmentApplication(
     studentName?: string;
     studentEmailNorm?: string;
     courseId?: string;
-  } = {},
+    adminActionCode: string;
+  },
 ): Promise<EnrollmentApplicationResponse> {
-  const approved = await eduhubAdminEnrollmentApplications.approve(applicationId);
+  const approved = await eduhubAdminEnrollmentApplications.approve(applicationId, {
+    adminActionCode: opts.adminActionCode,
+  });
   const enriched = ensureEnrollmentDocuments(approved, opts.listedTuition);
 
   const title = opts.courseTitle ?? enriched.courseTitle ?? enriched.courseId;

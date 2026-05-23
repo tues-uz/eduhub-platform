@@ -20,6 +20,11 @@ export function resolveStudentPageHeader(pathname: string): StudentPageHeaderRes
     return { kind: "empty" };
   }
 
+  /** Title and actions live in page content (StudentCourses). */
+  if (pathname === "/dashboard/courses") {
+    return { kind: "empty" };
+  }
+
   /** Title is shown in page content (StudentAvailableCourses). */
   if (pathname === "/dashboard/available-courses") {
     return { kind: "empty" };
@@ -63,6 +68,7 @@ export function resolveStudentPageHeader(pathname: string): StudentPageHeaderRes
   }
 
   const extraPages: { path: string; title: string }[] = [
+    { path: "/dashboard/notifications", title: "Notifications" },
     { path: "/dashboard/assignments", title: "Assignments" },
     { path: "/dashboard/schedule", title: "Schedule" },
     { path: "/dashboard/progress", title: "Progress" },

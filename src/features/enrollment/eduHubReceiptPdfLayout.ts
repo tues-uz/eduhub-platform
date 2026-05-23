@@ -10,12 +10,41 @@ import {
   type EduHubReceiptPdfLogos,
 } from "@/features/enrollment/enrollmentReceiptLogo";
 
-/** Cream page background from school receipt sample. */
-const PAGE_BG = { r: 242, g: 237, b: 228 } as const;
-const TITLE_BLUE = { r: 37, g: 84, b: 208 } as const;
-const MM_MARGIN = 14;
-const PAGE_BOTTOM = 285;
-const TABLE_BODY_ROWS = 11;
+const BRAND = { r: 57, g: 84, b: 208 } as const;
+const INK = { r: 9, g: 9, b: 11 } as const;
+const MUTED = { r: 113, g: 113, b: 122 } as const;
+const LINE = { r: 228, g: 228, b: 231 } as const;
+
+/** Typography scale (pt) — tuned for print readability. */
+const FONT = {
+  docTitle: 24,
+  amountHero: 15,
+  orgName: 14,
+  orgBody: 8,
+  orgSmall: 7.5,
+  metaLabel: 8.5,
+  metaValue: 9.5,
+  section: 7.5,
+  studentName: 11.5,
+  studentCourse: 10.5,
+  studentPhone: 9,
+  lineItem: 9.5,
+  lineItemWrap: 9,
+  teacher: 8.5,
+  lineAmount: 11,
+  totalLabel: 9.5,
+  totalAmount: 14,
+  notice: 8,
+  legalTitle: 8,
+  legalBody: 7.5,
+  signName: 7.5,
+  signTitle: 7,
+} as const;
+
+const M = 20;
+const PAGE_BOTTOM = 282;
+const LOGO_W = 28;
+const STAMP_W = 34;
 
 export type EduHubReceiptPdfInput = {
   variant: "official" | "submission";
@@ -27,7 +56,6 @@ export type EduHubReceiptPdfInput = {
   courseTitle: string;
   phone: string;
   teacherName: string;
-  /** Detailed line items for the DESCRIPTION column (multi-line). */
   descriptionLines: string[];
   currency: string;
   amount: number;
@@ -39,8 +67,7 @@ export function formatReceiptAmount(amount: number, currency: string): string {
   const cur = currency.toUpperCase();
   if (cur === "UZS" || cur === "SUM") {
     const n = Math.round(amount);
-    const grouped = n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-    return `${grouped} SO'M`;
+    return `${n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} SO'M`;
   }
   try {
     return new Intl.NumberFormat("en-US", {
@@ -71,41 +98,50 @@ function safeFilenamePart(s: string): string {
 
 function formatReceiptDate(iso: string): string {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso.toUpperCase();
-  return d
-    .toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-    .toUpperCase();
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
-function paintPageBackground(doc: jsPDF) {
-  const w = doc.internal.pageSize.getWidth();
-  const h = doc.internal.pageSize.getHeight();
-  doc.setFillColor(PAGE_BG.r, PAGE_BG.g, PAGE_BG.b);
-  doc.rect(0, 0, w, h, "F");
+type RGB = { r: number; g: number; b: number };
+
+function ink(doc: jsPDF, c: RGB) {
+  doc.setTextColor(c.r, c.g, c.b);
 }
 
-const STAMP_WIDTH_MM = 40;
-/** Top-right header logo — ~same visual height as “RECEIPT” title (reference receipt). */
-const HEADER_LOGO_WIDTH_MM = 22;
+function rule(doc: jsPDF, y: number, x1: number, x2: number, weight = 0.2) {
+  doc.setDrawColor(LINE.r, LINE.g, LINE.b);
+  doc.setLineWidth(weight);
+  doc.line(x1, y, x2, y);
+}
 
-function drawLabelValue(
-  doc: jsPDF,
-  label: string,
-  value: string,
-  x: number,
-  y: number,
-  labelW: number,
-) {
+function sectionTitle(doc: jsPDF, label: string, x: number, y: number) {
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(55, 55, 55);
+  doc.setFontSize(FONT.section);
+  ink(doc, MUTED);
   doc.text(label, x, y);
+}
 
-  doc.setFont("courier", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(20, 20, 20);
-  const valueLines = doc.splitTextToSize(value, 120);
-  doc.text(valueLines, x + labelW, y);
+function metaLine(doc: jsPDF, label: string, value: string, y: number, rightX: number, labelX: number) {
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(FONT.metaLabel);
+  ink(doc, MUTED);
+  doc.text(label, labelX, y);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(FONT.metaValue);
+  ink(doc, INK);
+  doc.text(value, rightX, y, { align: "right" });
+}
+
+function wrapDescription(doc: jsPDF, lines: string[], maxW: number): string[] {
+  const out: string[] = [];
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(FONT.lineItemWrap);
+  for (const block of lines) {
+    const t = block.trim();
+    if (!t) continue;
+    out.push(...doc.splitTextToSize(t, maxW));
+  }
+  return out.length > 0 ? out : ["TUITION FEE"];
 }
 
 export function renderEduHubReceiptPdf(
@@ -115,219 +151,212 @@ export function renderEduHubReceiptPdf(
 ): void {
   const headerLogo = logos?.header ?? null;
   const stampLogo = logos?.stamp ?? null;
-  paintPageBackground(doc);
 
   const pageW = doc.internal.pageSize.getWidth();
-  const rightX = pageW - MM_MARGIN;
-  let y = MM_MARGIN;
+  const rightX = pageW - M;
+  const contentW = pageW - M * 2;
+  const metaLabelX = pageW * 0.52;
+
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, pageW, doc.internal.pageSize.getHeight(), "F");
 
   const amountStr = formatReceiptAmount(data.amount, data.currency);
   const dateLabel = formatReceiptDate(data.issuedAtIso);
   const paymentLabel = formatPaymentMethodLabel(data.paymentMethod).toUpperCase();
 
-  // Title — large blue header (reference receipt)
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(52);
-  doc.setTextColor(TITLE_BLUE.r, TITLE_BLUE.g, TITLE_BLUE.b);
-  doc.text("RECEIPT", MM_MARGIN, y + 16);
+  let y = M;
 
-  /** Logo + contact align with the main table right edge (`rightX`). */
-  const orgBlockRight = rightX;
-  const logoX = orgBlockRight - HEADER_LOGO_WIDTH_MM;
-  let orgTextY = y;
+  // Header: issuer (left) + document summary (right)
+  let leftY = y;
   if (headerLogo) {
-    const logoH = HEADER_LOGO_WIDTH_MM * EDUHUB_RECEIPT_HEADER_LOGO_ASPECT;
-    doc.addImage(headerLogo, "PNG", logoX, y, HEADER_LOGO_WIDTH_MM, logoH);
-    orgTextY = y + logoH + 3;
+    const logoH = LOGO_W * EDUHUB_RECEIPT_HEADER_LOGO_ASPECT;
+    doc.addImage(headerLogo, "PNG", M, leftY, LOGO_W, logoH);
+    leftY += logoH + 5;
   }
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(70, 70, 70);
-  doc.text(ENROLLMENT_DOCUMENT_ORG.addressLine, orgBlockRight, orgTextY, { align: "right" });
-  doc.text(`Phone: ${ENROLLMENT_DOCUMENT_ORG.phone}`, orgBlockRight, orgTextY + 4, { align: "right" });
-  doc.text(`Telegram: ${ENROLLMENT_DOCUMENT_ORG.telegram}`, orgBlockRight, orgTextY + 8, {
-    align: "right",
-  });
 
-  y = Math.max(y + 38, orgTextY + 14);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(FONT.orgName);
+  ink(doc, INK);
+  doc.text(ENROLLMENT_DOCUMENT_ORG.name, M, leftY);
+  leftY += 5.5;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(FONT.orgBody);
+  ink(doc, MUTED);
+  const instLines = doc.splitTextToSize(ENROLLMENT_DOCUMENT_ORG.institutionLine, contentW * 0.46);
+  doc.text(instLines, M, leftY);
+  leftY += instLines.length * 3.8 + 1.5;
+
+  doc.setFontSize(FONT.orgSmall);
+  doc.text(ENROLLMENT_DOCUMENT_ORG.tagline, M, leftY);
+  leftY += 5;
+  doc.text(ENROLLMENT_DOCUMENT_ORG.addressLine, M, leftY);
+  leftY += 4;
+  doc.text(`Phone ${ENROLLMENT_DOCUMENT_ORG.phone}`, M, leftY);
+  leftY += 4;
+  doc.text(`Telegram ${ENROLLMENT_DOCUMENT_ORG.telegram}`, M, leftY);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(FONT.docTitle);
+  ink(doc, INK);
+  doc.text("Receipt", rightX, y + 6, { align: "right" });
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(FONT.amountHero);
+  ink(doc, BRAND);
+  doc.text(amountStr, rightX, y + 15, { align: "right" });
+
+  let metaY = y + 24;
+  metaLine(doc, "Invoice no.", data.invoiceNumber, metaY, rightX, metaLabelX);
+  metaY += 6;
+  metaLine(doc, "Receipt no.", data.receiptNumber, metaY, rightX, metaLabelX);
+  metaY += 6;
+  metaLine(doc, "Date", dateLabel, metaY, rightX, metaLabelX);
+  metaY += 6;
+  metaLine(doc, "Payment method", paymentLabel, metaY, rightX, metaLabelX);
+
+  y = Math.max(leftY, metaY) + 11;
+  rule(doc, y, M, rightX);
+  y += 10;
 
   if (data.variant === "submission") {
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(8);
-    doc.setTextColor(120, 90, 40);
+    doc.setFontSize(FONT.notice);
+    ink(doc, MUTED);
     doc.text(
-      "SUBMISSION COPY — Official INV/REC numbers are issued after the school approves your enrollment.",
-      MM_MARGIN,
+      "Submission copy — official invoice and receipt numbers are issued after the school approves your enrollment.",
+      M,
       y,
+      { maxWidth: contentW },
     );
-    y += 6;
+    y += 9;
+    rule(doc, y, M, rightX, 0.15);
+    y += 10;
   } else if (data.isDemo && import.meta.env.DEV) {
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(8);
-    doc.setTextColor(160, 90, 0);
-    doc.text("DEMO DOCUMENT — numbers not issued by server", MM_MARGIN, y);
-    y += 6;
+    doc.setFontSize(FONT.notice);
+    ink(doc, MUTED);
+    doc.text("Demo document — numbers not issued by server", M, y);
+    y += 9;
+    rule(doc, y, M, rightX, 0.15);
+    y += 10;
   }
 
-  const labelW = 38;
-  const metaRows: [string, string][] = [
-    ["DATE:", dateLabel],
-    ["RECEIPT NUMBER:", data.receiptNumber],
-    ["INVOICE NUMBER:", data.invoiceNumber],
-    ["PAYMENT METHOD:", paymentLabel],
-  ];
-  for (const [label, value] of metaRows) {
-    drawLabelValue(doc, label, value, MM_MARGIN, y, labelW);
-    y += 6;
-  }
+  sectionTitle(doc, "Received from", M, y);
+  y += 7;
 
-  y += 3;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(55, 55, 55);
-  doc.text("RECEIVED FROM:", MM_MARGIN, y);
-  y += 5.5;
-  doc.setFont("courier", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(20, 20, 20);
-  doc.text(data.fullName.toUpperCase(), MM_MARGIN, y);
-  y += 5;
-  const courseLines = doc.splitTextToSize(data.courseTitle.toUpperCase(), pageW - MM_MARGIN * 2);
-  doc.text(courseLines, MM_MARGIN, y);
-  y += courseLines.length * 4.8;
-  doc.text(data.phone.replace(/\s/g, ""), MM_MARGIN, y);
+  doc.setFontSize(FONT.studentName);
+  ink(doc, INK);
+  doc.text(data.fullName.toUpperCase(), M, y);
+  y += 6;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(FONT.studentCourse);
+  ink(doc, INK);
+  const courseLines = doc.splitTextToSize(data.courseTitle.toUpperCase(), contentW * 0.72);
+  doc.text(courseLines, M, y);
+  y += courseLines.length * 4.4 + 1.5;
+
+  doc.setFontSize(FONT.studentPhone);
+  ink(doc, MUTED);
+  doc.text(data.phone.replace(/\s/g, ""), M, y);
+  y += 13;
+
+  rule(doc, y, M, rightX);
   y += 10;
 
-  // Table
-  const colDesc = MM_MARGIN;
-  const colTeacher = 72;
-  const colPrice = 132;
-  const colSub = 162;
-  const tableW = rightX - MM_MARGIN;
-  const rowH = 7.2;
-  const headerH = 7;
-  const bodyRows = TABLE_BODY_ROWS;
-  const descColW = colTeacher - colDesc - 6;
-  const descPadTop = 2.5;
-  const descLineH = 3.6;
+  sectionTitle(doc, "Description", M, y);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(FONT.section);
+  ink(doc, MUTED);
+  doc.text("Amount", rightX, y, { align: "right" });
+  y += 8;
 
-  doc.setFont("courier", "normal");
-  doc.setFontSize(6.5);
-  const wrappedDesc: string[] = [];
-  for (const block of data.descriptionLines) {
-    const t = block.trim();
-    if (!t) continue;
-    wrappedDesc.push(...doc.splitTextToSize(t, descColW));
-  }
-  if (wrappedDesc.length === 0) {
-    wrappedDesc.push("TUITION FEE");
-  }
-  const firstRowH = Math.max(rowH, descPadTop + wrappedDesc.length * descLineH + 2);
-  const tableH = headerH + firstRowH + rowH * bodyRows;
+  const descW = contentW * 0.62;
+  const wrappedDesc = wrapDescription(doc, data.descriptionLines, descW);
+  const itemTop = y;
 
-  doc.setDrawColor(0, 0, 0);
-  doc.setLineWidth(0.35);
-  doc.rect(MM_MARGIN, y, tableW, tableH);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(FONT.lineItem);
+  ink(doc, INK);
+  doc.text(wrappedDesc, M, y);
+  const descH = wrappedDesc.length * 4.3;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(FONT.teacher);
+  ink(doc, MUTED);
+  const teacherLabel = `Teacher · ${data.teacherName.toUpperCase()}`;
+  const teacherLines = doc.splitTextToSize(teacherLabel, descW);
+  doc.text(teacherLines, M, itemTop + descH + 2.5);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
-  doc.setTextColor(45, 45, 45);
-  const hy = y + 4.8;
-  doc.text("DESCRIPTION", colDesc + 2, hy, { align: "left" });
-  doc.text("TEACHER", colTeacher + 2, hy);
-  doc.text("PRICE", colPrice + 2, hy);
-  doc.text("SUBTOTAL", colSub + 2, hy);
+  doc.setFontSize(FONT.lineAmount);
+  ink(doc, INK);
+  doc.text(amountStr, rightX, itemTop + 3.5, { align: "right" });
 
-  doc.line(MM_MARGIN, y + headerH, rightX, y + headerH);
-  doc.line(colTeacher, y, colTeacher, y + tableH);
-  doc.line(colPrice, y, colPrice, y + tableH);
-  doc.line(colSub, y, colSub, y + tableH);
+  y = itemTop + descH + teacherLines.length * 4 + 13;
+  rule(doc, y, M, rightX);
+  y += 9;
 
-  const firstRowTop = y + headerH;
-  const firstRowBottom = firstRowTop + firstRowH;
-  doc.line(MM_MARGIN, firstRowBottom, rightX, firstRowBottom);
-  let emptyRowTop = firstRowBottom;
-  for (let i = 0; i < bodyRows; i++) {
-    emptyRowTop += rowH;
-    doc.line(MM_MARGIN, emptyRowTop, rightX, emptyRowTop);
-  }
-
-  doc.setFont("courier", "normal");
-  doc.setFontSize(6.5);
-  doc.setTextColor(20, 20, 20);
-  doc.text(wrappedDesc, colDesc + 3, firstRowTop + descPadTop + 2.5);
-
-  const amountRowY = firstRowTop + firstRowH / 2 + 1;
-  doc.setFontSize(7.5);
-  const teacherLines = doc.splitTextToSize(data.teacherName.toUpperCase(), colPrice - colTeacher - 4);
-  doc.text(teacherLines, colTeacher + 2, amountRowY);
-  doc.text(amountStr, colPrice + 2, amountRowY);
-  doc.text(amountStr, colSub + 2, amountRowY);
-
-  for (let i = 0; i < bodyRows; i++) {
-    const ry = firstRowBottom + rowH * i + 4.8;
-    doc.text("—", colTeacher + 2, ry);
-    doc.text("—", colPrice + 2, ry);
-    doc.text("—", colSub + 2, ry);
-  }
-
-  y += tableH + 5;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(45, 45, 45);
-  doc.text("TAX:", colPrice, y);
-  doc.setFont("courier", "normal");
-  doc.text("—", colSub, y);
+  const totalsLabelX = rightX - 62;
+  metaLine(doc, "Tax", "—", y, rightX, totalsLabelX);
+  y += 8;
+  rule(doc, y, totalsLabelX, rightX, 0.35);
   y += 7;
-  doc.setLineWidth(0.6);
-  doc.line(colPrice - 2, y - 4, rightX, y - 4);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text("GRAND TOTAL:", colPrice, y);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10.5);
-  doc.text(amountStr, colSub, y);
 
-  y += 14;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
-  doc.setTextColor(50, 50, 50);
-  doc.text("CANCELLATIONS & REFUNDS:", MM_MARGIN, y);
-  y += 4;
+  doc.setFontSize(FONT.totalLabel);
+  ink(doc, INK);
+  doc.text("Grand total", totalsLabelX, y);
+  doc.setFontSize(FONT.totalAmount);
+  ink(doc, BRAND);
+  doc.text(amountStr, rightX, y + 0.5, { align: "right" });
+
+  y += 17;
+  rule(doc, y, M, rightX, 0.15);
+  y += 9;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(FONT.legalTitle);
+  ink(doc, INK);
+  doc.text("CANCELLATIONS & REFUNDS:", M, y);
+
+  y += 5;
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(40, 40, 40);
+  doc.setFontSize(FONT.legalBody);
+  ink(doc, MUTED);
   for (const line of ENROLLMENT_DOCUMENT_ORG.cancellationLines) {
-    doc.text(line, MM_MARGIN, y);
-    y += 3.5;
+    doc.text(line, M, y, { maxWidth: contentW * 0.58 });
+    y += 4;
   }
-  y += 3;
+  y += 2;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.text(ENROLLMENT_DOCUMENT_ORG.helpLine, MM_MARGIN, y);
+  doc.setFontSize(FONT.legalBody);
+  ink(doc, INK);
+  doc.text(ENROLLMENT_DOCUMENT_ORG.helpLine, M, y, { maxWidth: contentW * 0.58 });
 
-  const nameY = PAGE_BOTTOM - 12;
-  const titleY = nameY + 4;
-  const stampX = rightX - STAMP_WIDTH_MM;
-  const sigCenterX = stampX + STAMP_WIDTH_MM / 2;
+  const nameY = PAGE_BOTTOM - 8;
+  const stampX = rightX - STAMP_W;
+  const sigX = stampX + STAMP_W / 2;
+
   if (stampLogo) {
-    const stampH = STAMP_WIDTH_MM * EDUHUB_RECEIPT_STAMP_ASPECT;
-    const stampY = nameY - stampH - 2;
-    doc.addImage(stampLogo, "PNG", stampX, stampY, STAMP_WIDTH_MM, stampH);
+    const stampH = STAMP_W * EDUHUB_RECEIPT_STAMP_ASPECT;
+    doc.addImage(stampLogo, "PNG", stampX, nameY - stampH - 2, STAMP_W, stampH);
   } else {
-    doc.setDrawColor(TITLE_BLUE.r, TITLE_BLUE.g, TITLE_BLUE.b);
-    doc.setLineWidth(0.35);
-    doc.circle(sigCenterX, nameY - 8, 11, "S");
+    doc.setDrawColor(BRAND.r, BRAND.g, BRAND.b);
+    doc.setLineWidth(0.25);
+    doc.circle(sigX, nameY - 8, 9, "S");
   }
+
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.setTextColor(20, 20, 20);
-  doc.text(ENROLLMENT_DOCUMENT_ORG.signatoryName, sigCenterX, nameY, { align: "center" });
+  doc.setFontSize(FONT.signName);
+  ink(doc, INK);
+  doc.text(ENROLLMENT_DOCUMENT_ORG.signatoryName, sigX, nameY, { align: "center" });
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.5);
-  doc.setTextColor(80, 80, 80);
-  doc.text(ENROLLMENT_DOCUMENT_ORG.signatoryTitle, sigCenterX, titleY, { align: "center" });
+  doc.setFontSize(FONT.signTitle);
+  ink(doc, MUTED);
+  doc.text(ENROLLMENT_DOCUMENT_ORG.signatoryTitle, sigX, nameY + 4, { align: "center" });
 }
 
 export async function downloadEduHubReceiptPdf(

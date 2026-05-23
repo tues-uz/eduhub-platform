@@ -3,6 +3,7 @@ const REG_PARENT_PHONE_PREFIX = "eduhub_registration_parent_phone_";
 const REG_PASSPORT_PREFIX = "eduhub_registration_passport_";
 const REG_BIRTHDAY_PREFIX = "eduhub_registration_birthday_";
 const REG_BIRTH_CITY_PREFIX = "eduhub_registration_birth_city_";
+const REG_LATEST_SCHOOL_PREFIX = "eduhub_registration_latest_school_";
 
 function emailKey(email: string): string {
   return email.trim().toLowerCase();
@@ -16,6 +17,7 @@ export function saveRegistrationPhones(
     passportNumber?: string;
     dateOfBirth?: string;
     birthCity?: string;
+    latestSchool?: string;
   },
 ): void {
   if (typeof window === "undefined") return;
@@ -30,6 +32,9 @@ export function saveRegistrationPhones(
   }
   if (phones.birthCity != null) {
     localStorage.setItem(`${REG_BIRTH_CITY_PREFIX}${key}`, phones.birthCity.trim());
+  }
+  if (phones.latestSchool != null) {
+    localStorage.setItem(`${REG_LATEST_SCHOOL_PREFIX}${key}`, phones.latestSchool.trim());
   }
 }
 
@@ -56,4 +61,9 @@ export function registrationDateOfBirthForEmail(email: string): string {
 export function registrationBirthCityForEmail(email: string): string {
   if (typeof window === "undefined") return "";
   return localStorage.getItem(`${REG_BIRTH_CITY_PREFIX}${emailKey(email)}`) ?? "";
+}
+
+export function registrationLatestSchoolForEmail(email: string): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem(`${REG_LATEST_SCHOOL_PREFIX}${emailKey(email)}`) ?? "";
 }

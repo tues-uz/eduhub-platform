@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FileText, Award, BarChart3, Calendar, Settings, ArrowLeft } from "lucide-react";
+import { FileText, Award, BarChart3, Calendar, Settings, ArrowLeft } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/DashboardSidebar";
 

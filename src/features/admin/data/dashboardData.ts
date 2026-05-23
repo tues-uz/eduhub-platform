@@ -2,7 +2,7 @@ import {
   Users,
   GraduationCap,
   BookOpen,
-} from "lucide-react";
+} from "@/lib/icons";
 
 export const adminStats = [
   { icon: Users, label: "Total Users", value: "2,847", change: "+142", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },

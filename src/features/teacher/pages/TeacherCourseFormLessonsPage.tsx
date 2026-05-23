@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Trash2, GripVertical, FileText, Video, Loader2, Upload, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, GripVertical, FileText, Video, Loader2, Upload, X, ChevronDown, ChevronRight } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

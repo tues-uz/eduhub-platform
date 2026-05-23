@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ClipboardList, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
+import { ClipboardList, CheckCircle2, Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
 import { eduhubCourseQuizzes, QuizResponseForStudent, QuizResultResponse } from "@/api/eduhubClient";
@@ -106,7 +106,7 @@ export default function StudentPlacementTests() {
   };
 
   return (
-    <div className="container mx-auto max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="w-full max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           {screen === "list" && (
             <>
               <div className="mb-8">
@@ -119,11 +119,14 @@ export default function StudentPlacementTests() {
                   <p>Loading placement tests...</p>
                 </div>
               ) : error ? (
-                <div className="rounded-xl border border-red-100 bg-red-50 p-6 text-center">
-                  <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-3" />
-                  <p className="text-red-800 font-medium">{error}</p>
-                  <Button variant="outline" className="mt-4 border-red-200 text-red-700" onClick={fetchQuizzes}>
-                    Try Again
+                <div className="rounded-xl border border-dashed border-gray-200/80 bg-white/80 p-8 text-center">
+                  <ClipboardList className="mx-auto mb-3 h-12 w-12 text-foreground/30" />
+                  <p className="font-medium text-foreground/70">{error}</p>
+                  <p className="mt-1 text-sm text-foreground/50">
+                    Check your connection and try again.
+                  </p>
+                  <Button variant="outline" className="mt-4 rounded-full" onClick={fetchQuizzes}>
+                    Try again
                   </Button>
                 </div>
               ) : quizzes.length === 0 ? (

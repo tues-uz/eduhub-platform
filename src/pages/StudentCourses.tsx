@@ -2,16 +2,19 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen,
+  CalendarDays,
+  CheckCircle2,
   PlayCircle,
   Search,
-  User,
-  Clock,
-  Layers,
-} from "lucide-react";
+} from "@/lib/icons";
+import { InstructorAvatar } from "@/components/InstructorAvatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
+import { useStudentCourseScheduleSummaries } from "@/features/student/hooks/useStudentCourseScheduleSummaries";
+import { formatDisplayPersonName } from "@/lib/formatPersonName";
+import { StudentPromoCarousel } from "@/features/student/components/StudentPromoCarousel";
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("en-US", {
@@ -30,8 +33,54 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "Completed", label: "Completed" },
 ];
 
+type EnrollmentStat = {
+  label: string;
+  value: number;
+  icon: typeof BookOpen;
+};
+
+function EnrollmentStatCard({ label, value, icon: Icon }: EnrollmentStat) {
+  return (
+    <div className="flex flex-1 flex-col bg-white px-6 py-5">
+      <span className="inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.06em] text-zinc-500">
+        <Icon className="h-3.5 w-3.5 shrink-0 text-zinc-400" aria-hidden />
+        {label}
+      </span>
+      <span
+        className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-zinc-900"
+        style={{ fontFamily: "'DM Sans', sans-serif" }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function statusBadgeClass(status: string): string {
+  if (status === "Completed") return "bg-green-600 text-white";
+  if (status === "Almost Complete") return "bg-[#3954d0] text-white";
+  return "border border-yellow-200/80 bg-yellow-50 text-yellow-900";
+}
+
+function isEmptyMeta(value: string | undefined): boolean {
+  const t = value?.trim() ?? "";
+  return !t || t === "—" || t === "-";
+}
+
+function lessonSummary(modules: number, duration: string): string | null {
+  const parts: string[] = [];
+  if (modules > 0) {
+    parts.push(`${modules} lesson${modules === 1 ? "" : "s"}`);
+  }
+  if (!isEmptyMeta(duration)) {
+    parts.push(duration.trim());
+  }
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
 const StudentCourses = () => {
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
+  const scheduleSummaries = useStudentCourseScheduleSummaries(enrolledCourses);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
@@ -47,37 +96,48 @@ const StudentCourses = () => {
   const inProgressCount = enrolledCourses.filter((c) => c.status !== "Completed").length;
   const completedCount = enrolledCourses.filter((c) => c.status === "Completed").length;
 
+  const enrollmentStats: EnrollmentStat[] = [
+    { label: "Total enrolled", value: enrolledCourses.length, icon: BookOpen },
+    { label: "In progress", value: inProgressCount, icon: PlayCircle },
+    { label: "Completed", value: completedCount, icon: CheckCircle2 },
+  ];
+
   return (
-    <div className="container mx-auto min-h-0 px-0">
+    <div className="min-h-0 pb-8">
+      <StudentPromoCarousel placement="my-class" className="mb-6" fullWidth />
+
+      <div className="container mx-auto min-h-0 px-0">
           <div className="mb-8">
-            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-foreground/70 text-sm">
+            <div className="mb-6 flex items-start gap-4">
+              <div className="min-w-0 flex-1">
+                <h1
+                  className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+                  style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.02em" }}
+                >
+                  My Class
+                </h1>
+                <p className="mt-2 text-sm text-foreground/70">
                   Information about the classes you are enrolled in. Continue learning or review completed classes.
                 </p>
               </div>
-              <Link to="/eduhub">
-                <Button className="rounded-full" style={{ backgroundColor: "#3954d0" }}>
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  Browse More Classes
+              <Link to="/eduhub" className="shrink-0">
+                <Button
+                  variant="outline"
+                  className="rounded-full border-gray-200 bg-white text-foreground hover:bg-gray-50"
+                >
+                  More Classes
                 </Button>
               </Link>
             </div>
 
-            {/* Summary stats */}
-            <div className="mb-6 flex flex-wrap gap-4 text-sm">
-              <span className="rounded-full bg-blue-50 px-4 py-2 text-blue-700 font-medium">
-                {enrolledCourses.length} total enrolled
-              </span>
-              <span className="rounded-full bg-amber-50 px-4 py-2 text-amber-700 font-medium">
-                {inProgressCount} in progress
-              </span>
-              <span className="rounded-full bg-green-50 px-4 py-2 text-green-700 font-medium">
-                {completedCount} completed
-              </span>
+            <div className="mb-6 overflow-hidden rounded-2xl border border-zinc-200/80">
+              <div className="grid grid-cols-1 divide-y divide-zinc-200/80 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                {enrollmentStats.map((stat) => (
+                  <EnrollmentStatCard key={stat.label} {...stat} />
+                ))}
+              </div>
             </div>
 
-            {/* Search */}
             <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
               <Input
@@ -85,12 +145,11 @@ const StudentCourses = () => {
                 placeholder="Search by class name, instructor, or category..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-11 rounded-lg border-gray-200 pl-10"
+                className="h-11 rounded-xl border-gray-200 pl-10"
               />
             </div>
           </div>
 
-          {/* Status filter + count side by side */}
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               {STATUS_FILTERS.map(({ value, label }) => (
@@ -98,7 +157,7 @@ const StudentCourses = () => {
                   key={value}
                   variant={statusFilter === value ? "default" : "outline"}
                   size="sm"
-                  className={`rounded-full text-xs px-5 ${statusFilter !== value ? "hover:bg-gray-100 hover:border-gray-200" : ""}`}
+                  className={`rounded-full px-5 text-xs ${statusFilter !== value ? "hover:border-gray-200 hover:bg-gray-100" : ""}`}
                   style={statusFilter === value ? { backgroundColor: "#3954d0" } : undefined}
                   onClick={() => setStatusFilter(value)}
                 >
@@ -111,13 +170,22 @@ const StudentCourses = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredCourses.map((course) => (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 min-[1300px]:grid-cols-4">
+            {filteredCourses.map((course) => {
+              const hasNextLesson = !isEmptyMeta(course.nextLesson);
+              const lessonsLabel = lessonSummary(course.modules, course.duration);
+              const category = course.category.trim();
+              const scheduleSummary = scheduleSummaries.get(String(course.id));
+
+              return (
               <div
                 key={course.id}
-                className="flex flex-col overflow-hidden rounded-xl border border-gray-200/50 bg-white/80 shadow-sm backdrop-blur-sm transition-all hover:border-gray-300/50 hover:shadow-md"
+                className="relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md transition-shadow hover:shadow-lg"
               >
-                <div className="relative h-40 w-full shrink-0 bg-gray-200 sm:h-44">
+                <Link
+                  to={`/dashboard/courses/${course.id}`}
+                  className="relative mx-3 mt-3 flex h-52 overflow-hidden rounded-xl bg-gray-100 sm:h-56"
+                >
                   {course.thumbnailUrl ? (
                     <img
                       src={course.thumbnailUrl}
@@ -128,81 +196,113 @@ const StudentCourses = () => {
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center" aria-hidden>
-                      <BookOpen className="h-10 w-10 text-gray-400/90" />
+                      <BookOpen className="h-12 w-12 text-gray-400/90" />
                     </div>
                   )}
-                  <div
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent"
-                    aria-hidden
-                  />
                   <span
-                    className={`absolute right-2 top-2 rounded-full px-3 py-1.5 text-xs font-medium shadow-sm ${
-                      course.status === "Completed"
-                        ? "bg-green-100 text-green-700"
-                        : course.status === "Almost Complete"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-amber-100 text-amber-700"
-                    }`}
+                    className={`absolute left-0 top-0 m-2 rounded-full px-2.5 py-0.5 text-xs font-semibold shadow-sm ${statusBadgeClass(course.status)}`}
                   >
                     {course.status}
                   </span>
-                </div>
+                </Link>
 
-                <div className="flex flex-1 flex-col p-4 sm:p-5">
-                <div className="mb-4 min-w-0">
-                    {course.category && (
-                      <span className="text-xs font-medium uppercase tracking-wide text-foreground/60">
-                        {course.category}
+                <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
+                  <div className="flex flex-1 flex-col">
+                  <div className="flex items-center justify-between gap-3">
+                    {category ? (
+                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                        {category}
                       </span>
+                    ) : (
+                      <span aria-hidden />
                     )}
-                    <h3 className="mt-0.5 mb-1 font-semibold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.3px" }}>
-                      {course.title}
-                    </h3>
-                    <div className="flex items-center gap-1.5 text-sm text-foreground/60">
-                      <User className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span>{course.instructor}</span>
-                    </div>
-                </div>
-
-                {/* Class info */}
-                <div className="mb-4 flex flex-wrap gap-3 text-xs text-foreground/60">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    {course.duration}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Layers className="h-3.5 w-3.5" />
-                    {course.modules} modules
-                  </span>
-                  <span>Enrolled {formatDate(course.enrolledDate)}</span>
-                </div>
-
-                <div className="mb-4 flex-1">
-                  <div className="mb-2 flex items-center justify-between text-xs text-foreground/60">
-                    <span>Progress</span>
-                    <span className="font-bold text-foreground">{course.progress}%</span>
-                  </div>
-                  <Progress value={course.progress} className="h-2 bg-gray-200" />
-                </div>
-
-                <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-2">
-                  <div className="flex min-w-0 items-center gap-1.5 text-sm text-foreground/70">
-                    <PlayCircle className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">Next: {course.nextLesson}</span>
-                  </div>
-                  <Link to={`/dashboard/courses/${course.id}`}>
-                    <Button
-                      size="sm"
-                      className="flex-shrink-0 rounded-full"
-                      style={{ backgroundColor: "#3954d0" }}
+                    <time
+                      className="shrink-0 text-xs text-slate-400"
+                      dateTime={course.enrolledDate}
                     >
-                      {course.status === "Completed" ? "Review" : "Continue"}
-                    </Button>
+                      Joined {formatDate(course.enrolledDate)}
+                    </time>
+                  </div>
+
+                  <Link to={`/dashboard/courses/${course.id}`} className="group mt-2 block">
+                    <h5
+                      className="line-clamp-2 text-lg font-bold leading-snug tracking-tight text-slate-900 group-hover:text-[#3954d0]"
+                      style={{ fontFamily: "'DM Sans', sans-serif" }}
+                    >
+                      {course.title}
+                    </h5>
                   </Link>
-                </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <InstructorAvatar
+                        name={course.instructor}
+                        avatarUrl={course.instructorAvatarUrl}
+                        className="h-8 w-8"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-800">
+                          {formatDisplayPersonName(course.instructor)}
+                        </p>
+                        <p className="text-xs text-slate-500">Instructor</p>
+                      </div>
+                    </div>
+                    {lessonsLabel ? (
+                      <p className="shrink-0 text-right text-xs font-medium text-slate-500">
+                        {lessonsLabel}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  {scheduleSummary ? (
+                    <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+                        <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#3954d0]/70" aria-hidden />
+                        Schedule
+                      </span>
+                      <span className="text-xs tabular-nums text-slate-700">
+                        <span className="font-semibold text-slate-900">{scheduleSummary.reached}</span>
+                        <span className="text-slate-400"> / </span>
+                        <span className="font-medium">{scheduleSummary.total}</span>
+                        <span className="text-slate-500">{" sessions"}</span>
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {hasNextLesson ? (
+                    <p className="mt-4 flex min-w-0 items-start gap-2 rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-600">
+                      <PlayCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#3954d0]" aria-hidden />
+                      <span className="min-w-0">
+                        <span className="block text-xs font-medium uppercase tracking-wide text-slate-500">
+                          Up next
+                        </span>
+                        <span className="line-clamp-2 font-medium text-slate-800">{course.nextLesson}</span>
+                      </span>
+                    </p>
+                  ) : null}
+                  </div>
+
+                  <div className="mt-4 space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs font-medium text-slate-600">
+                      <span>Your progress</span>
+                      <span className="tabular-nums text-slate-900">{course.progress}%</span>
+                    </div>
+                    <Progress value={course.progress} className="h-2 bg-slate-100" />
+                  </div>
+
+                  <Link
+                    to={`/dashboard/courses/${course.id}`}
+                    className="flex w-full items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300"
+                  >
+                    <PlayCircle className="mr-2 h-5 w-5" aria-hidden />
+                    {course.status === "Completed" ? "Review class" : "Continue learning"}
+                  </Link>
+                  </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
 
           {filteredCourses.length === 0 && (
@@ -222,6 +322,7 @@ const StudentCourses = () => {
               </Button>
             </div>
           )}
+      </div>
     </div>
   );
 };

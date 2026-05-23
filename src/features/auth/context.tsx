@@ -2,10 +2,12 @@ import { createContext, useContext, useEffect, useMemo, useState, type PropsWith
 import type { SessionUser, UserRole } from "./types";
 import { getAccessToken } from "@/api/eduhubClient";
 import { eduhubAuth } from "@/api/eduhubClient";
+import { resolveInstructorCategory } from "@/features/teacher/resolveInstructorCategory";
 
 const USER_ID_KEY = "userId";
 const USER_AVATAR_URL_KEY = "userAvatarUrl";
 const USER_PHONE_KEY = "userPhone";
+const USER_CATEGORY_KEY = "userCategory";
 
 function mapApiRoleToApp(apiRole: string): UserRole {
   if (apiRole === "LECTURER") return "teacher";
@@ -20,7 +22,8 @@ function readSessionUser(): SessionUser {
   const id = localStorage.getItem(USER_ID_KEY) || undefined;
   const avatarUrl = localStorage.getItem(USER_AVATAR_URL_KEY) || undefined;
   const phoneNumber = localStorage.getItem(USER_PHONE_KEY) || undefined;
-  return { id, name, email, role, avatarUrl, phoneNumber };
+  const category = localStorage.getItem(USER_CATEGORY_KEY) || undefined;
+  return { id, name, email, role, avatarUrl, phoneNumber, category };
 }
 
 export function setSessionUser(user: SessionUser): void {
@@ -32,6 +35,11 @@ export function setSessionUser(user: SessionUser): void {
   else localStorage.removeItem(USER_AVATAR_URL_KEY);
   if (user.phoneNumber) localStorage.setItem(USER_PHONE_KEY, user.phoneNumber);
   else localStorage.removeItem(USER_PHONE_KEY);
+  if (user.role === "teacher" && user.category?.trim()) {
+    localStorage.setItem(USER_CATEGORY_KEY, user.category.trim());
+  } else {
+    localStorage.removeItem(USER_CATEGORY_KEY);
+  }
 }
 
 export function clearSessionUser(): void {
@@ -40,6 +48,7 @@ export function clearSessionUser(): void {
   localStorage.removeItem("userEmail");
   localStorage.removeItem("userRole");
   localStorage.removeItem(USER_PHONE_KEY);
+  localStorage.removeItem(USER_CATEGORY_KEY);
 }
 
 type AuthSessionValue = {
@@ -64,6 +73,8 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
       .then((me) => {
         const role = mapApiRoleToApp(me.role);
         const prev = readSessionUser();
+        const category =
+          role === "teacher" ? resolveInstructorCategory(me.email, me.category ?? prev.category) : undefined;
         setSessionUser({
           id: me.id,
           name: me.fullName,
@@ -71,6 +82,7 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
           role,
           avatarUrl: me.avatarUrl ?? prev.avatarUrl,
           phoneNumber: me.phoneNumber ?? prev.phoneNumber,
+          category,
         });
         setUser(readSessionUser());
       })

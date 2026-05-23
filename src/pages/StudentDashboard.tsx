@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen,
@@ -7,32 +7,195 @@ import {
   TrendingUp,
   Calendar,
   CheckCircle2,
-  PlayCircle,
   BarChart3,
   Target,
-  Bell,
   Clock,
-  AlertCircle,
-} from "lucide-react";
+  Loader2,
+} from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import { DashboardPageHeader } from "@/components/DashboardPageHeader";
+import { InstructorAvatar } from "@/components/InstructorAvatar";
 import { useAuthSession } from "@/features/auth/context";
 import { useLayoutContext } from "@/features/layout/context";
 import { studentStats } from "@/features/student/data/dashboardData";
 import { useStudentCoursesQuery, useStudentOverviewQuery } from "@/features/student/hooks/useStudentQueries";
+import { useStudentUpcomingScheduleQuery } from "@/features/student/hooks/useStudentUpcomingSchedule";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
+import { cn } from "@/lib/utils";
+import { formatSessionTimeLabel, sessionStartMs } from "@/features/courses/classSchedulePreview";
+import {
+  formatScheduleCountdown,
+  formatUpcomingScheduleDayLabel,
+} from "@/features/student/upcomingSchedule";
+import type { UpcomingScheduleItem } from "@/features/student/upcomingSchedule";
+
+function UpcomingScheduleCard({ item }: { item: UpcomingScheduleItem }) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const startMs = sessionStartMs(item.sessionDate, item.sessionTime);
+  const date = startMs != null ? new Date(startMs) : null;
+  const monthLabel = date
+    ? date.toLocaleDateString(undefined, { month: "short" }).toUpperCase()
+    : "TBA";
+  const dayLabel = date ? String(date.getDate()) : "—";
+  const weekdayLabel = date
+    ? date.toLocaleDateString(undefined, { weekday: "short" })
+    : null;
+  const timeLabel = formatSessionTimeLabel(item.sessionTime);
+  const relativeDay = formatUpcomingScheduleDayLabel(item.sessionDate);
+  const countdown =
+    item.timingStatus === "ongoing"
+      ? null
+      : formatScheduleCountdown(item.sessionDate, item.sessionTime, now);
+  const countdownShort = countdown?.replace(/^Starts in /, "In ");
+  const isOngoing = item.timingStatus === "ongoing";
+
+  return (
+    <Link
+      to={`/dashboard/courses/${encodeURIComponent(item.courseId)}`}
+      className="group flex gap-4 rounded-2xl border border-zinc-200/80 bg-white p-4 transition-all hover:border-[#3954d0]/25 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3954d0] focus-visible:ring-offset-2"
+    >
+      <div
+        className={cn(
+          "flex h-[4.5rem] w-14 shrink-0 flex-col items-center justify-center rounded-xl border text-center transition-colors",
+          isOngoing
+            ? "border-emerald-200 bg-emerald-50"
+            : "border-zinc-100 bg-zinc-50 group-hover:border-[#3954d0]/15 group-hover:bg-[#3954d0]/[0.04]",
+        )}
+      >
+        <span className="text-[10px] font-semibold tracking-wider text-zinc-500">{monthLabel}</span>
+        <span className="mt-0.5 text-2xl font-bold leading-none text-zinc-900">{dayLabel}</span>
+        {weekdayLabel ? (
+          <span className="mt-1 text-[10px] font-medium text-zinc-500">{weekdayLabel}</span>
+        ) : null}
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-semibold uppercase tracking-wide text-zinc-400">
+              {item.courseTitle}
+            </p>
+            <h3
+              className="mt-0.5 truncate text-base font-semibold text-zinc-900"
+              style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.2px" }}
+            >
+              {item.sessionTitle}
+            </h3>
+          </div>
+          {isOngoing ? (
+            <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+              Live
+            </span>
+          ) : countdownShort ? (
+            <span className="shrink-0 rounded-full bg-[#3954d0]/10 px-2.5 py-1 text-xs font-semibold text-[#3954d0]">
+              {countdownShort}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-600">
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <InstructorAvatar
+              name={item.instructor}
+              avatarUrl={item.instructorAvatarUrl}
+              className="h-5 w-5"
+            />
+            <span className="truncate">{formatDisplayPersonName(item.instructor)}</span>
+          </span>
+          {timeLabel ? (
+            <>
+              <span className="text-zinc-300" aria-hidden>
+                ·
+              </span>
+              <span className="inline-flex items-center gap-1 shrink-0">
+                <Clock className="h-3.5 w-3.5 text-zinc-400" aria-hidden />
+                {timeLabel}
+              </span>
+            </>
+          ) : null}
+          {relativeDay === "Today" || relativeDay === "Tomorrow" ? (
+            <>
+              <span className="text-zinc-300" aria-hidden>
+                ·
+              </span>
+              <span className="font-medium text-zinc-700">{relativeDay}</span>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+type DashboardStat = {
+  label: string;
+  value: string;
+  icon: typeof BookOpen;
+  href?: string;
+};
+
+function DashboardStatCard({
+  label,
+  value,
+  icon: Icon,
+  href = "/dashboard",
+  className,
+}: DashboardStat & { className?: string }) {
+  return (
+    <Link
+      to={href}
+      className={cn(
+        "group flex flex-1 flex-col bg-white px-5 py-5 transition-colors hover:bg-zinc-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#3954d0] sm:px-6",
+        className,
+      )}
+    >
+      <span className="inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.06em] text-zinc-500">
+        <Icon
+          className="h-3.5 w-3.5 shrink-0 text-zinc-400 transition-colors group-hover:text-zinc-500"
+          aria-hidden
+        />
+        {label}
+      </span>
+      <span
+        className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-zinc-900"
+        style={{ fontFamily: "'DM Sans', sans-serif" }}
+      >
+        {value}
+      </span>
+    </Link>
+  );
+}
+
+function dashboardStatBorderClass(index: number, total: number): string {
+  return cn(
+    index < total - 1 && "lg:border-r lg:border-zinc-200/80",
+    index % 2 === 0 && index < total - 1 && "max-lg:border-r max-lg:border-zinc-200/80",
+    index < 2 && "max-lg:border-b max-lg:border-zinc-200/80",
+  );
+}
+
+function WelcomeWave() {
+  return (
+    <span className="wave wave--inline wave--play-animation inline-flex shrink-0 align-middle" aria-hidden>
+      👋
+    </span>
+  );
+}
 
 const StudentDashboard = () => {
   const { user } = useAuthSession();
   const { isSidebarCollapsed } = useLayoutContext();
   const { data } = useStudentOverviewQuery();
-  const { data: enrolledCourses = [] } = useStudentCoursesQuery();
+  const { data: enrolledCourses = [], isLoading: coursesLoading } = useStudentCoursesQuery();
+  const { data: upcomingSchedule = [], isLoading: scheduleLoading } = useStudentUpcomingScheduleQuery(5);
   const displayName = formatDisplayPersonName(user.name);
 
   const statCards = useMemo(() => {
@@ -60,7 +223,7 @@ const StudentDashboard = () => {
       return stat;
     });
   }, [data?.stats, data?.assignments?.length, enrolledCourses]);
-  const courses = data?.courses ?? [];
+
   const assignments = data?.assignments ?? [];
   const recentActivity = data?.recentActivity ?? [];
 
@@ -77,247 +240,155 @@ const StudentDashboard = () => {
     return diffDays;
   };
 
-  const notifications = data?.notifications ?? [];
-
-  const unreadCount = notifications.filter((n) => n.unread).length;
-
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="min-h-dvh bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardSidebar />
-      
-      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6">
+
+      <main
+        className={`flex min-h-[calc(100dvh-4rem)] flex-col lg:h-dvh lg:max-h-dvh lg:overflow-hidden lg:min-h-0 pt-16 lg:pt-0 pb-0 transition-all duration-300 ${
+          isSidebarCollapsed ? "lg:ml-20 lg:w-[calc(100%-5rem)]" : "lg:ml-64 lg:w-[calc(100%-16rem)]"
+        }`}
+      >
+        <DashboardPageHeader />
+        <div className="min-h-0 flex-1 px-6 pt-4 pb-12 lg:overflow-y-auto lg:overscroll-y-contain">
+        <div className="container mx-auto px-0">
           {/* Dashboard Header */}
           <div className="mb-8">
-            <div className="mb-6 flex items-start justify-between">
-              <div>
-                <h1
-                  className="mb-2 text-[32px] font-bold tracking-wide text-foreground"
-                  style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.5px" }}
-                >
-                  Hi {displayName}, Welcome Back
-                </h1>
-                <p className="text-foreground/70" style={{ fontSize: '14px' }}>Here's what's happening with your classes today</p>
-              </div>
-              
-              {/* Notification Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full relative border border-black/24 hover:bg-gray-100"
-                  >
-                    <Bell className="h-5 w-5" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-6 w-6 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-semibold border-2 border-white">
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                      </span>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto rounded-2xl p-4">
-                  <div className="p-0">
-                    <div className="flex items-center justify-between mb-3 px-0">
-                      <h3 className="font-semibold text-sm" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>Notifications</h3>
-                      {unreadCount > 0 && (
-                        <Button variant="ghost" size="sm" className="text-xs h-6 px-0">
-                          Mark all as read
-                        </Button>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      {notifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                            notification.unread ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`mt-0.5 flex-shrink-0 ${
-                              notification.type === "assignment" ? "text-purple-500" :
-                              notification.type === "class" ? "text-blue-500" :
-                              notification.type === "certificate" ? "text-orange-500" :
-                              "text-gray-500"
-                            }`}>
-                              {notification.type === "assignment" && <FileText className="h-4 w-4" />}
-                              {notification.type === "class" && <BookOpen className="h-4 w-4" />}
-                              {notification.type === "certificate" && <Award className="h-4 w-4" />}
-                              {notification.type === "announcement" && <AlertCircle className="h-4 w-4" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1">
-                                  <p className={`text-sm font-medium ${notification.unread ? "text-foreground" : "text-foreground/70"}`}>
-                                    {notification.title}
-                                  </p>
-                                  <p className="text-xs text-foreground/60 mt-1">{notification.message}</p>
-                                  <p className="text-xs text-foreground/50 mt-1 flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {notification.time}
-                                  </p>
-                                </div>
-                                {notification.unread && (
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1" />
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {notifications.length === 0 && (
-                      <div className="text-center py-8 text-sm text-foreground/60">
-                        No notifications
-                      </div>
-                    )}
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <Link to="/dashboard/notifications">
-                        <Button size="sm" className="w-full rounded-full text-sm" style={{ backgroundColor: "#3954d0" }}>
-                          View all notifications
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <div className="mb-6 space-y-1">
+              <h1
+                className="flex flex-wrap items-center gap-x-2 text-[32px] font-bold leading-tight text-foreground"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                <span>Hi {displayName}, welcome back</span>
+                <WelcomeWave />
+              </h1>
+              <p className="text-foreground/70" style={{ fontSize: "14px" }}>
+                Here&apos;s what&apos;s happening with your classes today
+              </p>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {statCards.map((stat) => {
-                const Icon = stat.icon;
-                const href = "href" in stat && typeof stat.href === "string" ? stat.href : "/dashboard";
-                return (
-                  <Link
-                    key={stat.label}
-                    to={href}
-                    className="group bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-200/50 transition-all hover:shadow-md hover:border-[#3954d0]/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3954d0] focus-visible:ring-offset-2"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className={`${stat.bgColor} p-3 rounded-full transition-colors group-hover:opacity-90`}>
-                        <Icon className={`h-6 w-6 ${stat.color}`} />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-foreground mb-1">{stat.value}</p>
-                      <p className="text-sm text-foreground/70">{stat.label}</p>
-                    </div>
-                  </Link>
-                );
-              })}
+            {/* Stats */}
+            <div className="overflow-hidden rounded-2xl border border-zinc-200/80">
+              <div className="grid grid-cols-2 lg:grid-cols-4">
+                {statCards.map((stat, index) => {
+                  const href = "href" in stat && typeof stat.href === "string" ? stat.href : "/dashboard";
+                  return (
+                    <DashboardStatCard
+                      key={stat.label}
+                      label={stat.label}
+                      value={stat.value}
+                      icon={stat.icon}
+                      href={href}
+                      className={dashboardStatBorderClass(index, statCards.length)}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* My Class section */}
+            {/* Main column */}
             <div className="lg:col-span-2 space-y-6">
-              {/* My Class */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
+              {/* Upcoming Schedule */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 px-4 py-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>My Class</h2>
-                  <Link to="/eduhub">
-<Button variant="outline" className="text-sm hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200">
-                    View All
-                  </Button>
+                  <h2 className="text-2xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>Upcoming Schedule</h2>
+                  <Link to="/dashboard/schedule">
+                    <Button variant="ghost" className="text-sm hover:bg-transparent hover:text-foreground">
+                      View All
+                    </Button>
                   </Link>
                 </div>
-                <div className="space-y-4">
-                  {courses.map((course) => (
-                    <div
-                      key={course.id}
-                      className="p-4 rounded-lg border border-gray-200 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer bg-gradient-to-r from-white to-gray-50/50"
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0 flex items-center justify-center">
-                          <BookOpen className="h-5 w-5 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <h3 className="font-semibold text-foreground mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.3px' }}>{course.title}</h3>
-                              <p className="text-sm text-foreground/60">{course.instructor}</p>
-                            </div>
-                            <span className="py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full" style={{ paddingLeft: '12px', paddingRight: '12px' }}>
-                              {course.status}
-                            </span>
-                          </div>
-                          <div className="mb-6">
-                            <div className="flex items-center justify-between text-xs text-foreground/60 mb-1">
-                              <span>Progress</span>
-                              <span className="font-extrabold">{course.progress}%</span>
-                            </div>
-                            <Progress value={course.progress} className="h-2 bg-gray-200" />
-                          </div>
-                          <div className="flex items-center gap-4 text-sm">
-                            <div className="flex items-center gap-1 text-foreground/70">
-                              <PlayCircle className="h-4 w-4" />
-                              <span>Next: {course.nextLesson}</span>
-                            </div>
-                            <Button
-                              size="sm"
-                              className="ml-auto rounded-full"
-                              style={{ backgroundColor: '#3954d0' }}
-                            >
-                              Continue Learning
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+                <div className="space-y-3">
+                  {coursesLoading || scheduleLoading ? (
+                    <p className="py-8 text-center text-sm text-foreground/60">Loading your schedule…</p>
+                  ) : enrolledCourses.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-gray-200 py-10 text-center">
+                      <Calendar className="mx-auto mb-3 h-10 w-10 text-foreground/30" />
+                      <p className="font-medium text-foreground/70">No enrolled classes yet</p>
+                      <p className="mt-1 text-sm text-foreground/50">Enroll in a class to see your upcoming sessions here.</p>
+                      <Link to="/dashboard/available-courses">
+                        <Button className="mt-4 rounded-full" style={{ backgroundColor: "#3954d0" }}>
+                          Browse classes
+                        </Button>
+                      </Link>
                     </div>
-                  ))}
+                  ) : upcomingSchedule.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-gray-200 py-10 text-center">
+                      <Calendar className="mx-auto mb-3 h-10 w-10 text-foreground/30" />
+                      <p className="font-medium text-foreground/70">No upcoming sessions scheduled</p>
+                      <p className="mt-1 text-sm text-foreground/50">Your instructor may publish the class schedule soon.</p>
+                      <Link to="/dashboard/courses">
+                        <Button variant="outline" className="mt-4 rounded-full">
+                          View My Class
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    upcomingSchedule.map((item) => (
+                      <UpcomingScheduleCard key={`${item.courseId}-${item.sessionDate}-${item.sessionTime}-${item.sessionTitle}`} item={item} />
+                    ))
+                  )}
                 </div>
               </div>
 
               {/* Upcoming Assignments */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 px-4 py-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>Upcoming Assignments</h2>
-                  <Button variant="outline" className="text-sm">
+                  <h2 className="text-2xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>Upcoming Assignments</h2>
+                  <Button variant="ghost" className="text-sm hover:bg-transparent hover:text-foreground">
                     View Calendar
                   </Button>
                 </div>
                 <div className="space-y-3">
                   {assignments.map((assignment) => {
                     const daysUntil = getDaysUntilDue(assignment.dueDate);
-                    const isUrgent = daysUntil <= 3;
+                    const isOverdue = daysUntil < 0;
+                    const isDueSoon = !isOverdue && daysUntil <= 3;
                     return (
                       <div
                         key={assignment.id}
-                        className={`p-4 rounded-lg border ${
-                          isUrgent ? "border-red-200 bg-red-50/50" : "border-gray-200 bg-white"
-                        } hover:shadow-md transition-all`}
+                        className={cn(
+                          "rounded-2xl border p-4 transition-all hover:shadow-sm",
+                          isDueSoon
+                            ? "border-amber-200/80 bg-amber-50/30 hover:border-amber-300/80"
+                            : "border-zinc-200/80 bg-white hover:border-zinc-300",
+                        )}
                       >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-foreground mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.3px' }}>{assignment.title}</h3>
+                        <div className="mb-2 flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="mb-1 font-semibold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                              {assignment.title}
+                            </h3>
                             <p className="text-sm text-foreground/60">{assignment.course}</p>
                           </div>
                           <span
-                            className={`py-1 text-xs font-medium rounded-full ${
+                            className={cn(
+                              "shrink-0 rounded-full px-3 py-1 text-xs font-medium capitalize",
                               assignment.priority === "high"
-                                ? "bg-red-100 text-red-700"
+                                ? "bg-zinc-100 text-zinc-700"
                                 : assignment.priority === "medium"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-gray-100 text-gray-700"
-                            }`}
-                            style={{ paddingLeft: '12px', paddingRight: '12px' }}
+                                  ? "bg-zinc-100 text-zinc-600"
+                                  : "bg-zinc-50 text-zinc-500",
+                            )}
                           >
                             {assignment.priority}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center gap-2 text-sm text-foreground/70">
-                            <Calendar className="h-4 w-4" />
-                            <span>Due: {formatDate(assignment.dueDate)}</span>
-                            {isUrgent && (
-                              <span className="text-red-600 font-medium">
-                                ({daysUntil} {daysUntil === 1 ? "day" : "days"} left)
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground/70">
+                            <Calendar className="h-4 w-4 shrink-0" />
+                            <span>Due {formatDate(assignment.dueDate)}</span>
+                            {isOverdue ? (
+                              <span className="font-medium text-zinc-500">· Overdue</span>
+                            ) : isDueSoon ? (
+                              <span className="font-medium text-amber-800">
+                                · {daysUntil} {daysUntil === 1 ? "day" : "days"} left
                               </span>
-                            )}
+                            ) : null}
                           </div>
-                          <Button size="sm" variant="outline" className="rounded-full">
+                          <Button size="sm" variant="outline" className="shrink-0 rounded-full">
                             {assignment.status === "in-progress" ? "Continue" : "Start"}
                           </Button>
                         </div>
@@ -331,22 +402,22 @@ const StudentDashboard = () => {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Quick Actions */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
-                <h2 className="text-xl font-bold text-foreground mb-4" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>Quick Actions</h2>
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 px-4 py-6">
+                <h2 className="mb-4 text-xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>Quick Actions</h2>
                 <div className="space-y-2">
-                  <Button className="w-full justify-start rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
+                  <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                     <BookOpen className="h-4 w-4 mr-2" />
                     Browse classes
                   </Button>
-                  <Button className="w-full justify-start rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
+                  <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                     <FileText className="h-4 w-4 mr-2" />
                     My Assignments
                   </Button>
-                  <Button className="w-full justify-start rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
+                  <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                     <Award className="h-4 w-4 mr-2" />
                     Certificates
                   </Button>
-                  <Button className="w-full justify-start rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
+                  <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                     <BarChart3 className="h-4 w-4 mr-2" />
                     View Progress
                   </Button>
@@ -355,7 +426,7 @@ const StudentDashboard = () => {
 
               {/* Recent Activity */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
-                <h2 className="text-xl font-bold text-foreground mb-4" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>Recent Activity</h2>
+                <h2 className="mb-4 text-xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>Recent Activity</h2>
                 <div className="space-y-4">
                   {recentActivity.map((activity, index) => (
                     <div key={index} className="flex items-start gap-3">
@@ -378,7 +449,7 @@ const StudentDashboard = () => {
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
                 <div className="flex items-center gap-3 mb-4">
                   <Target className="h-6 w-6" />
-                  <h2 className="text-xl font-bold" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: '0.5px' }}>Overall Progress</h2>
+                  <h2 className="text-xl font-bold leading-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>Overall Progress</h2>
                 </div>
                 <div className="mb-4">
                   <div className="flex items-center justify-between text-sm mb-2">
@@ -400,6 +471,8 @@ const StudentDashboard = () => {
               </div>
             </div>
           </div>
+        </div>
+        <div className="h-8 w-full shrink-0" aria-hidden />
         </div>
       </main>
     </div>

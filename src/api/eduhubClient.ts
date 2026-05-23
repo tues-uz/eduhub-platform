@@ -248,13 +248,18 @@ export const eduhubAuth = {
   verifyEmail: (token: string) =>
     request<void>(`/auth/verify-email?token=${token}`, { method: "POST", skipAuth: true }),
 
-  me: () =>
-    request<UserResponse>("/auth/me"),
+  me: () => request<UserResponse>("/auth/me"),
 
   refresh: refreshAuth,
 
   changePassword: (body: { currentPassword: string; newPassword: string }) =>
     request<AuthResponse>("/auth/change-password", { method: "POST", body: JSON.stringify(body) }),
+
+  updateProfile: (body: { avatarUrl?: string; fullName?: string }) =>
+    request<{ id: string; fullName: string; email: string; role: string; avatarUrl?: string }>("/auth/me", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
 };
 
 /** Courses */
@@ -651,9 +656,17 @@ export const eduhubAdmin = {
     referralCode?: string;
     discountPercent?: number;
     rejectionReason?: string;
+    adminActionCode?: string;
   }) => request<CourseResponse>(`/admin/courses/${id}/review`, { method: "PATCH", body: JSON.stringify(body) }),
 
-  createUser: (body: { fullName: string; email: string; phoneNumber: string; role: string }) =>
+  createUser: (body: {
+    fullName: string;
+    email: string;
+    phoneNumber: string;
+    role: string;
+    adminCode?: string;
+    category?: string;
+  }) =>
     request<AdminCreateUserResponse>("/admin/users", { method: "POST", body: JSON.stringify(body) }),
 
   listUsers: (params?: { role?: string; enabled?: boolean; search?: string; page?: number; size?: number }) => {
