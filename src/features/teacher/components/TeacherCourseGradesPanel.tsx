@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Award, Download, GraduationCap, Loader2, Star } from "@/lib/icons";
 import { toast } from "sonner";
+import { eduhubCompletion } from "@/api/eduhubClient";
+import type { CourseGradebookRowResponse } from "@/api/eduhubTypes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -49,6 +52,32 @@ type DraftRow = {
   score: string;
 };
 
+type GradeReviewSummary = {
+  instructorRating: number | null;
+  platformRating: number | null;
+  instructorComment?: string;
+  platformComment?: string;
+};
+
+type GradeTableRow = {
+  studentId: string;
+  fullName: string;
+  email: string;
+  attended: number;
+  plannedTotal: number | null;
+  attendanceScore: number | null;
+  instructorScore?: number | null;
+  totalFinalScore: number | null;
+  draft: DraftRow;
+  dirty: boolean;
+  reviews: GradeReviewSummary;
+  published: boolean;
+  certificate?: CourseGradebookRowResponse["certificate"] | ReturnType<typeof getCourseCertificate>;
+  apiRow?: CourseGradebookRowResponse;
+  localStudent?: RosterStudentRow;
+  localSaved?: CourseFinalGradeRecord;
+};
+
 type TeacherCourseGradesPanelProps = {
   courseId: string;
   courseTitle: string;
@@ -67,6 +96,12 @@ function draftFromRecord(record?: CourseFinalGradeRecord): DraftRow {
   const instructor = readInstructorScore(record);
   return {
     score: instructor != null ? String(instructor) : "",
+  };
+}
+
+function draftFromApiRow(row?: CourseGradebookRowResponse): DraftRow {
+  return {
+    score: row?.instructorScore != null ? String(row.instructorScore) : "",
   };
 }
 
@@ -128,6 +163,7 @@ export function TeacherCourseGradesPanel({
   isError = false,
   plannedSessions = null,
 }: TeacherCourseGradesPanelProps) {
+  const queryClient = useQueryClient();
   const [gradesTick, setGradesTick] = useState(0);
   const [certTick, setCertTick] = useState(0);
   const [attendanceTick, setAttendanceTick] = useState(0);
@@ -136,6 +172,40 @@ export function TeacherCourseGradesPanel({
   const [publishingId, setPublishingId] = useState<string | "all" | null>(null);
   const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, DraftRow>>({});
+
+  const apiGradesQuery = useQuery({
+    queryKey: ["teacher", "course-gradebook", courseId],
+    queryFn: () => eduhubCompletion.gradebook(courseId),
+    enabled: isApiCourse && !isSubstituteViewer,
+  });
+
+  const saveApiGradeMutation = useMutation({
+    mutationFn: ({ row, score }: { row: CourseGradebookRowResponse; score: number }) =>
+      eduhubCompletion.saveGrade(courseId, row.studentId, { instructorScore: score }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["teacher", "course-gradebook", courseId] });
+      toast.success("Grade saved");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save grade."),
+  });
+
+  const publishApiCertificateMutation = useMutation({
+    mutationFn: (studentId: string) => eduhubCompletion.publishCertificate(courseId, studentId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["teacher", "course-gradebook", courseId] });
+      toast.success("Certificate published");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not publish certificate."),
+  });
+
+  const publishAllApiCertificatesMutation = useMutation({
+    mutationFn: () => eduhubCompletion.publishAllCertificates(courseId),
+    onSuccess: (certificates) => {
+      void queryClient.invalidateQueries({ queryKey: ["teacher", "course-gradebook", courseId] });
+      toast.success(`Published ${certificates.length} certificate${certificates.length === 1 ? "" : "s"}`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not publish certificates."),
+  });
 
   const savedGrades = useMemo(() => {
     void gradesTick;
@@ -186,12 +256,18 @@ export function TeacherCourseGradesPanel({
   useEffect(() => {
     setDrafts((prev) => {
       const next: Record<string, DraftRow> = {};
-      for (const s of students) {
-        next[s.id] = prev[s.id] ?? draftFromRecord(savedGrades[s.id]);
+      if (isApiCourse) {
+        for (const row of apiGradesQuery.data ?? []) {
+          next[row.studentId] = prev[row.studentId] ?? draftFromApiRow(row);
+        }
+      } else {
+        for (const s of students) {
+          next[s.id] = prev[s.id] ?? draftFromRecord(savedGrades[s.id]);
+        }
       }
       return next;
     });
-  }, [students, savedGrades]);
+  }, [apiGradesQuery.data, isApiCourse, savedGrades, students]);
 
   const updateDraft = useCallback((studentId: string, patch: Partial<DraftRow>) => {
     setDrafts((prev) => ({
@@ -346,17 +422,97 @@ export function TeacherCourseGradesPanel({
     [instructorName, publishedCerts],
   );
 
+  const effectiveLoading = isApiCourse ? apiGradesQuery.isLoading : isLoading;
+  const effectiveError = isApiCourse ? apiGradesQuery.isError : isError;
+  const apiRows = apiGradesQuery.data ?? [];
+
+  const tableRows = useMemo((): GradeTableRow[] => {
+    if (isSubstituteViewer) return [];
+    if (isApiCourse) {
+      return apiRows.map((row) => {
+        const draft = drafts[row.studentId] ?? draftFromApiRow(row);
+        const draftInstructor = parseFinalScoreInput(draft.score);
+        const liveTotal = computeTotalFinalScore(row.attendanceScore, draftInstructor);
+        return {
+          studentId: row.studentId,
+          fullName: row.studentName,
+          email: row.studentEmail,
+          attended: row.attendanceAttended,
+          plannedTotal: row.attendanceTotal,
+          attendanceScore: row.attendanceScore,
+          instructorScore: row.instructorScore,
+          totalFinalScore: row.totalFinalScore,
+          draft,
+          dirty: draft.score !== (row.instructorScore != null ? String(row.instructorScore) : ""),
+          reviews: row.reviewSummary,
+          published: Boolean(row.certificate),
+          certificate: row.certificate,
+          apiRow: row,
+        };
+      });
+    }
+
+    void attendanceTick;
+    void reviewsTick;
+    return students.map((s) => {
+      const emailNorm = s.email.trim().toLowerCase();
+      const reviews = getStudentCourseReviewSummary(courseId, emailNorm);
+      const saved = savedGrades[s.id];
+      const draft = drafts[s.id] ?? draftFromRecord(saved);
+      const savedInstructor = readInstructorScore(saved);
+      const attended = countSessionsStudentAttended(courseId, s.id, s.email);
+      const attendanceScore = computeAttendanceScore(attended, plannedSessions);
+      const draftInstructor = parseFinalScoreInput(draft.score);
+      const savedTotal =
+        saved?.totalFinalScore ??
+        computeTotalFinalScore(
+          saved?.attendanceScore ?? attendanceScore,
+          savedInstructor ?? null,
+        );
+      const published = publishedCerts.get(s.id);
+      return {
+        studentId: s.id,
+        fullName: s.fullName,
+        email: s.email,
+        attended,
+        plannedTotal: plannedSessions ?? null,
+        attendanceScore,
+        instructorScore: savedInstructor,
+        totalFinalScore: savedTotal,
+        draft,
+        dirty: draft.score !== (savedInstructor != null ? String(savedInstructor) : ""),
+        reviews,
+        published: Boolean(published),
+        certificate: published,
+        localStudent: s,
+        localSaved: saved,
+      };
+    });
+  }, [
+    apiRows,
+    attendanceTick,
+    courseId,
+    drafts,
+    isApiCourse,
+    isSubstituteViewer,
+    plannedSessions,
+    publishedCerts,
+    reviewsTick,
+    savedGrades,
+    students,
+  ]);
+
   const rosterGate = (
     <RosterEmptyState
       isSubstituteViewer={isSubstituteViewer}
       isApiCourse={isApiCourse}
-      isLoading={isLoading}
-      isError={isError}
-      studentsLength={students.length}
+      isLoading={effectiveLoading}
+      isError={effectiveError}
+      studentsLength={tableRows.length}
     />
   );
 
-  const showTable = isApiCourse && !isLoading && !isError && students.length > 0 && !isSubstituteViewer;
+  const showTable = !effectiveLoading && !effectiveError && tableRows.length > 0 && !isSubstituteViewer;
 
   return (
     <div>
@@ -368,8 +524,8 @@ export function TeacherCourseGradesPanel({
         <p className="text-sm text-foreground/60 min-w-0 flex-1 max-w-2xl">
           <span className="font-medium text-foreground/80">Total</span> = average of attendance % and instructor
           score. Save scores, then publish a certificate so the student sees it under{" "}
-          <span className="font-medium text-foreground/80">Certificates</span> (demo: this browser until an API
-          exists).
+          <span className="font-medium text-foreground/80">Certificates</span>
+          {isApiCourse ? "." : " (demo: this browser until an API exists)."}
         </p>
         {showTable ? (
           <Button
@@ -377,10 +533,16 @@ export function TeacherCourseGradesPanel({
             variant="outline"
             size="sm"
             className="shrink-0 rounded-full gap-1.5 border-[#3954d0]/40 text-[#3954d0] hover:bg-[#3954d0]/5"
-            disabled={publishingId === "all"}
-            onClick={publishAllEligible}
+            disabled={isApiCourse ? publishAllApiCertificatesMutation.isPending : publishingId === "all"}
+            onClick={() => {
+              if (isApiCourse) {
+                publishAllApiCertificatesMutation.mutate();
+              } else {
+                publishAllEligible();
+              }
+            }}
           >
-            {publishingId === "all" ? (
+            {(isApiCourse ? publishAllApiCertificatesMutation.isPending : publishingId === "all") ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <Award className="h-3.5 w-3.5" />
@@ -428,52 +590,42 @@ export function TeacherCourseGradesPanel({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {students.map((s) => {
-                  void attendanceTick;
-                  void reviewsTick;
-                  const emailNorm = s.email.trim().toLowerCase();
-                  const reviews = getStudentCourseReviewSummary(courseId, emailNorm);
-                  const saved = savedGrades[s.id];
-                  const draft = drafts[s.id] ?? draftFromRecord(saved);
-                  const savedInstructor = readInstructorScore(saved);
-                  const dirty =
-                    draft.score !== (savedInstructor != null ? String(savedInstructor) : "");
-                  const attended = countSessionsStudentAttended(courseId, s.id, s.email);
-                  const attendanceScore = computeAttendanceScore(attended, plannedSessions);
-                  const draftInstructor = parseFinalScoreInput(draft.score);
-                  const liveTotal = computeTotalFinalScore(attendanceScore, draftInstructor);
-                  const savedTotal =
-                    saved?.totalFinalScore ??
-                    computeTotalFinalScore(
-                      saved?.attendanceScore ?? attendanceScore,
-                      savedInstructor ?? null,
-                    );
-                  const published = publishedCerts.get(s.id);
-                  const canPublish = savedTotal != null && !published;
+                {tableRows.map((row) => {
+                  const draftInstructor = parseFinalScoreInput(row.draft.score);
+                  const liveTotal = computeTotalFinalScore(row.attendanceScore, draftInstructor);
+                  const canPublish = row.totalFinalScore != null && !row.published;
+                  const savingThisRow = isApiCourse
+                    ? saveApiGradeMutation.isPending && saveApiGradeMutation.variables?.row.studentId === row.studentId
+                    : savingId === row.studentId;
+                  const publishingThisRow = isApiCourse
+                    ? publishApiCertificateMutation.isPending &&
+                      publishApiCertificateMutation.variables === row.studentId
+                    : publishingId === row.studentId;
+                  const downloadingThisRow = downloadingCertId === row.studentId;
                   return (
-                    <TableRow key={s.id}>
+                    <TableRow key={row.studentId}>
                       <TableCell className="max-w-[14rem]">
                         <p className="font-medium text-foreground truncate">
-                          {formatDisplayPersonName(s.fullName)}
+                          {formatDisplayPersonName(row.fullName)}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate">{s.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{row.email}</p>
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-sm tabular-nums align-middle">
-                        {plannedSessions != null ? (
+                        {row.plannedTotal != null ? (
                           <span>
-                            <span className="font-medium text-foreground">{attended}</span>
-                            <span className="text-muted-foreground">/{plannedSessions}</span>
+                            <span className="font-medium text-foreground">{row.attended}</span>
+                            <span className="text-muted-foreground">/{row.plannedTotal}</span>
                           </span>
                         ) : (
                           <span>
-                            <span className="font-medium text-foreground">{attended}</span>
+                            <span className="font-medium text-foreground">{row.attended}</span>
                             <span className="text-muted-foreground text-xs"> sess.</span>
                           </span>
                         )}
                       </TableCell>
                       <TableCell className="text-right align-middle tabular-nums text-sm whitespace-nowrap">
-                        {attendanceScore != null ? (
-                          <span className="font-medium text-foreground">{attendanceScore}%</span>
+                        {row.attendanceScore != null ? (
+                          <span className="font-medium text-foreground">{row.attendanceScore}%</span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
@@ -487,9 +639,9 @@ export function TeacherCourseGradesPanel({
                             step={0.5}
                             inputMode="decimal"
                             placeholder="0–100"
-                            value={draft.score}
+                            value={row.draft.score}
                             className="h-9 w-16 tabular-nums bg-white"
-                            onChange={(e) => updateDraft(s.id, { score: e.target.value })}
+                            onChange={(e) => updateDraft(row.studentId, { score: e.target.value })}
                           />
                           <span className="text-xs text-muted-foreground">%</span>
                         </div>
@@ -502,16 +654,16 @@ export function TeacherCourseGradesPanel({
                         )}
                       </TableCell>
                       <TableCell className="align-middle whitespace-nowrap">
-                        {reviews.instructorRating != null ? (
+                        {row.reviews.instructorRating != null ? (
                           <div
                             className="inline-flex flex-col gap-0.5"
                             title={[
-                              `Instructor: ${reviews.instructorRating}/5`,
-                              reviews.instructorComment
-                                ? `"${reviews.instructorComment}"`
+                              `Instructor: ${row.reviews.instructorRating}/5`,
+                              row.reviews.instructorComment
+                                ? `"${row.reviews.instructorComment}"`
                                 : null,
-                              reviews.platformRating != null
-                                ? `Platform: ${reviews.platformRating}/5`
+                              row.reviews.platformRating != null
+                                ? `Platform: ${row.reviews.platformRating}/5`
                                 : "Platform review pending",
                             ]
                               .filter(Boolean)
@@ -522,9 +674,9 @@ export function TeacherCourseGradesPanel({
                                 className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400"
                                 aria-hidden
                               />
-                              {reviews.instructorRating}/5
+                              {row.reviews.instructorRating}/5
                             </span>
-                            {reviews.platformRating != null ? (
+                            {row.reviews.platformRating != null ? (
                               <span className="text-[10px] text-emerald-700 font-medium">
                                 + platform
                               </span>
@@ -543,18 +695,31 @@ export function TeacherCourseGradesPanel({
                             size="sm"
                             className="h-7 rounded-full px-3 text-xs shrink-0"
                             style={{ backgroundColor: "#3954d0" }}
-                            disabled={savingId === s.id || !dirty}
-                            onClick={() => handleSave(s, attendanceScore)}
+                            disabled={savingThisRow || !row.dirty}
+                            onClick={() => {
+                              const score = parseFinalScoreInput(row.draft.score);
+                              if (score == null) {
+                                toast.error("Enter an instructor score from 0 to 100.");
+                                return;
+                              }
+                              if (isApiCourse && row.apiRow) {
+                                saveApiGradeMutation.mutate({ row: row.apiRow, score });
+                                return;
+                              }
+                              if (row.localStudent) {
+                                handleSave(row.localStudent, row.attendanceScore);
+                              }
+                            }}
                           >
-                            {savingId === s.id ? (
+                            {savingThisRow ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : saved ? (
+                            ) : row.instructorScore != null ? (
                               "Update"
                             ) : (
                               "Save"
                             )}
                           </Button>
-                          {published ? (
+                          {row.published ? (
                             <div className="inline-flex shrink-0 items-center gap-1">
                               <span
                                 className="inline-flex items-center gap-0.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"
@@ -568,10 +733,22 @@ export function TeacherCourseGradesPanel({
                                 size="sm"
                                 variant="outline"
                                 className="h-7 shrink-0 rounded-full px-2 text-xs"
-                                disabled={downloadingCertId === s.id}
-                                onClick={() => void downloadPublishedCertificate(s.id)}
+                                disabled={downloadingThisRow}
+                                onClick={() => {
+                                  if (isApiCourse && row.certificate) {
+                                    setDownloadingCertId(row.studentId);
+                                    void downloadCourseCertificatePdf(row.certificate, instructorName)
+                                      .then(() => toast.success("Certificate downloaded"))
+                                      .catch((e) =>
+                                        toast.error(e instanceof Error ? e.message : "Could not generate certificate PDF"),
+                                      )
+                                      .finally(() => setDownloadingCertId(null));
+                                    return;
+                                  }
+                                  void downloadPublishedCertificate(row.studentId);
+                                }}
                               >
-                                {downloadingCertId === s.id ? (
+                                {downloadingThisRow ? (
                                   <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
                                 ) : (
                                   <Download className="h-3 w-3" aria-hidden />
@@ -584,10 +761,18 @@ export function TeacherCourseGradesPanel({
                               size="sm"
                               variant="outline"
                               className="h-7 shrink-0 rounded-full px-2.5 text-xs gap-0.5"
-                              disabled={!canPublish || publishingId === s.id}
-                              onClick={() => void publishCertificate(s, saved, savedTotal)}
+                              disabled={!canPublish || publishingThisRow}
+                              onClick={() => {
+                                if (isApiCourse) {
+                                  publishApiCertificateMutation.mutate(row.studentId);
+                                  return;
+                                }
+                                if (row.localStudent) {
+                                  void publishCertificate(row.localStudent, row.localSaved, row.totalFinalScore);
+                                }
+                              }}
                             >
-                              {publishingId === s.id ? (
+                              {publishingThisRow ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
                                 <Award className="h-3 w-3" aria-hidden />
@@ -609,7 +794,8 @@ export function TeacherCourseGradesPanel({
             planned schedule meetings. <span className="font-medium text-foreground/80">Total</span> = average of
             attendance % and instructor score.{" "}
             <span className="font-medium text-foreground/80">Feedback</span> shows the student&apos;s
-            instructor rating after they complete the class survey (demo: this browser).
+            instructor rating after they complete the class survey
+            {isApiCourse ? "." : " (demo: this browser)."}
           </p>
         </div>
       ) : null}

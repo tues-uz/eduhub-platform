@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Award, BookOpen, Download, Loader2, Lock } from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { eduhubCompletion } from "@/api/eduhubClient";
+import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
 import { downloadCourseCertificatePdf } from "@/features/courses/courseCertificatePdf";
 import {
   COURSE_CERTIFICATES_CHANGED,
   listCertificatesForStudent,
-  type CourseCertificateRecord,
 } from "@/features/courses/courseCertificatesStorage";
 import { hasSubmittedBothReviews } from "@/features/student/courseReviewsStorage";
 
@@ -27,10 +29,17 @@ const StudentCertificates = () => {
     return () => window.removeEventListener(COURSE_CERTIFICATES_CHANGED, bump);
   }, []);
 
-  const certificates = useMemo((): CourseCertificateRecord[] => {
+  const certificatesQuery = useQuery({
+    queryKey: ["student", "certificates"],
+    queryFn: eduhubCompletion.myCertificates,
+  });
+
+  const localDemoCertificates = useMemo(() => {
     void tick;
-    return listCertificatesForStudent(emailNorm);
+    return listCertificatesForStudent(emailNorm).filter((c) => !isUuid(c.courseId));
   }, [emailNorm, tick]);
+
+  const certificates = [...(certificatesQuery.data ?? []), ...localDemoCertificates];
 
   return (
     <div className="w-full max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -45,7 +54,13 @@ const StudentCertificates = () => {
           </span>
         </div>
       </div>
-      {certificates.length === 0 ? (
+      {certificatesQuery.isLoading ? (
+        <p className="text-sm text-foreground/60">Loading certificates…</p>
+      ) : certificatesQuery.isError ? (
+        <p className="text-sm text-red-600 rounded-xl border border-red-100 bg-red-50 px-4 py-4">
+          Could not load certificates. Try again later.
+        </p>
+      ) : certificates.length === 0 ? (
         <p className="text-sm text-foreground/70 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-6 py-10 text-center max-w-lg">
           No certificates yet. They appear here after your instructor saves your final score and publishes your
           certificate from the class Grades tab.
@@ -53,7 +68,8 @@ const StudentCertificates = () => {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {certificates.map((c) => {
-            const reviewsComplete = hasSubmittedBothReviews(c.courseId, emailNorm);
+            const reviewsComplete =
+              "reviewsComplete" in c ? c.reviewsComplete : hasSubmittedBothReviews(c.courseId, emailNorm);
             return (
             <div
               key={c.id}
