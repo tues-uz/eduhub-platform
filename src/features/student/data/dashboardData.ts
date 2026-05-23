@@ -4,7 +4,7 @@ import {
   BookOpen,
   FileText,
   TrendingUp,
-} from "lucide-react";
+} from "@/lib/icons";
 
 /** Overview stat tiles — `value` is default placeholder; dashboard can override from live data. */
 export const studentStats = [

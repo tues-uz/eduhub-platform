@@ -1,8 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BookOpen, Search, User, Clock, Layers, DollarSign, Loader2 } from "lucide-react";
+import { BookOpen, Search, Loader2, PlayCircle } from "@/lib/icons";
+import { InstructorAvatar } from "@/components/InstructorAvatar";
+import { StudentAvatarGroup } from "@/components/StudentAvatarGroup";
+import type { StudentAvatarPreview } from "@/components/StudentAvatarGroup";
 import { Button } from "@/components/ui/button";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuthSession } from "@/features/auth/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
@@ -14,6 +25,10 @@ import {
   type StudentCourseEnrollmentDisplayStatus,
 } from "@/features/enrollment/studentCourseEnrollmentStatus";
 import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
+import { resolveEnrolledStudentPreviews } from "@/features/student/enrolledStudentPreviews";
+import { StudentPromoCarousel } from "@/features/student/components/StudentPromoCarousel";
+import { COURSE_CATEGORY_OPTIONS } from "@/features/courses/courseCategories";
+import { formatDisplayPersonName } from "@/lib/formatPersonName";
 
 type AvailableCourseItem = {
   id: string;
@@ -21,6 +36,7 @@ type AvailableCourseItem = {
   linkId: string;
   title: string;
   instructor: string;
+  instructorAvatarUrl?: string;
   category: string;
   duration: string;
   modules: number;
@@ -32,11 +48,46 @@ type AvailableCourseItem = {
   nextLesson?: string;
   /** Cover image from API or teacher form upload */
   thumbnailUrl?: string;
+  enrollmentCount?: number;
+  enrolledStudents?: StudentAvatarPreview[];
 };
 
 function formatPrice(price: number | undefined, currency = "USD"): string {
   if (price == null || price <= 0) return "Free";
   return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
+}
+
+async function enrichWithEnrolledStudents(items: AvailableCourseItem[]): Promise<AvailableCourseItem[]> {
+  return Promise.all(
+    items.map(async (item) => {
+      const { students, totalCount } = await resolveEnrolledStudentPreviews({
+        linkId: item.linkId,
+        apiCourseId: item.id,
+        enrollmentCount: item.enrollmentCount,
+      });
+      if (students.length === 0) return item;
+      return {
+        ...item,
+        enrolledStudents: students,
+        enrollmentCount: totalCount ?? item.enrollmentCount,
+      };
+    }),
+  );
+}
+
+async function enrichWithInstructorAvatars(items: AvailableCourseItem[]): Promise<AvailableCourseItem[]> {
+  return Promise.all(
+    items.map(async (item) => {
+      if (item.instructorAvatarUrl || item.linkId.startsWith("teacher_")) return item;
+      try {
+        const detail = await eduhubCourses.getById(item.id);
+        const url = detail.lecturer?.avatarUrl?.trim();
+        return url ? { ...item, instructorAvatarUrl: url } : item;
+      } catch {
+        return item;
+      }
+    }),
+  );
 }
 
 const StudentAvailableCourses = () => {
@@ -46,6 +97,7 @@ const StudentAvailableCourses = () => {
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const { byCourse: applicationsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [courses, setCourses] = useState<AvailableCourseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrollmentStoreTick, setEnrollmentStoreTick] = useState(0);
@@ -86,7 +138,8 @@ const StudentAvailableCourses = () => {
           linkId,
           title: c.title,
           instructor: c.instructorName,
-          category: "Class",
+          instructorAvatarUrl: c.instructorAvatarUrl?.trim() || undefined,
+          category: c.category?.trim() || "Class",
           duration,
           modules: moduleCount,
           price: c.price,
@@ -98,7 +151,7 @@ const StudentAvailableCourses = () => {
         };
       });
 
-      const mapApiToItem = (c: CourseSummaryResponse) => {
+      const mapApiToItem = (c: CourseSummaryResponse & { lecturer?: { avatarUrl?: string } }) => {
         const enrolledData = enrolledByLinkId.get(c.id);
         const price = c.pricing?.discountedAmount ?? c.pricing?.amount;
         return {
@@ -106,12 +159,14 @@ const StudentAvailableCourses = () => {
           linkId: c.id,
           title: c.title,
           instructor: c.lecturerName,
+          instructorAvatarUrl: c.lecturer?.avatarUrl?.trim() || undefined,
           category: c.category ?? "Class",
           duration: "—",
           modules: 0,
           price: price as number | undefined,
           currency: c.pricing?.currency,
           thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
+          enrollmentCount: c.enrollmentCount,
           enrollmentStatus: enrollmentStatusFor(c.id),
           progress: enrolledData?.progress,
           status: enrolledData?.status,
@@ -137,8 +192,11 @@ const StudentAvailableCourses = () => {
         }
 
         const localOnly = localItems.filter((c) => !seenIds.has(c.id));
+        const merged = [...apiItems, ...localOnly];
+        const withAvatars = await enrichWithInstructorAvatars(merged);
+        const withStudents = await enrichWithEnrolledStudents(withAvatars);
         if (!cancelled) {
-          setCourses([...apiItems, ...localOnly]);
+          setCourses(withStudents);
         }
       } catch {
         if (!cancelled) setCourses(localItems);
@@ -149,18 +207,41 @@ const StudentAvailableCourses = () => {
     return () => { cancelled = true; };
   }, [enrolledCourses, enrollmentStoreTick, emailNorm, applicationsByCourse]);
 
-  // Show all courses (API + teacher-created) so students can see and take teacher courses
-  const filteredCourses = courses.filter((course) => {
+  const categoryOptions = useMemo(() => {
+    const options = new Set<string>(COURSE_CATEGORY_OPTIONS);
+    for (const course of courses) {
+      const value = course.category.trim();
+      if (value) options.add(value);
+    }
+    return Array.from(options).sort((a, b) => {
+      const aIndex = COURSE_CATEGORY_OPTIONS.indexOf(a as (typeof COURSE_CATEGORY_OPTIONS)[number]);
+      const bIndex = COURSE_CATEGORY_OPTIONS.indexOf(b as (typeof COURSE_CATEGORY_OPTIONS)[number]);
+      if (aIndex >= 0 && bIndex >= 0) return aIndex - bIndex;
+      if (aIndex >= 0) return -1;
+      if (bIndex >= 0) return 1;
+      return a.localeCompare(b);
+    });
+  }, [courses]);
+
+  const filteredCourses = useMemo(() => {
     const q = searchQuery.toLowerCase();
-    return (
-      course.title.toLowerCase().includes(q) ||
-      course.instructor.toLowerCase().includes(q) ||
-      course.category.toLowerCase().includes(q)
-    );
-  });
+    return courses.filter((course) => {
+      const matchesSearch =
+        !q ||
+        course.title.toLowerCase().includes(q) ||
+        course.instructor.toLowerCase().includes(q) ||
+        course.category.toLowerCase().includes(q);
+      const matchesCategory = categoryFilter === "all" || course.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [courses, searchQuery, categoryFilter]);
 
   return (
-    <div className="container mx-auto px-0 pt-4">
+    <TooltipProvider delayDuration={200}>
+    <div className="min-h-0 pb-8">
+      <StudentPromoCarousel placement="my-class" className="mb-6" fullWidth />
+
+      <div className="container mx-auto px-0">
           <div className="mb-8">
             <h1
               className="mb-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
@@ -171,15 +252,32 @@ const StudentAvailableCourses = () => {
             <p className="mb-4 text-sm text-foreground/70">
               Browse and enroll in classes offered on EduHub. Prices shown where set by instructors.
             </p>
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
-              <Input
-                type="search"
-                placeholder="Search by class name, instructor, or category..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-11 rounded-lg border-gray-200 pl-10"
-              />
+            <div className="flex w-full flex-wrap items-center justify-between gap-3">
+              <div className="relative min-w-0 flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
+                <Input
+                  type="search"
+                  placeholder="Search by class name, instructor, or category..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-11 rounded-xl border-gray-200 pl-10"
+                />
+              </div>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="h-11 w-[150px] shrink-0 rounded-xl border-gray-200 bg-white">
+                  <SelectValue placeholder="All categories" />
+                </SelectTrigger>
+                <SelectContent align="end" className="rounded-2xl border-gray-200 p-2 shadow-lg">
+                  <SelectItem value="all" className="cursor-pointer rounded-xl">
+                    All categories
+                  </SelectItem>
+                  {categoryOptions.map((category) => (
+                    <SelectItem key={category} value={category} className="cursor-pointer rounded-xl">
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -189,14 +287,19 @@ const StudentAvailableCourses = () => {
             </div>
           ) : (
             <>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm text-foreground/60">
-                  {filteredCourses.length} class{filteredCourses.length !== 1 ? "es" : ""} found
-                </p>
-              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 min-[1300px]:grid-cols-4">
+                {filteredCourses.map((course) => {
+                  const category = course.category.trim();
+                  const metaParts: string[] = [];
+                  if (course.modules > 0) {
+                    metaParts.push(`${course.modules} module${course.modules === 1 ? "" : "s"}`);
+                  }
+                  if (course.duration.trim() && course.duration !== "—") {
+                    metaParts.push(course.duration.trim());
+                  }
+                  const metaLabel = metaParts.length > 0 ? metaParts.join(" · ") : null;
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {filteredCourses.map((course) => (
+                  return (
                   <div
                     key={course.linkId}
                     role="link"
@@ -210,9 +313,9 @@ const StudentAvailableCourses = () => {
                         navigate(`/dashboard/available-courses/class/${encodeURIComponent(course.linkId)}`);
                       }
                     }}
-                    className="flex cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200/50 bg-white/80 shadow-sm backdrop-blur-sm transition-all hover:border-gray-300/50 hover:shadow-md"
+                    className="relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md transition-shadow hover:shadow-lg"
                   >
-                    <div className="relative h-40 w-full shrink-0 bg-gray-200 sm:h-44">
+                    <div className="relative mx-3 mt-3 flex h-52 shrink-0 overflow-hidden rounded-xl bg-gray-100 sm:h-56">
                       {course.thumbnailUrl ? (
                         <img
                           src={course.thumbnailUrl}
@@ -223,104 +326,118 @@ const StudentAvailableCourses = () => {
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center" aria-hidden>
-                          <BookOpen className="h-10 w-10 text-gray-400/90" />
+                          <BookOpen className="h-12 w-12 text-gray-400/90" />
                         </div>
                       )}
-                      <div
-                        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent"
-                        aria-hidden
-                      />
                       <EnrollmentStatusBadge
                         status={course.enrollmentStatus}
-                        className="absolute right-2 top-2"
+                        className="absolute left-0 top-0 m-2"
                       />
                     </div>
 
-                    <div className="flex flex-1 flex-col p-4">
-                    <div className="mb-4 flex items-start gap-4">
-                      <div className="min-w-0 flex-1">
-                        {course.category && (
-                          <span className="text-xs font-medium uppercase tracking-wide text-foreground/60">
-                            {course.category}
-                          </span>
-                        )}
+                    <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
+                      <div className="flex flex-1 flex-col">
+                        <div className="flex items-center justify-between gap-3">
+                          {category ? (
+                            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                              {category}
+                            </span>
+                          ) : (
+                            <span aria-hidden />
+                          )}
+                        </div>
+
                         <h3
-                          className="mt-0.5 mb-1 font-bold text-foreground"
-                          style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.3px" }}
+                          className="mt-2 line-clamp-2 text-lg font-bold leading-snug tracking-tight text-slate-900"
+                          style={{ fontFamily: "'DM Sans', sans-serif" }}
                         >
                           {course.title}
                         </h3>
-                        <div className="flex items-center gap-1.5 text-sm text-foreground/60">
-                          <User className="h-3.5 w-3.5 flex-shrink-0" />
-                          <span>{course.instructor}</span>
+
+                        <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <InstructorAvatar
+                              name={course.instructor}
+                              avatarUrl={course.instructorAvatarUrl}
+                              className="h-8 w-8"
+                            />
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-slate-800">
+                                {formatDisplayPersonName(course.instructor)}
+                              </p>
+                              <p className="text-xs text-slate-500">Instructor</p>
+                            </div>
+                          </div>
+                          {metaLabel ? (
+                            <p className="shrink-0 text-right text-xs font-medium text-slate-500">{metaLabel}</p>
+                          ) : null}
+                        </div>
+
+                        {course.enrolledStudents && course.enrolledStudents.length > 0 ? (
+                          <div
+                            className="mt-3"
+                            onClick={(event) => event.stopPropagation()}
+                            onKeyDown={(event) => event.stopPropagation()}
+                          >
+                            <StudentAvatarGroup
+                              students={course.enrolledStudents}
+                              totalCount={course.enrollmentCount}
+                              size="sm"
+                            />
+                          </div>
+                        ) : null}
+
+                        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+                          <span className="text-xs font-medium text-slate-500">Tuition</span>
+                          <span className="text-base font-bold tabular-nums tracking-tight text-slate-900">
+                            {formatPrice(course.price, course.currency)}
+                          </span>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="mb-4 flex flex-wrap gap-3 text-xs text-foreground/60">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
-                        {course.duration}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Layers className="h-3.5 w-3.5" />
-                        {course.modules} modules
-                      </span>
-                    </div>
-
-                    <div className="mb-4 flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-foreground/60" />
-                      <span className="font-semibold text-foreground">{formatPrice(course.price, course.currency)}</span>
-                    </div>
-
-                    <div className="mt-auto border-t border-gray-100 pt-4">
-                      {course.enrollmentStatus === "enrolled" ? (
-                        <Link
-                          to={`/dashboard/courses/${course.linkId}`}
-                          className="block"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Button
-                            size="sm"
-                            className="w-full rounded-full"
-                            style={{ backgroundColor: "#3954d0" }}
+                      <div className="mt-4">
+                        {course.enrollmentStatus === "enrolled" ? (
+                          <Link
+                            to={`/dashboard/courses/${course.linkId}`}
+                            className="flex w-full items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            Continue
-                          </Button>
-                        </Link>
-                      ) : course.enrollmentStatus === "pending_review" ? (
-                        <Link
-                          to={`/dashboard/available-courses/enroll/${encodeURIComponent(course.linkId)}/success`}
-                          className="block"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full rounded-full border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                            <PlayCircle className="mr-2 h-5 w-5" aria-hidden />
+                            Continue learning
+                          </Link>
+                        ) : course.enrollmentStatus === "pending_review" ? (
+                          <Link
+                            to={`/dashboard/available-courses/enroll/${encodeURIComponent(course.linkId)}/success`}
+                            className="block"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            View application
-                          </Button>
-                        </Link>
-                      ) : (
-                        <Link
-                          to={`/dashboard/available-courses/enroll/${encodeURIComponent(course.linkId)}`}
-                          className="block"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Button
-                            size="sm"
-                            className="w-full rounded-full"
-                            style={{ backgroundColor: "#3954d0" }}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-auto w-full rounded-xl border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+                            >
+                              View application
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Link
+                            to={`/dashboard/available-courses/enroll/${encodeURIComponent(course.linkId)}`}
+                            className="block"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            {course.enrollmentStatus === "rejected" ? "Apply again" : "Join Class"}
-                          </Button>
-                        </Link>
-                      )}
-                    </div>
+                            <Button
+                              size="sm"
+                              className="h-auto w-full rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+                            >
+                              {course.enrollmentStatus === "rejected" ? "Apply again" : "Join Class"}
+                            </Button>
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   </div>
-                ))}
+                );
+                })}
               </div>
 
               {filteredCourses.length === 0 && (
@@ -342,17 +459,26 @@ const StudentAvailableCourses = () => {
                         </Button>
                       </Link>
                     )}
-                    {searchQuery && (
-                      <Button variant="outline" className="rounded-full" onClick={() => setSearchQuery("")}>
-                        Clear search
+                    {searchQuery || categoryFilter !== "all" ? (
+                      <Button
+                        variant="outline"
+                        className="rounded-full"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setCategoryFilter("all");
+                        }}
+                      >
+                        Clear filters
                       </Button>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               )}
             </>
           )}
     </div>
+    </div>
+    </TooltipProvider>
   );
 };
 

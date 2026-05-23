@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, ArrowLeft, Calendar, CheckCircle2, Clock3, FileText } from "lucide-react";
+import { AlertCircle, ArrowLeft, Calendar, CheckCircle2, Clock3, FileText } from "@/lib/icons";
 import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";

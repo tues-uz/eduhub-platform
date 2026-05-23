@@ -24,6 +24,12 @@ import {
 } from "@/components/ui/select";
 import { eduhubAdmin } from "@/api/eduhubClient";
 import { adminTeachersStore } from "@/features/admin/data/adminTeachersStore";
+import {
+  isValidAdminActionCode,
+  normalizeAdminCode,
+  registerAdminStaffCode,
+} from "@/features/admin/adminStaffCode";
+import { COURSE_CATEGORY_OPTIONS } from "@/features/courses/courseCategories";
 
 /** Values are sent to `POST /admin/users`. Align with your API’s role enum (e.g. Spring `Role` names). */
 const ADD_USER_ROLE_OPTIONS: { value: string; label: string }[] = [
@@ -44,8 +50,13 @@ export default function AdminAddUserRolePage() {
     email: "",
     phoneNumber: "",
     role: "",
+    adminCode: "",
+    teacherCategory: "",
   });
   const navigate = useNavigate();
+
+  const isTeacherRole = formData.role === "LECTURER";
+  const isAdminRole = formData.role !== "" && !isTeacherRole;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,14 +64,34 @@ export default function AdminAddUserRolePage() {
       toast.error("Please fill in all fields");
       return;
     }
+    if (isTeacherRole && !formData.teacherCategory) {
+      toast.error("Please select a teacher category");
+      return;
+    }
+    if (isAdminRole && !isValidAdminActionCode(formData.adminCode)) {
+      toast.error("Enter an admin code (2–16 letters or numbers, e.g. AF01)");
+      return;
+    }
 
     setIsLoading(true);
     try {
-      const res = await eduhubAdmin.createUser(formData);
-      if (formData.role === "LECTURER") {
+      const adminCode = isAdminRole ? normalizeAdminCode(formData.adminCode) : undefined;
+      const res = await eduhubAdmin.createUser({
+        fullName: formData.fullName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        role: formData.role,
+        adminCode,
+        category: isTeacherRole ? formData.teacherCategory : undefined,
+      });
+      if (isAdminRole && adminCode) {
+        registerAdminStaffCode(formData.email, adminCode);
+      }
+      if (isTeacherRole) {
         adminTeachersStore.upsertByEmail({
           name: formData.fullName.trim(),
           email: formData.email.trim(),
+          category: formData.teacherCategory,
           coursesTaught: [],
           totalStudents: 0,
           status: "Active",
@@ -171,7 +202,14 @@ export default function AdminAddUserRolePage() {
             <Select
               required
               value={formData.role}
-              onValueChange={(value) => setFormData({ ...formData, role: value })}
+              onValueChange={(value) =>
+                setFormData({
+                  ...formData,
+                  role: value,
+                  adminCode: value === "LECTURER" ? "" : formData.adminCode,
+                  teacherCategory: value === "LECTURER" ? formData.teacherCategory : "",
+                })
+              }
             >
               <SelectTrigger className="bg-white">
                 <SelectValue placeholder="Select role" />
@@ -185,6 +223,50 @@ export default function AdminAddUserRolePage() {
               </SelectContent>
             </Select>
           </div>
+
+          {isTeacherRole ? (
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select
+                required
+                value={formData.teacherCategory}
+                onValueChange={(value) => setFormData({ ...formData, teacherCategory: value })}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COURSE_CATEGORY_OPTIONS.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+
+          {isAdminRole ? (
+            <div className="space-y-2">
+              <Label htmlFor="adminCode">Admin code</Label>
+              <Input
+                id="adminCode"
+                name="adminCode"
+                type="text"
+                required
+                placeholder="e.g. AF01"
+                value={formData.adminCode}
+                onChange={(e) => setFormData({ ...formData, adminCode: e.target.value.toUpperCase() })}
+                className="bg-white font-mono text-sm uppercase max-w-[180px]"
+                maxLength={16}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <p className="text-xs text-slate-500">
+                Short ID used on approve/reject actions so you can tell which admin handled a request.
+              </p>
+            </div>
+          ) : null}
 
           <Button
             type="submit"

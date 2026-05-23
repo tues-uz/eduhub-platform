@@ -1,7 +1,7 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Home, LayoutDashboard } from "lucide-react";
+import { Home, LayoutDashboard } from "@/lib/icons";
 
 const NotFound = () => {
   const location = useLocation();

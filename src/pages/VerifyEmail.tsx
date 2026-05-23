@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import EduHubHeader from "@/components/EduHubHeader";
 import { eduhubAuth } from "@/api/eduhubClient";

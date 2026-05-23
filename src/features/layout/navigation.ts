@@ -14,7 +14,7 @@ import {
   Link2,
   QrCode,
   CreditCard,
-} from "lucide-react";
+} from "@/lib/icons";
 
 type MenuItemBase = {
   icon: typeof LayoutDashboard;
@@ -37,7 +37,6 @@ export const studentMenuItems: FlatMenuItem[] = [
   { icon: ListChecks, label: "Placement Test", path: "/dashboard/placement-tests" },
   { icon: ClipboardList, label: "Quiz", path: "/dashboard/quiz" },
   { icon: Award, label: "Certificates", path: "/dashboard/certificates" },
-  { icon: Bell, label: "Notifications", path: "/dashboard/notifications" },
   { icon: Settings, label: "Settings", path: "/dashboard/settings" },
 ];
 
@@ -64,6 +63,7 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
       { label: "Enrollments & waitlist", path: "/dashboard/admin/enrollments" },
       { label: "Enrollment applications", path: "/dashboard/admin/enrollment-applications" },
       { label: "Classes & rosters", path: "/dashboard/admin/classes" },
+      { label: "Student promos", path: "/dashboard/admin/promos" },
     ],
   },
   {

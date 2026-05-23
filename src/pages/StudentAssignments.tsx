@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { FileText, Calendar, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { FileText, Calendar, Loader2, AlertCircle, CheckCircle } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { eduhubAssignments, eduhubEnrollments, type AssignmentResponse, type SubmissionResponse } from "@/api/eduhubClient";
 

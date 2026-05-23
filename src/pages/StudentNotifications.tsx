@@ -1,81 +1,95 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bell, AlertCircle, Clock, CheckCircle2, Receipt, Loader2 } from "lucide-react";
+import { Bell, ChevronDown, Clock, Loader2, Search } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
-import { eduhubNotifications } from "@/api/eduhubClient";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import type { NotificationResponse } from "@/api/eduhubTypes";
+import {
+  formatNotificationRelativeTime,
+  NotificationBodyText,
+  notificationIconToneBgClass,
+  NotificationKindIcon,
+  resolveNotificationIcon,
+  resolveStudentNotificationCategory,
+  type StudentNotificationCategory,
+} from "@/features/notifications/notificationDisplay";
+import {
+  useNotificationMutations,
+  useNotificationsQuery,
+} from "@/features/notifications/useNotificationsQuery";
 
-function formatRelativeTime(iso: string): string {
-  const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return iso;
-  const diff = Date.now() - t;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
-  return new Date(iso).toLocaleDateString(undefined, { dateStyle: "medium" });
-}
+type CategoryFilter = "all" | StudentNotificationCategory;
+type ReadFilter = "all" | "unread" | "read";
 
-function getIcon(kind: string) {
-  switch (kind) {
-    case "enrollment_approved":
-    case "enrollment_receipt_ready":
-      return <Receipt className="h-5 w-5 text-green-600" />;
-    case "enrollment_rejected":
-    case "course_rejected":
-      return <AlertCircle className="h-5 w-5 text-red-500" />;
-    default:
-      return <Bell className="h-5 w-5 text-foreground/60" />;
-  }
-}
+const CATEGORY_FILTER_OPTIONS: { value: CategoryFilter; label: string }[] = [
+  { value: "all", label: "All types" },
+  { value: "enrollment", label: "Enrollment" },
+  { value: "class", label: "Class" },
+  { value: "payment", label: "Payment" },
+  { value: "certificate", label: "Certificate" },
+  { value: "schedule", label: "Schedule" },
+  { value: "attendance", label: "Attendance" },
+  { value: "other", label: "Other" },
+];
+
+const READ_FILTER_OPTIONS: { value: ReadFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "unread", label: "Unread" },
+  { value: "read", label: "Read" },
+];
 
 const StudentNotifications = () => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const queryKey = ["notifications"];
-
-  const { data: notifications = [], isLoading } = useQuery({
-    queryKey,
-    queryFn: () => eduhubNotifications.list(),
-  });
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+  const [readFilter, setReadFilter] = useState<ReadFilter>("all");
+  const { data: notifications = [], isLoading } = useNotificationsQuery();
+  const { markReadMutation, markAllReadMutation } = useNotificationMutations();
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
-  const markReadMutation = useMutation({
-    mutationFn: (id: string) => eduhubNotifications.markRead(id),
-    onMutate: async (id: string) => {
-      await queryClient.cancelQueries({ queryKey });
-      const prev = queryClient.getQueryData<NotificationResponse[]>(queryKey);
-      queryClient.setQueryData<NotificationResponse[]>(queryKey, (old) =>
-        (old ?? []).map((n) => (n.id === id ? { ...n, read: true } : n)),
-      );
-      return { prev };
-    },
-    onError: (_err, _id, ctx) => {
-      if (ctx?.prev) queryClient.setQueryData(queryKey, ctx.prev);
-    },
-    onSettled: () => void queryClient.invalidateQueries({ queryKey }),
-  });
+  const categoryFilterLabel =
+    CATEGORY_FILTER_OPTIONS.find((option) => option.value === categoryFilter)?.label ?? "All types";
+  const readFilterLabel =
+    READ_FILTER_OPTIONS.find((option) => option.value === readFilter)?.label ?? "All";
 
-  const markAllReadMutation = useMutation({
-    mutationFn: () => eduhubNotifications.markAllRead(),
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey });
-      const prev = queryClient.getQueryData<NotificationResponse[]>(queryKey);
-      queryClient.setQueryData<NotificationResponse[]>(queryKey, (old) =>
-        (old ?? []).map((n) => ({ ...n, read: true })),
-      );
-      return { prev };
-    },
-    onError: (_err, _ctx, ctx) => {
-      if (ctx?.prev) queryClient.setQueryData(queryKey, ctx.prev);
-    },
-    onSettled: () => void queryClient.invalidateQueries({ queryKey }),
-  });
+  const hasActiveFilters =
+    search.trim().length > 0 || categoryFilter !== "all" || readFilter !== "all";
+
+  const filteredNotifications = useMemo(() => {
+    const q = search.trim().toLowerCase();
+
+    return notifications.filter((notification) => {
+      const matchesSearch =
+        !q ||
+        [notification.title, notification.body, notification.kind]
+          .join(" ")
+          .toLowerCase()
+          .includes(q);
+
+      const category = resolveStudentNotificationCategory(notification.kind, notification.title);
+      const matchesCategory = categoryFilter === "all" || category === categoryFilter;
+
+      const matchesRead =
+        readFilter === "all" ||
+        (readFilter === "unread" ? !notification.read : notification.read);
+
+      return matchesSearch && matchesCategory && matchesRead;
+    });
+  }, [notifications, search, categoryFilter, readFilter]);
+
+  const clearFilters = () => {
+    setSearch("");
+    setCategoryFilter("all");
+    setReadFilter("all");
+  };
 
   const onRowClick = (notification: NotificationResponse) => {
     if (!notification.read) markReadMutation.mutate(notification.id);
@@ -84,12 +98,8 @@ const StudentNotifications = () => {
 
   return (
     <div
-      className="mx-auto box-border w-full max-w-3xl"
-      style={{
-        fontFamily: "'DM Sans', sans-serif",
-        paddingLeft: "clamp(1rem, 4vw, 1.75rem)",
-        paddingRight: "clamp(1rem, 4vw, 1.75rem)",
-      }}
+      className="w-full"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
       <div className="mb-8">
         <p className="text-foreground/70 text-sm">Your recent activity and updates.</p>
@@ -112,6 +122,84 @@ const StudentNotifications = () => {
         </div>
       </div>
 
+      {!isLoading && notifications.length > 0 ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="relative min-w-0 w-full max-w-md sm:w-auto sm:flex-1">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40"
+              aria-hidden
+            />
+            <Input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search notifications…"
+              className="h-10 rounded-xl border-gray-200 pl-10"
+            />
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 w-[120px] shrink-0 justify-between rounded-xl border-gray-200 bg-white px-2.5 text-sm font-normal text-foreground hover:bg-gray-50 data-[state=open]:border-gray-300 data-[state=open]:ring-2 data-[state=open]:ring-[#3954d0]/15"
+                >
+                  <span className="truncate">{categoryFilterLabel}</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[120px] rounded-2xl border-gray-200 p-2 shadow-lg">
+                {CATEGORY_FILTER_OPTIONS.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    className={cn(
+                      "cursor-pointer rounded-xl px-3 py-2 text-sm focus:bg-gray-100",
+                      categoryFilter === option.value && "bg-gray-50 font-medium text-foreground",
+                    )}
+                    onClick={() => setCategoryFilter(option.value)}
+                  >
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 w-[96px] shrink-0 justify-between rounded-xl border-gray-200 bg-white px-2.5 text-sm font-normal text-foreground hover:bg-gray-50 data-[state=open]:border-gray-300 data-[state=open]:ring-2 data-[state=open]:ring-[#3954d0]/15"
+                >
+                  <span className="truncate">{readFilterLabel}</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[96px] rounded-2xl border-gray-200 p-2 shadow-lg">
+                {READ_FILTER_OPTIONS.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    className={cn(
+                      "cursor-pointer rounded-xl px-3 py-2 text-sm focus:bg-gray-100",
+                      readFilter === option.value && "bg-gray-50 font-medium text-foreground",
+                    )}
+                    onClick={() => setReadFilter(option.value)}
+                  >
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      ) : null}
+
+      {!isLoading && notifications.length > 0 ? (
+        <p className="mb-4 text-sm text-foreground/60">
+          {filteredNotifications.length} notification{filteredNotifications.length === 1 ? "" : "s"}
+        </p>
+      ) : null}
+
       {isLoading ? (
         <div className="flex items-center justify-center py-16 text-muted-foreground">
           <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading notifications…
@@ -119,7 +207,10 @@ const StudentNotifications = () => {
       ) : (
         <>
           <div className="space-y-2">
-            {notifications.map((notification) => (
+            {filteredNotifications.map((notification) => {
+              const iconTone = resolveNotificationIcon(notification.kind, notification.title).tone;
+
+              return (
               <button
                 key={notification.id}
                 type="button"
@@ -131,8 +222,14 @@ const StudentNotifications = () => {
                 }`}
               >
                 <div className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
-                    {getIcon(notification.kind)}
+                  <div
+                    className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full shadow-sm ${notificationIconToneBgClass(iconTone)}`}
+                  >
+                    <NotificationKindIcon
+                      kind={notification.kind}
+                      title={notification.title}
+                      className="h-5 w-5"
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
@@ -145,24 +242,42 @@ const StudentNotifications = () => {
                       </p>
                       {!notification.read && <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />}
                     </div>
-                    <p className="mt-1 text-sm text-foreground/60">{notification.body}</p>
+                    <NotificationBodyText body={notification.body} className="mt-1 text-sm text-foreground/60" />
                     <p className="mt-2 flex items-center gap-1.5 text-xs text-foreground/50">
                       <Clock className="h-3.5 w-3.5" />
-                      {formatRelativeTime(notification.createdAt)}
+                      {formatNotificationRelativeTime(notification.createdAt)}
                     </p>
                   </div>
                 </div>
               </button>
-            ))}
+            );
+            })}
           </div>
 
-          {notifications.length === 0 && (
+          {filteredNotifications.length === 0 && (
             <div className="rounded-xl border border-gray-200/50 bg-white/50 py-16 text-center">
               <Bell className="mx-auto mb-4 h-12 w-12 text-foreground/30" />
-              <p className="font-medium text-foreground/70">No notifications yet.</p>
-              <p className="mt-1 text-sm text-foreground/50">
-                Enrollment decisions and other updates will appear here.
+              <p className="font-medium text-foreground/70">
+                {notifications.length === 0
+                  ? "No notifications yet."
+                  : "No notifications match your filters."}
               </p>
+              <p className="mt-1 text-sm text-foreground/50">
+                {notifications.length === 0
+                  ? "Enrollment decisions and other updates will appear here."
+                  : "Try adjusting your search or filter settings."}
+              </p>
+              {notifications.length > 0 && hasActiveFilters ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 rounded-full"
+                  onClick={clearFilters}
+                >
+                  Clear filters
+                </Button>
+              ) : null}
             </div>
           )}
         </>

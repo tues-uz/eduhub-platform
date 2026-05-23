@@ -1,6 +1,10 @@
+import { eduhubCourses } from "@/api/eduhubClient";
+import { isUuid } from "@/api/utils";
+import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import type { SubstituteInviteRecord } from "@/features/teacher/data/substituteInviteWorkflowStore";
 import type { AttendanceSessionLogEntry } from "@/features/teacher/attendance/attendanceSessionLogsStorage";
 import { endReasonLabel, formatDurationMs } from "@/features/teacher/attendance/attendanceSessionLogsStorage";
+import { buildAttendanceJoinUrl } from "@/features/teacher/attendance/attendanceMeetingsStorage";
 
 const STORAGE_KEY = "eduhub_app_notifications_v1";
 
@@ -32,7 +36,8 @@ export type AppNotificationKind =
   | "instructor_attendance_qr_generated"
   | "admin_attendance_qr_generated"
   | "instructor_attendance_session_completed"
-  | "admin_attendance_session_completed";
+  | "admin_attendance_session_completed"
+  | "student_attendance_check_in_open";
 
 export type AppNotification = {
   id: string;
@@ -107,15 +112,19 @@ export function notifyEnrollmentDecision(opts: {
 
   const studentTitle =
     opts.decision === "approved" ? "Enrollment approved — receipt ready" : "Enrollment not approved";
-  const receiptRef =
-    opts.receiptNumber && opts.invoiceNumber
-      ? ` Receipt ${opts.receiptNumber} (invoice ${opts.invoiceNumber}).`
-      : opts.receiptNumber
-        ? ` Receipt ${opts.receiptNumber}.`
-        : "";
   const studentBody =
     opts.decision === "approved"
-      ? `You can now access "${opts.courseTitle}".${receiptRef} Download your invoice and receipt from Payment history.`
+      ? [
+          `You can now access "${opts.courseTitle}".`,
+          opts.receiptNumber && opts.invoiceNumber
+            ? `Receipt ${opts.receiptNumber} (invoice ${opts.invoiceNumber}).`
+            : opts.receiptNumber
+              ? `Receipt ${opts.receiptNumber}.`
+              : null,
+          "Download your invoice and receipt from Payment history.",
+        ]
+          .filter(Boolean)
+          .join("\n")
       : `Your enrollment request for "${opts.courseTitle}" was not approved.${opts.adminNote ? ` Note: ${opts.adminNote}` : ""}`;
 
   pushNotification({
@@ -521,6 +530,73 @@ export function notifySubstituteRejectedByPrimary(record: SubstituteInviteRecord
     read: false,
     refId: record.id,
   });
+}
+
+function listLocalApprovedStudentEmails(courseId: string): string[] {
+  const seen = new Set<string>();
+  return enrollmentApplicationStore
+    .list()
+    .filter((application) => application.courseId === courseId && application.status === "APPROVED")
+    .map((application) => application.applicantEmailNorm.trim().toLowerCase())
+    .filter((email) => {
+      if (!email || seen.has(email)) return false;
+      seen.add(email);
+      return true;
+    });
+}
+
+function pushStudentAttendanceCheckInNotification(
+  entry: AttendanceSessionLogEntry,
+  studentEmailNorm: string,
+): void {
+  const email = studentEmailNorm.trim().toLowerCase();
+  if (!email) return;
+
+  const meetingLabel = entry.meetingName.trim() || "Class session";
+  const instructor = entry.instructorName.trim() || "Your instructor";
+  const now = new Date().toISOString();
+
+  pushNotification({
+    id: crypto.randomUUID(),
+    kind: "student_attendance_check_in_open",
+    audience: "student",
+    studentEmailNorm: email,
+    title: "Class check-in is open",
+    body: `${instructor} started attendance for "${entry.courseTitle}" — ${meetingLabel}. Scan the QR or open this notification to check in before the window closes.`,
+    createdAt: now,
+    read: false,
+    href: buildAttendanceJoinUrl(entry.courseId, entry.sessionId, entry.startedAt),
+    refId: entry.sessionId,
+  });
+}
+
+/** Notifies enrolled students when an instructor generates a check-in QR (local demo store). */
+export function notifyStudentAttendanceCheckInOpen(entry: AttendanceSessionLogEntry): void {
+  for (const email of listLocalApprovedStudentEmails(entry.courseId)) {
+    pushStudentAttendanceCheckInNotification(entry, email);
+  }
+}
+
+/** Local enrollments plus API roster when the course id is a server UUID. */
+export async function notifyStudentAttendanceCheckInOpenFromApi(
+  entry: AttendanceSessionLogEntry,
+): Promise<void> {
+  notifyStudentAttendanceCheckInOpen(entry);
+
+  if (!isUuid(entry.courseId)) return;
+
+  try {
+    const students = await eduhubCourses.getEnrolledStudents(entry.courseId, 0, 200);
+    const seen = new Set(listLocalApprovedStudentEmails(entry.courseId));
+    for (const student of students) {
+      const email = student.email.trim().toLowerCase();
+      if (!email || seen.has(email)) continue;
+      seen.add(email);
+      pushStudentAttendanceCheckInNotification(entry, email);
+    }
+  } catch {
+    /* API roster unavailable — local enrollments only */
+  }
 }
 
 /** Logged when an instructor generates a check-in QR (local demo; same browser storage). */

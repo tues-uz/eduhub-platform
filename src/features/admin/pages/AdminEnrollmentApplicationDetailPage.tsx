@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "@/lib/icons";
 import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,11 @@ import {
   enrollmentPaymentListSummary,
   formatEnrollmentMoney,
 } from "@/features/enrollment/enrollmentPaymentDisplay";
+import {
+  AdminActionCodeField,
+  useAdminActionCodeState,
+} from "@/features/admin/components/AdminActionCodeField";
+import { formatReviewedByLabel, validateAdminActionCodeOrThrow } from "@/features/admin/adminStaffCode";
 
 function formatDate(iso: string) {
   try {
@@ -50,6 +55,7 @@ export default function AdminEnrollmentApplicationDetailPage() {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [adminActionCode, setAdminActionCode] = useAdminActionCodeState();
   const [listedTuition, setListedTuition] = useState<number | null>(null);
   const [listedCurrency, setListedCurrency] = useState("USD");
   const [coursePriceLoading, setCoursePriceLoading] = useState(false);
@@ -96,6 +102,13 @@ export default function AdminEnrollmentApplicationDetailPage() {
 
   const approve = async () => {
     if (!record || record.status !== "PENDING") return;
+    let code: string;
+    try {
+      code = validateAdminActionCodeOrThrow(adminActionCode);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Enter your admin code");
+      return;
+    }
     setBusy(true);
     try {
       await approveEnrollmentApplication(record.id, {
@@ -104,6 +117,7 @@ export default function AdminEnrollmentApplicationDetailPage() {
         studentName: record.fullName,
         studentEmailNorm: record.applicantEmailNorm,
         courseId: record.courseId,
+        adminActionCode: code,
       });
       toast.success("Approved", {
         description: "Student enrolled. Invoice and receipt are available in their Payment history.",
@@ -119,10 +133,18 @@ export default function AdminEnrollmentApplicationDetailPage() {
 
   const confirmReject = async () => {
     if (!record) return;
+    let code: string;
+    try {
+      code = validateAdminActionCodeOrThrow(adminActionCode);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Enter your admin code");
+      return;
+    }
     setBusy(true);
     try {
       await eduhubAdminEnrollmentApplications.reject(record.id, {
         adminNote: rejectNote.trim() || undefined,
+        adminActionCode: code,
       });
       notifyEnrollmentRejection({
         courseTitle: record.courseTitle ?? record.courseId,
@@ -419,27 +441,37 @@ export default function AdminEnrollmentApplicationDetailPage() {
             {record.reviewedAt ? (
               <p className="text-xs text-slate-500 border-t border-slate-100 pt-4">
                 Reviewed {formatDate(record.reviewedAt)}
-                {record.reviewedByName ? ` by ${record.reviewedByName}` : ""}
+                {formatReviewedByLabel(record.reviewedByName, record.reviewedByCode)
+                  ? ` by ${formatReviewedByLabel(record.reviewedByName, record.reviewedByCode)}`
+                  : ""}
               </p>
             ) : null}
           </div>
 
           {record.status === "PENDING" ? (
-            <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/50 px-6 py-5 sm:flex-row sm:justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                className="border-red-200 text-red-700 hover:bg-red-50 sm:order-1"
-                onClick={() => {
-                  setRejectNote("");
-                  setRejectOpen(true);
-                }}
-              >
-                Reject
-              </Button>
-              <Button type="button" disabled={busy} onClick={() => void approve()} className="sm:order-2">
-                {busy ? "Approving…" : "Approve enrollment"}
-              </Button>
+            <div className="flex flex-col gap-4 border-t border-slate-100 bg-slate-50/50 px-6 py-5">
+              <AdminActionCodeField
+                id="enrollment-admin-code"
+                value={adminActionCode}
+                onChange={setAdminActionCode}
+                className="max-w-sm"
+              />
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-red-200 text-red-700 hover:bg-red-50 sm:order-1"
+                  onClick={() => {
+                    setRejectNote("");
+                    setRejectOpen(true);
+                  }}
+                >
+                  Reject
+                </Button>
+                <Button type="button" disabled={busy} onClick={() => void approve()} className="sm:order-2">
+                  {busy ? "Approving…" : "Approve enrollment"}
+                </Button>
+              </div>
             </div>
           ) : null}
         </div>
@@ -450,15 +482,22 @@ export default function AdminEnrollmentApplicationDetailPage() {
           <DialogHeader>
             <DialogTitle>Reject application</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="reject-note-detail">Note to student (optional)</Label>
-            <Textarea
-              id="reject-note-detail"
-              value={rejectNote}
-              onChange={(e) => setRejectNote(e.target.value)}
-              placeholder="e.g. Amount mismatch, illegible screenshot"
-              className="min-h-[88px]"
+          <div className="space-y-4">
+            <AdminActionCodeField
+              id="reject-admin-code"
+              value={adminActionCode}
+              onChange={setAdminActionCode}
             />
+            <div className="space-y-2">
+              <Label htmlFor="reject-note-detail">Note to student (optional)</Label>
+              <Textarea
+                id="reject-note-detail"
+                value={rejectNote}
+                onChange={(e) => setRejectNote(e.target.value)}
+                placeholder="e.g. Amount mismatch, illegible screenshot"
+                className="min-h-[88px]"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectOpen(false)}>

@@ -51,6 +51,7 @@ import AdminAddUserRolePage from "@/features/admin/pages/AdminAddUserRolePage";
 import AdminTransactionsPage from "@/features/admin/pages/AdminTransactionsPage";
 import AdminReportsPage from "@/features/admin/pages/AdminReportsPage";
 import AdminSettingsPage from "@/features/admin/pages/AdminSettingsPage";
+import AdminPromosPage from "@/features/admin/pages/AdminPromosPage";
 import TeacherDashboard from "@/pages/TeacherDashboard";
 import TeacherPlaceholder from "@/pages/TeacherPlaceholder";
 import TeacherCoursesPage from "@/features/teacher/pages/TeacherCoursesPage";
@@ -124,6 +125,7 @@ export function AppRoutes() {
       <Route path="/dashboard/admin/reports" element={<AdminReportsPage />} />
       <Route path="/dashboard/admin/users" element={<AdminUsersPage />} />
       <Route path="/dashboard/admin/settings" element={<AdminSettingsPage />} />
+      <Route path="/dashboard/admin/promos" element={<AdminPromosPage />} />
 
       <Route path={appRoutes.dashboardTeacher} element={<TeacherDashboard />} />
       <Route path="/dashboard/teacher/courses" element={<TeacherCoursesPage />} />

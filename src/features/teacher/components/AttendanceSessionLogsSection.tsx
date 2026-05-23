@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList } from "@/lib/icons";
 import {
   ATTENDANCE_SESSION_LOGS_CHANGED,
   endReasonLabel,

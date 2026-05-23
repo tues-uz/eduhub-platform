@@ -2,14 +2,18 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
+  Banknotes,
   BookOpen,
+  CreditCard,
   DollarSign,
   FileCheck,
   IdCard,
   Loader2,
   MoreVertical,
   Upload,
-} from "lucide-react";
+  User,
+  type LucideIcon,
+} from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +55,7 @@ import {
   enrollmentRequiresVerificationUploads,
   formatPaymentMethodLabel,
 } from "@/features/enrollment/enrollmentDocumentConfig";
+import { EnrollmentBankTransferPanel } from "@/features/enrollment/EnrollmentBankTransferPanel";
 import { cn } from "@/lib/utils";
 import { ClassSchedulePreviewPanel } from "@/features/courses/ClassSchedulePreviewPanel";
 import {
@@ -94,19 +99,35 @@ function EnrollmentFormGroup({
   step,
   title,
   description,
+  icon: Icon,
   children,
 }: {
   step: string;
   title: string;
   description?: string;
+  icon?: LucideIcon;
   children: ReactNode;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm">
-      <div className="border-b border-zinc-100 bg-gradient-to-r from-[#3954d0]/[0.06] via-zinc-50/90 to-white p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#3954d0]">{step}</p>
-        <h2 className="mt-1 text-base font-semibold tracking-tight text-zinc-900">{title}</h2>
-        {description ? <p className="mt-1 text-xs leading-relaxed text-zinc-500">{description}</p> : null}
+      <div className="border-b border-zinc-800 bg-zinc-900 p-4">
+        <div className="flex items-start gap-3">
+          {Icon ? (
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/10"
+              aria-hidden
+            >
+              <Icon className="h-5 w-5 text-white" />
+            </div>
+          ) : null}
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">{step}</p>
+            <h2 className="mt-1 text-base font-semibold tracking-tight text-white">{title}</h2>
+            {description ? (
+              <p className="mt-1 text-xs leading-relaxed text-white/65">{description}</p>
+            ) : null}
+          </div>
+        </div>
       </div>
       <div className="p-4">{children}</div>
     </div>
@@ -815,6 +836,7 @@ const StudentEnrollmentApplicationPage = () => {
             <EnrollmentFormGroup
               step="Step 1"
               title="Contact"
+              icon={User}
               description="Profile fields from your account and your mailing address. Contact support to update read-only details."
             >
               <div className="space-y-8">
@@ -898,6 +920,7 @@ const StudentEnrollmentApplicationPage = () => {
             <EnrollmentFormGroup
               step="Step 2"
               title="Tuition payments"
+              icon={CreditCard}
               description={
                 requiresVerificationUploads
                   ? "Choose how you pay and your plan. Review the schedule below before you transfer."
@@ -1142,7 +1165,8 @@ const StudentEnrollmentApplicationPage = () => {
             <EnrollmentFormGroup
               step="Step 3"
               title="Verification uploads"
-              description="Identification and payment proof so we can verify who you are and match your transfer."
+              icon={IdCard}
+              description="Pay by transfer, upload your ID, then attach the bank receipt so we can verify you."
             >
               <div className="space-y-8">
                 <div>
@@ -1228,8 +1252,24 @@ const StudentEnrollmentApplicationPage = () => {
                 </div>
 
                 <div className="border-t border-zinc-100 pt-8">
-                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500">Transfer proof</h3>
-                  <p className="mt-1 text-xs text-zinc-500">Upload a clear screenshot or PDF of your payment.</p>
+                  <div className="flex items-center gap-2">
+                    <Banknotes className="h-4 w-4 text-zinc-500" aria-hidden />
+                    <h3 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                      Bank transfer
+                    </h3>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-500">Pay first, then upload your receipt below.</p>
+
+                  <EnrollmentBankTransferPanel className="mt-5" />
+
+                  <div className="mt-8 border-t border-zinc-100 pt-8">
+                    <div className="flex items-center gap-2">
+                      <Upload className="h-4 w-4 text-zinc-500" aria-hidden />
+                      <h3 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                        Payment receipt
+                      </h3>
+                    </div>
+                    <p className="mt-1 text-xs text-zinc-500">Screenshot or PDF from your bank app.</p>
 
                   <div className="mt-5">
                     {file ? (
@@ -1299,6 +1339,7 @@ const StudentEnrollmentApplicationPage = () => {
                         </div>
                       </label>
                     )}
+                  </div>
                   </div>
                 </div>
               </div>

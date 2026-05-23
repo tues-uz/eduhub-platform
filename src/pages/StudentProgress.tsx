@@ -1,4 +1,4 @@
-import { BarChart3, Target, BookOpen, Award } from "lucide-react";
+import { BarChart3, Target, BookOpen, Award } from "@/lib/icons";
 import { Progress } from "@/components/ui/progress";
 
 const COURSE_PROGRESS = [

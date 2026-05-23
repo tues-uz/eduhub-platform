@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/lib/icons";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { buildPayrollProofPagePath } from "@/features/admin/data/adminPayrollProofStore";
@@ -13,6 +13,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { formatThousandsInText } from "@/lib/utils";
+import {
+  AdminActionCodeField,
+  useAdminActionCodeState,
+} from "@/features/admin/components/AdminActionCodeField";
+import { validateAdminActionCodeOrThrow } from "@/features/admin/adminStaffCode";
 
 export default function AdminInstructorPayrollRequestsPage() {
   const location = useLocation();
@@ -22,6 +27,16 @@ export default function AdminInstructorPayrollRequestsPage() {
     [payrollRequests],
   );
   const [rejectNotes, setRejectNotes] = useState<Record<string, string>>({});
+  const [adminActionCode, setAdminActionCode] = useAdminActionCodeState();
+
+  const requireAdminCode = (): string | null => {
+    try {
+      return validateAdminActionCodeOrThrow(adminActionCode);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Enter your admin code");
+      return null;
+    }
+  };
 
   useEffect(() => {
     const raw = location.hash.replace(/^#/, "");
@@ -83,6 +98,12 @@ export default function AdminInstructorPayrollRequestsPage() {
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
+              <AdminActionCodeField
+                id="payroll-list-admin-code"
+                value={adminActionCode}
+                onChange={setAdminActionCode}
+                className="rounded-lg border border-amber-200/80 bg-white p-4"
+              />
               {pendingPayrollRequests.map((r) => (
                 <div
                   key={r.id}
@@ -114,7 +135,9 @@ export default function AdminInstructorPayrollRequestsPage() {
                         size="sm"
                         className="bg-emerald-600 hover:bg-emerald-700"
                         onClick={() => {
-                          const ok = instructorPayrollRequestStore.approve(r.id);
+                          const code = requireAdminCode();
+                          if (!code) return;
+                          const ok = instructorPayrollRequestStore.approve(r.id, code);
                           if (ok) toast.success("Request approved", { description: r.instructorName });
                           else toast.error("Could not approve", { description: "Request may have been removed." });
                         }}
@@ -126,8 +149,10 @@ export default function AdminInstructorPayrollRequestsPage() {
                         size="sm"
                         variant="destructive"
                         onClick={() => {
+                          const code = requireAdminCode();
+                          if (!code) return;
                           const note = rejectNotes[r.id]?.trim();
-                          const ok = instructorPayrollRequestStore.reject(r.id, note);
+                          const ok = instructorPayrollRequestStore.reject(r.id, code, note);
                           if (ok) {
                             toast.message("Request rejected", { description: r.instructorName });
                             setRejectNotes((prev) => {

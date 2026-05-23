@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Upload, Loader2, X } from "lucide-react";
+import { Upload, Loader2, X } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useAuthSession } from "@/features/auth/context";
 import { useTeacherCourseForm } from "./TeacherCourseFormContext";
+import { INSTRUCTOR_CATEGORY_MISSING } from "../resolveInstructorCategory";
 
 function profileInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -22,6 +23,7 @@ const TeacherCourseFormDetailsPage = () => {
     basePath,
     title,
     setTitle,
+    category,
     description,
     setDescription,
     classStartDate,
@@ -40,12 +42,13 @@ const TeacherCourseFormDetailsPage = () => {
   } = useTeacherCourseForm();
 
   const titleRequiredError = error === "Class title is required.";
+  const categoryRequiredError = error === INSTRUCTOR_CATEGORY_MISSING;
   const dateFieldErrors =
     error === "Enter both a class start date and a class end date, or leave both empty." ||
     error === "Class end date must be on or after the start date." ||
     error === "Class dates are invalid.";
   const showDetailsGlobalBanner =
-    Boolean(error) && !titleRequiredError && !dateFieldErrors;
+    Boolean(error) && !titleRequiredError && !categoryRequiredError && !dateFieldErrors;
 
   const continueToSchedule = () => {
     setError("");
@@ -171,6 +174,31 @@ const TeacherCourseFormDetailsPage = () => {
             />
             {titleRequiredError ? (
               <p id="title-error" className="text-sm text-red-600" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </section>
+
+          <section className="space-y-2">
+            <label htmlFor="category" className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Category <span className="font-semibold normal-case tracking-normal text-red-600">*</span>
+            </label>
+            <Input
+              id="category"
+              value={category || "Not assigned"}
+              readOnly
+              disabled
+              aria-invalid={categoryRequiredError}
+              aria-describedby={categoryRequiredError ? "category-error" : "category-hint"}
+              className={`h-11 rounded-xl border bg-slate-50 text-[15px] text-slate-700 shadow-none ${
+                categoryRequiredError ? "border-red-400" : "border-slate-200"
+              }`}
+            />
+            <p id="category-hint" className="text-xs text-slate-500">
+              Assigned by admin when your instructor account was created and cannot be changed here.
+            </p>
+            {categoryRequiredError ? (
+              <p id="category-error" className="text-sm text-red-600" role="alert">
                 {error}
               </p>
             ) : null}

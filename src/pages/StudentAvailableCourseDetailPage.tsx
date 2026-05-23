@@ -14,7 +14,7 @@ import {
   Loader2,
   Star,
   Users,
-} from "lucide-react";
+} from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLayoutContext } from "@/features/layout/context";
@@ -33,6 +33,7 @@ import {
 } from "@/features/admin/utils/adminCourseScheduleDisplay";
 import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
 import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
+import { formatSessionTimeLabel } from "@/features/courses/classSchedulePreview";
 
 const TEACHER_PREFIX = "teacher_";
 const MAX_CLASS_PHOTOS = 8;
@@ -64,6 +65,13 @@ function formatClassDateLabel(iso: string | undefined): string | null {
   const d = new Date(iso.trim());
   if (Number.isNaN(d.getTime())) return null;
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function formatSessionWeekdayLabel(iso: string | undefined): string | null {
+  if (!iso?.trim()) return null;
+  const d = new Date(iso.trim());
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, { weekday: "long" });
 }
 
 type SessionSlotLike = { title?: string; sessionDate?: string; sessionTime?: string };
@@ -657,18 +665,18 @@ const StudentAvailableCourseDetailPage = () => {
                         defaultValue={scheduleMonthTabs[0]?.value ?? "m1"}
                         className="mt-5 border-t border-zinc-100 pt-4"
                       >
-                        <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-xl border border-zinc-200/80 bg-zinc-100/90 p-1.5 text-zinc-600">
+                        <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-full border border-zinc-200/80 bg-zinc-100/90 p-1.5 text-zinc-600">
                           {scheduleMonthTabs.map((t) => (
                             <TabsTrigger
                               key={t.value}
                               value={t.value}
-                              className="flex min-h-[3.25rem] flex-col gap-0.5 whitespace-normal rounded-lg px-2 py-2 text-center data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm"
+                              className="group flex min-h-[3.25rem] flex-col gap-0.5 whitespace-normal rounded-full px-2 py-2 text-center data-[state=active]:bg-zinc-900 data-[state=active]:text-white data-[state=active]:shadow-sm"
                             >
-                              <span className="text-sm font-semibold leading-tight text-zinc-800">
+                              <span className="text-sm font-semibold leading-tight text-zinc-800 group-data-[state=active]:text-white">
                                 {t.tabLabel}
                               </span>
                               {t.monthLine ? (
-                                <span className="text-[10px] font-normal leading-snug text-zinc-500">
+                                <span className="text-[10px] font-normal leading-snug text-zinc-500 group-data-[state=active]:text-white/75">
                                   {t.monthLine}
                                 </span>
                               ) : null}
@@ -685,7 +693,12 @@ const StudentAvailableCourseDetailPage = () => {
                               <ul className="divide-y divide-zinc-100">
                                 {t.slots.map((row, idx) => {
                                   const dateLabel = formatClassDateLabel(row.sessionDate) ?? "Date TBA";
-                                  const timeLabel = row.sessionTime?.trim() || "—";
+                                  const weekdayLabel = formatSessionWeekdayLabel(row.sessionDate);
+                                  const timeLabel = formatSessionTimeLabel(row.sessionTime) ?? "—";
+                                  const timeWithDay =
+                                    weekdayLabel && timeLabel !== "—"
+                                      ? `${weekdayLabel} · ${timeLabel}`
+                                      : timeLabel;
                                   const title = row.title?.trim() || `Session ${idx + 1}`;
                                   return (
                                     <li
@@ -695,12 +708,12 @@ const StudentAvailableCourseDetailPage = () => {
                                       <div className="min-w-0">
                                         <p className="text-sm font-medium text-zinc-900">{title}</p>
                                         <p className="mt-0.5 text-xs tabular-nums text-zinc-500 sm:hidden">
-                                          {dateLabel} · {timeLabel}
+                                          {dateLabel} · {timeWithDay}
                                         </p>
                                       </div>
                                       <div className="hidden shrink-0 text-right text-sm tabular-nums text-zinc-700 sm:block">
                                         <p className="font-medium">{dateLabel}</p>
-                                        <p className="mt-0.5 text-xs text-zinc-500">{timeLabel}</p>
+                                        <p className="mt-0.5 text-xs text-zinc-500">{timeWithDay}</p>
                                       </div>
                                     </li>
                                   );

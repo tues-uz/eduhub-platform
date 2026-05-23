@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { ArrowLeft, FileText, Trash2, Eye, Clock, AlertCircle, Rocket, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, FileText, Trash2, Eye, Clock, AlertCircle, Rocket, Check, Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Calendar, GraduationCap } from "lucide-react";
+import { ArrowLeft, Calendar, GraduationCap } from "@/lib/icons";
 import type { ClassResumeItem } from "@/features/courses/classResumeStorage";
 import { cn } from "@/lib/utils";
 

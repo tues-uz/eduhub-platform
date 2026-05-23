@@ -11,8 +11,8 @@ import {
   adminStats,
   adminSystemActivity,
 } from "@/features/admin/data/dashboardData";
-import type { LucideIcon } from "lucide-react";
-import { Users, GraduationCap, BookOpen, TrendingUp } from "lucide-react";
+import type { LucideIcon } from "@/lib/icons";
+import { Users, GraduationCap, BookOpen, TrendingUp } from "@/lib/icons";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
 import { getAccessToken, eduhubAdmin, eduhubCourses, eduhubEnrollments } from "./eduhubClient";
@@ -267,6 +267,7 @@ export type StudentCourseListItem = {
   modules: number;
   enrolledDate: string;
   thumbnailUrl?: string;
+  instructorAvatarUrl?: string;
 };
 
 function normalizeStoredStudentEmail(): string | null {
@@ -299,6 +300,7 @@ function getTeacherCoursesAsStudentList(): StudentCourseListItem[] {
       modules: totalLessons,
       enrolledDate: c.createdAt.slice(0, 10),
       thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
+      instructorAvatarUrl: c.instructorAvatarUrl?.trim() || undefined,
     };
   });
 }
@@ -348,6 +350,29 @@ function enrichMockCourseProgress(course: StudentCourseListItem): StudentCourseL
   const status =
     progressPercent >= 100 ? "Completed" : progressPercent >= 75 ? "Almost Complete" : "In Progress";
   return { ...course, progress: progressPercent, status };
+}
+
+async function enrichStudentCourseInstructorAvatar(item: StudentCourseListItem): Promise<StudentCourseListItem> {
+  if (item.instructorAvatarUrl || String(item.id).startsWith("teacher_")) return item;
+  try {
+    const course = await eduhubCourses.getById(String(item.id));
+    const instructorAvatarUrl = course.lecturer?.avatarUrl?.trim();
+    return instructorAvatarUrl
+      ? {
+          ...item,
+          instructor: course.lecturer?.fullName?.trim() || item.instructor,
+          instructorAvatarUrl,
+        }
+      : item;
+  } catch {
+    return item;
+  }
+}
+
+async function enrichStudentCoursesInstructorAvatars(
+  courses: StudentCourseListItem[],
+): Promise<StudentCourseListItem[]> {
+  return Promise.all(courses.map(enrichStudentCourseInstructorAvatar));
 }
 
 export const coursesApi = {
@@ -409,14 +434,24 @@ export const coursesApi = {
             try {
               const course = await eduhubCourses.getById(String(item.id));
               const thumb = course.thumbnailUrl?.trim();
-              return thumb ? { ...item, thumbnailUrl: thumb } : item;
+              const instructorAvatarUrl = course.lecturer?.avatarUrl?.trim();
+              return {
+                ...item,
+                instructor: course.lecturer?.fullName?.trim() || item.instructor,
+                ...(thumb ? { thumbnailUrl: thumb } : {}),
+                ...(instructorAvatarUrl ? { instructorAvatarUrl } : {}),
+              };
             } catch {
               return item;
             }
           }),
         );
 
-        return [...apiList, ...localApprovedWithThumbs, ...localTeacher];
+        return enrichStudentCoursesInstructorAvatars([
+          ...apiList,
+          ...localApprovedWithThumbs,
+          ...localTeacher,
+        ]);
       } catch {
         return [...enrolledCourses.map(enrichMockCourseProgress), ...localTeacher];
       }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Award, BookOpen, Download, Loader2, Lock } from "lucide-react";
+import { Award, BookOpen, Download, Loader2, Lock } from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
@@ -33,7 +33,7 @@ const StudentCertificates = () => {
   }, [emailNorm, tick]);
 
   return (
-    <div className="container mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="w-full max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <div className="mb-8">
         <p className="text-foreground/70 text-sm">
           Certificates your instructor publishes after final scores. Submit instructor and Edu Hub feedback on

@@ -17,6 +17,12 @@ export const ENROLLMENT_DOCUMENT_ORG = {
 
 export const DEFAULT_ENROLLMENT_PAYMENT_METHOD = "BANK_TRANSFER";
 
+/** Bank details shown when students pay tuition by transfer at enrollment. */
+export const ENROLLMENT_BANK_TRANSFER_DETAILS = {
+  beneficiaryName: ENROLLMENT_DOCUMENT_ORG.name,
+  accountNumber: "5343958395",
+} as const;
+
 /** How the student pays at enrollment (submitted with the application). */
 export type EnrollmentPaymentMethod = "CASH" | "BANK_TRANSFER";
 

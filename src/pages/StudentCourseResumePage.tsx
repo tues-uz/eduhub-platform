@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
 import { ClassResumeArticleLayout } from "@/features/courses/ClassResumeArticleLayout";

@@ -6,7 +6,7 @@ import {
   CircleHelp,
   Star,
   X,
-} from "lucide-react";
+} from "@/lib/icons";
 import { toast } from "sonner";
 import { useAuthSession } from "@/features/auth/context";
 import { markCourseCongratsSeen } from "@/features/student/courseCongratsSeenStorage";

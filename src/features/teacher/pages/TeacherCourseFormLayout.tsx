@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Outlet, useNavigate, useMatch, NavLink } from "react-router-dom";
 import {
   AlertDialog,
@@ -26,6 +26,7 @@ import {
   resolveClassScheduleFormState,
 } from "./teacherCourseFormHelpers";
 import { TeacherCourseFormContext, type TeacherCourseFormContextValue } from "./TeacherCourseFormContext";
+import { resolveInstructorCategory, INSTRUCTOR_CATEGORY_MISSING } from "../resolveInstructorCategory";
 
 /** Normalize API ISO strings to `YYYY-MM-DD` for date inputs. */
 function toDateInputValue(iso?: string): string {
@@ -45,6 +46,11 @@ const TeacherCourseFormLayout = () => {
   const isEdit = !isNewFlow && !!courseId;
 
   const { user } = useAuthSession();
+
+  const instructorCategory = useMemo(
+    () => resolveInstructorCategory(user.email, user.category),
+    [user.email, user.category],
+  );
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -285,6 +291,10 @@ const TeacherCourseFormLayout = () => {
       setError("Class title is required.");
       return false;
     }
+    if (!instructorCategory.trim()) {
+      setError(INSTRUCTOR_CATEGORY_MISSING);
+      return false;
+    }
     const startTrim = classStartDate.trim();
     const endTrim = classEndDate.trim();
     if ((startTrim && !endTrim) || (!startTrim && endTrim)) {
@@ -304,7 +314,7 @@ const TeacherCourseFormLayout = () => {
       }
     }
     return true;
-  }, [title, classStartDate, classEndDate]);
+  }, [title, instructorCategory, classStartDate, classEndDate]);
 
   /** Schedule is owned by admin; this step is informational / approval only. */
   const validateScheduleStep = useCallback((): boolean => {
@@ -317,6 +327,10 @@ const TeacherCourseFormLayout = () => {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
       setError("Class title is required.");
+      return;
+    }
+    if (!instructorCategory.trim()) {
+      setError(INSTRUCTOR_CATEGORY_MISSING);
       return;
     }
     const startTrim = classStartDate.trim();
@@ -361,7 +375,7 @@ const TeacherCourseFormLayout = () => {
         const course = await eduhubCourses.create({
           title: trimmedTitle,
           description: description.trim() || "—",
-          category: "General",
+          category: instructorCategory.trim(),
           status: "DRAFT",
           classMeetingsInSixMonths: meetingsSixMo,
           classMeetingTitles: meetingTitlesForSave,
@@ -398,7 +412,7 @@ const TeacherCourseFormLayout = () => {
         await eduhubCourses.update(courseId, {
           title: trimmedTitle,
           description: description.trim() || "—",
-          category: existingCourse.category,
+          category: instructorCategory.trim() || existingCourse.category,
           status: existingCourse.status,
           classMeetingsInSixMonths: meetingsSixMo,
           classMeetingTitles: meetingTitlesForSave,
@@ -444,6 +458,7 @@ const TeacherCourseFormLayout = () => {
         teacherCoursesStore.update(courseId, {
           title: trimmedTitle,
           description: description.trim(),
+          category: instructorCategory.trim(),
           instructorName,
           lessons: validLessons,
           classMeetingsInSixMonths: meetingsSixMo,
@@ -462,6 +477,7 @@ const TeacherCourseFormLayout = () => {
         teacherCoursesStore.create({
           title: trimmedTitle,
           description: description.trim(),
+          category: instructorCategory.trim(),
           instructorName,
           lessons: validLessons,
           classMeetingsInSixMonths: meetingsSixMo,
@@ -487,6 +503,7 @@ const TeacherCourseFormLayout = () => {
     basePath,
     title,
     setTitle,
+    category: instructorCategory,
     description,
     setDescription,
     classMeetingsInSixMonths,

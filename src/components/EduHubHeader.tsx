@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -115,6 +115,11 @@ const EduHubHeader = () => {
 
             {/* CTA Buttons */}
             <div className="hidden md:flex items-center gap-2">
+              <Link to="/register">
+                <Button className="text-sm font-semibold bg-transparent text-foreground rounded-full border-0 hover:bg-gray-100 transition-all duration-300 h-10 px-6">
+                  Register
+                </Button>
+              </Link>
               <Link to="/signin">
                 <Button
                   variant="ghost"
@@ -122,11 +127,6 @@ const EduHubHeader = () => {
                   style={{ backgroundColor: "#3954d0" }}
                 >
                   Sign In
-                </Button>
-              </Link>
-              <Link to="/register">
-                <Button className="text-sm font-semibold bg-transparent text-foreground rounded-full border-2 border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all duration-300 h-10 px-6">
-                  Register
                 </Button>
               </Link>
             </div>
@@ -205,14 +205,14 @@ const EduHubHeader = () => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+                <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                  <Button className="w-full text-sm font-semibold bg-transparent text-foreground rounded-full border-0 hover:bg-gray-100 transition-all duration-300 h-10">
+                    Register
+                  </Button>
+                </Link>
                 <Link to="/signin" onClick={() => setMobileMenuOpen(false)}>
                   <Button className="w-full text-sm font-semibold text-white rounded-full h-10 hover:opacity-90 transition-opacity" style={{ backgroundColor: '#3954d0' }}>
                     Sign In
-                  </Button>
-                </Link>
-                <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="w-full text-sm font-semibold bg-transparent text-foreground rounded-full border-2 border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all duration-300 h-10">
-                    Register
                   </Button>
                 </Link>
               </div>

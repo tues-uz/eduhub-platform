@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, ChevronDown } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown } from "@/lib/icons";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { PayrollInstructorProofPanel } from "@/features/admin/components/PayrollInstructorProofPanel";
 import { buildPayrollProofPagePath } from "@/features/admin/data/adminPayrollProofStore";
@@ -27,8 +27,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AdminActionCodeField,
+  useAdminActionCodeState,
+} from "@/features/admin/components/AdminActionCodeField";
+import { validateAdminActionCodeOrThrow } from "@/features/admin/adminStaffCode";
 import { cn, formatThousandsInText } from "@/lib/utils";
 
 function StatusLine({ status }: { status: "pending" | "approved" | "rejected" }) {
@@ -53,6 +57,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
   const [submissionOpen, setSubmissionOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectDialogNote, setRejectDialogNote] = useState("");
+  const [adminActionCode, setAdminActionCode] = useAdminActionCodeState();
 
   const payrollSummary = useMemo(() => {
     if (!record) return "";
@@ -217,8 +222,18 @@ export default function AdminInstructorPayrollRequestDetailPage() {
 
         {record.status === "approved" ? (
           <div className="mb-4 rounded-xl border border-emerald-200/90 bg-emerald-50/50 px-4 py-3 text-sm text-emerald-950">
-            Figures are approved. Use the transfer proof section below to attach or update the bank receipt — that
-            notifies the instructor in this demo.
+            Figures are approved
+            {record.reviewedByCode ? (
+              <>
+                {" "}
+                by <span className="font-mono font-medium">{record.reviewedByCode}</span>
+              </>
+            ) : null}
+            {record.resolvedAt
+              ? ` (${new Date(record.resolvedAt).toLocaleDateString(undefined, { dateStyle: "medium" })})`
+              : ""}
+            . Use the transfer proof section below to attach or update the bank receipt — that notifies the
+            instructor in this demo.
           </div>
         ) : null}
         {record.status === "rejected" ? (
@@ -227,6 +242,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
             {record.resolvedAt
               ? ` (${new Date(record.resolvedAt).toLocaleDateString(undefined, { dateStyle: "medium" })})`
               : ""}
+            {record.reviewedByCode ? ` · ${record.reviewedByCode}` : ""}
             . You can still use the proof section below if you need a receipt on file.
           </div>
         ) : null}
@@ -284,12 +300,24 @@ export default function AdminInstructorPayrollRequestDetailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <AdminActionCodeField
+                id="payroll-detail-admin-code"
+                value={adminActionCode}
+                onChange={setAdminActionCode}
+              />
               <Button
                 type="button"
                 size="lg"
                 className="w-full bg-emerald-600 text-base font-medium hover:bg-emerald-700"
                 onClick={() => {
-                  const ok = instructorPayrollRequestStore.approve(record.id);
+                  let code: string;
+                  try {
+                    code = validateAdminActionCodeOrThrow(adminActionCode);
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "Enter your admin code");
+                    return;
+                  }
+                  const ok = instructorPayrollRequestStore.approve(record.id, code);
                   if (ok) toast.success("Approved", { description: `${record.instructorName} was notified.` });
                   else toast.error("Could not approve");
                 }}
@@ -312,15 +340,22 @@ export default function AdminInstructorPayrollRequestDetailPage() {
                 The instructor will see this in their notifications. You can leave a short explanation (recommended).
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <div className="space-y-2 py-2">
-              <Label htmlFor="reject-dialog-note">Note to instructor</Label>
-              <Textarea
-                id="reject-dialog-note"
-                value={rejectDialogNote}
-                onChange={(e) => setRejectDialogNote(e.target.value)}
-                placeholder="Reason they should fix or resubmit…"
-                className="min-h-[100px]"
+            <div className="space-y-4 py-2">
+              <AdminActionCodeField
+                id="payroll-reject-admin-code"
+                value={adminActionCode}
+                onChange={setAdminActionCode}
               />
+              <div className="space-y-2">
+                <Label htmlFor="reject-dialog-note">Note to instructor</Label>
+                <Textarea
+                  id="reject-dialog-note"
+                  value={rejectDialogNote}
+                  onChange={(e) => setRejectDialogNote(e.target.value)}
+                  placeholder="Reason they should fix or resubmit…"
+                  className="min-h-[100px]"
+                />
+              </div>
             </div>
             <AlertDialogFooter className="gap-2 sm:gap-0">
               <AlertDialogCancel onClick={() => setRejectDialogNote("")}>Cancel</AlertDialogCancel>
@@ -328,7 +363,14 @@ export default function AdminInstructorPayrollRequestDetailPage() {
                 type="button"
                 variant="destructive"
                 onClick={() => {
-                  const ok = instructorPayrollRequestStore.reject(record.id, rejectDialogNote.trim());
+                  let code: string;
+                  try {
+                    code = validateAdminActionCodeOrThrow(adminActionCode);
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "Enter your admin code");
+                    return;
+                  }
+                  const ok = instructorPayrollRequestStore.reject(record.id, code, rejectDialogNote.trim());
                   if (ok) {
                     toast.message("Request declined", { description: record.instructorName });
                     setRejectDialogNote("");

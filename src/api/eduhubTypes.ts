@@ -10,6 +10,8 @@ export interface UserResponse {
   avatarUrl?: string;
   bio?: string;
   phoneNumber?: string;
+  /** Teaching category for lecturers (assigned by admin). */
+  category?: string;
   /** Parent or guardian contact from registration. */
   parentPhoneNumber?: string;
   enabled?: boolean;
@@ -34,6 +36,8 @@ export interface RegisterRequest {
   dateOfBirth: string;
   /** City where the student was born. */
   birthCity: string;
+  /** Most recent school the student attended. */
+  latestSchool: string;
   password: string;
   role: "STUDENT" | ApiRole;
 }
@@ -357,6 +361,8 @@ export interface EnrollmentApplicationResponse {
   reviewedAt?: string;
   adminNote?: string;
   reviewedByName?: string;
+  /** Short admin identifier for audit trail (e.g. AF01). */
+  reviewedByCode?: string;
   /** Official invoice number (e.g. INV.EDUHUB.1125-0008). Set when admin approves. */
   invoiceNumber?: string;
   /** Official receipt number (e.g. REC.EDUHUB.1125-0008). Set when admin approves. */
@@ -371,6 +377,8 @@ export interface EnrollmentApplicationResponse {
 
 export interface EnrollmentApplicationReviewRequest {
   adminNote?: string;
+  /** Short admin identifier for audit trail (e.g. AF01). */
+  adminActionCode?: string;
 }
 
 // Class Resume Types

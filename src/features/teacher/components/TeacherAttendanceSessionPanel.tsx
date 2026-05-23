@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import QRCode from "react-qr-code";
-import { Maximize2, Minimize2, QrCode, RefreshCw, Square } from "lucide-react";
+import { Maximize2, Minimize2, QrCode, RefreshCw, Square } from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +37,7 @@ import {
 import {
   notifyAttendanceQrGenerated,
   notifyAttendanceSessionCompleted,
+  notifyStudentAttendanceCheckInOpenFromApi,
 } from "@/features/notifications/appNotificationStore";
 import {
   backfillCompletedSessionLog,
@@ -429,6 +430,7 @@ export function TeacherAttendanceSessionPanel({
       instructorName: user.name ?? "",
     });
     notifyAttendanceQrGenerated(log);
+    void notifyStudentAttendanceCheckInOpenFromApi(log);
     if (useSchedulePicker) {
       setRosterScheduleSlotIntent(null);
     }

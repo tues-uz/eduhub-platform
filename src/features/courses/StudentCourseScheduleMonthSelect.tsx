@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Lock } from "lucide-react";
+import { Lock } from "@/lib/icons";
 import {
   Select,
   SelectContent,
@@ -163,7 +163,7 @@ export function StudentCourseScheduleMonthSelect({
         >
           <SelectTrigger
             className={cn(
-              "mt-1.5 h-9 rounded-lg border-zinc-200 bg-white text-xs font-medium text-zinc-900 shadow-none focus:ring-[#3954d0]/25",
+              "mt-1.5 h-11 rounded-full border-zinc-200 bg-white px-4 text-xs font-medium text-zinc-900 shadow-none focus:ring-[#3954d0]/25",
               "[&>span:first-child]:flex [&>span:first-child]:min-w-0 [&>span:first-child]:flex-1 [&>span:first-child]:justify-start",
               locked && "cursor-not-allowed opacity-60",
             )}
@@ -183,11 +183,11 @@ export function StudentCourseScheduleMonthSelect({
               <SelectValue placeholder="Select month" className="text-left" />
             )}
           </SelectTrigger>
-          <SelectContent className="min-w-[var(--radix-select-trigger-width)]">
+          <SelectContent className="min-w-[var(--radix-select-trigger-width)] rounded-2xl border-zinc-200 p-1.5 shadow-lg">
             {scheduleMonthTabs.map((t) => {
               const monthNum = scheduleTabToPaymentMonths(t.value);
               return (
-                <SelectItem key={t.value} value={t.value} className="text-xs py-2.5 pr-3">
+                <SelectItem key={t.value} value={t.value} className="rounded-xl text-xs py-2.5 pr-3">
                   <MonthOptionRow
                     tabLabel={t.tabLabel}
                     monthLine={t.monthLine}

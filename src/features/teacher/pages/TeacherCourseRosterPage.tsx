@@ -20,7 +20,7 @@ import {
   Trash2,
   UserPlus,
   Users,
-} from "lucide-react";
+} from "@/lib/icons";
 import { toast } from "sonner";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";

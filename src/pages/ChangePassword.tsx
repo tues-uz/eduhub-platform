@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Lock, Eye, EyeOff, AlertCircle } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { eduhubAuth, setAuthTokens } from "@/api/eduhubClient";
 import { setSessionUser, useAuthSession } from "@/features/auth/context";
+import { resolveInstructorCategory } from "@/features/teacher/resolveInstructorCategory";
 
 const ChangePassword = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -19,7 +20,7 @@ const ChangePassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { refreshUser } = useAuthSession();
+  const { refreshUser, user: sessionUser } = useAuthSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +51,10 @@ const ChangePassword = () => {
       if (res.mustChangePassword === false) {
         setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);
         const role = res.user.role === "LECTURER" ? "teacher" : res.user.role === "ADMIN" ? "admin" : "student";
+        const category =
+          role === "teacher"
+            ? resolveInstructorCategory(res.user.email, res.user.category ?? sessionUser.category)
+            : undefined;
         setSessionUser({
           id: res.user.id,
           name: res.user.fullName,
@@ -57,6 +62,7 @@ const ChangePassword = () => {
           role,
           avatarUrl: res.user.avatarUrl,
           phoneNumber: res.user.phoneNumber,
+          category,
         });
         refreshUser();
         toast({ title: "Password changed", description: "Your password has been updated successfully." });

@@ -32,6 +32,8 @@ export type InstructorPayrollRequestRecord = {
   status: InstructorPayrollRequestStatus;
   resolvedAt?: string;
   adminNote?: string;
+  /** Short admin identifier for audit trail (e.g. AF01). */
+  reviewedByCode?: string;
 };
 
 type Listener = () => void;
@@ -196,12 +198,13 @@ export const instructorPayrollRequestStore = {
     return { ok: true, record };
   },
 
-  approve(id: string): boolean {
+  approve(id: string, adminActionCode: string): boolean {
     const i = snapshot.findIndex((r) => r.id === id && r.status === "pending");
     if (i === -1) return false;
     const resolvedAt = new Date().toISOString();
+    const code = adminActionCode.trim().toUpperCase();
     snapshot = snapshot.map((r) =>
-      r.id === id ? { ...r, status: "approved" as const, resolvedAt } : r,
+      r.id === id ? { ...r, status: "approved" as const, resolvedAt, reviewedByCode: code } : r,
     );
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
@@ -222,13 +225,14 @@ export const instructorPayrollRequestStore = {
     return true;
   },
 
-  reject(id: string, adminNote?: string): boolean {
+  reject(id: string, adminActionCode: string, adminNote?: string): boolean {
     const i = snapshot.findIndex((r) => r.id === id && r.status === "pending");
     if (i === -1) return false;
     const resolvedAt = new Date().toISOString();
     const note = adminNote?.trim() || undefined;
+    const code = adminActionCode.trim().toUpperCase();
     snapshot = snapshot.map((r) =>
-      r.id === id ? { ...r, status: "rejected" as const, resolvedAt, adminNote: note } : r,
+      r.id === id ? { ...r, status: "rejected" as const, resolvedAt, adminNote: note, reviewedByCode: code } : r,
     );
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));

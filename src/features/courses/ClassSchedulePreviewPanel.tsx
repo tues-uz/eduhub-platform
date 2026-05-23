@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { CalendarDays, Clock } from "lucide-react";
+import { CalendarDays, Clock } from "@/lib/icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
 import type { TeacherCourse } from "@/features/teacher/types";

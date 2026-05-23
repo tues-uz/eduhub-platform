@@ -50,4 +50,6 @@ export type TeacherCourse = {
   status?: "DRAFT" | "SCHEDULE_PENDING" | "SCHEDULE_APPROVED" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
   /** From API / roster — enrolled students for this class. */
   enrollmentCount?: number;
+  /** Subject area shown on student class cards and catalog filters. */
+  category?: string;
 };

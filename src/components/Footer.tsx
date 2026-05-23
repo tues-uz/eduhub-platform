@@ -1,4 +1,4 @@
-import { Facebook, Twitter, Instagram, Linkedin, Youtube, Mail, Phone, MapPin, ArrowRight } from "lucide-react";
+import { Facebook, Twitter, Instagram, Linkedin, Youtube, Mail, Phone, MapPin, ArrowRight } from "@/lib/icons";
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
 
@@ -294,8 +294,7 @@ const Footer = () => {
                     <li key={`${section.title}-${link}`} className="min-w-0">
                       <a
                         href="#"
-                        className="text-sm transition-colors hover:opacity-90 whitespace-nowrap block"
-                        style={{ color: creamMuted }}
+                        className="block whitespace-nowrap text-sm text-gray-400 transition-colors hover:text-white"
                       >
                         {link}
                       </a>

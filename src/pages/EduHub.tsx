@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { BookOpen, Users, Award, TrendingUp, Globe, BarChart3, GraduationCap, Lightbulb, Target, Zap, Heart, ChevronUp, ArrowRight, Linkedin, Check } from "lucide-react";
+import { BookOpen, Users, Award, TrendingUp, Globe, BarChart3, GraduationCap, Lightbulb, Target, Zap, Heart, ChevronUp, ArrowRight, Linkedin, Check, Star } from "@/lib/icons";
+import { cn } from "@/lib/utils";
 import EduHubHeader from "@/components/EduHubHeader";
 import Footer from "@/components/Footer";
 
@@ -93,10 +94,91 @@ const teamMembers = [
   { name: "Amirov Jamshid", nameLine1: "Amirov", nameLine2: "Jamshid", role: "Call Operator", roleLine1: "Call", roleLine2: "Operator", image: "/eduhub/8.png" },
 ];
 
+const studentReviews = [
+  {
+    name: "Aziza Karimova",
+    course: "Business English",
+    rating: 5,
+    quote:
+      "Every class felt practical, not textbook-heavy. My speaking confidence improved within the first month.",
+  },
+  {
+    name: "Jasur Toshmatov",
+    course: "Introduction to Economics",
+    rating: 5,
+    quote:
+      "Clear explanations and real examples. Instructors actually answer questions — economics finally clicked for me.",
+  },
+  {
+    name: "Madina Rakhimova",
+    course: "Digital Marketing Essentials",
+    featured: true,
+    rating: 5,
+    quote:
+      "The projects were hands-on and relevant. I used what I learned in class the same week for a freelance client pitch.",
+  },
+  {
+    name: "Bobur Nazarov",
+    course: "Financial Accounting",
+    rating: 4,
+    quote:
+      "Structured lessons and helpful feedback. The online format was smooth — I never felt lost between sessions.",
+  },
+  {
+    name: "Nilufar Yusupova",
+    course: "English for Business",
+    rating: 5,
+    quote:
+      "Small-group discussions and patient teachers. I can write reports and join meetings in English comfortably now.",
+  },
+  {
+    name: "Sardor Alimov",
+    course: "Data Analysis with Excel",
+    rating: 5,
+    quote:
+      "From basics to dashboards, step by step. I finished with skills I could show on my CV right away.",
+  },
+] as const;
+
+function reviewIndexLabel(index: number): string {
+  return String(index + 1).padStart(2, "0");
+}
+
+function ReviewStars({
+  rating,
+  size = "sm",
+  className,
+}: {
+  rating: number;
+  size?: "sm" | "md";
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("flex items-center gap-0.5", className)}
+      aria-label={`${rating} out of 5 stars`}
+    >
+      {Array.from({ length: 5 }, (_, index) => (
+        <Star
+          key={index}
+          className={cn(
+            size === "md" ? "h-4 w-4" : "h-3 w-3",
+            index < rating ? "fill-amber-400 text-amber-400" : "text-gray-300",
+          )}
+          strokeWidth={index < rating ? 0 : 1.5}
+          aria-hidden
+        />
+      ))}
+    </div>
+  );
+}
+
 const EduHub = () => {
   const words = ["Excellence", "Success", "Innovation", "Growth", "Knowledge"];
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [visionTab, setVisionTab] = useState<"mission" | "vision" | "values">("mission");
+  const featuredReview = studentReviews.find((review) => "featured" in review && review.featured) ?? studentReviews[0];
+  const supportingReviews = studentReviews.filter((review) => review !== featuredReview);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -192,6 +274,25 @@ const EduHub = () => {
           y: 0,
           duration: 0.7,
           stagger: 0.06,
+          ease,
+          scrollTrigger: {
+            trigger: triggerEl,
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+        });
+      }
+
+      // —— Student reviews: fade up with stagger ——
+      const reviewCards = root.querySelectorAll(".review-card-reveal");
+      if (reviewCards.length) {
+        gsap.set(reviewCards, { opacity: 0, y: 36 });
+        const triggerEl = reviewCards[0].parentElement ?? reviewCards[0];
+        gsap.to(reviewCards, {
+          opacity: 1,
+          y: 0,
+          duration: 0.65,
+          stagger: 0.08,
           ease,
           scrollTrigger: {
             trigger: triggerEl,
@@ -541,7 +642,7 @@ const EduHub = () => {
           </div>
 
           {/* Team grid - Framer card: white, rounded-16, image 16px radius, info + LinkedIn */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 gap-4 max-w-7xl mx-auto lg:grid-cols-4">
             {teamMembers.map((member) => (
               <div
                 key={member.name}
@@ -592,18 +693,21 @@ const EduHub = () => {
       <section className="py-24 relative bg-white">
         <div className="section-reveal container mx-auto px-6">
           <div className="grid grid-cols-1 gap-8 items-start lg:grid-cols-2 lg:gap-12">
-            <div className="text-center lg:text-left lg:sticky lg:top-24 pt-4 h-[600px] flex flex-col">
+            <div className="text-center lg:text-left lg:sticky lg:top-24 pt-4 flex flex-col lg:h-[600px]">
               <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 Why Choose EduHub?
               </h2>
-              <p className="text-foreground/70 max-w-2xl lg:max-w-none mx-auto lg:mx-0 leading-relaxed mb-4" style={{ fontSize: '16px' }}>
+              <p className="text-foreground/70 max-w-2xl lg:max-w-none mx-auto lg:mx-0 leading-relaxed mb-4 lg:mb-4" style={{ fontSize: '16px' }}>
                 EDUHUB is an educational center working under TISU, a leading private university in Uzbekistan.
-                It offers modern, high-quality language education using international standards. Our programs combine structured curricula with practical, real-world use so you can progress quickly and use the language confidently in work and study. Whether you are preparing for exams, career advancement, or academic exchange, EDUHUB supports your goals with experienced instructors and a learning environment designed for your success.
+                It offers modern, high-quality language education using international standards.
+                <span className="hidden lg:inline">
+                  {" "}Our programs combine structured curricula with practical, real-world use so you can progress quickly and use the language confidently in work and study. Whether you are preparing for exams, career advancement, or academic exchange, EDUHUB supports your goals with experienced instructors and a learning environment designed for your success.
+                </span>
               </p>
-              <p className="text-foreground/70 max-w-2xl lg:max-w-none mx-auto lg:mx-0 leading-relaxed mb-6 flex-1 min-h-0" style={{ fontSize: '16px' }}>
+              <p className="hidden lg:block text-foreground/70 max-w-2xl lg:max-w-none mx-auto lg:mx-0 leading-relaxed mb-6 flex-1 min-h-0" style={{ fontSize: '16px' }}>
                 Join a community of learners and professionals who choose EDUHUB for its commitment to quality, flexibility, and measurable results. From small-group classes to tailored one-on-one sessions, we adapt to your schedule and level so you can learn at your own pace while staying on track toward your language goals.
               </p>
-              <div>
+              <div className="hidden lg:block">
               <Link
                 to="/eduhub"
                 className="mt-auto self-start inline-flex items-center gap-2 px-6 py-3 rounded-[37px] font-semibold text-white transition-opacity hover:opacity-90 w-fit mx-auto lg:mx-0 shrink-0"
@@ -615,26 +719,27 @@ const EduHub = () => {
               </div>
             </div>
 
-            <div className="flex flex-col gap-6 pt-4">
+            <div className="flex flex-col gap-6 pt-2 lg:pt-4 pb-8 lg:pb-0">
             {features.map((feature, index) => (
                 <div
                   key={index}
-                  className="lg:sticky lg:top-24 rounded-[24px] overflow-hidden"
+                  className="sticky top-[5.5rem] lg:top-24 rounded-[24px] overflow-hidden p-4 shadow-sm"
                   style={{
                     background: "rgb(249, 250, 251)",
+                    zIndex: index + 1,
                   }}
                 >
-                  <div className="flex items-center gap-3 p-5 pb-0">
+                  <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-[rgb(238,238,238)] flex items-center justify-center flex-shrink-0 text-sm font-medium" style={{ color: "rgb(109, 109, 109)" }}>
                       {String(index + 1).padStart(2, "0")}
                     </div>
                     <h3 className="text-lg font-semibold" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(61, 61, 61)" }}>{feature.title}</h3>
                   </div>
-                  <div className="px-5 pt-0 pb-2">
+                  <div className="mt-2">
                     <p className="text-sm leading-relaxed" style={{ color: "rgb(109, 109, 109)" }}>{feature.description}</p>
                   </div>
-                  <div className="rounded-[20px] overflow-hidden p-0 mx-5 mt-2 mb-5">
-                    <div className="rounded-[20px] overflow-hidden aspect-[4/3] bg-gray-200">
+                  <div className="mt-2 overflow-hidden rounded-[20px]">
+                    <div className="aspect-[4/3] overflow-hidden rounded-[20px] bg-gray-200">
                       <img
                         src={feature.image}
                         alt={feature.imageAlt}
@@ -648,6 +753,17 @@ const EduHub = () => {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="mt-8 text-center lg:hidden">
+            <Link
+              to="/eduhub"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-[37px] font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#3954d0" }}
+            >
+              Learn More
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
@@ -684,23 +800,22 @@ const EduHub = () => {
 
               {/* Tabs with elastic sliding indicator */}
               <div className="tabs mb-6">
-                <div className="relative flex">
+                <div className="relative w-full">
                   <span
-                    className="absolute top-0 left-0 h-12 w-[170px] rounded-full z-0"
+                    className="absolute top-0 left-0 z-0 h-10 w-1/3 rounded-full transition-transform duration-[400ms] ease-[cubic-bezier(0.33,1,0.68,1)] sm:h-11 lg:h-12"
                     style={{
                       backgroundColor: "#199eff",
-                      transform: `translateX(${visionTab === "mission" ? 0 : visionTab === "vision" ? 170 : 340}px)`,
-                      transition: "transform 0.4s cubic-bezier(0.33, 1, 0.68, 1)",
+                      transform: `translateX(${visionTab === "mission" ? 0 : visionTab === "vision" ? 100 : 200}%)`,
                     }}
                     aria-hidden
                   />
-                  <ul className="flex flex-wrap list-none p-0 m-0">
+                  <ul className="grid grid-cols-3 list-none p-0 m-0 w-full">
                     <li>
                       <button
                         type="button"
                         role="tab"
                         onClick={() => setVisionTab("mission")}
-                        className={`relative z-10 inline-block h-12 w-[170px] py-3 px-6 font-medium rounded-full text-center transition-colors duration-200 ${visionTab !== "mission" ? "text-gray-500 hover:text-gray-800" : ""}`}
+                        className={`relative z-10 inline-flex h-10 w-full items-center justify-center rounded-full px-1 text-[11px] font-medium leading-tight transition-colors duration-200 sm:h-11 sm:px-2 sm:text-xs lg:h-12 lg:px-4 lg:text-sm ${visionTab !== "mission" ? "text-gray-500 hover:text-gray-800" : ""}`}
                         style={visionTab === "mission" ? { color: "#fff" } : undefined}
                       >
                         Our Mission
@@ -711,7 +826,7 @@ const EduHub = () => {
                         type="button"
                         role="tab"
                         onClick={() => setVisionTab("vision")}
-                        className={`relative z-10 inline-block h-12 w-[170px] py-3 px-6 font-medium rounded-xl text-center transition-colors duration-200 ${visionTab !== "vision" ? "text-gray-500 hover:text-gray-800" : ""}`}
+                        className={`relative z-10 inline-flex h-10 w-full items-center justify-center rounded-full px-1 text-[11px] font-medium leading-tight transition-colors duration-200 sm:h-11 sm:px-2 sm:text-xs lg:h-12 lg:px-4 lg:text-sm ${visionTab !== "vision" ? "text-gray-500 hover:text-gray-800" : ""}`}
                         style={visionTab === "vision" ? { color: "#fff" } : undefined}
                       >
                         Our Vision
@@ -722,7 +837,7 @@ const EduHub = () => {
                         type="button"
                         role="tab"
                         onClick={() => setVisionTab("values")}
-                        className={`relative z-10 inline-block h-12 w-[170px] py-3 px-6 font-medium rounded-full text-center transition-colors duration-200 ${visionTab !== "values" ? "text-gray-500 hover:text-gray-800" : ""}`}
+                        className={`relative z-10 inline-flex h-10 w-full items-center justify-center rounded-full px-1 text-[11px] font-medium leading-tight transition-colors duration-200 sm:h-11 sm:px-2 sm:text-xs lg:h-12 lg:px-4 lg:text-sm ${visionTab !== "values" ? "text-gray-500 hover:text-gray-800" : ""}`}
                         style={visionTab === "values" ? { color: "#fff" } : undefined}
                       >
                         Our Values
@@ -800,6 +915,131 @@ const EduHub = () => {
                   </>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Student voices — bento layout (matches stats / features Framer panels) */}
+      <section className="relative bg-gray-50 py-20">
+        <div className="section-reveal container mx-auto max-w-7xl px-6">
+          <div className="mb-12">
+            <div className="flex w-full flex-col gap-6 text-left lg:flex-row lg:items-end lg:gap-16">
+              <h2
+                className="flex-shrink-0 text-3xl font-bold leading-tight sm:text-4xl md:text-5xl"
+                style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(3, 2, 11)" }}
+              >
+                Voices from
+                <br />
+                the classroom
+              </h2>
+              <p
+                className="max-w-2xl text-base leading-relaxed lg:ml-auto lg:text-right"
+                style={{ color: "rgb(88, 88, 102)" }}
+              >
+                Learners across business, language, and skills programs — in their own words, after finishing a class at EduHub.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-[16px] p-2" style={{ backgroundColor: "rgb(249, 250, 251)" }}>
+            <div className="grid gap-2 lg:grid-cols-12">
+              <article
+                className="review-card-reveal flex min-h-[320px] flex-col justify-between rounded-[20px] bg-white p-6 sm:p-8 lg:col-span-7 lg:row-span-2 lg:min-h-[420px] lg:p-10"
+              >
+                <div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span
+                      className="inline-flex items-center rounded-[32px] px-3 py-1 text-xs font-medium"
+                      style={{ backgroundColor: "rgb(240, 244, 243)", color: "rgb(19, 38, 27)" }}
+                    >
+                      {featuredReview.course}
+                    </span>
+                    <ReviewStars rating={featuredReview.rating} size="md" />
+                  </div>
+                  <p
+                    className="mt-6 text-xl font-medium leading-snug sm:text-2xl lg:text-[1.65rem] lg:leading-[1.35]"
+                    style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(3, 2, 11)" }}
+                  >
+                    {featuredReview.quote}
+                  </p>
+                </div>
+                <div className="mt-8 flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-base font-semibold" style={{ color: "rgb(3, 2, 11)", fontFamily: "'DM Sans', sans-serif" }}>
+                      {featuredReview.name}
+                    </p>
+                    <p className="mt-1 text-sm" style={{ color: "rgb(88, 88, 102)" }}>
+                      EduHub student
+                    </p>
+                  </div>
+                  <span
+                    className="select-none text-5xl font-bold leading-none sm:text-6xl"
+                    style={{ color: "rgb(238, 238, 238)", fontFamily: "'DM Sans', sans-serif" }}
+                    aria-hidden
+                  >
+                    {reviewIndexLabel(studentReviews.indexOf(featuredReview))}
+                  </span>
+                </div>
+              </article>
+
+              {supportingReviews.slice(0, 2).map((review) => {
+                const reviewIndex = studentReviews.indexOf(review);
+                return (
+                  <article
+                    key={review.name}
+                    className="review-card-reveal flex min-h-[200px] flex-col rounded-[20px] bg-white p-5 sm:p-6 lg:col-span-5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div
+                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-medium"
+                        style={{ backgroundColor: "rgb(238, 238, 238)", color: "rgb(109, 109, 109)" }}
+                      >
+                        {reviewIndexLabel(reviewIndex)}
+                      </div>
+                      <p className="pt-1 text-right text-xs font-semibold uppercase tracking-wide" style={{ color: "rgb(109, 109, 109)" }}>
+                        {review.course}
+                      </p>
+                    </div>
+                    <ReviewStars rating={review.rating} className="mt-3" />
+                    <p className="mt-3 flex-1 text-sm leading-relaxed sm:text-[15px]" style={{ color: "rgb(75, 85, 84)" }}>
+                      {review.quote}
+                    </p>
+                    <p className="mt-5 text-sm font-semibold" style={{ color: "rgb(3, 2, 11)", fontFamily: "'DM Sans', sans-serif" }}>
+                      {review.name}
+                    </p>
+                  </article>
+                );
+              })}
+
+              {supportingReviews.slice(2).map((review) => {
+                const reviewIndex = studentReviews.indexOf(review);
+                return (
+                  <article
+                    key={review.name}
+                    className="review-card-reveal flex min-h-[200px] flex-col rounded-[20px] bg-white p-5 sm:p-6 lg:col-span-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-medium"
+                        style={{ backgroundColor: "rgb(238, 238, 238)", color: "rgb(109, 109, 109)" }}
+                      >
+                        {reviewIndexLabel(reviewIndex)}
+                      </div>
+                      <p className="text-sm font-semibold" style={{ color: "rgb(61, 61, 61)", fontFamily: "'DM Sans', sans-serif" }}>
+                        {review.course}
+                      </p>
+                    </div>
+                    <ReviewStars rating={review.rating} className="mt-3" />
+                    <p className="mt-3 flex-1 text-sm leading-relaxed line-clamp-4" style={{ color: "rgb(75, 85, 84)" }}>
+                      {review.quote}
+                    </p>
+                    <p className="mt-4 text-sm font-semibold" style={{ color: "rgb(3, 2, 11)", fontFamily: "'DM Sans', sans-serif" }}>
+                      {review.name}
+                    </p>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </div>
