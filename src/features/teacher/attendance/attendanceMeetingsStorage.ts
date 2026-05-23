@@ -4,6 +4,9 @@ export type StoredAttendanceMeeting = {
   sessionId: string;
   createdAt: string;
   modality: MeetingModality;
+  status?: "OPEN" | "CLOSED";
+  endedAt?: string;
+  endReason?: string;
   /** Instructor label, e.g. "Week 3 — Tuesday" */
   name: string;
   /** Opaque backend QR token; returned only when the session is created. */
@@ -91,6 +94,11 @@ export function loadStoredMeetings(courseId: string): StoredAttendanceMeeting[] 
         sessionId: String(x.sessionId),
         createdAt: typeof x.createdAt === "string" ? x.createdAt : new Date().toISOString(),
         modality: (x.modality === "in_person" ? "in_person" : "online") as MeetingModality,
+        status: (x.status === "CLOSED" ? "CLOSED" : x.status === "OPEN" ? "OPEN" : undefined) as
+          | StoredAttendanceMeeting["status"]
+          | undefined,
+        endedAt: typeof x.endedAt === "string" ? x.endedAt : undefined,
+        endReason: typeof x.endReason === "string" ? x.endReason : undefined,
         name: typeof x.name === "string" ? x.name.trim() : "",
         token: typeof x.token === "string" ? x.token.trim() : undefined,
         scheduleSlotIndex:
