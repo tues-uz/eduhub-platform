@@ -1,12 +1,20 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone } from "lucide-react";
+import { ArrowLeft, Check, Copy, Phone, User } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -15,7 +23,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { eduhubAdmin } from "@/api/eduhubClient";
-import { User } from "lucide-react";
 import { adminTeachersStore } from "@/features/admin/data/adminTeachersStore";
 
 /** Values are sent to `POST /admin/users`. Align with your API’s role enum (e.g. Spring `Role` names). */
@@ -29,6 +36,9 @@ const ADD_USER_ROLE_OPTIONS: { value: string; label: string }[] = [
 
 export default function AdminAddUserRolePage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [temporaryPassword, setTemporaryPassword] = useState("");
+  const [createdAccountEmail, setCreatedAccountEmail] = useState("");
+  const [hasCopiedPassword, setHasCopiedPassword] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -46,7 +56,7 @@ export default function AdminAddUserRolePage() {
 
     setIsLoading(true);
     try {
-      await eduhubAdmin.createUser(formData);
+      const res = await eduhubAdmin.createUser(formData);
       if (formData.role === "LECTURER") {
         adminTeachersStore.upsertByEmail({
           name: formData.fullName.trim(),
@@ -56,10 +66,12 @@ export default function AdminAddUserRolePage() {
           status: "Active",
         });
       }
+      setTemporaryPassword(res.temporaryPassword);
+      setCreatedAccountEmail(res.user.email);
+      setHasCopiedPassword(false);
       toast.success(`${formData.role} account created successfully`);
-      navigate("/dashboard/admin");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create user");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to create user");
     } finally {
       setIsLoading(false);
     }
@@ -67,6 +79,21 @@ export default function AdminAddUserRolePage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleCopyTemporaryPassword = async () => {
+    try {
+      await navigator.clipboard.writeText(temporaryPassword);
+      setHasCopiedPassword(true);
+      toast.success("Temporary password copied");
+    } catch {
+      toast.error("Could not copy password. Select and copy it manually.");
+    }
+  };
+
+  const handleTemporaryPasswordStored = () => {
+    setTemporaryPassword("");
+    navigate("/dashboard/admin");
   };
 
   return (
@@ -79,7 +106,7 @@ export default function AdminAddUserRolePage() {
 
         <AdminPageHeader
           title="Add user role"
-          description="Create a new user account with assigned role. Default password will be 'pleasechangeme123!' If the API rejects a role, confirm the backend supports that role value (e.g. ADMIN_FINANCE)."
+          description="Create a new staff account. A secure temporary password will be shown once after creation and the user must change it on first sign-in."
         />
 
         <form
@@ -98,6 +125,7 @@ export default function AdminAddUserRolePage() {
                 placeholder="Enter full name"
                 value={formData.fullName}
                 onChange={handleChange}
+                autoComplete="name"
                 className="pl-10 bg-white"
               />
             </div>
@@ -113,6 +141,8 @@ export default function AdminAddUserRolePage() {
               placeholder="user@school.com"
               value={formData.email}
               onChange={handleChange}
+              autoComplete="email"
+              spellCheck={false}
               className="bg-white"
             />
           </div>
@@ -129,6 +159,8 @@ export default function AdminAddUserRolePage() {
                 placeholder="+6281234567890"
                 value={formData.phoneNumber}
                 onChange={handleChange}
+                autoComplete="tel"
+                inputMode="tel"
                 className="pl-10 bg-white"
               />
             </div>
@@ -162,6 +194,46 @@ export default function AdminAddUserRolePage() {
             {isLoading ? "Creating..." : "Create User"}
           </Button>
         </form>
+
+        <Dialog
+          open={Boolean(temporaryPassword)}
+          onOpenChange={(open) => {
+            if (!open) {
+              toast.info("Store the temporary password before leaving this screen.");
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Temporary password created</DialogTitle>
+              <DialogDescription>
+                Share this password securely with {createdAccountEmail}. It will not be shown again.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-950">
+              <p className="text-sm font-medium">The user must enter this as their current password on first sign-in.</p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  value={temporaryPassword}
+                  readOnly
+                  className="font-mono tracking-wide bg-white"
+                  aria-label="Temporary password"
+                />
+                <Button type="button" variant="outline" onClick={handleCopyTemporaryPassword} className="min-h-10 gap-2">
+                  {hasCopiedPassword ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+                  {hasCopiedPassword ? "Copied" : "Copy"}
+                </Button>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" onClick={handleTemporaryPasswordStored}>
+                I have stored it securely
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

@@ -180,7 +180,7 @@ export default function AdminSubstituteInviteDetailPage() {
                 onClick={() => {
                   const r = substituteInviteWorkflowStore.approveByAdmin(rec.id);
                   if (!r.ok) {
-                    toast.error(r.reason);
+                    toast.error("reason" in r ? r.reason : "Could not approve substitute cover");
                     bump();
                     return;
                   }
@@ -201,7 +201,7 @@ export default function AdminSubstituteInviteDetailPage() {
                 onClick={() => {
                   const r = substituteInviteWorkflowStore.rejectByAdmin(rec.id);
                   if (!r.ok) {
-                    toast.error(r.reason);
+                    toast.error("reason" in r ? r.reason : "Could not reject substitute cover");
                     bump();
                     return;
                   }

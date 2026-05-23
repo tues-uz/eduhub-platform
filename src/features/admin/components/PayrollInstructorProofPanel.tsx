@@ -74,7 +74,7 @@ export function PayrollInstructorProofPanel({
       if (result.ok) {
         toast.success("Proof saved", { description: file.name });
       } else {
-        toast.error("Could not upload", { description: result.reason });
+        toast.error("Could not upload", { description: "reason" in result ? result.reason : "Please try again." });
       }
     },
     [className, course],

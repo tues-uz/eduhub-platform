@@ -66,7 +66,7 @@ function formatClassDateLabel(iso: string | undefined): string | null {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-type SessionSlotLike = { title: string; sessionDate: string; sessionTime: string };
+type SessionSlotLike = { title?: string; sessionDate?: string; sessionTime?: string };
 
 function sessionDateMs(iso: string | undefined): number {
   if (!iso?.trim()) return NaN;

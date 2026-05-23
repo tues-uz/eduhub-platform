@@ -13,8 +13,14 @@ export interface UserResponse {
   /** Parent or guardian contact from registration. */
   parentPhoneNumber?: string;
   enabled?: boolean;
+  passwordChanged?: boolean;
   createdAt?: string;
   coursesCount?: number;
+}
+
+export interface AdminCreateUserResponse {
+  user: UserResponse;
+  temporaryPassword: string;
 }
 
 export interface RegisterRequest {
@@ -141,6 +147,7 @@ export interface CourseSummaryResponse {
   /** When the lecturer created the course (first submitted as draft). */
   createdAt: string;
   pricing?: CoursePricingResponse;
+  classMeetingSlots?: ClassMeetingSlotDto[];
 }
 
 export interface ModuleRequest {
@@ -385,6 +392,92 @@ export interface ClassResumeRequest {
   sessionSlotKey?: string;
   sessionLabel?: string;
   thumbnailUrl?: string;
+}
+
+// Attendance Types
+
+export type AttendanceModality = "ONLINE" | "IN_PERSON";
+export type AttendanceSessionStatus = "OPEN" | "CLOSED";
+
+export interface AttendanceSessionCreateRequest {
+  meetingName?: string;
+  modality?: AttendanceModality;
+  scheduleSlotIndex?: number;
+  scheduleSlotKey?: string;
+}
+
+export interface AttendanceSessionResponse {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  meetingName: string;
+  modality: AttendanceModality;
+  status: AttendanceSessionStatus;
+  scheduleSlotIndex?: number;
+  scheduleSlotKey?: string;
+  startedAt: string;
+  endsAt: string;
+  endedAt?: string;
+  endReason?: string;
+  presentCount?: number;
+  enrolledCount?: number;
+  token?: string;
+}
+
+export interface AttendanceJoinInfoResponse {
+  sessionId: string;
+  courseId: string;
+  courseTitle: string;
+  meetingName: string;
+  status: AttendanceSessionStatus;
+  startedAt: string;
+  endsAt: string;
+  alreadyCheckedIn: boolean;
+}
+
+export interface AttendanceCheckInResponse {
+  id: string;
+  sessionId: string;
+  courseId: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  checkedAt: string;
+  alreadyRecorded: boolean;
+}
+
+export interface AttendanceRosterResponse {
+  session: AttendanceSessionResponse;
+  rows: {
+    studentId: string;
+    studentName: string;
+    studentEmail: string;
+    present: boolean;
+    checkedAt?: string;
+  }[];
+  summary: {
+    present: number;
+    absent: number;
+    enrolled: number;
+  };
+}
+
+export interface MyAttendanceResponse {
+  courseId: string;
+  courseTitle: string;
+  summary: {
+    attended: number;
+    totalHeld: number;
+    percentage: number;
+  };
+  sessions: {
+    sessionId: string;
+    meetingName: string;
+    startedAt: string;
+    status: AttendanceSessionStatus;
+    present: boolean;
+    checkedAt?: string;
+  }[];
 }
 
 // Notification Types

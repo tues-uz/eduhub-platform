@@ -6,9 +6,9 @@ import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWo
 import { isUuid } from "@/api/utils";
 
 export type SessionSlotLike = {
-  title: string;
-  sessionDate: string;
-  sessionTime: string;
+  title?: string;
+  sessionDate?: string;
+  sessionTime?: string;
   durationMinutes?: number;
 };
 

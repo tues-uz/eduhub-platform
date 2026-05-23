@@ -188,7 +188,7 @@ export default function TeacherSubstituteInviteReviewPage() {
                   onClick={() => {
                     const r = substituteInviteWorkflowStore.acceptBySubstitute(rec.id, emailNorm);
                     if (!r.ok) {
-                      toast.error(r.reason);
+                      toast.error("reason" in r ? r.reason : "Could not accept invite");
                       bump();
                       return;
                     }
@@ -209,7 +209,7 @@ export default function TeacherSubstituteInviteReviewPage() {
                   onClick={() => {
                     const r = substituteInviteWorkflowStore.declineBySubstitute(rec.id, emailNorm);
                     if (!r.ok) {
-                      toast.error(r.reason);
+                      toast.error("reason" in r ? r.reason : "Could not decline invite");
                       bump();
                       return;
                     }
@@ -239,7 +239,7 @@ export default function TeacherSubstituteInviteReviewPage() {
                   onClick={() => {
                     const r = substituteInviteWorkflowStore.approveByPrimary(rec.id, emailNorm);
                     if (!r.ok) {
-                      toast.error(r.reason);
+                      toast.error("reason" in r ? r.reason : "Could not approve cover");
                       bump();
                       return;
                     }
@@ -259,7 +259,7 @@ export default function TeacherSubstituteInviteReviewPage() {
                   onClick={() => {
                     const r = substituteInviteWorkflowStore.rejectByPrimary(rec.id, emailNorm);
                     if (!r.ok) {
-                      toast.error(r.reason);
+                      toast.error("reason" in r ? r.reason : "Could not reject cover");
                       bump();
                       return;
                     }

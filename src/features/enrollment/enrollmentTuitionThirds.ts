@@ -92,10 +92,10 @@ export function payNowForPlanMonths(
 /** Infer 1 / 2 / 3-month tuition schedule from stored payment fields (current enrollment form mapping). */
 export type InferredTuitionPlan = TuitionPlanMonths | "other";
 
-export type EnrollmentPaymentFields = Pick<
-  EnrollmentApplicationResponse,
-  "paymentPlan" | "installmentCount"
->;
+export type EnrollmentPaymentFields = {
+  paymentPlan?: EnrollmentApplicationResponse["paymentPlan"];
+  installmentCount?: EnrollmentApplicationResponse["installmentCount"];
+};
 
 export function inferTuitionPlanMonths(
   r: EnrollmentApplicationResponse | EnrollmentPaymentFields,

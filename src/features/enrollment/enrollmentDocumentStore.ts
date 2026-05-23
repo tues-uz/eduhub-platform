@@ -1,4 +1,4 @@
-import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
+import type { EnrollmentApplicationResponse, EnrollmentPaymentMethod } from "@/api/eduhubTypes";
 import { DEFAULT_ENROLLMENT_PAYMENT_METHOD } from "@/features/enrollment/enrollmentDocumentConfig";
 
 const STORAGE_KEY = "eduhub_enrollment_documents_v1";
@@ -7,7 +7,7 @@ const SEQ_KEY = "eduhub_enrollment_document_seq_v1";
 export type StoredEnrollmentDocuments = {
   invoiceNumber: string;
   receiptNumber: string;
-  paymentMethod: string;
+  paymentMethod: EnrollmentPaymentMethod;
   invoiceIssuedAt: string;
   receiptIssuedAt: string;
   amountPaid?: number;
@@ -67,7 +67,7 @@ export function allocateDemoEnrollmentDocuments(
   applicationId: string,
   issuedAtIso: string,
   amountPaid?: number,
-  paymentMethod: string = DEFAULT_ENROLLMENT_PAYMENT_METHOD,
+  paymentMethod: EnrollmentPaymentMethod = DEFAULT_ENROLLMENT_PAYMENT_METHOD,
 ): StoredEnrollmentDocuments {
   const period = documentPeriodCode(issuedAtIso);
   const seq = nextSequence();

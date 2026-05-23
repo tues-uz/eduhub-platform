@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { eduhubAuth, clearAuthTokens } from "@/api/eduhubClient";
-import { useAuthSession } from "@/features/auth/context";
+import { eduhubAuth, setAuthTokens } from "@/api/eduhubClient";
+import { setSessionUser, useAuthSession } from "@/features/auth/context";
 
 const ChangePassword = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -48,13 +48,25 @@ const ChangePassword = () => {
       });
       
       if (res.mustChangePassword === false) {
-        toast({ title: "Password changed", description: "Your password has been updated successfully." });
+        setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);
         const role = res.user.role === "LECTURER" ? "teacher" : res.user.role === "ADMIN" ? "admin" : "student";
+        setSessionUser({
+          id: res.user.id,
+          name: res.user.fullName,
+          email: res.user.email,
+          role,
+          avatarUrl: res.user.avatarUrl,
+          phoneNumber: res.user.phoneNumber,
+        });
+        refreshUser();
+        toast({ title: "Password changed", description: "Your password has been updated successfully." });
         const redirect = role === "admin" ? "/dashboard/admin" : role === "teacher" ? "/dashboard/teacher" : "/dashboard";
         navigate(redirect);
+      } else {
+        setError("Password change is still required. Please choose a different password.");
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to change password. Please check your current password.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to change password. Please check your current password.");
     } finally {
       setIsLoading(false);
     }
@@ -96,6 +108,7 @@ const ChangePassword = () => {
                   placeholder="Enter current password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
+                  autoComplete="current-password"
                   className="pl-10 pr-10 h-12 rounded-lg border-gray-200 focus:border-primary focus:ring-primary"
                   required
                 />
@@ -121,6 +134,7 @@ const ChangePassword = () => {
                   placeholder="Enter new password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
                   className="pl-10 pr-10 h-12 rounded-lg border-gray-200 focus:border-primary focus:ring-primary"
                   required
                 />
@@ -146,6 +160,7 @@ const ChangePassword = () => {
                   placeholder="Confirm new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
                   className="pl-10 pr-10 h-12 rounded-lg border-gray-200 focus:border-primary focus:ring-primary"
                   required
                 />

@@ -26,7 +26,14 @@ import type {
   TeacherResponse,
   ClassResumeResponse,
   ClassResumeRequest,
+  AttendanceSessionCreateRequest,
+  AttendanceSessionResponse,
+  AttendanceJoinInfoResponse,
+  AttendanceCheckInResponse,
+  AttendanceRosterResponse,
+  MyAttendanceResponse,
   NotificationResponse,
+  AdminCreateUserResponse,
 } from "./eduhubTypes";
 
 const BASE = EDUHUB_API_BASE_URL + EDUHUB_API_PREFIX;
@@ -242,7 +249,7 @@ export const eduhubAuth = {
     request<void>(`/auth/verify-email?token=${token}`, { method: "POST", skipAuth: true }),
 
   me: () =>
-    request<{ id: string; fullName: string; email: string; role: string; avatarUrl?: string }>("/auth/me"),
+    request<UserResponse>("/auth/me"),
 
   refresh: refreshAuth,
 
@@ -647,7 +654,7 @@ export const eduhubAdmin = {
   }) => request<CourseResponse>(`/admin/courses/${id}/review`, { method: "PATCH", body: JSON.stringify(body) }),
 
   createUser: (body: { fullName: string; email: string; phoneNumber: string; role: string }) =>
-    request<UserResponse>("/admin/users", { method: "POST", body: JSON.stringify(body) }),
+    request<AdminCreateUserResponse>("/admin/users", { method: "POST", body: JSON.stringify(body) }),
 
   listUsers: (params?: { role?: string; enabled?: boolean; search?: string; page?: number; size?: number }) => {
     const sp = new URLSearchParams();
@@ -706,6 +713,39 @@ export const eduhubClassResumes = {
 
   delete: (courseId: string, resumeId: string) =>
     request<void>(`/courses/${courseId}/resumes/${resumeId}`, { method: "DELETE" }),
+};
+
+/** Attendance */
+export const eduhubAttendance = {
+  createSession: (courseId: string, body: AttendanceSessionCreateRequest) =>
+    request<AttendanceSessionResponse>(`/courses/${courseId}/attendance/sessions`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  listSessions: (courseId: string) =>
+    request<AttendanceSessionResponse[]>(`/courses/${courseId}/attendance/sessions`),
+
+  closeSession: (sessionId: string, reason = "MANUAL_STOP") =>
+    request<AttendanceSessionResponse>(`/attendance/sessions/${sessionId}/close`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
+
+  joinInfo: (token: string) =>
+    request<AttendanceJoinInfoResponse>(`/attendance/join-info?token=${encodeURIComponent(token)}`),
+
+  checkIn: (token: string) =>
+    request<AttendanceCheckInResponse>("/attendance/check-ins", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
+
+  roster: (courseId: string, sessionId: string) =>
+    request<AttendanceRosterResponse>(`/courses/${courseId}/attendance/sessions/${sessionId}/roster`),
+
+  myAttendance: (courseId: string) =>
+    request<MyAttendanceResponse>(`/courses/${courseId}/attendance/my`),
 };
 
 /** Notifications */

@@ -30,12 +30,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { eduhubAdmin } from "@/api/eduhubClient";
+import type { StudentStatus } from "@/features/admin/data/adminOperationalMock";
 
 interface StudentRow {
   id: string;
   name: string;
   email: string;
-  studentStatus: string;
+  studentStatus: StudentStatus;
   enabled: boolean;
   coursesCount: number;
   registeredAt: string;

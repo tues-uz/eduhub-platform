@@ -22,13 +22,13 @@ export const adminTeachersStore = {
 
     return raw
       .filter((v): v is AdminTeacherRow => !!v && typeof v === "object")
-      .map((t: any) => ({
+      .map((t: any): AdminTeacherRow => ({
         id: typeof t.id === "string" ? t.id : `local-${Date.now()}`,
         name: typeof t.name === "string" ? t.name : "—",
         email: typeof t.email === "string" ? t.email : "",
         coursesTaught: Array.isArray(t.coursesTaught) ? t.coursesTaught : [],
         totalStudents: typeof t.totalStudents === "number" ? t.totalStudents : 0,
-        status: t.status === "Inactive" ? "Inactive" : ("Active" as const),
+        status: t.status === "Inactive" ? "Inactive" : "Active",
       }))
       .filter((t) => normalizeEmail(t.email) !== "");
   },
@@ -51,4 +51,3 @@ export const adminTeachersStore = {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
   },
 };
-

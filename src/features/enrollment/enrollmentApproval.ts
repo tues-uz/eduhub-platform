@@ -1,4 +1,4 @@
-import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
+import type { EnrollmentApplicationResponse, EnrollmentPaymentMethod } from "@/api/eduhubTypes";
 import { eduhubAdminEnrollmentApplications } from "@/api/eduhubClient";
 import {
   allocateDemoEnrollmentDocuments,
@@ -14,7 +14,7 @@ function mergeDocumentFields(
   doc: {
     invoiceNumber: string;
     receiptNumber: string;
-    paymentMethod: string;
+    paymentMethod: EnrollmentPaymentMethod;
     invoiceIssuedAt: string;
     receiptIssuedAt: string;
     amountPaid?: number;

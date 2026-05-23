@@ -194,7 +194,9 @@ export async function downloadCourseCertificatePdf(
   const bytes = await generateCourseCertificatePdfBytes(
     certificateRecordToPdfInput(record, instructorNameFallback),
   );
-  const blob = new Blob([bytes], { type: "application/pdf" });
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  const blob = new Blob([buffer], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   const studentSlug = slugFilenamePart(record.studentName) || "student";

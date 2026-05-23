@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ClassMeetingSlot } from "@/features/teacher/types";
+import type { ClassMeetingSlot, TeacherCourse } from "@/features/teacher/types";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -62,13 +62,13 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { eduhubCourseQuizzes, eduhubCourses, eduhubClassResumes, eduhubSchedule, type QuizResponse } from "@/api/eduhubClient";
+import { eduhubAttendance, eduhubCourseQuizzes, eduhubCourses, eduhubClassResumes, eduhubSchedule, type QuizResponse } from "@/api/eduhubClient";
 import {
   isLocalOnlyQuizId,
   mergeCourseQuizListsWithLocal,
   setLocalCourseQuizPublished,
 } from "@/features/teacher/data/localCourseQuizzesStorage";
-import type { CourseStatus } from "@/api/eduhubTypes";
+import type { CourseResponse, CourseStatus } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import {
   pushSubstituteInviteNotifications,
@@ -438,7 +438,7 @@ export default function TeacherCourseRosterPage() {
 
   const rosterScheduleView = useMemo(() => {
     const proposal = scheduleProposalQuery.data;
-    const course = scheduleSourceCourse ?? {};
+    const course = (scheduleSourceCourse ?? {}) as Partial<CourseResponse> & Partial<TeacherCourse>;
 
     if (proposal?.sessions?.length) {
       const rawSlots = proposal.sessions.map((s) => ({
@@ -668,6 +668,17 @@ export default function TeacherCourseRosterPage() {
     const m = loadStoredMeetings(courseMeta.id).find((x) => x.sessionId === overviewSessionId);
     return m ? formatMeetingOptionLabel(m) : null;
   }, [courseMeta?.id, overviewSessionId, attendanceUiKey]);
+
+  const attendanceRosterQuery = useQuery({
+    queryKey: ["teacher", "attendance-roster", courseMeta?.id, overviewSessionId, attendanceUiKey],
+    queryFn: () => eduhubAttendance.roster(courseMeta!.id, overviewSessionId!),
+    enabled: Boolean(courseMeta?.id && overviewSessionId && isUuid(overviewSessionId)),
+  });
+
+  const attendanceRosterByStudent = useMemo(() => {
+    const rows = attendanceRosterQuery.data?.rows ?? [];
+    return new Map(rows.map((row) => [row.studentId, row]));
+  }, [attendanceRosterQuery.data?.rows]);
 
   useEffect(() => {
     setAttendanceScheduleFilter("latest-qr");
@@ -1938,9 +1949,9 @@ export default function TeacherCourseRosterPage() {
                             </p>
                             {overviewSessionId ? (
                               <p className="text-xs text-muted-foreground tabular-nums">
-                                Present for this meeting (this browser):{" "}
+                                Present for this meeting:{" "}
                                 <span className="font-medium text-foreground">
-                                  {countPresentForSession(courseMeta.id, overviewSessionId)} / {studentsQuery.data.length}
+                                  {attendanceRosterQuery.data?.summary.present ?? countPresentForSession(courseMeta.id, overviewSessionId)} / {studentsQuery.data.length}
                                 </span>
                               </p>
                             ) : null}
@@ -1952,12 +1963,9 @@ export default function TeacherCourseRosterPage() {
                           </p>
                         )}
                         <p className="rounded-lg border border-amber-200/90 bg-amber-50/70 px-3 py-2 text-xs text-amber-950/85 leading-relaxed">
-                          Enrollment lists everyone who joined the class on the platform—it does not record scans by itself.
-                          Present and Checked in update only when this browser has a matching QR check-in for the meeting
-                          selected in <span className="font-medium text-amber-950">Jump by class schedule</span>,{" "}
-                          <span className="font-medium text-amber-950">Class meeting check-in</span>, or the same choice in
-                          both (student opened the link here or in another tab on this computer). Same-email roster row
-                          required.
+                          Enrollment lists everyone who joined the class on the platform. Present and Checked in now use
+                          the EduHub attendance API for the selected QR meeting; if the API is unavailable, this page falls
+                          back to same-browser prototype data.
                         </p>
                         <div className="space-y-2">
                           <Label htmlFor="attendance-schedule-filter" className="text-foreground">
@@ -2011,9 +2019,20 @@ export default function TeacherCourseRosterPage() {
                             <TableBody>
                               {studentsQuery.data.map((s, rowIndex) => {
                                 void attendanceUiKey;
-                                const entry =
+                                const apiEntry = attendanceRosterByStudent.get(s.id);
+                                const localEntry =
                                   overviewSessionId != null
                                     ? getPresentForStudent(courseMeta.id, overviewSessionId, s.id, s.email)
+                                    : undefined;
+                                const entry = apiEntry
+                                  ? {
+                                      checkedAt: apiEntry.checkedAt ?? "",
+                                      email: apiEntry.studentEmail,
+                                      fullName: apiEntry.studentName,
+                                      present: apiEntry.present,
+                                    }
+                                  : localEntry
+                                    ? { ...localEntry, present: true }
                                     : undefined;
                                 const rosterLen = studentsQuery.data.length;
                                 return (
@@ -2021,7 +2040,7 @@ export default function TeacherCourseRosterPage() {
                                     <TableCell className="font-medium text-foreground">{s.fullName}</TableCell>
                                     <TableCell className="text-muted-foreground">{s.email}</TableCell>
                                     <TableCell className="text-center">
-                                      {entry ? (
+                                      {entry?.present ? (
                                         <span className="inline-flex items-center justify-center text-emerald-600" title="Checked in">
                                           <CheckCircle2 className="h-5 w-5" aria-label="Present" />
                                         </span>
@@ -2030,7 +2049,7 @@ export default function TeacherCourseRosterPage() {
                                       )}
                                     </TableCell>
                                     <TableCell className="text-right text-sm text-muted-foreground tabular-nums whitespace-nowrap">
-                                      {entry
+                                      {entry?.present && entry.checkedAt
                                         ? new Date(entry.checkedAt).toLocaleString(undefined, {
                                             month: "short",
                                             day: "numeric",

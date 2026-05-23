@@ -15,7 +15,7 @@ import type { LucideIcon } from "lucide-react";
 import { Users, GraduationCap, BookOpen, TrendingUp } from "lucide-react";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
-import { getAccessToken, eduhubAdmin, eduhubEnrollments } from "./eduhubClient";
+import { getAccessToken, eduhubAdmin, eduhubCourses, eduhubEnrollments } from "./eduhubClient";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 
 /** Admin dashboard stat row — `icon` must be a component (JSON APIs send strings; we resolve those below). */

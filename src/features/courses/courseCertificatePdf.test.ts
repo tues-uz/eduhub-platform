@@ -31,7 +31,9 @@ describe("generateCourseCertificatePdfBytes", () => {
       if (!bytes) {
         return new Response(null, { status: 404 });
       }
-      return new Response(bytes, { status: 200 });
+      const buffer = new ArrayBuffer(bytes.byteLength);
+      new Uint8Array(buffer).set(bytes);
+      return new Response(buffer, { status: 200 });
     };
 
     try {

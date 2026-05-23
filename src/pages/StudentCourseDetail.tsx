@@ -36,6 +36,7 @@ import {
   eduhubSchedule,
   eduhubCourseQuizzes,
   eduhubClassResumes,
+  eduhubAttendance,
   type QuizResponseForStudent,
 } from "@/api/eduhubClient";
 import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
@@ -441,6 +442,12 @@ const StudentCourseDetail = () => {
   const id = courseId && !isTeacherCourse && !isUuid(courseId ?? "") ? parseInt(courseId, 10) : NaN;
 
   const isEnrolled = courseId ? enrolledCourses.some((c) => c.id === courseId || c.id === courseId) : false;
+
+  const myAttendanceQuery = useQuery({
+    queryKey: ["student", "attendance", courseId],
+    queryFn: () => eduhubAttendance.myAttendance(courseId!),
+    enabled: Boolean(courseId && isUuid(courseId) && isEnrolled),
+  });
 
   useEffect(() => {
     const bump = () => setEnrollmentStoreTick((n) => n + 1);
@@ -968,7 +975,7 @@ const StudentCourseDetail = () => {
           .filter(({ key }) => key.includes(`:${courseIdStr}:`))
           .sort((a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime())
       : [];
-  const attendanceTableRows = attendanceEntries.map((entry) => {
+  const localAttendanceTableRows = attendanceEntries.map((entry) => {
     const sessionId = parseSessionIdFromAttendanceKey(entry.key, courseIdStr);
     const resolved =
       entry.storedMeetingName ??
@@ -978,6 +985,15 @@ const StudentCourseDetail = () => {
       meetingName: resolved ?? "Class meeting",
     };
   });
+  const attendanceTableRows = myAttendanceQuery.data
+    ? myAttendanceQuery.data.sessions
+        .filter((session) => session.present && session.checkedAt)
+        .map((session) => ({
+          key: session.sessionId,
+          checkedAt: session.checkedAt!,
+          meetingName: session.meetingName || "Class meeting",
+        }))
+    : localAttendanceTableRows;
 
   const classStartLabel = formatClassDateLabel(
     resolvedSchedule?.classStartDate ?? course.classStartDate,
@@ -1534,14 +1550,14 @@ const StudentCourseDetail = () => {
                   <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-5">
                     <h3 className="font-semibold text-blue-900">Attendance check-in</h3>
                     <p className="mt-1 text-sm text-blue-800/90">
-                      Your instructor shows a QR code in class. Scan it to check in. Meeting titles appear when this device
-                      also has the instructor&apos;s saved meeting names (same browser profile).
+                      Your instructor shows a QR code in class. Scan it to check in. Your records sync from the EduHub
+                      attendance API after check-in.
                     </p>
                   </div>
 
                   {attendanceTableRows.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-6 text-sm text-foreground/65">
-                      No check-ins recorded on this browser for this class yet.
+                      No check-ins recorded for this class yet.
                     </div>
                   ) : (
                     <div className="rounded-2xl border border-slate-200/90 bg-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06)] ring-1 ring-slate-900/[0.04] overflow-hidden">

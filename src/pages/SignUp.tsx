@@ -48,6 +48,7 @@ const SignUp = () => {
         parentPhoneNumber: formData.parentPhoneNumber,
         passportNumber: formData.passportNumber,
         dateOfBirth: formData.dateOfBirth,
+        birthCity: formData.birthCity,
         password: formData.password,
         role: "STUDENT",
       });

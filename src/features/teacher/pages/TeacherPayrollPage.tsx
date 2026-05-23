@@ -299,7 +299,7 @@ export default function TeacherPayrollPage() {
       instructorNotes,
     });
     if (!result.ok) {
-      toast.error("Could not submit", { description: result.reason });
+      toast.error("Could not submit", { description: "reason" in result ? result.reason : "Please try again." });
       return;
     }
     toast.success("Payroll request sent", { description: "An admin will review it on the Payroll dashboard." });

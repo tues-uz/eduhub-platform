@@ -6,6 +6,8 @@ export type StoredAttendanceMeeting = {
   modality: MeetingModality;
   /** Instructor label, e.g. "Week 3 — Tuesday" */
   name: string;
+  /** Opaque backend QR token; returned only when the session is created. */
+  token?: string;
   /** 0-based row on the approved class schedule when QR was generated from the schedule dropdown. */
   scheduleSlotIndex?: number;
   /** Stable key for enrollment schedule row (date|time|title). */
@@ -88,8 +90,9 @@ export function loadStoredMeetings(courseId: string): StoredAttendanceMeeting[] 
       .map((x) => ({
         sessionId: String(x.sessionId),
         createdAt: typeof x.createdAt === "string" ? x.createdAt : new Date().toISOString(),
-        modality: x.modality === "in_person" ? "in_person" : "online",
+        modality: (x.modality === "in_person" ? "in_person" : "online") as MeetingModality,
         name: typeof x.name === "string" ? x.name.trim() : "",
+        token: typeof x.token === "string" ? x.token.trim() : undefined,
         scheduleSlotIndex:
           typeof x.scheduleSlotIndex === "number" && x.scheduleSlotIndex >= 0
             ? Math.floor(x.scheduleSlotIndex)

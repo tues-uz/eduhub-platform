@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import QRCode from "react-qr-code";
 import { Maximize2, Minimize2, QrCode, RefreshCw, Square } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,7 +23,7 @@ import {
 import { useAuthSession } from "@/features/auth/context";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import type { TeacherCourse } from "@/features/teacher/types";
-import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
+import { eduhubAttendance, eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import {
   buildCourseScheduleSlots,
@@ -128,6 +129,7 @@ export function TeacherAttendanceSessionPanel({
   const [nextMeetingName, setNextMeetingName] = useState("");
   const [projectorMode, setProjectorMode] = useState(false);
   const [sessionClock, setSessionClock] = useState(() => Date.now());
+  const [currentSessionToken, setCurrentSessionToken] = useState<string | null>(null);
   /** Sessions ended early via Stop — hides QR until a new meeting QR is generated. */
   const [manuallyStoppedSessionIds, setManuallyStoppedSessionIds] = useState<string[]>([]);
   /** Roster: saved meeting id chosen in overview picker (drives attendance table). */
@@ -284,12 +286,42 @@ export function TeacherAttendanceSessionPanel({
       setSessionId(null);
       return;
     }
-    const list = loadStoredMeetings(courseId);
-    setStoredMeetings(list);
-    setSessionId((prev) => {
-      if (prev && list.some((m) => m.sessionId === prev)) return prev;
-      return list[0]?.sessionId ?? null;
-    });
+    let cancelled = false;
+    eduhubAttendance
+      .listSessions(courseId)
+      .then((sessions) => {
+        if (cancelled) return;
+        const localById = new Map(loadStoredMeetings(courseId).map((m) => [m.sessionId, m]));
+        const list: StoredAttendanceMeeting[] = sessions.slice(0, MAX_STORED_MEETINGS).map((s) => ({
+          sessionId: s.id,
+          createdAt: s.startedAt,
+          modality: s.modality === "IN_PERSON" ? "in_person" : "online",
+          name: s.meetingName,
+          token: localById.get(s.id)?.token,
+          scheduleSlotIndex: s.scheduleSlotIndex,
+          scheduleSlotKey: s.scheduleSlotKey,
+        }));
+        setStoredMeetings(list);
+        setCurrentSessionToken(null);
+        setSessionId((prev) => {
+          if (prev && list.some((m) => m.sessionId === prev)) return prev;
+          const open = sessions.find((s) => s.status === "OPEN");
+          return open?.id ?? list[0]?.sessionId ?? null;
+        });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const list = loadStoredMeetings(courseId);
+        setStoredMeetings(list);
+        setCurrentSessionToken(null);
+        setSessionId((prev) => {
+          if (prev && list.some((m) => m.sessionId === prev)) return prev;
+          return list[0]?.sessionId ?? null;
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [courseId]);
 
   const selectedCourse = useMemo(
@@ -328,7 +360,7 @@ export function TeacherAttendanceSessionPanel({
 
   const scheduleSlotForGenerate = rosterScheduleSlotIntent;
 
-  const generateSession = useCallback(() => {
+  const generateSession = useCallback(async () => {
     if (!courseId) return;
     const name = useSchedulePicker
       ? (scheduleSlotForGenerate?.label.trim() ||
@@ -352,11 +384,26 @@ export function TeacherAttendanceSessionPanel({
 
     const slotIndex = scheduleSlotForGenerate?.index;
     const scheduleSlotKey = slotKeyForScheduleOption(scheduleSlotForGenerate);
+    let created;
+    try {
+      created = await eduhubAttendance.createSession(courseId, {
+        meetingName: name,
+        modality: "IN_PERSON",
+        scheduleSlotIndex: typeof slotIndex === "number" && slotIndex >= 0 ? slotIndex : undefined,
+        scheduleSlotKey,
+      });
+    } catch (e) {
+      toast.error("Could not generate attendance QR", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+      return;
+    }
     const next: StoredAttendanceMeeting = {
-      sessionId: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      modality: "online",
+      sessionId: created.id,
+      createdAt: created.startedAt,
+      modality: "in_person",
       name,
+      token: created.token,
       ...(typeof slotIndex === "number" && slotIndex >= 0 ? { scheduleSlotIndex: slotIndex } : {}),
       ...(scheduleSlotKey ? { scheduleSlotKey } : {}),
     };
@@ -369,6 +416,7 @@ export function TeacherAttendanceSessionPanel({
       return merged;
     });
     setSessionId(next.sessionId);
+    setCurrentSessionToken(created.token ?? null);
     setNextMeetingName(useSchedulePicker ? "" : (suggestedMeetingName?.trim() ?? ""));
 
     const log = startSessionLog({
@@ -403,8 +451,13 @@ export function TeacherAttendanceSessionPanel({
   const joinUrl = useMemo(() => {
     if (!courseId || !sessionId) return "";
     const meeting = storedMeetings.find((m) => m.sessionId === sessionId);
+    const token = currentSessionToken ?? meeting?.token;
+    if (token) {
+      const path = `/dashboard/attendance/join?token=${encodeURIComponent(token)}`;
+      return `${typeof window !== "undefined" ? window.location.origin : ""}${path}`;
+    }
     return buildAttendanceJoinUrl(courseId, sessionId, meeting?.createdAt);
-  }, [courseId, sessionId, storedMeetings]);
+  }, [courseId, currentSessionToken, sessionId, storedMeetings]);
 
   const activeMeeting = useMemo(
     () => storedMeetings.find((m) => m.sessionId === sessionId),
@@ -503,11 +556,21 @@ export function TeacherAttendanceSessionPanel({
     user.name,
   ]);
 
-  const stopSession = useCallback(() => {
+  const stopSession = useCallback(async () => {
     if (!courseId || !sessionId || !activeMeeting) return;
     if (manuallyStoppedSessionIds.includes(sessionId)) return;
     if (manualStopOnceRef.current.has(sessionId)) return;
     manualStopOnceRef.current.add(sessionId);
+
+    try {
+      if (isUuid(sessionId)) await eduhubAttendance.closeSession(sessionId, "MANUAL_STOP");
+    } catch (e) {
+      toast.error("Could not stop attendance session", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+      manualStopOnceRef.current.delete(sessionId);
+      return;
+    }
 
     const courseTitle = selectedCourse?.title?.trim() || "Class";
     let ended = finalizeSessionLog({ courseId, sessionId, endReason: "manual_stop" });
@@ -528,6 +591,7 @@ export function TeacherAttendanceSessionPanel({
     if (ended) {
       notifyAttendanceSessionCompleted(ended);
     }
+    setCurrentSessionToken(null);
     setManuallyStoppedSessionIds((prev) => (prev.includes(sessionId) ? prev : [...prev, sessionId]));
   }, [
     courseId,
