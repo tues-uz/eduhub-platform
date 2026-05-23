@@ -253,6 +253,7 @@ export default function TeacherCourseRosterPage() {
   const { courseId = "" } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
   const queryClient = useQueryClient();
   const { user } = useAuthSession();
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -384,7 +385,7 @@ export default function TeacherCourseRosterPage() {
         };
       }
     },
-    enabled: Boolean(courseId) && isUuid(courseId) && isApiCourseLecturer,
+    enabled: Boolean(courseId) && isUuid(courseId) && isApiCourseLecturer && tabFromUrl === "quiz",
     retry: 1,
   });
 
@@ -584,7 +585,6 @@ export default function TeacherCourseRosterPage() {
   const [overviewSessionId, setOverviewSessionId] = useState<string | null>(null);
   const [attendanceScheduleFilter, setAttendanceScheduleFilter] = useState("latest-qr");
   const [attendanceUiKey, setAttendanceUiKey] = useState(0);
-  const tabFromUrl = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState<TeacherCourseTab>(() =>
     isTeacherCourseTab(tabFromUrl) ? tabFromUrl : "roster",
   );
@@ -676,9 +676,14 @@ export default function TeacherCourseRosterPage() {
   });
 
   const attendanceRosterByStudent = useMemo(() => {
-    const rows = attendanceRosterQuery.data?.rows ?? [];
-    return new Map(rows.map((row) => [row.studentId, row]));
-  }, [attendanceRosterQuery.data?.rows]);
+    const rows = overviewSessionId ? (attendanceRosterQuery.data?.rows ?? []) : [];
+    const map = new Map<string, (typeof rows)[number]>();
+    rows.forEach((row) => {
+      map.set(row.studentId, row);
+      map.set(`email:${row.studentEmail.trim().toLowerCase()}`, row);
+    });
+    return map;
+  }, [attendanceRosterQuery.data?.rows, overviewSessionId]);
 
   useEffect(() => {
     setAttendanceScheduleFilter("latest-qr");
@@ -723,6 +728,8 @@ export default function TeacherCourseRosterPage() {
         dispatchAttendanceOverviewSessionSync(cid, picked.sessionId);
         return;
       }
+
+      setOverviewSessionId(null);
 
       if (value === "latest-qr" && meetings.length === 0) {
         toast.info("No QR meetings yet — generate check-in in Class meeting check-in above.");
@@ -1930,15 +1937,13 @@ export default function TeacherCourseRosterPage() {
                       <div className="space-y-3">
                         <div className="rounded-lg border border-sky-200 bg-sky-50/90 px-3 py-2.5 text-xs text-sky-950/90 leading-relaxed space-y-2">
                           <p>
-                            <span className="font-semibold text-sky-950">Phone scan vs this screen:</span> if the student
-                            checks in on their phone, data stays on the phone until a server attendance API exists. This
-                            table only reads check-ins saved in the browser where you opened this page (or another tab on
-                            the same computer).
+                            <span className="font-semibold text-sky-950">Phone scan vs this screen:</span> student phone
+                            scans now sync through the EduHub attendance API. If the API is unavailable, this table may
+                            still fall back to same-browser prototype data.
                           </p>
                           <p>
-                            Also confirm the student account email matches the roster row, the meeting selected here or in
-                            Class meeting check-in matches the QR they scanned, and they are signed in as a student on the
-                            check-in page.
+                            Confirm the student account email matches the roster row, the meeting selected here matches the
+                            QR they scanned, and they are signed in as a student on the check-in page.
                           </p>
                         </div>
                         {overviewMeetingLabel ? (
@@ -1991,11 +1996,11 @@ export default function TeacherCourseRosterPage() {
                             </SelectContent>
                           </Select>
                           <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
-                            When a row matches a saved QR, the{" "}
+                            When a row matches the selected QR session, the{" "}
                             <span className="font-medium text-foreground/80">Present</span> and{" "}
                             <span className="font-medium text-foreground/80">Checked in</span> columns in this table use
-                            that meeting—the same session as in Class meeting check-in. If nothing matches, generate a QR
-                            for that day in Class meeting check-in, then try again.
+                            that meeting from the attendance API. If nothing matches, generate a QR for that day in Class
+                            meeting check-in, then try again.
                           </p>
                           <div
                             className="overflow-x-auto rounded-xl border border-gray-200 bg-gray-50/30 shadow-sm"
@@ -2019,7 +2024,9 @@ export default function TeacherCourseRosterPage() {
                             <TableBody>
                               {studentsQuery.data.map((s, rowIndex) => {
                                 void attendanceUiKey;
-                                const apiEntry = attendanceRosterByStudent.get(s.id);
+                                const apiEntry =
+                                  attendanceRosterByStudent.get(s.id) ??
+                                  attendanceRosterByStudent.get(`email:${s.email.trim().toLowerCase()}`);
                                 const localEntry =
                                   overviewSessionId != null
                                     ? getPresentForStudent(courseMeta.id, overviewSessionId, s.id, s.email)
@@ -2041,8 +2048,9 @@ export default function TeacherCourseRosterPage() {
                                     <TableCell className="text-muted-foreground">{s.email}</TableCell>
                                     <TableCell className="text-center">
                                       {entry?.present ? (
-                                        <span className="inline-flex items-center justify-center text-emerald-600" title="Checked in">
-                                          <CheckCircle2 className="h-5 w-5" aria-label="Present" />
+                                        <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700" title="Checked in">
+                                          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                                          Present
                                         </span>
                                       ) : (
                                         <span className="text-muted-foreground">—</span>
