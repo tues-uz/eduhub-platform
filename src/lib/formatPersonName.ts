@@ -1,6 +1,6 @@
-/** e.g. rifkrifk → Rifkrifk, john doe → John Doe, dosen-2 → Dosen-2 */
-export function formatDisplayPersonName(name: string): string {
-  const t = name.trim();
+/** e.g. rifkrifk → Rifkrifk, john doe → John Doe, dosen-2 → Dosen-2, russia 1 → Russia 1 */
+function titleCaseDisplayText(text: string): string {
+  const t = text.trim();
   if (!t || t === "—") return t;
   const titled = t.replace(/(^|[\s-])([a-z])/g, (_, sep, letter) => sep + letter.toUpperCase());
   const first = titled.charAt(0);
@@ -8,6 +8,15 @@ export function formatDisplayPersonName(name: string): string {
     return first.toUpperCase() + titled.slice(1);
   }
   return titled;
+}
+
+export function formatDisplayPersonName(name: string): string {
+  return titleCaseDisplayText(name);
+}
+
+/** Session or class labels entered in lowercase, e.g. russia 1 → Russia 1 */
+export function formatDisplayTitle(title: string): string {
+  return titleCaseDisplayText(title);
 }
 
 /** e.g. John Doe → JD, rifkrifk → RI */

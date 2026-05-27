@@ -14,7 +14,7 @@ export const ENROLLMENT_STATUS_BADGE: Record<
 > = {
   enrolled: {
     label: "Enrolled",
-    className: "bg-blue-100 text-blue-700",
+    className: "bg-[#3954d0] text-white border border-white/50",
   },
   pending_review: {
     label: "Pending review",

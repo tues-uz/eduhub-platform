@@ -6,6 +6,7 @@ import {
   resolveEnrollmentSessionTimingStatus,
   type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
+import { resolveJoinFromMeeting } from "@/features/enrollment/enrollmentSessionTuition";
 import { resolvedAdminScheduleSessionTotal } from "@/features/admin/utils/adminCourseScheduleDisplay";
 import { getScheduleAttendanceState } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
@@ -17,21 +18,27 @@ export type CourseScheduleSummary = {
   reached: number;
   /** Total planned sessions for the class. */
   total: number;
+  /** 1-based meeting the student would join from (first upcoming or in progress). */
+  joinFromMeeting: number;
+  /** All meetings on the schedule have already finished. */
+  allSessionsFinished: boolean;
 };
-
-function countReachedSessions(slots: SessionSlotLike[], courseId: string): number {
-  const { heldSlotKeys, activeSlotKeys } = getScheduleAttendanceState(courseId);
-  return slots.filter((slot) => {
-    const status = resolveEnrollmentSessionTimingStatus(slot, heldSlotKeys, activeSlotKeys);
-    return status === "finished" || status === "ongoing";
-  }).length;
-}
 
 function buildSummary(slots: SessionSlotLike[], courseId: string, total: number): CourseScheduleSummary | null {
   if (total <= 0) return null;
+  const { heldSlotKeys, activeSlotKeys } = getScheduleAttendanceState(courseId);
+  const timings = slots.map((slot) =>
+    resolveEnrollmentSessionTimingStatus(slot, heldSlotKeys, activeSlotKeys),
+  );
+  const effectiveTotal = Math.max(total, slots.length);
+  const { joinFromMeeting, allSessionsFinished } = resolveJoinFromMeeting(effectiveTotal, timings);
+  const reached = timings.filter((status) => status === "finished" || status === "ongoing").length;
+
   return {
-    reached: countReachedSessions(slots, courseId),
-    total: Math.max(total, slots.length),
+    reached,
+    total: effectiveTotal,
+    joinFromMeeting,
+    allSessionsFinished,
   };
 }
 

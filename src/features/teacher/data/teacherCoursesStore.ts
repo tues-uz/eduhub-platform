@@ -77,6 +77,33 @@ export const teacherCoursesStore = {
     saveCourses(courses);
     return true;
   },
+
+  upsertById(id: string, course: TeacherCourse): TeacherCourse {
+    const courses = loadCourses();
+    const idx = courses.findIndex((c) => c.id === id);
+    const now = new Date().toISOString();
+    if (idx === -1) {
+      const created: TeacherCourse = {
+        ...course,
+        id,
+        createdAt: course.createdAt || now,
+        updatedAt: now,
+      };
+      courses.push(created);
+      saveCourses(courses);
+      return created;
+    }
+    const updated: TeacherCourse = {
+      ...courses[idx],
+      ...course,
+      id,
+      createdAt: courses[idx].createdAt,
+      updatedAt: now,
+    };
+    courses[idx] = updated;
+    saveCourses(courses);
+    return updated;
+  },
 };
 
 export function createEmptyLesson(order: number): TeacherLesson {

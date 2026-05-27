@@ -4,6 +4,7 @@ import {
   clearTeacherClassChecklist,
   DEFAULT_TEACHER_CLASS_CHECKLIST_ITEMS,
   getTeacherClassChecklist,
+  instructorVerifyItemId,
   setTeacherClassChecklistItem,
   TEACHER_CLASS_CHECKLIST_CHANGED,
   TEACHER_CLASS_CHECKLIST_STORAGE_KEY,
@@ -69,5 +70,6 @@ export function useTeacherClassChecklist(courseId: string | undefined) {
     toggle,
     reset,
     ready: Boolean(courseId && userKey),
+    verifyItemId: instructorVerifyItemId,
   };
 }

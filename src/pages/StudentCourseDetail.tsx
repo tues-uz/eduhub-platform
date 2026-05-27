@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Link, Navigate, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -24,7 +25,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CircularProgress } from "@/components/ui/circular-progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsTrigger } from "@/components/ui/tabs";
+import {
+  SlidingPillTabsList,
+  slidingPillTabTriggerClassName,
+} from "@/components/ui/sliding-pill-tabs-list";
 import {
   Table,
   TableBody,
@@ -58,9 +63,9 @@ import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWo
 import {
   classScheduleStatusHint,
   formatSessionTimeLabel,
+  buildScheduleMonthTabs,
   resolveEnrollmentSessionTimingStatus,
   resolveSessionTimingStatus,
-  scheduleMonthSessionCounts,
 } from "@/features/courses/classSchedulePreview";
 import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
 import {
@@ -77,10 +82,11 @@ import {
   type TuitionPlanMonths,
 } from "@/features/enrollment/enrollmentTuitionThirds";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
-import { formatDisplayPersonName } from "@/lib/formatPersonName";
+import { formatDisplayPersonName, formatDisplayTitle } from "@/lib/formatPersonName";
 import { cn } from "@/lib/utils";
 import { useAuthSession } from "@/features/auth/context";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
+import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
 import {
   CLASS_RESUME_CHANGED,
   CLASS_RESUME_STORAGE_KEY,
@@ -246,8 +252,54 @@ type SessionSlotLike = { title?: string; sessionDate?: string; sessionTime?: str
 /** Use the lecturer-provided title when set; otherwise show the session number only. */
 function sessionSlotStudentLabel(slot: SessionSlotLike, indexZeroBased: number): string {
   const t = slot.title?.trim();
-  if (t) return t;
+  if (t) return formatDisplayTitle(t);
   return String(indexZeroBased + 1);
+}
+
+function statCountValue(count: number, singular: string, plural = `${singular}s`): ReactNode {
+  return (
+    <>
+      {count}{" "}
+      <span className="text-base font-medium normal-case text-zinc-500">
+        {count === 1 ? singular : plural}
+      </span>
+    </>
+  );
+}
+
+function ClassStatItem({
+  icon: Icon,
+  label,
+  value,
+  iconWrapperClassName,
+  iconClassName,
+  valueClassName,
+}: {
+  icon: typeof BookOpen;
+  label: string;
+  value: ReactNode;
+  iconWrapperClassName: string;
+  iconClassName: string;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="flex min-w-[9.5rem] items-center gap-3">
+      <div
+        className={cn(
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+          iconWrapperClassName,
+        )}
+      >
+        <Icon className={cn("h-5 w-5", iconClassName)} aria-hidden />
+      </div>
+      <div className="min-w-0">
+        <p className={cn("text-lg font-semibold tabular-nums tracking-tight text-zinc-900", valueClassName)}>
+          {value}
+        </p>
+        <p className="mt-0.5 text-xs uppercase tracking-wide leading-snug text-zinc-500">{label}</p>
+      </div>
+    </div>
+  );
 }
 
 function StudentSessionScheduleCard({
@@ -319,7 +371,7 @@ function StudentSessionScheduleCard({
               <dt className="shrink-0 pt-0.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-zinc-400">
                 Date
               </dt>
-              <dd className="min-w-0 max-w-[70%] text-right text-xs font-normal leading-snug text-zinc-600">
+              <dd className="min-w-0 max-w-[70%] text-right text-xs font-bold leading-snug text-zinc-600">
                 {dateValue ?? <span className="text-zinc-400">Not set</span>}
               </dd>
             </div>
@@ -327,7 +379,7 @@ function StudentSessionScheduleCard({
               <dt className="shrink-0 pt-0.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-zinc-400">
                 Time
               </dt>
-              <dd className="text-right text-xs font-medium tabular-nums leading-snug text-zinc-700">
+              <dd className="text-right text-xs font-bold tabular-nums leading-snug text-zinc-700">
                 {timeValue ?? <span className="font-normal text-zinc-400">Not set</span>}
               </dd>
             </div>
@@ -762,7 +814,7 @@ const StudentCourseDetail = () => {
 
   const adminScheduleMonthCount = useMemo(() => {
     if (allSessionSlots.length === 0) return 0;
-    return scheduleMonthSessionCounts(allSessionSlots).filter((n) => n > 0).length;
+    return buildScheduleMonthTabs(allSessionSlots).length;
   }, [allSessionSlots]);
 
   const lessonsFromApi = apiLessons.map((l) => ({
@@ -1094,7 +1146,7 @@ const StudentCourseDetail = () => {
 
   return (
     <>
-      <div className="w-full min-w-0" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <div className="w-full min-w-0 pb-24 lg:pb-0" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           <header className="mb-10">
             <div className="-mx-6 box-border min-w-0 w-[calc(100%+3rem)] max-w-[calc(100%+3rem)]">
               <div className="overflow-hidden rounded-none border-0 bg-white shadow-none">
@@ -1115,9 +1167,7 @@ const StudentCourseDetail = () => {
                     aria-hidden
                   />
                   {isEnrolled ? (
-                    <span className="absolute right-3 top-3 rounded-full bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 shadow-sm">
-                      Enrolled
-                    </span>
+                    <EnrollmentStatusBadge status="enrolled" className="absolute right-3 top-3" />
                   ) : null}
                 </div>
               </div>
@@ -1125,8 +1175,8 @@ const StudentCourseDetail = () => {
                 <div className="grid gap-6 px-6 py-4 sm:px-8 sm:py-5 lg:grid-cols-12 lg:items-start">
                   <div className="min-w-0 lg:col-span-8">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <p className="text-xs font-medium capitalize tracking-tight text-zinc-500">
-                    {course.category}
+                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                    {formatDisplayTitle(course.category)}
                   </p>
                   {isEnrolled ? (
                     <span
@@ -1144,16 +1194,16 @@ const StudentCourseDetail = () => {
                   ) : null}
                 </div>
 
-                <div className="mt-1.5 flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+                <div className="mt-1.5 flex flex-col items-start gap-1.5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
                   <h1 className="min-w-0 max-w-3xl text-[1.375rem] font-bold leading-snug tracking-tight text-zinc-950 sm:text-[1.75rem] sm:leading-tight">
                     {course.title}
                   </h1>
                   {isEnrolled ? (
-                    <p className="shrink-0 self-end text-right text-sm leading-snug text-zinc-500 sm:max-w-[13rem]">
+                    <p className="shrink-0 text-sm leading-snug text-zinc-500 sm:max-w-[13rem] sm:text-right">
                       Joined {formatDate(course.enrolledDate)}
                     </p>
                   ) : course.duration !== "—" || course.modules > 0 ? (
-                    <p className="shrink-0 self-end text-right text-sm leading-snug text-zinc-500 sm:max-w-[13rem]">
+                    <p className="shrink-0 text-sm leading-snug text-zinc-500 sm:max-w-[13rem] sm:text-right">
                       {course.duration !== "—" ? <span>{course.duration}</span> : null}
                       {course.duration !== "—" && course.modules > 0 ? (
                         <span className="text-zinc-300" aria-hidden>
@@ -1166,9 +1216,9 @@ const StudentCourseDetail = () => {
                   ) : null}
                 </div>
 
-                <div className="mt-6 rounded-2xl border border-zinc-200/80 bg-white p-5 ring-1 ring-zinc-100/80">
-                  <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-10">
-                    <div className="flex min-w-0 items-center gap-4">
+                <div className="mt-6 rounded-2xl bg-white p-5 shadow-[0_2px_12px_-2px_rgba(24,24,27,0.08),0_8px_24px_-6px_rgba(24,24,27,0.06)]">
+                  <div className="flex items-center justify-between gap-4 sm:gap-10">
+                    <div className="flex min-w-0 flex-1 items-center gap-4">
                       {course.instructorAvatarUrl ? (
                         <img
                           src={course.instructorAvatarUrl}
@@ -1193,16 +1243,16 @@ const StudentCourseDetail = () => {
                       </div>
                     </div>
                     {isEnrolled ? (
-                      <div className="shrink-0 border-t border-zinc-100 pt-5 sm:border-l sm:border-t-0 sm:pl-10 sm:pt-0 sm:text-right">
+                      <div className="flex shrink-0 flex-col items-end sm:border-l sm:border-zinc-100 sm:pl-10 sm:text-right">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                           Your progress
                         </p>
-                        <div className="mt-2 flex justify-end">
+                        <div className="mt-2">
                           <CircularProgress value={course.progress} size={48} strokeWidth={3.5} />
                         </div>
                       </div>
                     ) : (
-                      <div className="shrink-0 border-t border-zinc-100 pt-5 sm:border-l sm:border-t-0 sm:pl-10 sm:pt-0 sm:text-right">
+                      <div className="flex shrink-0 flex-col items-end sm:border-l sm:border-zinc-100 sm:pl-10 sm:text-right">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                           Tuition
                         </p>
@@ -1213,92 +1263,114 @@ const StudentCourseDetail = () => {
                     )}
                   </div>
 
-                  <dl className="mt-6 grid grid-cols-2 gap-5 border-t border-zinc-100 pt-7 sm:gap-6">
-                    <div className="min-w-0">
-                      <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                        <BookOpen className="size-5 shrink-0 text-[#3954d0]/65" aria-hidden />
-                        Lessons
-                      </dt>
-                      <dd className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">{lessons.length}</dd>
+                  <div className="mt-6 border-t border-zinc-100 pt-6">
+                    <h3 className="text-base font-semibold tracking-tight text-zinc-900">Class statistics</h3>
+                    <div className="mt-4 grid grid-cols-2 gap-6">
+                      <ClassStatItem
+                        icon={BookOpen}
+                        label="Lessons"
+                        value={statCountValue(lessons.length, "lesson")}
+                        iconWrapperClassName="bg-sky-50"
+                        iconClassName="text-sky-500"
+                      />
+                      <ClassStatItem
+                        icon={Users}
+                        label="Students joined"
+                        value={
+                          course.enrollmentCount != null ? (
+                            statCountValue(course.enrollmentCount, "student")
+                          ) : (
+                            <span className="font-normal text-zinc-400">—</span>
+                          )
+                        }
+                        iconWrapperClassName="bg-rose-50"
+                        iconClassName="text-rose-500"
+                      />
+                      <ClassStatItem
+                        icon={CalendarDays}
+                        label="Total sessions"
+                        value={
+                          totalSessionsCount != null ? (
+                            statCountValue(totalSessionsCount, "session")
+                          ) : (
+                            <span className="font-normal text-zinc-400">—</span>
+                          )
+                        }
+                        iconWrapperClassName="bg-[#3954d0]/10"
+                        iconClassName="text-[#3954d0]"
+                      />
+                      {hasClassDateRange ? (
+                        <ClassStatItem
+                          icon={CalendarRange}
+                          label="Schedule"
+                          value={
+                            classStartLabel && classEndLabel ? (
+                              <>
+                                {classStartLabel}
+                                <span className="font-normal text-zinc-400"> → </span>
+                                {classEndLabel}
+                              </>
+                            ) : classStartLabel ? (
+                              <>Starts {classStartLabel}</>
+                            ) : classEndLabel ? (
+                              <>Ends {classEndLabel}</>
+                            ) : (
+                              "—"
+                            )
+                          }
+                          iconWrapperClassName="bg-violet-50"
+                          iconClassName="text-violet-600"
+                          valueClassName="text-sm font-semibold leading-snug"
+                        />
+                      ) : null}
                     </div>
-                    <div className="min-w-0">
-                      <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                        <Users className="size-5 shrink-0 text-[#3954d0]/65" aria-hidden />
-                        Students joined
-                      </dt>
-                      <dd className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">
-                        {course.enrollmentCount != null ? (
-                          course.enrollmentCount
-                        ) : (
-                          <span className="font-normal text-zinc-400">—</span>
-                        )}
-                      </dd>
-                    </div>
-                    <div className="min-w-0">
-                      <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                        <CalendarDays className="size-5 shrink-0 text-[#3954d0]/65" aria-hidden />
-                        Total sessions
-                      </dt>
-                      <dd className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">
-                        {totalSessionsCount != null ? (
-                          totalSessionsCount
-                        ) : (
-                          <span className="font-normal text-zinc-400">—</span>
-                        )}
-                      </dd>
-                    </div>
-                    {hasClassDateRange ? (
-                      <div className="min-w-0">
-                        <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                          <CalendarRange className="size-5 shrink-0 text-[#3954d0]/65" aria-hidden />
-                          Schedule
-                        </dt>
-                        <dd className="mt-1.5 text-sm font-semibold leading-snug text-zinc-900">
-                          {classStartLabel && classEndLabel ? (
-                            <>
-                              {classStartLabel}
-                              <span className="font-normal text-zinc-400"> → </span>
-                              {classEndLabel}
-                            </>
-                          ) : classStartLabel ? (
-                            <>Starts {classStartLabel}</>
-                          ) : classEndLabel ? (
-                            <>Ends {classEndLabel}</>
-                          ) : null}
-                        </dd>
-                      </div>
-                    ) : null}
-                  </dl>
+                  </div>
                 </div>
 
                 <div className="mt-8 w-full min-w-0">
           <Tabs value={activeCourseTab} onValueChange={onCourseTabChange} className="w-full">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
-              <TabsList className="flex h-auto min-h-10 flex-wrap gap-1 rounded-full p-1">
-                <TabsTrigger value="content" className="rounded-full font-bold">
-                  Class Content
-                </TabsTrigger>
-                <TabsTrigger value="resume" className="gap-1.5 rounded-full">
-                  <FileText className="h-3.5 w-3.5 opacity-70" aria-hidden />
-                  Resume
-                </TabsTrigger>
-                <TabsTrigger value="quiz" className="gap-1.5 rounded-full">
-                  <ClipboardList className="h-3.5 w-3.5 opacity-70" aria-hidden />
-                  Quiz
-                </TabsTrigger>
-                <TabsTrigger value="attendance" className="rounded-full">
-                  Attendance
-                </TabsTrigger>
-              </TabsList>
+            <div className="mb-5 sm:flex sm:items-center sm:justify-between sm:gap-2">
+              <div className="min-w-0 w-full overflow-x-auto sm:w-auto sm:overflow-visible [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <SlidingPillTabsList
+                  activeValue={activeCourseTab}
+                  className="inline-flex h-10 w-max max-w-none flex-nowrap gap-0.5 rounded-full p-1 sm:gap-1"
+                >
+                  <TabsTrigger
+                    value="content"
+                    className={cn(slidingPillTabTriggerClassName, "px-2.5 text-xs sm:px-3 sm:text-sm")}
+                  >
+                    <span className="sm:hidden">Content</span>
+                    <span className="hidden sm:inline">Class Content</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="resume"
+                    className={cn(slidingPillTabTriggerClassName, "px-2.5 text-xs sm:px-3 sm:text-sm")}
+                  >
+                    Resume
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="quiz"
+                    className={cn(slidingPillTabTriggerClassName, "px-2.5 text-xs sm:px-3 sm:text-sm")}
+                  >
+                    Quiz
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="attendance"
+                    className={cn(slidingPillTabTriggerClassName, "px-2.5 text-xs sm:px-3 sm:text-sm")}
+                  >
+                    Attendance
+                  </TabsTrigger>
+                </SlidingPillTabsList>
+              </div>
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
-                className="rounded-full"
+                className="hidden shrink-0 rounded-full sm:inline-flex"
                 onClick={() => setScannerOpen(true)}
                 title="Scan attendance QR"
               >
-                <Camera className="mr-2 h-4 w-4" />
+                <Camera className="h-4 w-4" aria-hidden />
                 Scan QR
               </Button>
             </div>
@@ -1670,7 +1742,7 @@ const StudentCourseDetail = () => {
                                 <TableCell className="border-0 py-4 pl-3 pr-5 align-middle text-right">
                                   <div className="flex flex-col items-end gap-0.5">
                                     <span className="inline-flex items-center gap-1.5 text-sm font-medium tabular-nums text-slate-800">
-                                      <Clock className="h-3.5 w-3.5 text-slate-400" aria-hidden />
+                                      <Clock className="hidden h-3.5 w-3.5 text-slate-400 sm:block" aria-hidden />
                                       {dt.toLocaleTimeString(undefined, {
                                         hour: "numeric",
                                         minute: "2-digit",
@@ -1708,8 +1780,8 @@ const StudentCourseDetail = () => {
                         <p className="text-xs text-foreground/55">This class</p>
                       </div>
                       <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-                        Class period and the school&apos;s three-month schedule. Pick a month below to see every
-                        session planned for that part of the term.
+                        Class period and the approved class schedule. Pick a month below to see every session planned
+                        for that part of the term.
                       </p>
 
                       {hasScheduleSummary ? (
@@ -1717,7 +1789,7 @@ const StudentCourseDetail = () => {
                           {hasClassDateRange ? (
                             <div className="rounded-2xl border border-zinc-100 bg-zinc-50/60 px-3 py-2.5">
                               <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Class period</p>
-                              <p className="mt-1 flex items-start gap-1.5 text-xs font-medium leading-snug text-zinc-900">
+                              <p className="mt-1 flex items-start gap-1.5 text-sm font-medium leading-snug text-zinc-900">
                                 <CalendarRange className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#3954d0]" aria-hidden />
                                 <span>
                                   {classStartLabel && classEndLabel
@@ -1734,7 +1806,7 @@ const StudentCourseDetail = () => {
                           {totalSessionsCount != null ? (
                             <div className="rounded-2xl border border-zinc-100 bg-zinc-50/60 px-3 py-2.5">
                               <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Scheduled sessions</p>
-                              <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-zinc-900">
+                              <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-zinc-900">
                                 <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#3954d0]" aria-hidden />
                                 {totalSessionsCount}
                                 {adminScheduleMonthCount > 0 ? (
@@ -1793,6 +1865,23 @@ const StudentCourseDetail = () => {
           </header>
 
         </div>
+      {createPortal(
+        <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200/90 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
+          <div className="flex w-full min-w-0 items-center justify-center px-4 py-3 sm:px-6">
+            <Button
+              type="button"
+              className="h-10 w-full max-w-none rounded-xl border-0 px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#2f47b3] hover:text-white sm:px-5"
+              style={{ backgroundColor: "#3954d0" }}
+              onClick={() => setScannerOpen(true)}
+              title="Scan attendance QR"
+            >
+              <Camera className="h-4 w-4" aria-hidden />
+              Scan QR
+            </Button>
+          </div>
+        </footer>,
+        document.body,
+      )}
       <Dialog
         open={scannerOpen}
         onOpenChange={(open) => {
@@ -1803,9 +1892,9 @@ const StudentCourseDetail = () => {
           }
         }}
       >
-        <DialogContent className="gap-0 overflow-hidden rounded-2xl border-zinc-200/80 p-0 shadow-xl sm:max-w-md sm:rounded-2xl [&>button]:right-4 [&>button]:top-4 [&>button]:rounded-full [&>button]:border [&>button]:border-zinc-200 [&>button]:bg-white/90">
+        <DialogContent className="gap-0 w-[calc(100%-2rem)] max-w-[calc(100%-2rem)] overflow-hidden rounded-2xl border-zinc-200/80 p-0 shadow-xl sm:w-full sm:max-w-md sm:rounded-2xl [&>button]:hidden sm:[&>button]:inline-flex sm:[&>button]:right-4 sm:[&>button]:top-4 sm:[&>button]:rounded-full sm:[&>button]:border sm:[&>button]:border-zinc-200 sm:[&>button]:bg-white/90">
           <div className="border-b border-zinc-100 bg-gradient-to-b from-zinc-50/90 to-white px-6 pb-5 pt-6">
-            <div className="flex items-start gap-3.5 pr-8">
+            <div className="flex items-start gap-3.5 sm:pr-8">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#3954d0]/10 text-[#3954d0] ring-1 ring-[#3954d0]/15">
                 <QrCode className="h-5 w-5" aria-hidden />
               </div>

@@ -1,6 +1,6 @@
 import type { AdminPaymentRow, PaymentStatus } from "@/features/admin/data/adminOperationalMock";
 
-export const INSTRUCTOR_REVENUE_SHARE = 0.7;
+export const INSTRUCTOR_REVENUE_SHARE = 0.6;
 export const PLATFORM_REVENUE_SHARE = 1 - INSTRUCTOR_REVENUE_SHARE;
 
 export function formatMoney(amount: number, currency: string) {

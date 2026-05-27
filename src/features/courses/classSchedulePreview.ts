@@ -3,6 +3,11 @@ import { scheduleSlotKeyFromParts } from "@/features/teacher/attendance/heldSche
 import type { TeacherCourse } from "@/features/teacher/types";
 import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
 import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
+import {
+  distributeSessionsIntoMonths,
+  distributeSessionsIntoThreeMonths,
+  type ScheduleSlotRow,
+} from "@/features/courses/scheduleThreeMonthBuckets";
 import { isUuid } from "@/api/utils";
 
 export type SessionSlotLike = {
@@ -108,8 +113,10 @@ export function paymentMonthsToScheduleTab(months: 1 | 2 | 3): "m1" | "m2" | "m3
 }
 
 export function scheduleTabToPaymentMonths(tab: string): 1 | 2 | 3 {
-  if (tab === "m1") return 1;
-  if (tab === "m2") return 2;
+  const match = tab.match(/^m(\d+)$/);
+  const n = match ? Number(match[1]) : 1;
+  if (!Number.isFinite(n) || n <= 1) return 1;
+  if (n === 2) return 2;
   return 3;
 }
 
@@ -154,86 +161,65 @@ function formatMonthHeading(ymKey: string): string {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "long" });
 }
 
-function scheduleMonthSubtitle(tabIndex: number, keysOrdered: string[]): string {
-  if (keysOrdered.length === 0) {
-    return tabIndex === 0 ? "Dates to be confirmed" : "No dates yet";
-  }
-  if (tabIndex === 0) return formatMonthHeading(keysOrdered[0]);
-  if (tabIndex === 1) {
-    return keysOrdered.length >= 2 ? formatMonthHeading(keysOrdered[1]) : "No dates yet";
-  }
-  if (keysOrdered.length > 3) {
-    return `${formatMonthHeading(keysOrdered[2])} onward`;
-  }
-  if (keysOrdered.length === 3) return formatMonthHeading(keysOrdered[2]);
-  return "No dates yet";
+function scheduleMonthTabLabel(index: number): string {
+  if (index === 0) return "1 month";
+  if (index === 1) return "2nd month";
+  if (index === 2) return "3rd month";
+  return `${index + 1}th month`;
 }
 
-/** Three tabs: first two calendar months, third = later months + undated rows. */
+function slotHasContent(slot: SessionSlotLike): boolean {
+  return Boolean(slot.title?.trim() || slot.sessionDate?.trim() || slot.sessionTime?.trim());
+}
+
+function toScheduleSlotRow(slot: SessionSlotLike): ScheduleSlotRow {
+  return {
+    title: slot.title,
+    sessionDate: slot.sessionDate,
+    sessionTime: slot.sessionTime,
+    durationMinutes: slot.durationMinutes,
+  };
+}
+
+function calendarMonthLineForBucket(bucket: SessionSlotLike[]): string {
+  for (const slot of bucket) {
+    const key = yearMonthKey(slot.sessionDate);
+    if (key) return formatMonthHeading(key);
+  }
+  return "Dates to be confirmed";
+}
+
+/** One tab per schedule month — same calendar-month buckets as the admin schedule editor. */
 export function buildScheduleMonthTabs(slots: SessionSlotLike[]): ScheduleMonthTab[] {
   if (!slots.length) return [];
 
-  const sortByDate = (a: SessionSlotLike, b: SessionSlotLike) => {
-    const na = sessionDateMs(a.sessionDate);
-    const nb = sessionDateMs(b.sessionDate);
-    if (Number.isNaN(na) && Number.isNaN(nb)) return 0;
-    if (Number.isNaN(na)) return 1;
-    if (Number.isNaN(nb)) return -1;
-    return na - nb;
-  };
+  const rows = slots.map(toScheduleSlotRow);
+  const { buckets } = distributeSessionsIntoMonths(rows);
 
-  const dated: SessionSlotLike[] = [];
-  const undated: SessionSlotLike[] = [];
-  for (const s of slots) {
-    if (yearMonthKey(s.sessionDate)) dated.push(s);
-    else undated.push(s);
-  }
-  dated.sort(sortByDate);
-
-  const keysOrdered: string[] = [];
-  const seen = new Set<string>();
-  for (const s of dated) {
-    const k = yearMonthKey(s.sessionDate);
-    if (k && !seen.has(k)) {
-      seen.add(k);
-      keysOrdered.push(k);
-    }
-  }
-
-  const buckets: [SessionSlotLike[], SessionSlotLike[], SessionSlotLike[]] = [[], [], []];
-
-  if (keysOrdered.length === 0) {
-    buckets[0] = [...undated].sort(sortByDate);
-  } else {
-    for (const s of dated) {
-      const k = yearMonthKey(s.sessionDate)!;
-      const monthIndex = keysOrdered.indexOf(k);
-      if (monthIndex <= 0) buckets[0].push(s);
-      else if (monthIndex === 1) buckets[1].push(s);
-      else buckets[2].push(s);
-    }
-    buckets[0].sort(sortByDate);
-    buckets[1].sort(sortByDate);
-    buckets[2].sort(sortByDate);
-    if (undated.length) {
-      buckets[2].push(...undated);
-      buckets[2].sort(sortByDate);
-    }
-  }
-
-  return SCHEDULE_MONTH_TAB_DEFS.map((def, i) => ({
-    value: def.value,
-    tabLabel: def.tabLabel,
-    monthLine: scheduleMonthSubtitle(i, keysOrdered),
-    slots: buckets[i],
-  }));
+  return buckets
+    .map((bucket, index) => {
+      const sessionSlots = bucket
+        .map((row) => ({
+          title: row.title ?? "",
+          sessionDate: row.sessionDate ?? "",
+          sessionTime: row.sessionTime ?? "",
+          durationMinutes: row.durationMinutes,
+        }))
+        .filter(slotHasContent);
+      return {
+        value: `m${index + 1}`,
+        tabLabel: scheduleMonthTabLabel(index),
+        monthLine: calendarMonthLineForBucket(sessionSlots),
+        slots: sessionSlots,
+      };
+    })
+    .filter((tab) => tab.slots.length > 0);
 }
 
-/** Session counts in each of the three schedule month buckets (for tuition split). */
+/** Session counts in each of the three tuition buckets (legacy payment split). */
 export function scheduleMonthSessionCounts(slots: SessionSlotLike[]): [number, number, number] {
-  const tabs = buildScheduleMonthTabs(slots);
-  if (!tabs.length) return [0, 0, 0];
-  return [tabs[0]?.slots.length ?? 0, tabs[1]?.slots.length ?? 0, tabs[2]?.slots.length ?? 0];
+  if (!slots.length) return [0, 0, 0];
+  return distributeSessionsIntoThreeMonths(slots.map(toScheduleSlotRow)).counts;
 }
 
 /** Same date order as `ClassSchedulePreviewPanel` meeting numbers. */

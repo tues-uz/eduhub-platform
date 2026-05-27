@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Award, Download, GraduationCap, Loader2, Star } from "@/lib/icons";
+import { Award, Download, Eye, GraduationCap, Loader2, Star } from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -27,6 +34,7 @@ import { formatDisplayPersonName } from "@/lib/formatPersonName";
 import {
   COURSE_REVIEWS_CHANGED,
   getStudentCourseReviewSummary,
+  type StudentCourseReviewSummary,
 } from "@/features/student/courseReviewsStorage";
 import {
   computeAttendanceScore,
@@ -68,6 +76,98 @@ function draftFromRecord(record?: CourseFinalGradeRecord): DraftRow {
   return {
     score: instructor != null ? String(instructor) : "",
   };
+}
+
+function ReviewStarsRow({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-0.5" aria-label={`${rating} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          className={`h-4 w-4 shrink-0 ${
+            n <= rating ? "fill-amber-400 text-amber-400" : "text-slate-200"
+          }`}
+          aria-hidden
+        />
+      ))}
+      <span className="ml-1.5 text-sm font-medium tabular-nums text-foreground">{rating}/5</span>
+    </div>
+  );
+}
+
+function formatReviewDate(iso?: string): string | null {
+  if (!iso?.trim()) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function StudentReviewDialog({
+  open,
+  onOpenChange,
+  studentName,
+  studentEmail,
+  reviews,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  studentName: string;
+  studentEmail: string;
+  reviews: StudentCourseReviewSummary;
+}) {
+  const instructorDate = formatReviewDate(reviews.instructorSubmittedAt);
+  const platformDate = formatReviewDate(reviews.platformSubmittedAt);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md rounded-2xl sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Student review</DialogTitle>
+          <DialogDescription>
+            Feedback from {formatDisplayPersonName(studentName)} ({studentEmail}) after completing this class.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-5 pt-1">
+          {reviews.instructorRating != null ? (
+            <section className="space-y-2">
+              <h3 className="text-sm font-medium text-foreground">Instructor rating</h3>
+              <ReviewStarsRow rating={reviews.instructorRating} />
+              {reviews.instructorComment?.trim() ? (
+                <p className="text-sm leading-relaxed text-muted-foreground">{reviews.instructorComment.trim()}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">No comment.</p>
+              )}
+              {instructorDate ? (
+                <p className="text-xs text-muted-foreground">Submitted {instructorDate}</p>
+              ) : null}
+            </section>
+          ) : (
+            <p className="text-sm text-muted-foreground">No instructor review yet.</p>
+          )}
+          {reviews.platformRating != null ? (
+            <section className="space-y-2 border-t border-slate-100 pt-4">
+              <h3 className="text-sm font-medium text-foreground">Platform rating</h3>
+              <ReviewStarsRow rating={reviews.platformRating} />
+              {reviews.platformComment?.trim() ? (
+                <p className="text-sm leading-relaxed text-muted-foreground">{reviews.platformComment.trim()}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">No comment.</p>
+              )}
+              {platformDate ? (
+                <p className="text-xs text-muted-foreground">Submitted {platformDate}</p>
+              ) : null}
+            </section>
+          ) : null}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 function RosterEmptyState({
@@ -136,6 +236,7 @@ export function TeacherCourseGradesPanel({
   const [publishingId, setPublishingId] = useState<string | "all" | null>(null);
   const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, DraftRow>>({});
+  const [reviewStudent, setReviewStudent] = useState<RosterStudentRow | null>(null);
 
   const savedGrades = useMemo(() => {
     void gradesTick;
@@ -356,7 +457,14 @@ export function TeacherCourseGradesPanel({
     />
   );
 
-  const showTable = isApiCourse && !isLoading && !isError && students.length > 0 && !isSubstituteViewer;
+  const showTable =
+    isApiCourse && !isLoading && !isError && students.length > 0 && !isSubstituteViewer;
+
+  const reviewDialogSummary = useMemo(() => {
+    if (!reviewStudent) return null;
+    void reviewsTick;
+    return getStudentCourseReviewSummary(courseId, reviewStudent.email.trim().toLowerCase());
+  }, [courseId, reviewStudent, reviewsTick]);
 
   return (
     <div>
@@ -395,213 +503,227 @@ export function TeacherCourseGradesPanel({
         <div className="space-y-2">
           <div className="rounded-xl border border-gray-200 bg-gray-50/30 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
-            <Table className="min-w-[40rem] w-full table-auto">
-              <TableHeader>
-                <TableRow className="bg-slate-50/90 hover:bg-slate-50/90">
-                  <TableHead className="min-w-[10rem] whitespace-nowrap">Student</TableHead>
-                  <TableHead
-                    className="min-w-[5rem] whitespace-nowrap"
-                    title="QR check-ins vs planned schedule sessions."
-                  >
-                    Sessions
-                  </TableHead>
-                  <TableHead
-                    className="min-w-[4.75rem] whitespace-nowrap text-right"
-                    title="Auto: sessions attended ÷ planned (0–100)."
-                  >
-                    Attend. %
-                  </TableHead>
-                  <TableHead className="min-w-[6.5rem] whitespace-nowrap">Instructor</TableHead>
-                  <TableHead
-                    className="min-w-[4.25rem] whitespace-nowrap text-right"
-                    title="Average of attendance score and instructor score."
-                  >
-                    Total
-                  </TableHead>
-                  <TableHead
-                    className="min-w-[6.5rem] whitespace-nowrap"
-                    title="Student feedback from the class completion page."
-                  >
-                    Feedback
-                  </TableHead>
-                  <TableHead className="w-[1%] whitespace-nowrap text-right px-2">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {students.map((s) => {
-                  void attendanceTick;
-                  void reviewsTick;
-                  const emailNorm = s.email.trim().toLowerCase();
-                  const reviews = getStudentCourseReviewSummary(courseId, emailNorm);
-                  const saved = savedGrades[s.id];
-                  const draft = drafts[s.id] ?? draftFromRecord(saved);
-                  const savedInstructor = readInstructorScore(saved);
-                  const dirty =
-                    draft.score !== (savedInstructor != null ? String(savedInstructor) : "");
-                  const attended = countSessionsStudentAttended(courseId, s.id, s.email);
-                  const attendanceScore = computeAttendanceScore(attended, plannedSessions);
-                  const draftInstructor = parseFinalScoreInput(draft.score);
-                  const liveTotal = computeTotalFinalScore(attendanceScore, draftInstructor);
-                  const savedTotal =
-                    saved?.totalFinalScore ??
-                    computeTotalFinalScore(
-                      saved?.attendanceScore ?? attendanceScore,
-                      savedInstructor ?? null,
-                    );
-                  const published = publishedCerts.get(s.id);
-                  const canPublish = savedTotal != null && !published;
-                  return (
-                    <TableRow key={s.id}>
-                      <TableCell className="max-w-[14rem]">
-                        <p className="font-medium text-foreground truncate">
-                          {formatDisplayPersonName(s.fullName)}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">{s.email}</p>
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap text-sm tabular-nums align-middle">
-                        {plannedSessions != null ? (
-                          <span>
-                            <span className="font-medium text-foreground">{attended}</span>
-                            <span className="text-muted-foreground">/{plannedSessions}</span>
-                          </span>
-                        ) : (
-                          <span>
-                            <span className="font-medium text-foreground">{attended}</span>
-                            <span className="text-muted-foreground text-xs"> sess.</span>
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right align-middle tabular-nums text-sm whitespace-nowrap">
-                        {attendanceScore != null ? (
-                          <span className="font-medium text-foreground">{attendanceScore}%</span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="align-middle whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1">
-                          <Input
-                            type="number"
-                            min={0}
-                            max={100}
-                            step={0.5}
-                            inputMode="decimal"
-                            placeholder="0–100"
-                            value={draft.score}
-                            className="h-9 w-16 tabular-nums bg-white"
-                            onChange={(e) => updateDraft(s.id, { score: e.target.value })}
-                          />
-                          <span className="text-xs text-muted-foreground">%</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right align-middle tabular-nums whitespace-nowrap">
-                        {liveTotal != null ? (
-                          <span className="font-semibold text-[#1e40af]">{liveTotal}%</span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="align-middle whitespace-nowrap">
-                        {reviews.instructorRating != null ? (
-                          <div
-                            className="inline-flex flex-col gap-0.5"
-                            title={[
-                              `Instructor: ${reviews.instructorRating}/5`,
-                              reviews.instructorComment
-                                ? `"${reviews.instructorComment}"`
-                                : null,
-                              reviews.platformRating != null
-                                ? `Platform: ${reviews.platformRating}/5`
-                                : "Platform review pending",
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          >
-                            <span className="inline-flex items-center gap-1 text-sm font-medium text-foreground">
-                              <Star
-                                className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400"
-                                aria-hidden
-                              />
-                              {reviews.instructorRating}/5
+              <Table className="min-w-[40rem] w-full table-auto">
+                <TableHeader>
+                  <TableRow className="bg-slate-50/90 hover:bg-slate-50/90">
+                    <TableHead className="min-w-[10rem] whitespace-nowrap">Student</TableHead>
+                    <TableHead
+                      className="min-w-[5rem] whitespace-nowrap"
+                      title="QR check-ins vs planned schedule sessions."
+                    >
+                      Sessions
+                    </TableHead>
+                    <TableHead
+                      className="min-w-[4.75rem] whitespace-nowrap text-right"
+                      title="Auto: sessions attended ÷ planned (0–100)."
+                    >
+                      Attend. %
+                    </TableHead>
+                    <TableHead className="min-w-[6.5rem] whitespace-nowrap">Instructor</TableHead>
+                    <TableHead
+                      className="min-w-[4.25rem] whitespace-nowrap text-right"
+                      title="Average of attendance score and instructor score."
+                    >
+                      Total
+                    </TableHead>
+                    <TableHead
+                      className="min-w-[6.5rem] whitespace-nowrap"
+                      title="Student feedback from the class completion page."
+                    >
+                      Feedback
+                    </TableHead>
+                    <TableHead className="w-[1%] whitespace-nowrap text-right px-2">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {students.map((s) => {
+                    void attendanceTick;
+                    void reviewsTick;
+                    const emailNorm = s.email.trim().toLowerCase();
+                    const reviews = getStudentCourseReviewSummary(courseId, emailNorm);
+                    const saved = savedGrades[s.id];
+                    const draft = drafts[s.id] ?? draftFromRecord(saved);
+                    const savedInstructor = readInstructorScore(saved);
+                    const dirty =
+                      draft.score !== (savedInstructor != null ? String(savedInstructor) : "");
+                    const attended = countSessionsStudentAttended(courseId, s.id, s.email);
+                    const attendanceScore = computeAttendanceScore(attended, plannedSessions);
+                    const draftInstructor = parseFinalScoreInput(draft.score);
+                    const liveTotal = computeTotalFinalScore(attendanceScore, draftInstructor);
+                    const savedTotal =
+                      saved?.totalFinalScore ??
+                      computeTotalFinalScore(
+                        saved?.attendanceScore ?? attendanceScore,
+                        savedInstructor ?? null,
+                      );
+                    const published = publishedCerts.get(s.id);
+                    const canPublish = savedTotal != null && !published;
+                    return (
+                      <TableRow key={s.id}>
+                        <TableCell className="max-w-[14rem]">
+                          <p className="font-medium text-foreground truncate">
+                            {formatDisplayPersonName(s.fullName)}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">{s.email}</p>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-sm tabular-nums align-middle">
+                          {plannedSessions != null ? (
+                            <span>
+                              <span className="font-medium text-foreground">{attended}</span>
+                              <span className="text-muted-foreground">/{plannedSessions}</span>
                             </span>
-                            {reviews.platformRating != null ? (
-                              <span className="text-[10px] text-emerald-700 font-medium">
-                                + platform
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-muted-foreground">Platform pending</span>
-                            )}
+                          ) : (
+                            <span>
+                              <span className="font-medium text-foreground">{attended}</span>
+                              <span className="text-muted-foreground text-xs"> sess.</span>
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right align-middle tabular-nums text-sm whitespace-nowrap">
+                          {attendanceScore != null ? (
+                            <span className="font-medium text-foreground">{attendanceScore}%</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="align-middle whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1">
+                            <Input
+                              type="number"
+                              min={0}
+                              max={100}
+                              step={0.5}
+                              inputMode="decimal"
+                              placeholder="0–100"
+                              value={draft.score}
+                              className="h-9 w-16 tabular-nums bg-white"
+                              onChange={(e) => updateDraft(s.id, { score: e.target.value })}
+                            />
+                            <span className="text-xs text-muted-foreground">%</span>
                           </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Pending</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="w-[1%] whitespace-nowrap px-2 py-3 text-right align-middle">
-                        <div className="inline-flex flex-row items-center justify-end gap-1.5">
-                          <Button
-                            type="button"
-                            size="sm"
-                            className="h-7 rounded-full px-3 text-xs shrink-0"
-                            style={{ backgroundColor: "#3954d0" }}
-                            disabled={savingId === s.id || !dirty}
-                            onClick={() => handleSave(s, attendanceScore)}
-                          >
-                            {savingId === s.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : saved ? (
-                              "Update"
-                            ) : (
-                              "Save"
-                            )}
-                          </Button>
-                          {published ? (
-                            <div className="inline-flex shrink-0 items-center gap-1">
-                              <span
-                                className="inline-flex items-center gap-0.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"
-                                title="Certificate published"
+                        </TableCell>
+                        <TableCell className="text-right align-middle tabular-nums whitespace-nowrap">
+                          {liveTotal != null ? (
+                            <span className="font-semibold text-[#1e40af]">{liveTotal}%</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="align-middle whitespace-nowrap">
+                          {reviews.instructorRating != null ? (
+                            <div className="inline-flex flex-col gap-1">
+                              <div
+                                className="inline-flex flex-col gap-0.5"
+                                title={[
+                                  `Instructor: ${reviews.instructorRating}/5`,
+                                  reviews.instructorComment
+                                    ? `"${reviews.instructorComment}"`
+                                    : null,
+                                  reviews.platformRating != null
+                                    ? `Platform: ${reviews.platformRating}/5`
+                                    : "Platform review pending",
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
                               >
-                                <Award className="h-3 w-3" aria-hidden />
-                                Done
-                              </span>
+                                <span className="inline-flex items-center gap-1 text-sm font-medium text-foreground">
+                                  <Star
+                                    className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400"
+                                    aria-hidden
+                                  />
+                                  {reviews.instructorRating}/5
+                                </span>
+                                {reviews.platformRating != null ? (
+                                  <span className="text-[10px] text-emerald-700 font-medium">
+                                    + platform
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    Platform pending
+                                  </span>
+                                )}
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-fit px-2 text-xs text-[#3954d0] hover:text-[#3954d0] hover:bg-[#3954d0]/5"
+                                onClick={() => setReviewStudent(s)}
+                              >
+                                <Eye className="h-3.5 w-3.5 mr-1" aria-hidden />
+                                Read review
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Pending</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="w-[1%] whitespace-nowrap px-2 py-3 text-right align-middle">
+                          <div className="inline-flex flex-row items-center justify-end gap-1.5">
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="h-7 rounded-full px-3 text-xs shrink-0"
+                              style={{ backgroundColor: "#3954d0" }}
+                              disabled={savingId === s.id || !dirty}
+                              onClick={() => handleSave(s, attendanceScore)}
+                            >
+                              {savingId === s.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : saved ? (
+                                "Update"
+                              ) : (
+                                "Save"
+                              )}
+                            </Button>
+                            {published ? (
+                              <div className="inline-flex shrink-0 items-center gap-1">
+                                <span
+                                  className="inline-flex items-center gap-0.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"
+                                  title="Certificate published"
+                                >
+                                  <Award className="h-3 w-3" aria-hidden />
+                                  Done
+                                </span>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 shrink-0 rounded-full px-2 text-xs"
+                                  disabled={downloadingCertId === s.id}
+                                  onClick={() => void downloadPublishedCertificate(s.id)}
+                                >
+                                  {downloadingCertId === s.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                                  ) : (
+                                    <Download className="h-3 w-3" aria-hidden />
+                                  )}
+                                </Button>
+                              </div>
+                            ) : (
                               <Button
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                className="h-7 shrink-0 rounded-full px-2 text-xs"
-                                disabled={downloadingCertId === s.id}
-                                onClick={() => void downloadPublishedCertificate(s.id)}
+                                className="h-7 shrink-0 rounded-full px-2.5 text-xs gap-0.5"
+                                disabled={!canPublish || publishingId === s.id}
+                                onClick={() => void publishCertificate(s, saved, savedTotal)}
                               >
-                                {downloadingCertId === s.id ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                                {publishingId === s.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
                                 ) : (
-                                  <Download className="h-3 w-3" aria-hidden />
+                                  <Award className="h-3 w-3" aria-hidden />
                                 )}
+                                Publish
                               </Button>
-                            </div>
-                          ) : (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="h-7 shrink-0 rounded-full px-2.5 text-xs gap-0.5"
-                              disabled={!canPublish || publishingId === s.id}
-                              onClick={() => void publishCertificate(s, saved, savedTotal)}
-                            >
-                              {publishingId === s.id ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <Award className="h-3 w-3" aria-hidden />
-                              )}
-                              Publish
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
           </div>
           <p className="text-xs text-muted-foreground px-0.5 leading-relaxed">
@@ -612,6 +734,17 @@ export function TeacherCourseGradesPanel({
             instructor rating after they complete the class survey (demo: this browser).
           </p>
         </div>
+      ) : null}
+      {reviewStudent && reviewDialogSummary ? (
+        <StudentReviewDialog
+          open={Boolean(reviewStudent)}
+          onOpenChange={(open) => {
+            if (!open) setReviewStudent(null);
+          }}
+          studentName={reviewStudent.fullName}
+          studentEmail={reviewStudent.email}
+          reviews={reviewDialogSummary}
+        />
       ) : null}
     </div>
   );

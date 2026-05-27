@@ -1,44 +1,36 @@
-import { Link } from "react-router-dom";
-import { MoreVertical } from "@/lib/icons";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DashboardClassSearch } from "@/components/DashboardClassSearch";
+import { studentHeaderIconButtonClass } from "@/components/studentDashboardHeaderStyles";
 import { StudentNotificationDropdown } from "@/features/notifications/StudentNotificationDropdown";
+import { cn } from "@/lib/utils";
 
-export function DashboardPageHeader() {
+/** Top padding for main content below the fixed student mobile header. */
+export const MOBILE_STUDENT_HEADER_OFFSET = "pt-16";
+
+export { studentHeaderIconButtonClass };
+
+type DashboardPageHeaderProps = {
+  title?: string;
+};
+
+export function StudentDashboardHeaderToolbar({ className }: { className?: string }) {
   return (
-    <header className="sticky top-16 z-30 flex min-h-[4.5625rem] shrink-0 items-center border-b border-gray-200 bg-white/95 px-6 backdrop-blur-md sm:px-8 lg:top-0">
-      <div className="container mx-auto flex w-full max-w-6xl items-center justify-end gap-2 px-0">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 shrink-0 rounded-full border border-zinc-200 bg-white/80 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900"
-              aria-label="Page menu"
-            >
-              <MoreVertical className="h-5 w-5" aria-hidden />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[11rem]">
-            <DropdownMenuItem asChild>
-              <Link to="/dashboard/available-courses" className="cursor-pointer">
-                Available classes
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/dashboard" className="cursor-pointer">
-                Dashboard
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <StudentNotificationDropdown />
+    <div className={cn("flex shrink-0 items-center gap-0.5 sm:gap-1", className)}>
+      <StudentNotificationDropdown triggerClassName={studentHeaderIconButtonClass} />
+    </div>
+  );
+}
+
+export function DashboardPageHeader(_props: DashboardPageHeaderProps) {
+  return (
+    <header className="sticky top-0 z-30 hidden h-[4.5625rem] shrink-0 items-center border-b border-gray-200 bg-white px-6 sm:px-8 lg:flex">
+      <div className="flex w-full items-center gap-4">
+        <div className="flex min-w-0 flex-1 items-center">
+          <div className="hidden w-full max-w-md lg:block xl:max-w-xl">
+            <DashboardClassSearch variant="header" />
+          </div>
+        </div>
+
+        <StudentDashboardHeaderToolbar />
       </div>
     </header>
   );

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   formatNotificationRelativeTime,
+  formatUnreadNotificationBadge,
   NotificationBodyText,
   NotificationKindIcon,
 } from "@/features/notifications/notificationDisplay";
@@ -16,6 +17,7 @@ import {
   useNotificationsQuery,
 } from "@/features/notifications/useNotificationsQuery";
 import { cn } from "@/lib/utils";
+import { studentHeaderIconButtonClass } from "@/components/studentDashboardHeaderStyles";
 import type { NotificationResponse } from "@/api/eduhubTypes";
 
 type StudentNotificationDropdownProps = {
@@ -40,16 +42,18 @@ export function StudentNotificationDropdown({ triggerClassName }: StudentNotific
           type="button"
           variant="ghost"
           size="icon"
-          className={cn(
-            "relative h-10 w-10 shrink-0 rounded-full border border-zinc-200 bg-white/80 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900",
-            triggerClassName,
-          )}
+          className={cn(studentHeaderIconButtonClass, "relative", triggerClassName)}
           aria-label="Notifications"
         >
-          <Bell className="h-5 w-5" aria-hidden />
+          <Bell aria-hidden />
           {unreadCount > 0 ? (
-            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[10px] font-semibold text-white">
-              {unreadCount > 9 ? "9+" : unreadCount}
+            <span
+              className={cn(
+                "absolute -right-1 -top-1 flex h-5 items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[10px] font-bold text-white",
+                unreadCount > 9 ? "min-w-[22px]" : "min-w-5",
+              )}
+            >
+              {formatUnreadNotificationBadge(unreadCount)}
             </span>
           ) : null}
         </Button>
@@ -105,7 +109,7 @@ export function StudentNotificationDropdown({ triggerClassName }: StudentNotific
                         <div className="min-w-0 flex-1">
                           <p
                             className={cn(
-                              "text-sm font-medium",
+                              "text-sm font-semibold",
                               !notification.read ? "text-foreground" : "text-foreground/70",
                             )}
                           >

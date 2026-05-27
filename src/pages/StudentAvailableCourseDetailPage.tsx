@@ -21,6 +21,7 @@ import { useLayoutContext } from "@/features/layout/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { cn } from "@/lib/utils";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
+import { instructorProfileAvatarsStore } from "@/features/teacher/data/instructorProfileAvatarsStore";
 import type { TeacherCourse } from "@/features/teacher/types";
 import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
@@ -33,7 +34,14 @@ import {
 } from "@/features/admin/utils/adminCourseScheduleDisplay";
 import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
 import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
-import { formatSessionTimeLabel } from "@/features/courses/classSchedulePreview";
+import { formatSessionTimeLabel, resolveSessionTimingStatus, buildScheduleMonthTabs, sessionDateMs } from "@/features/courses/classSchedulePreview";
+import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
+import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
+import {
+  COURSE_REVIEWS_CHANGED,
+  listInstructorReviewsForCourse,
+} from "@/features/student/courseReviewsStorage";
+import { formatDisplayPersonName, formatDisplayTitle, profileInitials } from "@/lib/formatPersonName";
 
 const TEACHER_PREFIX = "teacher_";
 const MAX_CLASS_PHOTOS = 8;
@@ -76,119 +84,6 @@ function formatSessionWeekdayLabel(iso: string | undefined): string | null {
 
 type SessionSlotLike = { title?: string; sessionDate?: string; sessionTime?: string };
 
-function sessionDateMs(iso: string | undefined): number {
-  if (!iso?.trim()) return NaN;
-  const t = new Date(iso.trim()).getTime();
-  return Number.isNaN(t) ? NaN : t;
-}
-
-/** `YYYY-MM` for grouping, or null if missing/invalid. */
-function yearMonthKey(sessionDate: string | undefined): string | null {
-  if (!sessionDate?.trim()) return null;
-  const d = new Date(sessionDate.trim());
-  if (Number.isNaN(d.getTime())) return null;
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function formatMonthHeading(ymKey: string): string {
-  const [y, m] = ymKey.split("-").map(Number);
-  if (!y || !m) return ymKey;
-  const d = new Date(y, m - 1, 1);
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "long" });
-}
-
-const SCHEDULE_MONTH_TAB_DEFS: readonly { value: string; tabLabel: string }[] = [
-  { value: "m1", tabLabel: "1 month" },
-  { value: "m2", tabLabel: "2nd month" },
-  { value: "m3", tabLabel: "3rd month" },
-];
-
-function scheduleMonthSubtitle(tabIndex: number, keysOrdered: string[]): string {
-  if (keysOrdered.length === 0) {
-    return tabIndex === 0 ? "Dates to be confirmed" : "No dates yet";
-  }
-  if (tabIndex === 0) return formatMonthHeading(keysOrdered[0]);
-  if (tabIndex === 1) {
-    return keysOrdered.length >= 2 ? formatMonthHeading(keysOrdered[1]) : "No dates yet";
-  }
-  if (keysOrdered.length > 3) {
-    return `${formatMonthHeading(keysOrdered[2])} onward`;
-  }
-  if (keysOrdered.length === 3) return formatMonthHeading(keysOrdered[2]);
-  return "No dates yet";
-}
-
-type ScheduleMonthTab = {
-  value: string;
-  tabLabel: string;
-  monthLine: string;
-  slots: SessionSlotLike[];
-};
-
-/**
- * Always three tabs (1 month / 2nd month / 3rd month): first two distinct calendar months,
- * third tab is the third month plus any later months. Undated rows go on the 3rd tab.
- * Empty tabs stay visible so students see the full three-month layout.
- */
-function buildScheduleMonthTabs(slots: SessionSlotLike[]): ScheduleMonthTab[] {
-  if (!slots.length) return [];
-
-  const sortByDate = (a: SessionSlotLike, b: SessionSlotLike) => {
-    const na = sessionDateMs(a.sessionDate);
-    const nb = sessionDateMs(b.sessionDate);
-    if (Number.isNaN(na) && Number.isNaN(nb)) return 0;
-    if (Number.isNaN(na)) return 1;
-    if (Number.isNaN(nb)) return -1;
-    return na - nb;
-  };
-
-  const dated: SessionSlotLike[] = [];
-  const undated: SessionSlotLike[] = [];
-  for (const s of slots) {
-    if (yearMonthKey(s.sessionDate)) dated.push(s);
-    else undated.push(s);
-  }
-  dated.sort(sortByDate);
-
-  const keysOrdered: string[] = [];
-  const seen = new Set<string>();
-  for (const s of dated) {
-    const k = yearMonthKey(s.sessionDate);
-    if (k && !seen.has(k)) {
-      seen.add(k);
-      keysOrdered.push(k);
-    }
-  }
-
-  const buckets: [SessionSlotLike[], SessionSlotLike[], SessionSlotLike[]] = [[], [], []];
-
-  if (keysOrdered.length === 0) {
-    buckets[0] = [...undated].sort(sortByDate);
-  } else {
-    for (const s of dated) {
-      const k = yearMonthKey(s.sessionDate)!;
-      const monthIndex = keysOrdered.indexOf(k);
-      if (monthIndex <= 0) buckets[0].push(s);
-      else if (monthIndex === 1) buckets[1].push(s);
-      else buckets[2].push(s);
-    }
-    buckets[0].sort(sortByDate);
-    buckets[1].sort(sortByDate);
-    buckets[2].sort(sortByDate);
-    if (undated.length) {
-      buckets[2].push(...undated);
-      buckets[2].sort(sortByDate);
-    }
-  }
-
-  return SCHEDULE_MONTH_TAB_DEFS.map((def, i) => ({
-    value: def.value,
-    tabLabel: def.tabLabel,
-    monthLine: scheduleMonthSubtitle(i, keysOrdered),
-    slots: buckets[i],
-  }));
-}
-
 /** Same resolution order as enrolled student course detail: API proposal → approved local → course slots. */
 function resolvePreviewSessionSlots(
   courseId: string,
@@ -220,37 +115,37 @@ function resolvePreviewSessionSlots(
 
 type LessonPreview = { id: string; title: string };
 
-type DummyReview = {
-  id: string;
-  authorName: string;
-  rating: number;
-  dateLabel: string;
-  body: string;
-};
+function formatReviewAuthorName(courseId: string, emailNorm: string): string {
+  const app = enrollmentApplicationStore.findLatestForCourseAndEmail(courseId, emailNorm);
+  if (app?.fullName?.trim()) {
+    const parts = formatDisplayPersonName(app.fullName).split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0]} ${parts[parts.length - 1]![0]}.`;
+    }
+    return parts[0] ?? "Student";
+  }
+  const local = emailNorm.split("@")[0] ?? "";
+  const bits = local.split(/[._-]+/).filter(Boolean);
+  if (bits.length >= 2) {
+    const lastInitial = bits[bits.length - 1]![0]?.toUpperCase() ?? "";
+    return `${formatDisplayPersonName(bits[0])} ${lastInitial}.`.trim();
+  }
+  if (bits[0]) return formatDisplayPersonName(bits[0]);
+  return "Student";
+}
 
-const DUMMY_STUDENT_REVIEWS: DummyReview[] = [
-  {
-    id: "r1",
-    authorName: "Maya R.",
-    rating: 5,
-    dateLabel: "3 weeks ago",
-    body: "Clear explanations and homework that actually helped. The instructor replies quickly in the forum.",
-  },
-  {
-    id: "r2",
-    authorName: "Jonas T.",
-    rating: 4,
-    dateLabel: "Last month",
-    body: "Pace was comfortable for working full-time. Would love a few more practice quizzes.",
-  },
-  {
-    id: "r3",
-    authorName: "Priya S.",
-    rating: 5,
-    dateLabel: "2 months ago",
-    body: "Loved the structure—each lesson built on the last. Finished feeling confident for the final project.",
-  },
-];
+function formatReviewDateLabel(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const diffDays = Math.floor((Date.now() - d.getTime()) / (24 * 60 * 60 * 1000));
+  if (diffDays < 1) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 14) return "1 week ago";
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  if (diffDays < 60) return "Last month";
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
 
 function ReviewStars({ rating }: { rating: number }) {
   return (
@@ -275,6 +170,7 @@ const StudentAvailableCourseDetailPage = () => {
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const { isSidebarCollapsed } = useLayoutContext();
   const [, setEnrollmentStoreTick] = useState(0);
+  const [reviewsTick, setReviewsTick] = useState(0);
   const scheduleLocalTick = useAdminCourseLocalDataVersion();
 
   const [loading, setLoading] = useState(true);
@@ -293,6 +189,16 @@ const StudentAvailableCourseDetailPage = () => {
     window.addEventListener("storage", bump);
     return () => {
       window.removeEventListener("eduhub-enrollment-applications-changed", bump);
+      window.removeEventListener("storage", bump);
+    };
+  }, []);
+
+  useEffect(() => {
+    const bump = () => setReviewsTick((n) => n + 1);
+    window.addEventListener(COURSE_REVIEWS_CHANGED, bump);
+    window.addEventListener("storage", bump);
+    return () => {
+      window.removeEventListener(COURSE_REVIEWS_CHANGED, bump);
       window.removeEventListener("storage", bump);
     };
   }, []);
@@ -384,7 +290,11 @@ const StudentAvailableCourseDetailPage = () => {
   const instructor =
     apiCourse?.lecturer?.fullName ?? teacherCourse?.instructorName ?? "—";
   const instructorAvatarUrl =
-    apiCourse?.lecturer?.avatarUrl?.trim() || teacherCourse?.instructorAvatarUrl?.trim() || undefined;
+    apiCourse?.lecturer?.avatarUrl?.trim() ||
+    teacherCourse?.instructorAvatarUrl?.trim() ||
+    instructorProfileAvatarsStore.getByEmail(apiCourse?.lecturer?.email ?? "") ||
+    instructorProfileAvatarsStore.getByName(instructor) ||
+    undefined;
   const category = apiCourse?.category ?? "Class";
   const description = apiCourse?.description ?? teacherCourse?.description ?? "";
   const thumbnailUrl = apiCourse?.thumbnailUrl?.trim() || teacherCourse?.thumbnailUrl?.trim();
@@ -441,6 +351,21 @@ const StudentAvailableCourseDetailPage = () => {
     sessionSlotsPreview.length,
     scheduleLocalTick,
   ]);
+
+  const instructorReviews = useMemo(() => {
+    void reviewsTick;
+    if (!linkId) return [];
+    return listInstructorReviewsForCourse(linkId).map((review) => {
+      const authorName = formatReviewAuthorName(linkId, review.emailNorm);
+      return {
+        id: review.emailNorm,
+        authorName,
+        rating: review.rating,
+        dateLabel: formatReviewDateLabel(review.submittedAt),
+        body: review.comment?.trim() || "No written comment.",
+      };
+    });
+  }, [linkId, reviewsTick]);
 
   const meetings =
     apiCourse?.classMeetingsInSixMonths ??
@@ -525,14 +450,12 @@ const StudentAvailableCourseDetailPage = () => {
                     {title}
                   </h1>
                 </div>
-                <div
-                  className="flex min-w-0 shrink-0 flex-col gap-4 sm:max-w-md sm:items-end sm:text-right"
-                >
+                <div className="w-full min-w-0 sm:w-auto sm:max-w-md sm:shrink-0">
                   <div
-                    className="flex flex-row flex-wrap items-end justify-end gap-x-6 gap-y-2 sm:gap-x-8"
+                    className="grid w-full grid-cols-2 gap-x-4 gap-y-2 sm:flex sm:w-auto sm:flex-row sm:flex-wrap sm:items-end sm:justify-end sm:gap-x-8 sm:gap-y-2"
                     aria-label="Class start and end dates"
                   >
-                  <div className="min-w-0 text-right">
+                  <div className="min-w-0 text-left sm:text-right">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
                       Class start
                     </p>
@@ -542,7 +465,7 @@ const StudentAvailableCourseDetailPage = () => {
                       )}
                     </p>
                   </div>
-                  <div className="min-w-0 text-right">
+                  <div className="min-w-0 text-left sm:text-right">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
                       Class end
                     </p>
@@ -699,14 +622,21 @@ const StudentAvailableCourseDetailPage = () => {
                                     weekdayLabel && timeLabel !== "—"
                                       ? `${weekdayLabel} · ${timeLabel}`
                                       : timeLabel;
-                                  const title = row.title?.trim() || `Session ${idx + 1}`;
+                                  const title = formatDisplayTitle(row.title?.trim() || `Session ${idx + 1}`);
+                                  const timingStatus = resolveSessionTimingStatus(row);
                                   return (
                                     <li
                                       key={`${t.value}-${row.sessionDate}-${idx}-${title}`}
-                                      className="flex flex-col gap-1 py-3 first:pt-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+                                      className={cn(
+                                        "flex flex-col gap-1 py-3 first:pt-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4",
+                                        timingStatus === "finished" && "opacity-75",
+                                      )}
                                     >
-                                      <div className="min-w-0">
-                                        <p className="text-sm font-medium text-zinc-900">{title}</p>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex flex-col items-start gap-1">
+                                          <SessionTimingChip status={timingStatus} />
+                                          <p className="text-sm font-medium text-zinc-900">{title}</p>
+                                        </div>
                                         <p className="mt-0.5 text-xs tabular-nums text-zinc-500 sm:hidden">
                                           {dateLabel} · {timeWithDay}
                                         </p>
@@ -764,37 +694,45 @@ const StudentAvailableCourseDetailPage = () => {
                       <h2 className="text-base font-semibold tracking-tight text-foreground">
                         Reviews from students
                       </h2>
-                      <p className="text-xs text-foreground/55">Sample feedback</p>
+                      {instructorReviews.length > 0 ? (
+                        <p className="text-xs text-foreground/55">
+                          {instructorReviews.length} review{instructorReviews.length === 1 ? "" : "s"}
+                        </p>
+                      ) : null}
                     </div>
-                    <ul className="mt-3 divide-y divide-zinc-100">
-                      {DUMMY_STUDENT_REVIEWS.map((r) => (
-                        <li key={r.id} className="py-4 first:pt-0 last:pb-0">
-                          <div className="flex gap-3">
-                            <div
-                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[11px] font-semibold tracking-wide text-zinc-600"
-                              aria-hidden
-                            >
-                              {r.authorName
-                                .split(/\s+/)
-                                .map((p) => p[0])
-                                .join("")
-                                .slice(0, 2)
-                                .toUpperCase()}
-                            </div>
-                            <div className="min-w-0 flex-1 space-y-2">
-                              <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-                                <div className="min-w-0">
-                                  <p className="text-sm font-medium text-zinc-900">{r.authorName}</p>
-                                  <p className="mt-0.5 text-xs text-zinc-400">{r.dateLabel}</p>
-                                </div>
-                                <ReviewStars rating={r.rating} />
+                    {instructorReviews.length > 0 ? (
+                      <ul className="mt-3 divide-y divide-zinc-100">
+                        {instructorReviews.map((r) => (
+                          <li key={r.id} className="py-4 first:pt-0 last:pb-0">
+                            <div className="flex gap-3">
+                              <div
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[11px] font-semibold tracking-wide text-zinc-600"
+                                aria-hidden
+                              >
+                                {profileInitials(r.authorName)}
                               </div>
-                              <p className="line-clamp-3 text-sm leading-relaxed text-zinc-600">{r.body}</p>
+                              <div className="min-w-0 flex-1 space-y-2">
+                                <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-zinc-900">{r.authorName}</p>
+                                    {r.dateLabel ? (
+                                      <p className="mt-0.5 text-xs text-zinc-400">{r.dateLabel}</p>
+                                    ) : null}
+                                  </div>
+                                  <ReviewStars rating={r.rating} />
+                                </div>
+                                <p className="line-clamp-4 text-sm leading-relaxed text-zinc-600">{r.body}</p>
+                              </div>
                             </div>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+                        No instructor reviews yet. Students can rate their instructor after they finish the class
+                        (demo: saved in this browser until an API exists).
+                      </p>
+                    )}
                   </div>
                 </aside>
               </div>
@@ -868,27 +806,25 @@ const StudentAvailableCourseDetailPage = () => {
         ? createPortal(
             <footer
               className={cn(
-                "fixed bottom-0 z-50 border-t border-zinc-200/90 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md",
+                "fixed bottom-0 z-40 border-t border-zinc-200/90 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md",
                 "left-0 right-0",
                 isSidebarCollapsed ? "lg:left-20 lg:right-0" : "lg:left-64 lg:right-0",
               )}
             >
-              <div className="grid w-full min-w-0 grid-cols-1 gap-3 px-4 py-3 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-4 lg:px-6 xl:gap-6 xl:px-8">
-                <div className="order-1 flex min-w-0 items-center justify-center lg:order-1 lg:justify-start">
-                  <Link
-                    to="/dashboard/available-courses"
-                    title="Back to available classes"
-                    aria-label="Back to available classes"
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-200 text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
-                  >
-                    <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-                  </Link>
-                </div>
-                <div className="order-first flex min-w-0 justify-center lg:order-2 lg:justify-end">
+              <div className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+                <Link
+                  to="/dashboard/available-courses"
+                  title="Back to available classes"
+                  aria-label="Back to available classes"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-200 text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
+                >
+                  <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+                </Link>
+                <div className="flex min-w-0 shrink-0 justify-end">
                   {enrollmentStatus === "enrolled" ? (
                     <Button
                       asChild
-                      className="h-10 w-auto shrink-0 rounded-xl border-0 px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#2f47b3] hover:text-white"
+                      className="h-10 shrink-0 rounded-xl border-0 px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#2f47b3] hover:text-white sm:px-5"
                       style={{ backgroundColor: "#3954d0" }}
                     >
                       <Link to={workspacePath}>Continue to Class</Link>
@@ -897,14 +833,14 @@ const StudentAvailableCourseDetailPage = () => {
                     <Button
                       asChild
                       variant="outline"
-                      className="h-10 w-full max-w-[180px] rounded-xl border-amber-300 bg-amber-50 text-sm font-semibold text-amber-900 shadow-sm hover:bg-amber-100 sm:max-w-[200px]"
+                      className="h-10 shrink-0 rounded-xl border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 shadow-sm hover:bg-zinc-50 sm:px-5"
                     >
                       <Link to={enrollSuccessPath}>View application</Link>
                     </Button>
                   ) : (
                     <Button
                       asChild
-                      className="h-10 w-full max-w-[140px] rounded-xl border-0 text-sm font-semibold text-white shadow-sm hover:bg-[#2f47b3] hover:text-white sm:max-w-[160px]"
+                      className="h-10 shrink-0 rounded-xl border-0 px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#2f47b3] hover:text-white sm:px-5"
                       style={{ backgroundColor: "#3954d0" }}
                     >
                       <Link to={enrollPath}>

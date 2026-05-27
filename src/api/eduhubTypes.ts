@@ -334,6 +334,8 @@ export interface EnrollmentApplicationRequest {
   joinFromSessionNumber?: number;
   /** Total class meetings on the published schedule at enrollment time. */
   scheduleSessionCount?: number;
+  /** Referral code entered by the student (optional). */
+  referralCode?: string;
 }
 
 export interface EnrollmentApplicationResponse {
@@ -356,6 +358,7 @@ export interface EnrollmentApplicationResponse {
   installmentCount?: EnrollmentInstallmentCount;
   joinFromSessionNumber?: number;
   scheduleSessionCount?: number;
+  referralCode?: string;
   status: EnrollmentApplicationStatus;
   submittedAt: string;
   reviewedAt?: string;

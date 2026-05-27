@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { eduhubAuth, setAuthTokens } from "@/api/eduhubClient";
-import { setSessionUser, useAuthSession } from "@/features/auth/context";
+import { resolveAvatarFromAuthResponse, setSessionUser, useAuthSession } from "@/features/auth/context";
 import { resolveInstructorCategory } from "@/features/teacher/resolveInstructorCategory";
 
 const ChangePassword = () => {
@@ -60,7 +60,7 @@ const ChangePassword = () => {
           name: res.user.fullName,
           email: res.user.email,
           role,
-          avatarUrl: res.user.avatarUrl,
+          avatarUrl: resolveAvatarFromAuthResponse(res.user.avatarUrl, res.user.email),
           phoneNumber: res.user.phoneNumber,
           category,
         });

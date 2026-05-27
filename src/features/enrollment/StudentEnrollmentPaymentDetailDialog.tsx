@@ -87,27 +87,47 @@ const STATUS_CONFIG: Record<
 const STACK_CARD = "flex flex-col gap-3 rounded-xl border border-zinc-200 bg-zinc-50/50 p-3";
 const STACK_CARD_WHITE = "flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3";
 
+/** Soft tinted icon badge for detail rows. */
+type DetailRowTone = "blue" | "emerald" | "violet" | "sky" | "teal" | "amber" | "rose";
+
+const detailRowToneClass: Record<DetailRowTone, string> = {
+  blue: "bg-blue-50 text-blue-600 ring-1 ring-blue-100/80",
+  emerald: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100/80",
+  violet: "bg-violet-50 text-violet-600 ring-1 ring-violet-100/80",
+  sky: "bg-sky-50 text-sky-600 ring-1 ring-sky-100/80",
+  teal: "bg-teal-50 text-teal-600 ring-1 ring-teal-100/80",
+  amber: "bg-amber-50 text-amber-600 ring-1 ring-amber-100/80",
+  rose: "bg-rose-50 text-rose-600 ring-1 ring-rose-100/80",
+};
+
 function DetailRow({
   icon: Icon,
   label,
   children,
   mono,
+  tone = "blue",
 }: {
   icon: typeof Calendar;
   label: string;
   children: ReactNode;
   mono?: boolean;
+  tone?: DetailRowTone;
 }) {
   return (
     <div className="flex gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500">
+      <div
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+          detailRowToneClass[tone],
+        )}
+      >
         <Icon className="h-4 w-4" aria-hidden />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs text-zinc-500">{label}</p>
         <div
           className={cn(
-            "mt-0.5 text-sm text-zinc-900",
+            "mt-0.5 text-sm font-semibold text-zinc-900",
             mono && "font-mono text-[13px] tracking-tight",
           )}
         >
@@ -137,14 +157,21 @@ function VerificationDocumentRow({
   icon: Icon,
   label,
   url,
+  tone = "blue",
 }: {
   icon: typeof FileText;
   label: string;
   url?: string;
+  tone?: DetailRowTone;
 }) {
   return (
     <div className="flex gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500">
+      <div
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+          detailRowToneClass[tone],
+        )}
+      >
         <Icon className="h-4 w-4" aria-hidden />
       </div>
       <div className="min-w-0 flex-1">
@@ -248,26 +275,26 @@ function PaymentDetailDialogBody({
   const showHeaderDivider = Boolean(amount || instructor);
 
   return (
-      <DialogContent className="flex max-h-[calc(100dvh-64px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[440px]">
-        <DialogHeader className="flex shrink-0 flex-col gap-4 border-b border-zinc-100 bg-zinc-50/80 px-6 pb-5 pt-6 text-left">
-          <div className="flex items-start justify-between gap-3 pr-8">
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-h-[calc(100dvh-64px)] sm:w-full sm:max-w-[440px] sm:rounded-2xl [&>button]:inline-flex [&>button]:h-8 [&>button]:w-8 [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button]:border [&>button]:border-zinc-200 [&>button]:bg-white [&>button]:opacity-100 [&>button]:shadow-sm [&>button]:hover:bg-zinc-50">
+        <DialogHeader className="flex shrink-0 flex-col gap-4 border-b border-zinc-100 bg-zinc-50/80 p-4 text-left">
+          <div className="flex min-w-0 flex-col gap-1.5 pr-6">
+            <div className="flex flex-wrap items-center gap-2">
               <DialogTitle className="text-lg font-semibold leading-snug text-zinc-900">
                 {enriched.courseTitle ?? enriched.courseId}
               </DialogTitle>
-              <DialogDescription className="mt-0 text-sm text-zinc-600">
-                Enrollment & payment details
-              </DialogDescription>
+              <span
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+                  status.className,
+                )}
+              >
+                <StatusIcon className="h-3.5 w-3.5" aria-hidden />
+                {status.label}
+              </span>
             </div>
-            <span
-              className={cn(
-                "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
-                status.className,
-              )}
-            >
-              <StatusIcon className="h-3.5 w-3.5" aria-hidden />
-              {status.label}
-            </span>
+            <DialogDescription className="mt-0 text-sm text-zinc-600">
+              Enrollment & payment details
+            </DialogDescription>
           </div>
 
           <div className="flex flex-col gap-4 rounded-xl border border-zinc-200/90 bg-white p-3 shadow-sm">
@@ -293,7 +320,7 @@ function PaymentDetailDialogBody({
                 />
                 <div className="min-w-0">
                   <p className="text-[11px] font-medium text-zinc-500">Instructor</p>
-                  <p className="mt-0.5 truncate text-sm font-medium text-zinc-900">
+                  <p className="mt-0.5 truncate text-sm font-semibold text-zinc-900">
                     {formatDisplayPersonName(instructor.name)}
                   </p>
                 </div>
@@ -307,7 +334,7 @@ function PaymentDetailDialogBody({
             >
               <div>
                 <p className="text-[11px] font-medium text-zinc-500">Payment plan</p>
-                <p className="mt-0.5 text-sm font-medium text-zinc-900">{planLabel}</p>
+                <p className="mt-0.5 text-sm font-semibold text-zinc-900">{planLabel}</p>
                 {planDetail ? (
                   <p className="mt-0.5 text-xs text-zinc-500">{planDetail}</p>
                 ) : null}
@@ -315,7 +342,7 @@ function PaymentDetailDialogBody({
               {methodLabel ? (
                 <div>
                   <p className="text-[11px] font-medium text-zinc-500">Method</p>
-                  <p className="mt-0.5 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-900">
+                  <p className="mt-0.5 inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-900">
                     <CreditCard className="h-3.5 w-3.5 shrink-0 text-zinc-400" aria-hidden />
                     {methodLabel}
                   </p>
@@ -332,7 +359,7 @@ function PaymentDetailDialogBody({
           </div>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-4">
           {hasOfficial && (enriched.invoiceNumber || enriched.receiptNumber) ? (
             <section className="mb-5">
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
@@ -368,11 +395,11 @@ function PaymentDetailDialogBody({
               Timeline
             </h3>
             <div className={STACK_CARD}>
-              <DetailRow icon={Calendar} label="Submitted">
+              <DetailRow icon={Calendar} label="Submitted" tone="blue">
                 {formatDetailDate(r.submittedAt)}
               </DetailRow>
               {r.reviewedAt ? (
-                <DetailRow icon={CheckCircle2} label="Reviewed">
+                <DetailRow icon={CheckCircle2} label="Reviewed" tone="emerald">
                   {formatDetailDate(r.reviewedAt)}
                 </DetailRow>
               ) : null}
@@ -384,20 +411,20 @@ function PaymentDetailDialogBody({
               Your details
             </h3>
             <div className={STACK_CARD}>
-              <DetailRow icon={User} label="Name">
+              <DetailRow icon={User} label="Name" tone="violet">
                 {r.fullName}
               </DetailRow>
-              <DetailRow icon={Mail} label="Email">
+              <DetailRow icon={Mail} label="Email" tone="sky">
                 {r.email}
               </DetailRow>
-              <DetailRow icon={Phone} label="Phone">
+              <DetailRow icon={Phone} label="Phone" tone="teal">
                 {r.phone}
                 {r.phoneSecondary ? (
                   <span className="block text-zinc-600">{r.phoneSecondary}</span>
                 ) : null}
               </DetailRow>
-              <DetailRow icon={MapPin} label="Address">
-                <span className="whitespace-pre-wrap font-normal capitalize leading-relaxed">
+              <DetailRow icon={MapPin} label="Address" tone="amber">
+                <span className="whitespace-pre-wrap font-semibold capitalize leading-relaxed">
                   {r.address}
                 </span>
               </DetailRow>
@@ -414,11 +441,13 @@ function PaymentDetailDialogBody({
                   icon={FileText}
                   label="Payment proof"
                   url={enriched.paymentProofUrl}
+                  tone="blue"
                 />
                 <VerificationDocumentRow
                   icon={IdCard}
                   label="ID document"
                   url={enriched.idCardUrl}
+                  tone="violet"
                 />
               </div>
             ) : (
@@ -441,7 +470,7 @@ function PaymentDetailDialogBody({
           ) : null}
         </div>
 
-        <div className="flex shrink-0 flex-col gap-2 border-t border-zinc-100 bg-white px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="flex shrink-0 flex-col gap-2 border-t border-zinc-100 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button
             type="button"
             className="h-11 w-full rounded-xl bg-[#3954d0] text-sm font-medium hover:bg-[#2f47b3]"

@@ -13,6 +13,16 @@ export const DEFAULT_TEACHER_CLASS_CHECKLIST_ITEMS: readonly { readonly id: stri
   },
 ] as const;
 
+/** Per-student instructor verification for a QR attendance session. */
+export function instructorVerifyItemId(
+  sessionId: string,
+  studentId: string,
+  studentEmail: string,
+): string {
+  const sid = studentId?.trim() || `email:${studentEmail.trim().toLowerCase()}`;
+  return `verify:${sessionId}:${sid}`;
+}
+
 type ChecklistRoot = Record<string, Record<string, Record<string, true>>>;
 
 function readRoot(): ChecklistRoot {

@@ -28,6 +28,12 @@ export function formatNotificationRelativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { dateStyle: "medium" });
 }
 
+/** Caps notification badge counts at 9+ when unread exceeds nine. */
+export function formatUnreadNotificationBadge(count: number): string {
+  if (count <= 0) return "";
+  return count > 9 ? "9+" : String(count);
+}
+
 export type NotificationIconTone = "success" | "error" | "warning" | "info" | "neutral";
 
 type NotificationIconConfig = {
@@ -304,7 +310,7 @@ export function NotificationBodyText({
           <span className="font-semibold text-foreground">{courseName}</span>.
         </p>
         {receiptNumber || invoiceNumber ? (
-          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2.5">
+          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-xl border border-zinc-200/80 bg-zinc-50/80 px-3 py-2.5">
             {receiptNumber ? (
               <>
                 <dt className="text-[11px] font-medium uppercase tracking-wide text-foreground/45">

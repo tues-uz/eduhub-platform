@@ -20,6 +20,13 @@ export type StudentCourseReviewSummary = {
   platformSubmittedAt?: string;
 };
 
+export type CourseInstructorReviewListItem = {
+  emailNorm: string;
+  rating: number;
+  comment?: string;
+  submittedAt: string;
+};
+
 function storageKey(courseId: string, emailNorm: string): string {
   return `${STORAGE_PREFIX}${encodeURIComponent(courseId)}__${emailNorm.trim().toLowerCase()}`;
 }
@@ -95,4 +102,32 @@ export function saveCourseReview(
 export function hasSubmittedBothReviews(courseId: string, emailNorm: string): boolean {
   const data = load(courseId, emailNorm);
   return Boolean(data.instructor && data.platform);
+}
+
+/** All instructor-target reviews submitted for a course (demo: scans localStorage). */
+export function listInstructorReviewsForCourse(courseId: string): CourseInstructorReviewListItem[] {
+  if (typeof window === "undefined" || !courseId.trim()) return [];
+  const prefix = `${STORAGE_PREFIX}${encodeURIComponent(courseId)}__`;
+  const items: CourseInstructorReviewListItem[] = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key?.startsWith(prefix)) continue;
+      const emailNorm = key.slice(prefix.length).trim().toLowerCase();
+      if (!emailNorm) continue;
+      const data = load(courseId, emailNorm);
+      const instructor = data.instructor;
+      if (!instructor?.rating) continue;
+      items.push({
+        emailNorm,
+        rating: instructor.rating,
+        comment: instructor.comment,
+        submittedAt: instructor.submittedAt,
+      });
+    }
+  } catch {
+    /* ignore */
+  }
+  items.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
+  return items;
 }

@@ -79,9 +79,9 @@ function planSummary(r: EnrollmentApplicationResponse): string {
 }
 
 function statusStyles(status: EnrollmentApplicationResponse["status"]): string {
-  if (status === "APPROVED") return "bg-emerald-100 text-emerald-900";
-  if (status === "REJECTED") return "bg-red-100 text-red-900";
-  return "bg-amber-100 text-amber-950";
+  if (status === "APPROVED") return "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80";
+  if (status === "REJECTED") return "bg-red-50 text-red-800 ring-1 ring-red-200/80";
+  return "bg-amber-50 text-amber-900 ring-1 ring-amber-200/80";
 }
 
 async function fetchCoursePdfContext(courseId: string): Promise<{
@@ -144,6 +144,60 @@ async function downloadEnrollmentPdf(r: EnrollmentApplicationResponse) {
   toast.error("Could not generate PDF", {
     description: "Tuition amount is missing for this application.",
   });
+}
+
+function statusLabel(status: EnrollmentApplicationResponse["status"]): string {
+  if (status === "PENDING") return "Pending review";
+  if (status === "APPROVED") return "Approved";
+  return "Rejected";
+}
+
+function PaymentHistoryMobileCard({
+  record,
+  onOpenDetails,
+}: {
+  record: EnrollmentApplicationResponse;
+  onOpenDetails: () => void;
+}) {
+  const r = enrichEnrollmentApplication(record);
+
+  return (
+    <article className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="min-w-0 flex-1 text-sm font-semibold leading-snug text-zinc-900">
+          {r.courseTitle ?? r.courseId}
+        </h3>
+        <span
+          className={cn(
+            "inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium",
+            statusStyles(r.status),
+          )}
+        >
+          {statusLabel(r.status)}
+        </span>
+      </div>
+      <p className="mt-2 text-xs tabular-nums text-zinc-500">{formatSubmittedAt(r.submittedAt)}</p>
+      <dl className="mt-3 space-y-2 border-t border-zinc-100 pt-3 text-xs">
+        <div className="flex items-start justify-between gap-3">
+          <dt className="shrink-0 text-zinc-500">Invoice</dt>
+          <dd className="min-w-0 break-all text-right font-mono text-zinc-800">{r.invoiceNumber ?? "—"}</dd>
+        </div>
+        <div className="flex items-start justify-between gap-3">
+          <dt className="shrink-0 text-zinc-500">Receipt</dt>
+          <dd className="min-w-0 break-all text-right font-mono text-zinc-800">{r.receiptNumber ?? "—"}</dd>
+        </div>
+      </dl>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="mt-4 h-9 w-full rounded-xl text-xs"
+        onClick={onOpenDetails}
+      >
+        View details
+      </Button>
+    </article>
+  );
 }
 
 const StudentPaymentInfo = () => {
@@ -224,16 +278,18 @@ const StudentPaymentInfo = () => {
     
     <div className="w-full bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <div className="w-full pb-10">
-        <p className="mb-6 text-sm text-zinc-600">
-          Payment history, invoices, and receipts for your enrollment applications. Apply from{" "}
-          <Link
-            to="/dashboard/available-courses"
-            className="font-medium text-[#3954d0] underline-offset-2 hover:underline"
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <p className="max-w-2xl text-sm text-zinc-600">
+            Payment history, invoices, and receipts for your enrollment applications. Official invoice and receipt
+            numbers are issued after the school approves your application.
+          </p>
+          <Button
+            asChild
+            className="h-10 shrink-0 rounded-xl bg-[#3954d0] text-sm font-medium hover:bg-[#2f47b3]"
           >
-            Available Classes
-          </Link>
-          . Official invoice and receipt numbers are issued after the school approves your application.
-        </p>
+            <Link to="/dashboard/available-courses">Available Classes</Link>
+          </Button>
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -256,8 +312,8 @@ const StudentPaymentInfo = () => {
           </div>
         ) : (
           <>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="relative min-w-0 w-full max-w-md sm:w-auto sm:flex-1">
+            <div className="mb-4 flex items-center gap-2 sm:gap-3">
+              <div className="relative w-full max-w-xs sm:max-w-sm">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" aria-hidden />
                 <Input
                   value={search}
@@ -266,13 +322,13 @@ const StudentPaymentInfo = () => {
                   className="h-10 rounded-xl bg-white pl-10"
                 />
               </div>
-              <div className="flex shrink-0 items-center gap-3">
+              <div className="flex shrink-0 items-center">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-10 w-[160px] shrink-0 justify-between rounded-xl border-zinc-200 bg-white px-3 text-sm font-normal text-zinc-900 hover:bg-zinc-50 data-[state=open]:border-zinc-300 data-[state=open]:ring-2 data-[state=open]:ring-[#3954d0]/15"
+                    className="h-10 w-[7.25rem] shrink-0 justify-between rounded-xl border-zinc-200 bg-white px-2.5 text-sm font-normal text-zinc-900 hover:bg-zinc-50 data-[state=open]:border-zinc-300 data-[state=open]:ring-2 data-[state=open]:ring-[#3954d0]/15 sm:w-[160px] sm:px-3"
                   >
                     <span className="truncate">{statusFilterLabel}</span>
                     <ChevronDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
@@ -296,7 +352,25 @@ const StudentPaymentInfo = () => {
               </div>
             </div>
 
-            <div className="w-full overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+            <div className="md:hidden">
+              {filteredRows.length === 0 ? (
+                <div className="rounded-xl border border-zinc-200 bg-white px-4 py-10 text-center text-sm text-zinc-500">
+                  No payments match your search or filter.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredRows.map((raw) => (
+                    <PaymentHistoryMobileCard
+                      key={raw.id}
+                      record={raw}
+                      onOpenDetails={() => setDetailRecord(enrichEnrollmentApplication(raw))}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="hidden w-full overflow-x-auto rounded-xl border border-zinc-200 bg-white md:block">
               <Table className="min-w-[720px] text-sm">
                 <TableHeader>
                   <TableRow className="border-zinc-200 bg-white hover:bg-white">
@@ -350,11 +424,7 @@ const StudentPaymentInfo = () => {
                           <span
                             className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles(r.status)}`}
                           >
-                            {r.status === "PENDING"
-                              ? "Pending review"
-                              : r.status === "APPROVED"
-                                ? "Approved"
-                                : "Rejected"}
+                            {statusLabel(r.status)}
                           </span>
                         </TableCell>
                         <TableCell className="align-middle px-3 py-3">

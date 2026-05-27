@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuthSession, clearSessionUser } from "@/features/auth/context";
+import { instructorProfileAvatarsStore } from "@/features/teacher/data/instructorProfileAvatarsStore";
 import { clearAuthTokens } from "@/api/eduhubClient";
 import { useLayoutContext } from "@/features/layout/context";
 import {
@@ -20,6 +21,10 @@ import {
 import { dashboardHomeByRole } from "@/app/routes";
 import { SIDEBAR_COLLAPSE_ENABLED } from "@/features/layout/hooks/useSidebarState";
 import { formatDisplayPersonName, profileInitials } from "@/lib/formatPersonName";
+import {
+  StudentDashboardHeaderToolbar,
+} from "@/components/DashboardPageHeader";
+import { DashboardClassSearch } from "@/components/DashboardClassSearch";
 
 const DashboardSidebar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -30,6 +35,10 @@ const DashboardSidebar = () => {
   const userName = formatDisplayPersonName(user.name);
   const userEmail = user.email;
   const userRole = user.role;
+  const sidebarAvatarUrl =
+    user.avatarUrl?.trim() ||
+    instructorProfileAvatarsStore.getByEmail(user.email) ||
+    instructorProfileAvatarsStore.getByName(user.name);
 
   const nestedMenuItems =
     userRole === "teacher" ? teacherMenuItems : userRole === "admin" ? adminMenuItems : null;
@@ -77,6 +86,28 @@ const DashboardSidebar = () => {
   return (
     <div style={{ fontFamily: logoFont }}>
       {/* Mobile Header */}
+      {userRole === "student" ? (
+        <header className="fixed left-0 right-0 top-0 z-50 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur-md lg:hidden">
+          <div className="flex h-16 items-center justify-between gap-3 px-4">
+            <Link to={dashboardHome} className="flex shrink-0 items-center">
+              <img src="/logo-eduhub.png" alt="EduHub Logo" className="h-8 w-auto object-contain" />
+            </Link>
+            <div className="flex shrink-0 items-center gap-1">
+              <DashboardClassSearch compact />
+              <StudentDashboardHeaderToolbar />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="rounded-full"
+                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              >
+                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
+            </div>
+          </div>
+        </header>
+      ) : (
       <header className={`lg:hidden fixed top-0 left-0 right-0 z-50 ${isProfessionalRole ? "bg-slate-900 border-slate-800" : "bg-white/95 backdrop-blur-md border-gray-200"} shadow-sm border-b`}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
@@ -112,18 +143,19 @@ const DashboardSidebar = () => {
           </div>
         </div>
       </header>
+      )}
 
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="lg:hidden fixed inset-0 z-[55] bg-black/50"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-screen ${sidebarBg} border-r ${sidebarBorder} z-50 lg:z-30 transition-all duration-300 ${
+        className={`fixed top-0 left-0 z-[60] h-screen ${sidebarBg} border-r ${sidebarBorder} transition-all duration-300 lg:z-30 ${
           isCollapsed ? "w-20" : "w-64"
         } ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
@@ -164,8 +196,8 @@ const DashboardSidebar = () => {
           <div className="p-4">
             <div className={`flex items-center gap-3 p-3 rounded-xl ${userCardBg} ${isCollapsed ? "justify-center" : ""}`}>
               <div className={`${isCollapsed ? "w-8 h-8" : "w-10 h-10"} rounded-full ${userAvatarBg} flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden`}>
-                {user.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                {sidebarAvatarUrl ? (
+                  <img src={sidebarAvatarUrl} alt="" className="h-full w-full object-cover" />
                 ) : userName ? (
                   <span className="text-xs">{profileInitials(userName)}</span>
                 ) : (
@@ -272,7 +304,7 @@ const DashboardSidebar = () => {
           </nav>
 
           {/* Footer Section */}
-          <div className={`p-4 ${isProfessionalRole ? "border-t border-slate-800" : ""}`}>
+          <div className={`p-4 pb-[max(1rem,env(safe-area-inset-bottom))] lg:pb-4 ${isProfessionalRole ? "border-t border-slate-800" : ""}`}>
             <Button
               variant="ghost"
               className={`w-full rounded-xl ${isCollapsed ? "justify-center" : "justify-start"} ${isProfessionalRole ? "text-slate-300" : "text-foreground/70"} ${logoutHover}`}
