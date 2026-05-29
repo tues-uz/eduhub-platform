@@ -297,12 +297,16 @@ export function TeacherAttendanceSessionPanel({
           sessionId: s.id,
           createdAt: s.startedAt,
           modality: s.modality === "IN_PERSON" ? "in_person" : "online",
+          status: s.status,
+          endedAt: s.endedAt,
+          endReason: s.endReason,
           name: s.meetingName,
           token: localById.get(s.id)?.token,
           scheduleSlotIndex: s.scheduleSlotIndex,
           scheduleSlotKey: s.scheduleSlotKey,
         }));
         setStoredMeetings(list);
+        persistMeetings(courseId, list);
         setCurrentSessionToken(null);
         setSessionId((prev) => {
           if (prev && list.some((m) => m.sessionId === prev)) return prev;
@@ -403,6 +407,9 @@ export function TeacherAttendanceSessionPanel({
       sessionId: created.id,
       createdAt: created.startedAt,
       modality: "in_person",
+      status: created.status,
+      endedAt: created.endedAt,
+      endReason: created.endReason,
       name,
       token: created.token,
       ...(typeof slotIndex === "number" && slotIndex >= 0 ? { scheduleSlotIndex: slotIndex } : {}),
@@ -511,16 +518,22 @@ export function TeacherAttendanceSessionPanel({
       : 0;
   const sessionRemainingMs = Math.max(0, ATTENDANCE_SESSION_MAX_MS - sessionElapsedMs);
 
+  const isBackendSessionClosed = activeMeeting?.status === "CLOSED";
+
   const isSessionManuallyStopped =
-    Boolean(sessionId) && manuallyStoppedSessionIds.includes(sessionId as string);
+    Boolean(sessionId) &&
+    (manuallyStoppedSessionIds.includes(sessionId as string) ||
+      (isBackendSessionClosed && activeMeeting?.endReason === "MANUAL_STOP"));
 
   const checkInWindowOpen =
     Boolean(activeMeeting && Number.isFinite(sessionStartMs)) &&
+    !isBackendSessionClosed &&
     !isSessionManuallyStopped &&
     sessionElapsedMs < ATTENDANCE_SESSION_MAX_MS;
 
   useEffect(() => {
     if (!courseId || !activeMeeting?.sessionId) return;
+    if (isBackendSessionClosed) return;
     if (sessionElapsedMs < ATTENDANCE_SESSION_MAX_MS) return;
     const sid = activeMeeting.sessionId;
     if (finalizedMaxDurationRef.current.has(sid)) return;
@@ -549,6 +562,7 @@ export function TeacherAttendanceSessionPanel({
     activeMeeting?.sessionId,
     activeMeeting?.createdAt,
     activeMeeting?.name,
+    isBackendSessionClosed,
     sessionElapsedMs,
     selectedCourse?.title,
     user.email,
@@ -565,7 +579,23 @@ export function TeacherAttendanceSessionPanel({
     manualStopOnceRef.current.add(sessionId);
 
     try {
-      if (isUuid(sessionId)) await eduhubAttendance.closeSession(sessionId, "MANUAL_STOP");
+      if (isUuid(sessionId)) {
+        const closed = await eduhubAttendance.closeSession(sessionId, "MANUAL_STOP");
+        setStoredMeetings((prev) => {
+          const next = prev.map((m) =>
+            m.sessionId === sessionId
+              ? {
+                  ...m,
+                  status: closed.status,
+                  endedAt: closed.endedAt,
+                  endReason: closed.endReason,
+                }
+              : m,
+          );
+          persistMeetings(courseId, next);
+          return next;
+        });
+      }
     } catch (e) {
       toast.error("Could not stop attendance session", {
         description: e instanceof Error ? e.message : "Please try again.",
@@ -738,7 +768,7 @@ export function TeacherAttendanceSessionPanel({
                   type="button"
                   variant="outline"
                   className="rounded-full"
-                  disabled={!joinUrl}
+                  disabled={!joinUrl || !checkInWindowOpen}
                   onClick={() => setProjectorMode(true)}
                 >
                   <Maximize2 className="h-4 w-4 mr-2" />
@@ -804,6 +834,13 @@ export function TeacherAttendanceSessionPanel({
                       <p className="mt-2 text-sm text-amber-950/85">
                         You ended check-in for this meeting ({formatElapsedLabel(sessionElapsedMs)}). Generate a new QR
                         when you are ready for another check-in window.
+                      </p>
+                    </div>
+                  ) : isBackendSessionClosed ? (
+                    <div className="w-full max-w-md rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-5 text-center">
+                      <p className="text-sm font-semibold text-amber-950">Check-in closed</p>
+                      <p className="mt-2 text-sm text-amber-950/85">
+                        This meeting is closed on the server. Generate a new QR when you need another check-in window.
                       </p>
                     </div>
                   ) : (

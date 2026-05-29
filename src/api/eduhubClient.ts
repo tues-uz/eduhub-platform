@@ -34,6 +34,12 @@ import type {
   MyAttendanceResponse,
   NotificationResponse,
   AdminCreateUserResponse,
+  CourseCertificateResponse,
+  CourseGradebookRowResponse,
+  CourseReviewRequest,
+  CourseReviewResponse,
+  CourseReviewSummaryResponse,
+  FinalGradeRequest,
 } from "./eduhubTypes";
 
 const BASE = EDUHUB_API_BASE_URL + EDUHUB_API_PREFIX;
@@ -759,6 +765,40 @@ export const eduhubAttendance = {
 
   myAttendance: (courseId: string) =>
     request<MyAttendanceResponse>(`/courses/${courseId}/attendance/my`),
+};
+
+/** Course completion: grades, certificates, and reviews */
+export const eduhubCompletion = {
+  gradebook: (courseId: string) =>
+    request<CourseGradebookRowResponse[]>(`/courses/${courseId}/grades`),
+
+  saveGrade: (courseId: string, studentId: string, body: FinalGradeRequest) =>
+    request<CourseGradebookRowResponse>(`/courses/${courseId}/grades/${studentId}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
+  publishCertificate: (courseId: string, studentId: string) =>
+    request<CourseCertificateResponse>(`/courses/${courseId}/certificates/${studentId}/publish`, {
+      method: "POST",
+    }),
+
+  publishAllCertificates: (courseId: string) =>
+    request<CourseCertificateResponse[]>(`/courses/${courseId}/certificates/publish-all`, {
+      method: "POST",
+    }),
+
+  myCertificates: () =>
+    request<CourseCertificateResponse[]>("/certificates/me"),
+
+  submitReview: (courseId: string, body: CourseReviewRequest) =>
+    request<CourseReviewResponse>(`/courses/${courseId}/reviews`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  myReviewSummary: (courseId: string) =>
+    request<CourseReviewSummaryResponse>(`/courses/${courseId}/reviews/me`),
 };
 
 /** Notifications */

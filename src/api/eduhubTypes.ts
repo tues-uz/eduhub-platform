@@ -491,6 +491,73 @@ export interface MyAttendanceResponse {
   }[];
 }
 
+// Course Completion Types
+
+export type CourseReviewTarget = "INSTRUCTOR" | "PLATFORM";
+
+export interface CourseReviewRequest {
+  target: CourseReviewTarget;
+  rating: number;
+  comment?: string;
+}
+
+export interface CourseReviewResponse {
+  id: string;
+  courseId: string;
+  studentId: string;
+  target: CourseReviewTarget;
+  rating: number;
+  comment?: string;
+  submittedAt: string;
+}
+
+export interface CourseReviewSummaryResponse {
+  instructorRating: number | null;
+  platformRating: number | null;
+  instructorComment?: string;
+  platformComment?: string;
+  instructorSubmittedAt?: string;
+  platformSubmittedAt?: string;
+}
+
+export interface CourseCertificateResponse {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  studentId: string;
+  studentEmailNorm: string;
+  studentName: string;
+  totalFinalScore: number;
+  attendanceScore?: number;
+  instructorScore?: number;
+  certificateNumber: string;
+  issuedAt: string;
+  instructorName?: string;
+  publishedByEmail?: string;
+  reviewsComplete: boolean;
+}
+
+export interface FinalGradeRequest {
+  instructorScore: number;
+  comment?: string;
+}
+
+export interface CourseGradebookRowResponse {
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  attendanceAttended: number;
+  attendanceTotal: number;
+  attendanceScore: number | null;
+  instructorScore: number | null;
+  totalFinalScore: number | null;
+  comment?: string;
+  gradedAt?: string;
+  gradedByEmail?: string;
+  certificate?: CourseCertificateResponse;
+  reviewSummary: CourseReviewSummaryResponse;
+}
+
 // Notification Types
 
 export interface NotificationResponse {

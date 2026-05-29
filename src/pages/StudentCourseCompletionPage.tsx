@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -8,6 +9,9 @@ import {
   X,
 } from "@/lib/icons";
 import { toast } from "sonner";
+import { eduhubCompletion } from "@/api/eduhubClient";
+import { isUuid } from "@/api/utils";
+import type { CourseReviewSummaryResponse } from "@/api/eduhubTypes";
 import { useAuthSession } from "@/features/auth/context";
 import { markCourseCongratsSeen } from "@/features/student/courseCongratsSeenStorage";
 import {
@@ -37,6 +41,13 @@ const COMMENT_MAX = 200;
 type LocationState = {
   courseTitle?: string;
   instructor?: string;
+};
+
+type ApiReviewSnapshot = {
+  target: CourseReviewTarget;
+  rating: number;
+  comment?: string;
+  submittedAt: string;
 };
 
 function FieldLabel({
@@ -178,6 +189,9 @@ function ReviewFormCard({
   courseId,
   emailNorm,
   onReviewSaved,
+  apiReview,
+  onApiSubmit,
+  isSubmitting = false,
 }: {
   target: CourseReviewTarget;
   title: string;
@@ -187,10 +201,13 @@ function ReviewFormCard({
   courseId: string;
   emailNorm: string;
   onReviewSaved?: () => void;
+  apiReview?: ApiReviewSnapshot;
+  onApiSubmit?: (review: CourseReviewRecord) => void;
+  isSubmitting?: boolean;
 }) {
   const existing = useMemo(
-    () => getCourseReview(courseId, emailNorm, target),
-    [courseId, emailNorm, target],
+    () => apiReview ?? getCourseReview(courseId, emailNorm, target),
+    [apiReview, courseId, emailNorm, target],
   );
   const [rating, setRating] = useState(existing?.rating ?? 0);
   const [comment, setComment] = useState(existing?.comment ?? "");
@@ -220,6 +237,10 @@ function ReviewFormCard({
       comment: comment.trim() || undefined,
       submittedAt: new Date().toISOString(),
     };
+    if (onApiSubmit) {
+      onApiSubmit(record);
+      return;
+    }
     saveCourseReview(courseId, emailNorm, record);
     setSaved(record);
     onReviewSaved?.();
@@ -303,9 +324,9 @@ function ReviewFormCard({
             type="button"
             className="completion-btn-submit"
             onClick={handleSubmit}
-            disabled={rating < 1}
+            disabled={rating < 1 || isSubmitting}
           >
-            Submit
+            {isSubmitting ? "Submitting…" : "Submit"}
           </button>
         </div>
       </div>
@@ -327,10 +348,41 @@ const StudentCourseCompletionPage = () => {
       : undefined;
   const state = (location.state as LocationState | null) ?? {};
   const { user } = useAuthSession();
+  const queryClient = useQueryClient();
   const emailNorm = user.email.trim().toLowerCase();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const { byCourse: enrollmentAppsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
   const [completionTick, setCompletionTick] = useState(0);
+  const useApiCompletion = Boolean(courseId && isUuid(courseId) && !isPreview);
+
+  const reviewSummaryQuery = useQuery({
+    queryKey: ["student", "course-review-summary", courseId],
+    queryFn: () => eduhubCompletion.myReviewSummary(courseId!),
+    enabled: useApiCompletion,
+    retry: false,
+  });
+
+  const certificatesQuery = useQuery({
+    queryKey: ["student", "certificates"],
+    queryFn: eduhubCompletion.myCertificates,
+    enabled: useApiCompletion,
+  });
+
+  const saveReviewMutation = useMutation({
+    mutationFn: (review: CourseReviewRecord) =>
+      eduhubCompletion.submitReview(courseId!, {
+        target: review.target,
+        rating: review.rating,
+        comment: review.comment,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["student", "course-review-summary", courseId] });
+      void queryClient.invalidateQueries({ queryKey: ["student", "certificates"] });
+      setCompletionTick((t) => t + 1);
+      toast.success("Feedback saved.");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save feedback."),
+  });
 
   useEffect(() => {
     const bump = () => setCompletionTick((t) => t + 1);
@@ -421,14 +473,43 @@ const StudentCourseCompletionPage = () => {
   const publishedCertificate = useMemo(() => {
     void completionTick;
     if (!courseId) return undefined;
+    if (useApiCompletion) {
+      return certificatesQuery.data?.find((c) => c.courseId === courseId);
+    }
     return listCertificatesForStudent(emailNorm).find((c) => c.courseId === courseId);
-  }, [completionTick, emailNorm, courseId]);
+  }, [completionTick, emailNorm, courseId, certificatesQuery.data, useApiCompletion]);
 
   const reviewsComplete = useMemo(() => {
     void completionTick;
     if (!courseId) return false;
+    if (useApiCompletion) {
+      const s = reviewSummaryQuery.data;
+      return Boolean(s?.instructorRating && s?.platformRating);
+    }
     return hasSubmittedBothReviews(courseId, emailNorm);
-  }, [courseId, emailNorm, completionTick]);
+  }, [courseId, emailNorm, completionTick, reviewSummaryQuery.data, useApiCompletion]);
+
+  const apiReview = (target: CourseReviewTarget): ApiReviewSnapshot | undefined => {
+    const s: CourseReviewSummaryResponse | undefined = reviewSummaryQuery.data;
+    if (!s) return undefined;
+    if (target === "INSTRUCTOR" && s.instructorRating != null) {
+      return {
+        target,
+        rating: s.instructorRating,
+        comment: s.instructorComment,
+        submittedAt: s.instructorSubmittedAt ?? new Date().toISOString(),
+      };
+    }
+    if (target === "PLATFORM" && s.platformRating != null) {
+      return {
+        target,
+        rating: s.platformRating,
+        comment: s.platformComment,
+        submittedAt: s.platformSubmittedAt ?? new Date().toISOString(),
+      };
+    }
+    return undefined;
+  };
 
   if (!courseId) {
     return <Navigate to="/dashboard/courses" replace />;
@@ -511,6 +592,9 @@ const StudentCourseCompletionPage = () => {
             courseLabel={meta.title}
             courseId={courseId}
             emailNorm={emailNorm}
+            apiReview={useApiCompletion ? apiReview("INSTRUCTOR") : undefined}
+            onApiSubmit={useApiCompletion ? (review) => saveReviewMutation.mutate(review) : undefined}
+            isSubmitting={saveReviewMutation.isPending}
             onReviewSaved={() => setCompletionTick((t) => t + 1)}
           />
 
@@ -522,6 +606,9 @@ const StudentCourseCompletionPage = () => {
             courseLabel={meta.title}
             courseId={courseId}
             emailNorm={emailNorm}
+            apiReview={useApiCompletion ? apiReview("PLATFORM") : undefined}
+            onApiSubmit={useApiCompletion ? (review) => saveReviewMutation.mutate(review) : undefined}
+            isSubmitting={saveReviewMutation.isPending}
             onReviewSaved={() => setCompletionTick((t) => t + 1)}
           />
         </div>

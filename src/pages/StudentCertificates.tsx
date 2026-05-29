@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Award, Download, GraduationCap, Loader2, Lock } from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { eduhubCompletion } from "@/api/eduhubClient";
+import type { CourseCertificateResponse } from "@/api/eduhubTypes";
+import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
 import { downloadCourseCertificatePdf } from "@/features/courses/courseCertificatePdf";
 import {
@@ -21,13 +25,15 @@ const formatDate = (dateString: string) =>
     year: "numeric",
   });
 
+type DisplayCertificate = CourseCertificateRecord | CourseCertificateResponse;
+
 function CertificateCard({
   certificate,
   reviewsComplete,
   downloading,
   onDownload,
 }: {
-  certificate: CourseCertificateRecord;
+  certificate: DisplayCertificate;
   reviewsComplete: boolean;
   downloading: boolean;
   onDownload: () => void;
@@ -147,13 +153,26 @@ const StudentCertificates = () => {
     return () => window.removeEventListener(COURSE_CERTIFICATES_CHANGED, bump);
   }, []);
 
-  const certificates = useMemo((): CourseCertificateRecord[] => {
+  const certificatesQuery = useQuery({
+    queryKey: ["student", "certificates"],
+    queryFn: eduhubCompletion.myCertificates,
+  });
+
+  const localDemoCertificates = useMemo(() => {
     void tick;
-    return listCertificatesForStudent(emailNorm);
+    return listCertificatesForStudent(emailNorm).filter((c) => !isUuid(c.courseId));
   }, [emailNorm, tick]);
 
+  const certificates = useMemo(
+    (): DisplayCertificate[] => [...(certificatesQuery.data ?? []), ...localDemoCertificates],
+    [certificatesQuery.data, localDemoCertificates],
+  );
+
   const readyCount = useMemo(
-    () => certificates.filter((c) => hasSubmittedBothReviews(c.courseId, emailNorm)).length,
+    () =>
+      certificates.filter((c) =>
+        "reviewsComplete" in c ? c.reviewsComplete : hasSubmittedBothReviews(c.courseId, emailNorm),
+      ).length,
     [certificates, emailNorm],
   );
 
@@ -164,7 +183,7 @@ const StudentCertificates = () => {
           <p>Certificates your instructor publishes after final scores.</p>
           <p>Submit instructor and Edu Hub feedback on your class completion page before downloading the PDF.</p>
         </div>
-        {certificates.length > 0 ? (
+        {!certificatesQuery.isLoading && certificates.length > 0 ? (
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200/80">
               {certificates.length} certificate{certificates.length === 1 ? "" : "s"} earned
@@ -178,7 +197,13 @@ const StudentCertificates = () => {
         ) : null}
       </div>
 
-      {certificates.length === 0 ? (
+      {certificatesQuery.isLoading ? (
+        <p className="text-sm text-foreground/60">Loading certificates…</p>
+      ) : certificatesQuery.isError ? (
+        <p className="text-sm text-red-600 rounded-xl border border-red-100 bg-red-50 px-4 py-4">
+          Could not load certificates. Try again later.
+        </p>
+      ) : certificates.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/60 px-6 py-12 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100">
             <Award className="h-7 w-7 text-zinc-400" aria-hidden />
@@ -192,7 +217,8 @@ const StudentCertificates = () => {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-4">
           {certificates.map((c) => {
-            const reviewsComplete = hasSubmittedBothReviews(c.courseId, emailNorm);
+            const reviewsComplete =
+              "reviewsComplete" in c ? c.reviewsComplete : hasSubmittedBothReviews(c.courseId, emailNorm);
             return (
               <CertificateCard
                 key={c.id}
@@ -201,7 +227,7 @@ const StudentCertificates = () => {
                 downloading={downloadingId === c.id}
                 onDownload={() => {
                   setDownloadingId(c.id);
-                  void downloadCourseCertificatePdf(c)
+                  void downloadCourseCertificatePdf(c as CourseCertificateRecord)
                     .then(() => toast.success("Certificate downloaded"))
                     .catch((e) =>
                       toast.error(e instanceof Error ? e.message : "Could not generate certificate PDF"),
