@@ -154,7 +154,7 @@ export function PayrollInstructorProofPanel({
           aria-describedby={infoHintId}
           value={notesDraft}
           onChange={(e) => setNotesDraft(e.target.value.slice(0, PAYROLL_INFORMATION_MAX_CHARS))}
-          placeholder="e.g. Transfer ref ABC-2026-0312 · Period: March 1–15 · 70% contract rate · …"
+          placeholder="e.g. Transfer ref ABC-2026-0312 · Period: March 1–15 · 60% contract rate · …"
           className="min-h-[100px] resize-y bg-white text-slate-900 border-slate-200"
           rows={4}
         />

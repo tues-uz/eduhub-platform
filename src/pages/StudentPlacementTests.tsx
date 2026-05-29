@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ClipboardList, CheckCircle2, Loader2 } from "@/lib/icons";
+import { CheckCircle2, ClipboardList, Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
-import { useAuthSession } from "@/features/auth/context";
+import { StudentQuizListEmptyState } from "@/components/StudentQuizListEmptyState";
 import { eduhubCourseQuizzes, QuizResponseForStudent, QuizResultResponse } from "@/api/eduhubClient";
 
 const LETTER_COLORS = ["bg-blue-500", "bg-red-500", "bg-amber-500", "bg-green-500"] as const;
 
 export default function StudentPlacementTests() {
-  const { user } = useAuthSession();
   const [quizzes, setQuizzes] = useState<QuizResponseForStudent[]>([]);
   const [completedQuizIds, setCompletedQuizIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -31,8 +30,6 @@ export default function StudentPlacementTests() {
       
       // Fetch global placement tests
       const allQuizzes = await eduhubCourseQuizzes.getPlacementTests();
-      setQuizzes(allQuizzes);
-
       setQuizzes(allQuizzes);
 
       // Check completions using batch results endpoint
@@ -106,36 +103,47 @@ export default function StudentPlacementTests() {
   };
 
   return (
-    <div className="w-full max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="w-full" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           {screen === "list" && (
             <>
-              <div className="mb-8">
-                <p className="text-foreground/70 text-sm">Assess your level before starting a class.</p>
-              </div>
-
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                  <Loader2 className="h-12 w-12 animate-spin mb-4" />
-                  <p>Loading placement tests...</p>
+                <div className="flex min-h-[min(28rem,calc(100dvh-18rem))] w-full flex-col items-center justify-center px-4 py-12 text-zinc-400">
+                  <Loader2 className="mb-4 h-10 w-10 animate-spin" />
+                  <p className="text-sm">Loading placement tests…</p>
                 </div>
               ) : error ? (
-                <div className="rounded-xl border border-dashed border-gray-200/80 bg-white/80 p-8 text-center">
-                  <ClipboardList className="mx-auto mb-3 h-12 w-12 text-foreground/30" />
-                  <p className="font-medium text-foreground/70">{error}</p>
-                  <p className="mt-1 text-sm text-foreground/50">
-                    Check your connection and try again.
-                  </p>
-                  <Button variant="outline" className="mt-4 rounded-full" onClick={fetchQuizzes}>
-                    Try again
-                  </Button>
-                </div>
+                <StudentQuizListEmptyState
+                  title="Couldn't load placement tests"
+                  description="Check your connection and try again."
+                  action={
+                    <Button
+                      type="button"
+                      className="mx-auto h-10 rounded-xl bg-[#3954d0] px-4 text-sm font-medium hover:bg-[#2f47b3]"
+                      onClick={fetchQuizzes}
+                    >
+                      Try again
+                    </Button>
+                  }
+                />
               ) : quizzes.length === 0 ? (
-                <div className="rounded-xl border border-gray-200/50 bg-white/80 p-8 text-center">
-                  <ClipboardList className="mx-auto h-12 w-12 text-foreground/30 mb-3" />
-                  <p className="text-foreground/60">No placement tests available at the moment.</p>
-                </div>
+                <StudentQuizListEmptyState
+                  title="No placement tests yet"
+                  description="When your school publishes placement tests, they'll appear here so you can assess your level."
+                  action={
+                    <Button
+                      asChild
+                      className="mx-auto h-10 rounded-xl bg-[#3954d0] px-4 text-sm font-medium hover:bg-[#2f47b3]"
+                    >
+                      <Link to="/dashboard/available-courses">Browse classes</Link>
+                    </Button>
+                  }
+                />
               ) : (
-                <div className="space-y-4">
+                <div className="mx-auto w-full max-w-3xl">
+                  <div className="mb-8">
+                    <p className="text-sm text-foreground/70">Assess your level before starting a class.</p>
+                  </div>
+                  <div className="space-y-4">
                   {quizzes.map((quiz) => {
                     const completed = completedQuizIds.has(quiz.id);
                     return (
@@ -178,6 +186,7 @@ export default function StudentPlacementTests() {
                       </div>
                     );
                   })}
+                  </div>
                 </div>
               )}
             </>

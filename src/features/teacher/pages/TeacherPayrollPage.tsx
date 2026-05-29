@@ -1,22 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "@/lib/icons";
+import { ArrowLeft, ChevronDown, ChevronRight, Search } from "@/lib/icons";
 import { toast } from "sonner";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { useAuthSession } from "@/features/auth/context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -26,8 +17,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
+import {
+  hasPayrollProofFile,
+  payrollProofKey,
+  usePayrollProofMap,
+} from "@/features/admin/data/adminPayrollProofStore";
 import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock";
-import { DEMO_TEACHER_PAYROLL_EMAIL, mockAdminPayments } from "@/features/admin/data/adminOperationalMock";
 import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { eduhubCourses } from "@/api/eduhubClient";
@@ -37,11 +32,10 @@ import {
   buildPayrollSummaryText,
   currencyMapToFormattedLines,
   estimateInstructorAndPlatformSplitLines,
-  estimateInstructorPayoutLines,
   formatMoney,
   INSTRUCTOR_REVENUE_SHARE,
   mergeCurrencyMaps,
-  PLATFORM_REVENUE_SHARE,
+  type ClassPayrollAggregate,
 } from "@/features/payroll/classPayrollAggregate";
 import {
   instructorPayrollRequestDedupeKey,
@@ -49,6 +43,100 @@ import {
   useInstructorPayrollRequests,
   type InstructorPayrollRequestRecord,
 } from "@/features/teacher/data/instructorPayrollRequestStore";
+import { TeacherPayrollSubmitDialog } from "@/features/teacher/components/TeacherPayrollSubmitDialog";
+import {
+  buildTeacherPayrollStudentRows,
+  summarizeTeacherPayrollStudentRows,
+  useTeacherPayrollClassStudents,
+  type TeacherPayrollStudentRow,
+} from "@/features/teacher/hooks/useTeacherPayrollClassStudents";
+import {
+  emptyTeacherPayrollForm,
+  type TeacherPayrollFormFields,
+} from "@/features/payroll/payrollScheduleEligibility";
+import {
+  ensurePayrollSubmitDemo,
+  isPayrollSubmitDemoCourse,
+  PAYROLL_SUBMIT_DEMO_COURSE_ID,
+} from "@/features/payroll/payrollSubmitDemo";
+import { cn, formatThousandsInText } from "@/lib/utils";
+
+function formatRelativeTime(iso: string): string {
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return iso;
+  const diff = Date.now() - t;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 14) return `${days} day${days === 1 ? "" : "s"} ago`;
+  return new Date(iso).toLocaleDateString(undefined, { dateStyle: "medium" });
+}
+
+function SubmissionStatusPill({ status }: { status: "pending" | "approved" | "rejected" }) {
+  if (status === "approved") {
+    return <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-900">Approved</span>;
+  }
+  if (status === "rejected") {
+    return <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-900">Not approved</span>;
+  }
+  return <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900">Pending</span>;
+}
+
+function StudentPayrollStatusBadge({ status }: { status: TeacherPayrollStudentRow["status"] }) {
+  if (status === "enrolled") {
+    return (
+      <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
+        Enrolled
+      </span>
+    );
+  }
+  return <PaymentStatusBadge status={status} />;
+}
+
+function courseTitleMatchesClass(title: string, classSection: string, course: string): boolean {
+  const norm = title.trim().toLowerCase();
+  return classSection.trim().toLowerCase() === norm || course.trim().toLowerCase() === norm;
+}
+
+function paymentAggregateMatchesCourse(title: string, agg: ClassPayrollAggregate): boolean {
+  return courseTitleMatchesClass(title, agg.className, agg.course);
+}
+
+function resolveSubmissionCourse(
+  submission: InstructorPayrollRequestRecord,
+  instructorCourses: TeacherCourse[],
+): TeacherCourse | undefined {
+  return instructorCourses.find((course) =>
+    courseTitleMatchesClass(course.title, submission.classSection, submission.course),
+  );
+}
+
+type TeacherPayrollClassRow = ClassPayrollAggregate & {
+  courseId: string;
+  enrollmentCount: number;
+};
+
+function payrollRequestStatusBadge(latest: InstructorPayrollRequestRecord | undefined, hasPending: boolean) {
+  if (hasPending) {
+    return { label: "Pending review", className: "bg-amber-100 text-amber-900 ring-amber-200/80" };
+  }
+  if (latest?.status === "approved") {
+    return {
+      label: latest.resolvedAt ? `Approved · ${new Date(latest.resolvedAt).toLocaleDateString()}` : "Approved",
+      className: "bg-emerald-100 text-emerald-900 ring-emerald-200/80",
+    };
+  }
+  if (latest?.status === "rejected") {
+    return {
+      label: latest.resolvedAt ? `Declined · ${new Date(latest.resolvedAt).toLocaleDateString()}` : "Declined",
+      className: "bg-red-100 text-red-900 ring-red-200/80",
+    };
+  }
+  return { label: "Ready", className: "bg-slate-100 text-slate-700 ring-slate-200/90" };
+}
 
 function paymentMatchesInstructor(p: AdminPaymentRow, emailNorm: string, nameNorm: string): boolean {
   const le = (p.lecturerEmail ?? "").trim().toLowerCase();
@@ -78,40 +166,18 @@ export default function TeacherPayrollPage() {
   const { user } = useAuthSession();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   const [search, setSearch] = useState("");
+  const [submissionSearch, setSubmissionSearch] = useState("");
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [openSubmitKey, setOpenSubmitKey] = useState<string | null>(null);
-  const [formByClass, setFormByClass] = useState<
-    Record<
-      string,
-      {
-        periodLabel: string;
-        sessionsTaught: string;
-        requestedPayout: string;
-        payoutDetails: string;
-        instructorNotes: string;
-      }
-    >
-  >({});
+  const [expandedClassKey, setExpandedClassKey] = useState<string | null>(null);
+  const [formByClass, setFormByClass] = useState<Record<string, TeacherPayrollFormFields>>({});
 
-  const updateForm = (
-    ck: string,
-    patch: Partial<{
-      periodLabel: string;
-      sessionsTaught: string;
-      requestedPayout: string;
-      payoutDetails: string;
-      instructorNotes: string;
-    }>,
-  ) => {
+  const updateForm = (ck: string, patch: Partial<TeacherPayrollFormFields>) => {
     setFormByClass((prev) => ({
       ...prev,
       [ck]: {
-        periodLabel: "",
-        sessionsTaught: "",
-        requestedPayout: "",
-        payoutDetails: "",
-        instructorNotes: "",
+        ...emptyTeacherPayrollForm(),
         ...(prev[ck] ?? {}),
         ...patch,
       },
@@ -127,30 +193,39 @@ export default function TeacherPayrollPage() {
 
   useEffect(() => {
     let cancelled = false;
+    const instructorName = user.name?.trim() || "Instructor";
     async function loadClasses() {
       setCoursesLoading(true);
       const local = teacherCoursesStore.getAll();
+      const demo = ensurePayrollSubmitDemo(instructorName);
       if (!user.id) {
-        if (!cancelled) setCourses(local);
+        const withDemo = [demo, ...local.filter((c) => c.id !== PAYROLL_SUBMIT_DEMO_COURSE_ID)];
+        if (!cancelled) setCourses(withDemo);
         if (!cancelled) setCoursesLoading(false);
         return;
       }
       try {
         const res = await eduhubCourses.getByLecturer(user.id);
-        const apiCourses: TeacherCourse[] = (res || []).map((c) => ({
-          id: c.id,
-          title: c.title,
-          description: "",
-          instructorName: c.lecturerName,
-          thumbnailUrl: c.thumbnailUrl,
-          enrollmentCount: c.enrollmentCount,
-          classMeetingsInSixMonths: c.classMeetingsInSixMonths,
-          classMeetingSlots: c.classMeetingSlots,
-          lessons: [],
-          createdAt: c.createdAt,
-          updatedAt: c.createdAt,
-          status: c.status,
-        }));
+        const apiCourses: TeacherCourse[] = (res || []).map((c) => {
+          const unit = c.pricing?.discountedAmount ?? c.pricing?.amount;
+          return {
+            id: c.id,
+            title: c.title,
+            description: "",
+            instructorName: c.lecturerName,
+            thumbnailUrl: c.thumbnailUrl,
+            enrollmentCount: c.enrollmentCount,
+            classMeetingsInSixMonths: c.classMeetingsInSixMonths,
+            classMeetingSlots: c.classMeetingSlots,
+            lessons: [],
+            createdAt: c.createdAt,
+            updatedAt: c.createdAt,
+            status: c.status,
+            ...(unit != null && unit > 0
+              ? { price: unit, priceCurrency: c.pricing?.currency }
+              : {}),
+          };
+        });
         const merged = [...apiCourses, ...local];
         // Keep this page lightweight; we don't enrich via GET /courses/{id} here.
         const dedup = new Map<string, TeacherCourse>();
@@ -159,9 +234,11 @@ export default function TeacherPayrollPage() {
           dedup.set(c.id, c);
         });
         const out = Array.from(dedup.values());
-        if (!cancelled) setCourses(out);
+        const withDemo = [demo, ...out.filter((c) => c.id !== PAYROLL_SUBMIT_DEMO_COURSE_ID)];
+        if (!cancelled) setCourses(withDemo);
       } catch {
-        if (!cancelled) setCourses(local);
+        const withDemo = [demo, ...local.filter((c) => c.id !== PAYROLL_SUBMIT_DEMO_COURSE_ID)];
+        if (!cancelled) setCourses(withDemo);
       } finally {
         if (!cancelled) setCoursesLoading(false);
       }
@@ -170,7 +247,7 @@ export default function TeacherPayrollPage() {
     return () => {
       cancelled = true;
     };
-  }, [user.id]);
+  }, [user.id, user.name]);
 
   const emailNorm = user.email.trim().toLowerCase();
   const nameNorm = (user.name ?? "").trim().toLowerCase();
@@ -178,32 +255,14 @@ export default function TeacherPayrollPage() {
 
   const allPayments = useAdminPayments();
   const payrollRequests = useInstructorPayrollRequests();
+  const proofMap = usePayrollProofMap();
 
-  const { payments, usingDemoPayrollFallback } = useMemo(() => {
+  const payments = useMemo(() => {
     const normE = emailNorm.trim().toLowerCase();
     const normN = nameNorm.trim().toLowerCase();
-    const matched =
-      normE || normN ? allPayments.filter((p) => paymentMatchesInstructor(p, normE, normN)) : ([] as AdminPaymentRow[]);
-    if (matched.length > 0) {
-      return { payments: matched, usingDemoPayrollFallback: false };
-    }
-    if (user.role === "teacher") {
-      const fromStore = allPayments.filter(
-        (p) => (p.lecturerEmail ?? "").trim().toLowerCase() === DEMO_TEACHER_PAYROLL_EMAIL,
-      );
-      const demo =
-        fromStore.length > 0
-          ? fromStore
-          : mockAdminPayments.filter(
-              (p) => (p.lecturerEmail ?? "").trim().toLowerCase() === DEMO_TEACHER_PAYROLL_EMAIL,
-            );
-      return {
-        payments: demo,
-        usingDemoPayrollFallback: demo.length > 0,
-      };
-    }
-    return { payments: matched, usingDemoPayrollFallback: false };
-  }, [allPayments, emailNorm, nameNorm, user.role]);
+    if (!normE && !normN) return [] as AdminPaymentRow[];
+    return allPayments.filter((p) => paymentMatchesInstructor(p, normE, normN));
+  }, [allPayments, emailNorm, nameNorm]);
 
   const filteredPayments = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -224,31 +283,61 @@ export default function TeacherPayrollPage() {
     );
   }, [payments, search]);
 
-  const classAggregates = useMemo(() => aggregatePaymentsByClass(filteredPayments), [filteredPayments]);
+  const classAggregates = useMemo(() => aggregatePaymentsByClass(payments), [payments]);
 
-  const activeCourseTitles = useMemo(() => {
-    if (coursesLoading) return [] as string[];
+  const instructorCourses = useMemo(() => {
+    if (coursesLoading) return [] as TeacherCourse[];
     const published = courses.filter((c) => c.status === "PUBLISHED");
-    const base = (published.length > 0 ? published : courses).filter((c) => c.title?.trim());
-    return base.map((c) => c.title.trim());
+    return (published.length > 0 ? published : courses).filter((c) => c.title?.trim());
   }, [courses, coursesLoading]);
 
-  const classCardModels = useMemo(() => {
-    // Prefer payment-driven cards (best: includes real section names).
-    if (classAggregates.length > 0) return classAggregates;
-    // Fallback: show teacher's active classes even when there are no payment rows yet.
-    return activeCourseTitles.map((title) => ({
-      className: title,
-      course: title,
-      lecturerName: instructorLabel,
-      lecturerEmail: emailNorm || undefined,
-      paymentCount: 0,
-      paidCount: 0,
-      unpaidCount: 0,
-      paidByCurrency: new Map<string, number>(),
-      outstandingByCurrency: new Map<string, number>(),
-    }));
-  }, [activeCourseTitles, classAggregates, emailNorm, instructorLabel]);
+  const classCardModels = useMemo((): TeacherPayrollClassRow[] => {
+    if (coursesLoading) return [];
+    return instructorCourses.map((course) => {
+      const title = course.title.trim();
+      const fromPayments = classAggregates.find((agg) => paymentAggregateMatchesCourse(title, agg));
+      if (fromPayments) {
+        return {
+          ...fromPayments,
+          courseId: course.id,
+          enrollmentCount: course.enrollmentCount ?? 0,
+        };
+      }
+      return {
+        className: title,
+        course: title,
+        lecturerName: course.instructorName || instructorLabel,
+        lecturerEmail: emailNorm || undefined,
+        paymentCount: 0,
+        paidCount: 0,
+        unpaidCount: 0,
+        paidByCurrency: new Map<string, number>(),
+        outstandingByCurrency: new Map<string, number>(),
+        courseId: course.id,
+        enrollmentCount: course.enrollmentCount ?? 0,
+      };
+    });
+  }, [classAggregates, coursesLoading, emailNorm, instructorCourses, instructorLabel]);
+
+  const { enrolledByCourseId, loading: enrolledStudentsLoading } = useTeacherPayrollClassStudents(
+    instructorCourses,
+    user.id,
+  );
+
+  const filteredClassCards = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return classCardModels;
+    return classCardModels.filter((agg) => {
+      if ([agg.className, agg.course].join(" ").toLowerCase().includes(q)) return true;
+      return filteredPayments.some((p) => {
+        if (p.className !== agg.className || p.course !== agg.course) return false;
+        return [p.studentName, p.studentEmail, p.reference, p.status, formatMoney(p.amount, p.currency)]
+          .join(" ")
+          .toLowerCase()
+          .includes(q);
+      });
+    });
+  }, [classCardModels, filteredPayments, search]);
 
   const totals = useMemo(() => {
     const byCurrency = new Map<string, number>();
@@ -262,29 +351,69 @@ export default function TeacherPayrollPage() {
 
   const classCardKey = (className: string, course: string) => `${className}\t${course}`;
 
-  const initFormIfMissing = (ck: string, suggestedPayout: string) => {
+  const mySubmissions = useMemo(() => {
+    return payrollRequests.filter((r) => {
+      const re = r.instructorEmailNorm.trim().toLowerCase();
+      const instructorMatch =
+        (emailNorm && re && re === emailNorm) ||
+        (!re && nameNorm && r.instructorName.trim().toLowerCase() === nameNorm);
+      if (!instructorMatch) return false;
+      if (coursesLoading || instructorCourses.length === 0) return false;
+      return resolveSubmissionCourse(r, instructorCourses) != null;
+    });
+  }, [payrollRequests, emailNorm, nameNorm, instructorCourses, coursesLoading]);
+
+  const filteredSubmissions = useMemo(() => {
+    const q = submissionSearch.trim().toLowerCase();
+    if (!q) return mySubmissions;
+    return mySubmissions.filter((r) => {
+      const hay = [
+        r.classSection,
+        r.course,
+        r.periodLabel,
+        r.sessionsTaught,
+        r.requestedPayout,
+        r.payoutDetails,
+        r.summary,
+        r.instructorNotes,
+        r.adminNote ?? "",
+        r.status,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [mySubmissions, submissionSearch]);
+
+  const sortedSubmissions = useMemo(
+    () => [...filteredSubmissions].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
+    [filteredSubmissions],
+  );
+
+  const pendingSubmissionCount = useMemo(
+    () => sortedSubmissions.filter((r) => r.status === "pending").length,
+    [sortedSubmissions],
+  );
+
+  const initFormIfMissing = (ck: string) => {
     setFormByClass((prev) => {
       if (prev[ck]) return prev;
-      const d = new Date();
-      const periodLabel = d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
       return {
         ...prev,
-        [ck]: {
-          periodLabel,
-          sessionsTaught: "",
-          requestedPayout: suggestedPayout,
-          payoutDetails: "",
-          instructorNotes: "",
-        },
+        [ck]: emptyTeacherPayrollForm(),
       };
     });
   };
 
-  const onSubmitRequest = (className: string, course: string, summary: string, suggestedPayout: string) => {
+  const onSubmitRequest = (className: string, course: string, summary: string) => {
     const ck = classCardKey(className, course);
-    initFormIfMissing(ck, suggestedPayout);
+    initFormIfMissing(ck);
     const f = formByClass[ck];
     if (!f) return;
+    if (!f.periodLabel.trim()) {
+      toast.error("Select a schedule period", { description: "Choose the month from your class schedule." });
+      return;
+    }
     const instructorNotes = f.instructorNotes.trim();
     const result = instructorPayrollRequestStore.submit({
       classSection: className,
@@ -316,7 +445,7 @@ export default function TeacherPayrollPage() {
           isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"
         }`}
       >
-        <div className="container mx-auto px-6 max-w-5xl">
+        <div className="container mx-auto px-6 max-w-7xl">
           <Link
             to="/dashboard/teacher"
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
@@ -325,390 +454,453 @@ export default function TeacherPayrollPage() {
             Back to Teacher Dashboard
           </Link>
 
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground" style={{ letterSpacing: "0.5px" }}>
-                Payroll
-              </h1>
-              <p className="text-foreground/60 text-sm mt-1 max-w-2xl">
-                Your classes and student payments (demo data). Submit a payroll request per class for admin approval; after
-                approval, finance may record payout proof separately.
-              </p>
-              {usingDemoPayrollFallback ? (
-                <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                  Showing sample tuition rows for this screen because none match your signed-in profile yet. After a
-                  billing API is connected, amounts will follow your classes. Payroll requests still use your account.
-                </p>
-              ) : null}
-            </div>
-            <Button asChild variant="outline" className="rounded-full w-full sm:w-auto">
-              <Link to="/dashboard/teacher/payroll/submissions">My submissions</Link>
-            </Button>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-foreground" style={{ letterSpacing: "0.5px" }}>
+              Payroll
+            </h1>
+            <p className="text-foreground/60 text-sm mt-1 max-w-2xl">
+              Your classes and linked student payments. Submit a payroll request per class for admin approval, then track
+              submissions on the My submissions tab.
+            </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3 mb-8">
-            <Card className="rounded-2xl border-slate-200/90 shadow-sm sm:col-span-2">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-slate-700">Total tuition in view</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1">
-                {totals.length === 0 ? (
-                  <p className="text-2xl font-semibold text-slate-900 tabular-nums">—</p>
-                ) : (
-                  totals.map((t) => (
-                    <p key={t.currency} className="text-2xl font-semibold text-slate-900 tabular-nums">
-                      {t.formatted}
-                    </p>
-                  ))
-                )}
-                <p className="text-xs text-slate-500">
-                  {filteredPayments.length} payment row(s) · {classAggregates.length} class section(s)
-                </p>
-              </CardContent>
-            </Card>
+          <Tabs defaultValue="payroll" className="w-full">
+            <TabsList className="mb-6 h-11 w-full sm:w-auto justify-start bg-slate-100/90 p-1 rounded-xl border border-slate-200/80">
+              <TabsTrigger value="payroll" className="rounded-lg px-4 data-[state=active]:shadow-sm">
+                Payroll
+              </TabsTrigger>
+              <TabsTrigger value="submissions" className="rounded-lg px-4 data-[state=active]:shadow-sm">
+                My submissions
+                {pendingSubmissionCount > 0 ? (
+                  <span className="ml-1.5 inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-amber-950">
+                    {pendingSubmissionCount}
+                  </span>
+                ) : null}
+              </TabsTrigger>
+            </TabsList>
 
-            <Card className="rounded-2xl border-slate-200/90 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-slate-700">Quick search</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <TabsContent value="payroll" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+          <Card className="rounded-2xl border-slate-200/90 shadow-sm overflow-hidden mb-12">
+            <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900">Your classes</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {filteredPayments.length} payment row{filteredPayments.length === 1 ? "" : "s"} ·{" "}
+                  {filteredClassCards.length} class{filteredClassCards.length === 1 ? "" : "es"}
+                  {totals.length > 0 ? (
+                    <>
+                      {" "}
+                      · Total in view{" "}
+                      {totals.map((t) => t.formatted).join(", ")}
+                    </>
+                  ) : null}
+                </p>
+              </div>
+              <div className="w-full sm:max-w-xs">
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Student, class, invoice…"
+                  placeholder="Search class, student, invoice…"
                   className="bg-white"
                 />
-              </CardContent>
-            </Card>
-          </div>
-
-          {missingProfile ? (
-            <p className="text-slate-500 text-sm mb-8">Sign in with a profile so we can match your classes.</p>
-          ) : classCardModels.length === 0 ? (
-            <p className="text-slate-500 text-sm mb-8">
-              {coursesLoading
-                ? "Loading your classes…"
-                : "No active classes yet. Create a class in My Class, then come back here to submit payroll."}
-            </p>
-          ) : (
-            <div className="grid gap-6 mb-12">
-              {classCardModels.map((agg) => {
-                const ck = classCardKey(agg.className, agg.course);
-                const rows = filteredPayments.filter((p) => p.className === agg.className && p.course === agg.course);
-                const totalStudents = new Set(
-                  rows.map((r) => {
-                    const e = r.studentEmail.trim().toLowerCase();
-                    return e || `name:${r.studentName.trim().toLowerCase()}`;
-                  }),
-                ).size;
-                const totalEnrolledMap = mergeCurrencyMaps(new Map(agg.paidByCurrency), new Map(agg.outstandingByCurrency));
-                const enrolledLines = currencyMapToFormattedLines(totalEnrolledMap);
-                const revenueSplit = estimateInstructorAndPlatformSplitLines(totalEnrolledMap);
-
-                const payoutLines = estimateInstructorPayoutLines(agg.paidByCurrency);
-                const summaryText = buildPayrollSummaryText(agg);
-                const suggestedPayout =
-                  payoutLines.length === 0 ? "" : payoutLines.map((l) => l.formatted).join(", ");
-                const latest = latestRequestForClass(
-                  payrollRequests,
-                  agg.className,
-                  agg.course,
-                  emailNorm,
-                  instructorLabel,
-                );
-                const hasPending = latest?.status === "pending";
-
-                let statusBadge: { label: string; className: string } | null = null;
-                if (hasPending) {
-                  statusBadge = { label: "Pending admin review", className: "bg-amber-100 text-amber-900" };
-                } else if (latest?.status === "approved") {
-                  statusBadge = {
-                    label: `Approved · ${latest.resolvedAt ? new Date(latest.resolvedAt).toLocaleDateString() : ""}`,
-                    className: "bg-emerald-100 text-emerald-900",
-                  };
-                } else if (latest?.status === "rejected") {
-                  statusBadge = {
-                    label: `Not approved · ${latest.resolvedAt ? new Date(latest.resolvedAt).toLocaleDateString() : ""}`,
-                    className: "bg-red-100 text-red-900",
-                  };
-                }
-
-                return (
-                  <Card key={ck} className="rounded-2xl border-slate-200/90 shadow-sm overflow-hidden">
-                    <CardHeader className="pb-4 border-b border-slate-100 bg-white">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <CardTitle className="text-[18px] leading-snug text-slate-900 truncate">{agg.className}</CardTitle>
-                          {agg.course && agg.course !== agg.className ? (
-                            <p className="text-sm text-slate-500 mt-0.5 truncate">{agg.course}</p>
-                          ) : null}
-                          <p className="text-xs text-slate-500 mt-2">
-                            {agg.paymentCount} invoice{agg.paymentCount === 1 ? "" : "s"} · {agg.paidCount} paid · {agg.unpaidCount} unpaid
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {statusBadge ? (
-                            <span
-                              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${statusBadge.className}`}
-                            >
-                              {statusBadge.label}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                              Ready
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-                            Total students
-                          </p>
-                          <div className="mt-1 text-base font-semibold tabular-nums text-slate-900">
-                            <span>{rows.length === 0 ? 0 : totalStudents}</span>
-                          </div>
-                          <p className="mt-1 text-[10px] text-slate-500 leading-snug">
-                            Unique students with a payment row (demo).
-                          </p>
-                        </div>
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-                            Total enrolled
-                          </p>
-                          <div className="mt-1 text-base font-semibold tabular-nums text-slate-900">
-                            {enrolledLines.length === 0 ? (
-                              <span className="text-slate-400">—</span>
-                            ) : (
-                              enrolledLines.map((l) => (
-                                <p key={l.currency} className="leading-snug">
-                                  {l.formatted}
-                                </p>
-                              ))
-                            )}
-                          </div>
-                          <p className="mt-1 text-[10px] text-slate-500 leading-snug">
-                            Sum of all student tuition rows (paid + outstanding).
-                          </p>
-                        </div>
-                        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-                            Revenue split
-                          </p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">
-                            {Math.round(INSTRUCTOR_REVENUE_SHARE * 100)}% instructor ·{" "}
-                            {Math.round(PLATFORM_REVENUE_SHARE * 100)}% platform (of total enrolled)
-                          </p>
-                          <div className="mt-2 space-y-2 text-sm">
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
-                                Instructor
-                              </p>
-                              <div className="font-semibold tabular-nums text-slate-900">
-                                {revenueSplit.instructorLines.length === 0 ? (
-                                  <span className="text-slate-400">—</span>
-                                ) : (
-                                  revenueSplit.instructorLines.map((l) => (
-                                    <p key={l.currency} className="leading-snug">
-                                      {l.formatted}
-                                    </p>
-                                  ))
-                                )}
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                                Platform
-                              </p>
-                              <div className="font-semibold tabular-nums text-slate-900">
-                                {revenueSplit.platformLines.length === 0 ? (
-                                  <span className="text-slate-400">—</span>
-                                ) : (
-                                  revenueSplit.platformLines.map((l) => (
-                                    <p key={l.currency} className="leading-snug">
-                                      {l.formatted}
-                                    </p>
-                                  ))
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="pt-5 space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                          {summaryText}
-                        </p>
-                        <Button
-                          type="button"
-                          className="w-full sm:w-auto bg-[#3954d0] hover:bg-[#2f46b3]"
-                          disabled={hasPending}
-                          onClick={() => {
-                            initFormIfMissing(ck, suggestedPayout);
-                            setOpenSubmitKey(ck);
-                          }}
-                        >
-                          {hasPending ? "Awaiting admin approval" : "Submit payroll"}
-                        </Button>
-                      </div>
-
-                      <Accordion type="single" collapsible className="w-full border border-slate-200 rounded-xl px-4">
-                        <AccordionItem value="students" className="border-0">
-                          <AccordionTrigger className="text-sm font-medium text-slate-800 py-3 hover:no-underline">
-                            View student payments ({rows.length})
-                          </AccordionTrigger>
-                          <AccordionContent>
-                            <div className="overflow-x-auto -mx-2 pb-2">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow className="bg-slate-50">
-                                    <TableHead>Student</TableHead>
-                                    <TableHead>Amount</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Due</TableHead>
-                                    <TableHead>Paid</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {rows.map((p) => (
-                                    <TableRow key={p.id}>
-                                      <TableCell className="font-medium text-slate-900">
-                                        <div className="min-w-0 max-w-[220px]">
-                                          <p className="truncate">{p.studentName}</p>
-                                          <p className="text-xs text-slate-500 truncate">{p.studentEmail}</p>
-                                        </div>
-                                      </TableCell>
-                                      <TableCell className="tabular-nums">{formatMoney(p.amount, p.currency)}</TableCell>
-                                      <TableCell>
-                                        <PaymentStatusBadge status={p.status} />
-                                      </TableCell>
-                                      <TableCell className="tabular-nums text-slate-700">{p.dueDate}</TableCell>
-                                      <TableCell className="tabular-nums text-slate-700">{p.paidAt ?? "—"}</TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-
-                      {latest?.status === "rejected" && latest.adminNote ? (
-                        <p className="text-sm text-red-800 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                          <span className="font-medium">Admin: </span>
-                          {latest.adminNote}
-                        </p>
-                      ) : null}
-
-                      <Dialog open={openSubmitKey === ck} onOpenChange={(open) => setOpenSubmitKey(open ? ck : null)}>
-                        <DialogContent className="max-w-xl">
-                          <DialogHeader>
-                            <DialogTitle>Submit payroll for approval</DialogTitle>
-                            <DialogDescription>
-                              {agg.className} · {agg.course}. Admin will review and approve or reject.
-                            </DialogDescription>
-                          </DialogHeader>
-
-                          <div className="grid gap-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div>
-                                <label className="text-xs font-medium text-slate-700" htmlFor={`period-${ck}`}>
-                                  Period
-                                </label>
-                                <Input
-                                  id={`period-${ck}`}
-                                  value={formByClass[ck]?.periodLabel ?? ""}
-                                  onChange={(e) => updateForm(ck, { periodLabel: e.target.value })}
-                                  placeholder="e.g. Apr 2026"
-                                  className="mt-1 bg-white"
-                                />
-                              </div>
-                              <div>
-                                <label className="text-xs font-medium text-slate-700" htmlFor={`sessions-${ck}`}>
-                                  Sessions taught
-                                </label>
-                                <Input
-                                  id={`sessions-${ck}`}
-                                  value={formByClass[ck]?.sessionsTaught ?? ""}
-                                  onChange={(e) => updateForm(ck, { sessionsTaught: e.target.value })}
-                                  placeholder="e.g. 8/9"
-                                  className="mt-1 bg-white"
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="text-xs font-medium text-slate-700" htmlFor={`requested-${ck}`}>
-                                Requested payout
-                              </label>
-                              <Input
-                                id={`requested-${ck}`}
-                                value={formByClass[ck]?.requestedPayout ?? ""}
-                                onChange={(e) => updateForm(ck, { requestedPayout: e.target.value })}
-                                placeholder="e.g. 2,100,000 UZS"
-                                className="mt-1 bg-white"
-                              />
-                              <p className="text-[11px] text-slate-500 mt-1">
-                                Suggestion (demo): {suggestedPayout || "—"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <label className="text-xs font-medium text-slate-700" htmlFor={`payout-${ck}`}>
-                                Payout details (optional)
-                              </label>
-                              <Input
-                                id={`payout-${ck}`}
-                                value={formByClass[ck]?.payoutDetails ?? ""}
-                                onChange={(e) => updateForm(ck, { payoutDetails: e.target.value })}
-                                placeholder="Bank account / card / reference…"
-                                className="mt-1 bg-white"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="text-xs font-medium text-slate-700" htmlFor={`notes-${ck}`}>
-                                Notes to admin (optional)
-                              </label>
-                              <Textarea
-                                id={`notes-${ck}`}
-                                value={formByClass[ck]?.instructorNotes ?? ""}
-                                onChange={(e) => updateForm(ck, { instructorNotes: e.target.value })}
-                                placeholder="Any context for the admin…"
-                                className="mt-1 bg-white min-h-[90px]"
-                              />
-                            </div>
-
-                            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                              <span className="font-medium text-slate-700">System summary:</span> {summaryText}
-                            </div>
-                          </div>
-
-                          <DialogFooter className="gap-2 sm:gap-2">
-                            <Button type="button" variant="outline" onClick={() => setOpenSubmitKey(null)}>
-                              Cancel
-                            </Button>
-                            <Button
-                              type="button"
-                              className="bg-[#3954d0] hover:bg-[#2f46b3]"
-                              onClick={() => onSubmitRequest(agg.className, agg.course, summaryText, suggestedPayout)}
-                            >
-                              Submit to admin
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              </div>
             </div>
-          )}
+
+            {missingProfile ? (
+              <p className="px-6 py-8 text-sm text-slate-500">Sign in with a profile so we can match your classes.</p>
+            ) : filteredClassCards.length === 0 ? (
+              <p className="px-6 py-8 text-sm text-slate-500">
+                {coursesLoading
+                  ? "Loading your classes…"
+                  : classCardModels.length > 0
+                    ? "No classes match your search."
+                    : "No active classes yet. Create a class in My Class, then come back here to submit payroll."}
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+                      <TableHead className="w-10" />
+                      <TableHead>Class</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Students</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Invoices</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Total tuition</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Your share</TableHead>
+                      <TableHead className="whitespace-nowrap">Request</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredClassCards.map((agg) => {
+                      const ck = classCardKey(agg.className, agg.course);
+                      const course = instructorCourses.find((item) => item.id === agg.courseId);
+                      const enrolled = enrolledByCourseId.get(agg.courseId) ?? [];
+                      const studentRows = course
+                        ? buildTeacherPayrollStudentRows(course, enrolled, payments, agg.className, agg.course)
+                        : [];
+                      const rowSummary = summarizeTeacherPayrollStudentRows(studentRows);
+                      const rows = filteredPayments.filter((p) => p.className === agg.className && p.course === agg.course);
+                      const totalStudents =
+                        studentRows.length > 0 ? studentRows.length : agg.enrollmentCount;
+                      const paidCount = studentRows.length > 0 ? rowSummary.paidCount : agg.paidCount;
+                      const unpaidCount = studentRows.length > 0 ? rowSummary.unpaidCount : agg.unpaidCount;
+                      const totalEnrolledMap =
+                        studentRows.length > 0
+                          ? mergeCurrencyMaps(rowSummary.paidByCurrency, rowSummary.outstandingByCurrency)
+                          : mergeCurrencyMaps(new Map(agg.paidByCurrency), new Map(agg.outstandingByCurrency));
+                      const enrolledLines = currencyMapToFormattedLines(totalEnrolledMap);
+                      const revenueSplit = estimateInstructorAndPlatformSplitLines(totalEnrolledMap);
+                      const summaryText =
+                        studentRows.length > 0
+                          ? buildPayrollSummaryText({
+                              ...agg,
+                              paymentCount: studentRows.length,
+                              paidCount: rowSummary.paidCount,
+                              unpaidCount: rowSummary.unpaidCount,
+                              paidByCurrency: rowSummary.paidByCurrency,
+                              outstandingByCurrency: rowSummary.outstandingByCurrency,
+                            })
+                          : buildPayrollSummaryText(agg);
+                      const paidStudentCount = studentRows.filter((row) => row.status === "paid").length;
+                      const paymentCurrency =
+                        studentRows.find((row) => row.currency)?.currency ??
+                        course?.priceCurrency ??
+                        rows[0]?.currency ??
+                        "UZS";
+                      const paidPaymentAmounts = studentRows
+                        .filter((row) => row.status === "paid" && row.amount != null)
+                        .map((row) => row.amount as number);
+                      const latest = latestRequestForClass(
+                        payrollRequests,
+                        agg.className,
+                        agg.course,
+                        emailNorm,
+                        instructorLabel,
+                      );
+                      const hasPending = latest?.status === "pending";
+                      const statusBadge = payrollRequestStatusBadge(latest, hasPending);
+                      const classPayrollRequests = payrollRequests.filter(
+                        (request) =>
+                          instructorPayrollRequestDedupeKey(
+                            request.classSection,
+                            request.course,
+                            request.instructorEmailNorm,
+                            request.instructorName,
+                          ) ===
+                          instructorPayrollRequestDedupeKey(
+                            agg.className,
+                            agg.course,
+                            emailNorm,
+                            instructorLabel,
+                          ),
+                      );
+                      const isExpanded = expandedClassKey === ck;
+
+                      return (
+                        <Fragment key={ck}>
+                          <TableRow className="align-top">
+                            <TableCell className="py-4">
+                              <button
+                                type="button"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                                aria-expanded={isExpanded}
+                                aria-label={isExpanded ? "Hide student payments" : "Show student payments"}
+                                onClick={() => setExpandedClassKey(isExpanded ? null : ck)}
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="h-4 w-4" aria-hidden />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" aria-hidden />
+                                )}
+                              </button>
+                            </TableCell>
+                            <TableCell className="py-4 min-w-[160px]">
+                              <p className="font-medium text-slate-900">
+                                {agg.className}
+                                {isPayrollSubmitDemoCourse({ id: agg.courseId }) ? (
+                                  <span className="ml-2 inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-800">
+                                    Demo
+                                  </span>
+                                ) : null}
+                              </p>
+                              {isPayrollSubmitDemoCourse({ id: agg.courseId }) ? (
+                                <p className="mt-1 text-[11px] text-violet-700">3-month schedule complete — ready to submit payroll</p>
+                              ) : null}
+                              {latest?.status === "rejected" && latest.adminNote ? (
+                                <p className="mt-1 text-[11px] leading-snug text-red-700 line-clamp-2" title={latest.adminNote}>
+                                  Admin: {latest.adminNote}
+                                </p>
+                              ) : null}
+                            </TableCell>
+                            <TableCell className="py-4 text-right tabular-nums text-slate-900">
+                              {totalStudents}
+                            </TableCell>
+                            <TableCell className="py-4 text-right text-sm text-slate-700 whitespace-nowrap">
+                              <span className="tabular-nums">{paidCount} paid</span>
+                              <span className="text-slate-400"> · </span>
+                              <span className="tabular-nums">{unpaidCount} unpaid</span>
+                            </TableCell>
+                            <TableCell className="py-4 text-right tabular-nums text-slate-900 whitespace-nowrap">
+                              {enrolledLines.length === 0 ? (
+                                "—"
+                              ) : (
+                                enrolledLines.map((l) => <p key={l.currency}>{l.formatted}</p>)
+                              )}
+                            </TableCell>
+                            <TableCell className="py-4 text-right tabular-nums font-medium text-emerald-800 whitespace-nowrap">
+                              {revenueSplit.instructorLines.length === 0 ? (
+                                "—"
+                              ) : (
+                                revenueSplit.instructorLines.map((l) => <p key={l.currency}>{l.formatted}</p>)
+                              )}
+                              <p className="mt-0.5 text-[10px] font-normal text-slate-500">
+                                {Math.round(INSTRUCTOR_REVENUE_SHARE * 100)}% of tuition
+                              </p>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <span
+                                className={cn(
+                                  "inline-flex max-w-[140px] items-center rounded-full px-2.5 py-1 text-[11px] font-medium ring-1",
+                                  statusBadge.className,
+                                )}
+                              >
+                                {statusBadge.label}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-4 text-right">
+                              <Button
+                                type="button"
+                                size="sm"
+                                className="bg-[#3954d0] hover:bg-[#2f46b3] whitespace-nowrap"
+                                onClick={() => {
+                                  initFormIfMissing(ck);
+                                  setOpenSubmitKey(ck);
+                                }}
+                              >
+                                Submit payroll
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                          {isExpanded ? (
+                            <TableRow key={`${ck}-payments`} className="bg-slate-50/50 hover:bg-slate-50/50">
+                              <TableCell colSpan={8} className="px-4 py-4 sm:px-6">
+                                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                                  <div className="border-b border-slate-100 px-4 py-3">
+                                    <p className="text-sm font-medium text-slate-900">Enrolled students</p>
+                                    <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">{summaryText}</p>
+                                  </div>
+                                  <div className="overflow-x-auto">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+                                          <TableHead>Student</TableHead>
+                                          <TableHead>Amount</TableHead>
+                                          <TableHead>Status</TableHead>
+                                          <TableHead>Due</TableHead>
+                                          <TableHead>Paid</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {enrolledStudentsLoading ? (
+                                          <TableRow>
+                                            <TableCell colSpan={5} className="py-6 text-center text-sm text-slate-500">
+                                              Loading enrolled students…
+                                            </TableCell>
+                                          </TableRow>
+                                        ) : studentRows.length === 0 ? (
+                                          <TableRow>
+                                            <TableCell colSpan={5} className="py-6 text-center text-sm text-slate-500">
+                                              No enrolled students for this class yet.
+                                            </TableCell>
+                                          </TableRow>
+                                        ) : (
+                                          studentRows.map((student) => (
+                                            <TableRow key={student.id}>
+                                              <TableCell className="font-medium text-slate-900">
+                                                <div className="min-w-0 max-w-[240px]">
+                                                  <p className="truncate">{student.studentName}</p>
+                                                  <p className="text-xs text-slate-500 truncate">{student.studentEmail}</p>
+                                                </div>
+                                              </TableCell>
+                                              <TableCell className="tabular-nums whitespace-nowrap">
+                                                {student.amount != null && student.amount > 0
+                                                  ? formatMoney(student.amount, student.currency)
+                                                  : "—"}
+                                              </TableCell>
+                                              <TableCell>
+                                                <StudentPayrollStatusBadge status={student.status} />
+                                              </TableCell>
+                                              <TableCell className="tabular-nums text-slate-700 whitespace-nowrap">
+                                                {student.dueDate ?? "—"}
+                                              </TableCell>
+                                              <TableCell className="tabular-nums text-slate-700 whitespace-nowrap">
+                                                {student.paidAt ?? "—"}
+                                              </TableCell>
+                                            </TableRow>
+                                          ))
+                                        )}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ) : null}
+                          <TeacherPayrollSubmitDialog
+                            key={`${ck}-dialog`}
+                            open={openSubmitKey === ck}
+                            onOpenChange={(open) => setOpenSubmitKey(open ? ck : null)}
+                            className={agg.className}
+                            course={agg.course}
+                            formKey={ck}
+                            form={formByClass[ck]}
+                            onFormChange={(patch) => updateForm(ck, patch)}
+                            summaryText={summaryText}
+                            enrolledStudentCount={studentRows.length}
+                            paidStudentCount={paidStudentCount}
+                            paymentCurrency={paymentCurrency}
+                            paidPaymentAmounts={paidPaymentAmounts}
+                            existingClassRequests={classPayrollRequests}
+                            onSubmit={() => onSubmitRequest(agg.className, agg.course, summaryText)}
+                          />
+                        </Fragment>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </Card>
+            </TabsContent>
+
+            <TabsContent value="submissions" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+          <section className="mb-12">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground tracking-tight">My submissions</h2>
+                <p className="text-foreground/60 text-sm mt-1 max-w-2xl">
+                  Track your monthly submissions (pending / approved / not approved). After admin records a bank transfer,{" "}
+                  <span className="text-foreground/75">Transfer proof</span> shows here and you get a notification.
+                </p>
+              </div>
+              <Button asChild variant="outline" className="rounded-full w-full sm:w-auto">
+                <Link to="/dashboard/teacher/notifications">View notifications</Link>
+              </Button>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3 mb-6">
+              <Card className="rounded-2xl border-slate-200/90 shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-slate-700">Total submissions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-semibold text-slate-900 tabular-nums">{sortedSubmissions.length}</p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-2xl border-slate-200/90 shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-slate-700">Pending</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-semibold text-slate-900 tabular-nums">{pendingSubmissionCount}</p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-2xl border-slate-200/90 shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-slate-700">Search</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" aria-hidden />
+                    <Input
+                      value={submissionSearch}
+                      onChange={(e) => setSubmissionSearch(e.target.value)}
+                      placeholder="Class, period, status…"
+                      className="bg-white pl-9"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {sortedSubmissions.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center text-sm text-slate-600">
+                {coursesLoading
+                  ? "Loading submissions for your classes…"
+                  : instructorCourses.length === 0
+                    ? "Create a class in My Class, then submit payroll from the Payroll tab to see submissions here."
+                    : "No submissions yet for your classes. Submit payroll from the Payroll tab when you are ready."}
+              </div>
+            ) : (
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50">
+                      <TableHead>Class</TableHead>
+                      <TableHead>Period</TableHead>
+                      <TableHead>Requested</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Transfer proof</TableHead>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead>Admin note</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedSubmissions.map((r) => {
+                      const matchedCourse = resolveSubmissionCourse(r, instructorCourses);
+                      const classTitle = matchedCourse?.title.trim() || r.classSection.trim() || r.course.trim();
+                      const classSubtitle =
+                        matchedCourse?.status === "PUBLISHED"
+                          ? `${matchedCourse.enrollmentCount ?? 0} enrolled`
+                          : matchedCourse?.status
+                            ? matchedCourse.status.replace(/_/g, " ").toLowerCase()
+                            : null;
+                      const proofOnFile = hasPayrollProofFile(proofMap[payrollProofKey(r.classSection, r.course)]);
+                      return (
+                        <TableRow key={r.id}>
+                          <TableCell className="font-medium text-slate-900">
+                            <div className="min-w-0">
+                              <p className="truncate">{classTitle}</p>
+                              {classSubtitle ? (
+                                <p className="text-xs text-slate-500 truncate capitalize">{classSubtitle}</p>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-slate-700">{r.periodLabel || "—"}</TableCell>
+                          <TableCell className="text-slate-700 tabular-nums">
+                            {r.requestedPayout ? formatThousandsInText(r.requestedPayout) : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <SubmissionStatusPill status={r.status} />
+                          </TableCell>
+                          <TableCell className="text-slate-600">
+                            {proofOnFile ? (
+                              <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-900">
+                                On file
+                              </span>
+                            ) : r.status === "approved" ? (
+                              <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                                Awaiting admin
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-slate-600">{formatRelativeTime(r.submittedAt)}</TableCell>
+                          <TableCell className="text-slate-600">
+                            <span className="line-clamp-2">{r.adminNote?.trim() || "—"}</span>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </section>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>

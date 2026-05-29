@@ -19,6 +19,7 @@ import {
   type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
 import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
+import { formatDisplayTitle } from "@/lib/formatPersonName";
 
 type PaymentMonth = 1 | 2 | 3;
 
@@ -180,7 +181,9 @@ export function ClassSchedulePreviewPanel({
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             {customTitle ? (
-                              <p className="text-sm font-semibold tracking-tight text-zinc-900">{customTitle}</p>
+                              <p className="text-sm font-semibold tracking-tight text-zinc-900">
+                                {formatDisplayTitle(customTitle)}
+                              </p>
                             ) : (
                               <span className="inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-zinc-600 ring-1 ring-zinc-200/90">
                                 Meeting {meetingNum}

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { eduhubAuth, setAuthTokens } from "@/api/eduhubClient";
 import { appRoutes } from "@/app/routes";
-import { setSessionUser, useAuthSession } from "@/features/auth/context";
+import { resolveAvatarFromAuthResponse, setSessionUser, useAuthSession } from "@/features/auth/context";
 import type { UserRole } from "@/features/auth/types";
 import { resolveInstructorCategory } from "@/features/teacher/resolveInstructorCategory";
 
@@ -63,7 +63,7 @@ const SignIn = () => {
         name: res.user.fullName,
         email: res.user.email,
         role,
-        avatarUrl: res.user.avatarUrl,
+        avatarUrl: resolveAvatarFromAuthResponse(res.user.avatarUrl, res.user.email),
         phoneNumber: res.user.phoneNumber ?? fromRegistration ?? localStorage.getItem("userPhone") ?? undefined,
         category,
       });

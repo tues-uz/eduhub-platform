@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   BookOpen,
   CalendarDays,
@@ -57,9 +57,9 @@ function EnrollmentStatCard({ label, value, icon: Icon }: EnrollmentStat) {
 }
 
 function statusBadgeClass(status: string): string {
-  if (status === "Completed") return "bg-green-600 text-white";
-  if (status === "Almost Complete") return "bg-[#3954d0] text-white";
-  return "border border-yellow-200/80 bg-yellow-50 text-yellow-900";
+  if (status === "Completed") return "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80";
+  if (status === "Almost Complete") return "bg-blue-50 text-blue-900 ring-1 ring-blue-200/80";
+  return "bg-yellow-50 text-yellow-900 ring-1 ring-yellow-200/80";
 }
 
 function isEmptyMeta(value: string | undefined): boolean {
@@ -79,10 +79,15 @@ function lessonSummary(modules: number, duration: string): string | null {
 }
 
 const StudentCourses = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const scheduleSummaries = useStudentCourseScheduleSummaries(enrolledCourses);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") ?? "");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get("q") ?? "");
+  }, [searchParams]);
 
   const filteredCourses = enrolledCourses.filter((course) => {
     const matchesSearch =
@@ -112,7 +117,7 @@ const StudentCourses = () => {
               <div className="min-w-0 flex-1">
                 <h1
                   className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-                  style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.02em" }}
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
                   My Class
                 </h1>
@@ -144,7 +149,20 @@ const StudentCourses = () => {
                 type="search"
                 placeholder="Search by class name, instructor, or category..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchQuery(value);
+                  setSearchParams(
+                    (prev) => {
+                      const next = new URLSearchParams(prev);
+                      const trimmed = value.trim();
+                      if (trimmed) next.set("q", trimmed);
+                      else next.delete("q");
+                      return next;
+                    },
+                    { replace: true },
+                  );
+                }}
                 className="h-11 rounded-xl border-gray-200 pl-10"
               />
             </div>
@@ -180,7 +198,7 @@ const StudentCourses = () => {
               return (
               <div
                 key={course.id}
-                className="relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md transition-shadow hover:shadow-lg"
+                className="group relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md transition-shadow hover:shadow-lg"
               >
                 <Link
                   to={`/dashboard/courses/${course.id}`}
@@ -192,7 +210,7 @@ const StudentCourses = () => {
                       alt=""
                       loading="lazy"
                       decoding="async"
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center" aria-hidden>
@@ -224,9 +242,9 @@ const StudentCourses = () => {
                     </time>
                   </div>
 
-                  <Link to={`/dashboard/courses/${course.id}`} className="group mt-2 block">
+                  <Link to={`/dashboard/courses/${course.id}`} className="mt-2 block">
                     <h5
-                      className="line-clamp-2 text-lg font-bold leading-snug tracking-tight text-slate-900 group-hover:text-[#3954d0]"
+                      className="line-clamp-2 text-lg font-bold leading-snug tracking-tight text-slate-900"
                       style={{ fontFamily: "'DM Sans', sans-serif" }}
                     >
                       {course.title}
@@ -260,11 +278,11 @@ const StudentCourses = () => {
                         <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#3954d0]/70" aria-hidden />
                         Schedule
                       </span>
-                      <span className="text-xs tabular-nums text-slate-700">
-                        <span className="font-semibold text-slate-900">{scheduleSummary.reached}</span>
-                        <span className="text-slate-400"> / </span>
-                        <span className="font-medium">{scheduleSummary.total}</span>
-                        <span className="text-slate-500">{" sessions"}</span>
+                      <span className="text-xs font-semibold tabular-nums text-slate-900">
+                        {scheduleSummary.reached}
+                        <span className="text-slate-500"> / </span>
+                        {scheduleSummary.total}
+                        <span className="text-slate-700"> sessions</span>
                       </span>
                     </div>
                   ) : null}
@@ -316,6 +334,14 @@ const StudentCourses = () => {
                 onClick={() => {
                   setSearchQuery("");
                   setStatusFilter("all");
+                  setSearchParams(
+                    (prev) => {
+                      const next = new URLSearchParams(prev);
+                      next.delete("q");
+                      return next;
+                    },
+                    { replace: true },
+                  );
                 }}
               >
                 Clear filters

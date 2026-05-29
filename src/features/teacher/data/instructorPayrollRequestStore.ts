@@ -3,6 +3,7 @@ import {
   notifyAdminInstructorPayrollRequest,
   notifyInstructorPayrollRequestDecision,
 } from "@/features/notifications/appNotificationStore";
+import { parsePayrollPeriodYearMonth } from "@/features/payroll/payrollScheduleEligibility";
 
 const STORAGE_KEY = "eduhub.instructorPayrollRequests.v1";
 
@@ -144,20 +145,30 @@ export const instructorPayrollRequestStore = {
     summary: string;
     instructorNotes: string;
   }): { ok: true; record: InstructorPayrollRequestRecord } | { ok: false; reason: string } {
-    const key = instructorPayrollRequestDedupeKey(
+    const classKey = instructorPayrollRequestDedupeKey(
       opts.classSection,
       opts.course,
       opts.instructorEmailNorm,
       opts.instructorName,
     );
-    const hasPending = snapshot.some((r) => r.status === "pending" && instructorPayrollRequestDedupeKey(
-      r.classSection,
-      r.course,
-      r.instructorEmailNorm,
-      r.instructorName,
-    ) === key);
-    if (hasPending) {
-      return { ok: false, reason: "You already have a pending request for this class." };
+    const periodYm = parsePayrollPeriodYearMonth(opts.periodLabel, new Date().toISOString());
+    const alreadySubmitted = snapshot.some((r) => {
+      if (instructorPayrollRequestDedupeKey(r.classSection, r.course, r.instructorEmailNorm, r.instructorName) !== classKey) {
+        return false;
+      }
+      if (r.status === "rejected") return false;
+      if (periodYm) {
+        return parsePayrollPeriodYearMonth(r.periodLabel, r.submittedAt) === periodYm;
+      }
+      return r.status === "pending";
+    });
+    if (alreadySubmitted) {
+      return {
+        ok: false,
+        reason: periodYm
+          ? `Payroll for ${opts.periodLabel.trim()} was already submitted for this class.`
+          : "You already have a pending request for this class.",
+      };
     }
 
     const record: InstructorPayrollRequestRecord = {

@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { eduhubAuth, eduhubUploadFile, getAccessToken } from "@/api/eduhubClient";
 import type { UserResponse } from "@/api/eduhubTypes";
-import { setSessionUser, useAuthSession } from "@/features/auth/context";
 import {
   registrationBirthCityForEmail,
   registrationDateOfBirthForEmail,
@@ -16,6 +15,8 @@ import {
   registrationPassportForEmail,
   registrationPhoneForEmail,
 } from "@/features/auth/registrationPhoneStorage";
+import { setSessionUser, useAuthSession } from "@/features/auth/context";
+import { instructorProfileAvatarsStore } from "@/features/teacher/data/instructorProfileAvatarsStore";
 import { formatDisplayPersonName, profileInitials } from "@/lib/formatPersonName";
 
 function formatRegistrationDate(value: string): string {
@@ -35,7 +36,7 @@ function RegistrationDetail({
   value: string;
 }) {
   return (
-    <div className="rounded-lg border border-gray-100 bg-gray-50/60 px-4 py-3">
+    <div className="rounded-xl border border-gray-100 bg-gray-50/60 px-4 py-3">
       <div className="mb-1 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-foreground/50">
         <Icon className="h-3.5 w-3.5" aria-hidden />
         {label}
@@ -96,6 +97,7 @@ const StudentSettings = () => {
       avatarUrl: updates.avatarUrl !== undefined ? updates.avatarUrl || undefined : avatarUrl || undefined,
     };
     setSessionUser(next);
+    instructorProfileAvatarsStore.set(next.email, next.name, next.avatarUrl);
     refreshUser();
 
     if (getAccessToken()) {
@@ -152,7 +154,7 @@ const StudentSettings = () => {
         <p className="text-foreground/70 text-sm">Manage your account and preferences.</p>
       </div>
       <form onSubmit={handleSave} className="space-y-8">
-        <div className="rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm">
+        <div className="rounded-xl border border-gray-200/50 bg-white/80 p-4 shadow-sm sm:p-6">
           <h2
             className="mb-4 flex items-center gap-2 font-semibold text-foreground"
             style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.5px" }}
@@ -229,7 +231,7 @@ const StudentSettings = () => {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1.5"
+                className="mt-1.5 rounded-xl"
                 placeholder="Your name"
               />
             </div>
@@ -240,7 +242,7 @@ const StudentSettings = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1.5"
+                className="mt-1.5 rounded-xl"
                 placeholder="your@email.com"
               />
             </div>
@@ -265,7 +267,7 @@ const StudentSettings = () => {
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm">
+        <div className="rounded-xl border border-gray-200/50 bg-white/80 p-4 shadow-sm sm:p-6">
           <h2
             className="mb-4 flex items-center gap-2 font-semibold text-foreground"
             style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.5px" }}

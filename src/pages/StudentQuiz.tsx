@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ClipboardList, CheckCircle2 } from "@/lib/icons";
+import { ClipboardList, CheckCircle2, Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
-import { useAuthSession } from "@/features/auth/context";
+import { StudentQuizListEmptyState } from "@/components/StudentQuizListEmptyState";
 import { eduhubCourseQuizzes, eduhubEnrollments, QuizResponseForStudent, QuizResultResponse } from "@/api/eduhubClient";
 
 const LETTER_COLORS = ["bg-blue-500", "bg-red-500", "bg-amber-500", "bg-green-500"] as const;
 
 export default function StudentQuiz() {
-  const { user } = useAuthSession();
   const [searchParams] = useSearchParams();
   const filterCourseId = searchParams.get("courseId");
   const [quizzes, setQuizzes] = useState<QuizResponseForStudent[]>([]);
@@ -118,22 +117,35 @@ export default function StudentQuiz() {
   };
 
   return (
-    <div className="w-full max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="w-full" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           {screen === "list" && (
             <>
-              <div className="mb-8">
-                <p className="text-foreground/70 text-sm">Choose a quiz and answer multiple choice questions (A, B, C, D).</p>
-              </div>
-
               {loading ? (
-                <div className="py-12 text-center text-gray-500">Loading quizzes...</div>
-              ) : quizzes.length === 0 ? (
-                <div className="rounded-xl border border-gray-200/50 bg-white/80 p-8 text-center">
-                  <ClipboardList className="mx-auto h-12 w-12 text-foreground/30 mb-3" />
-                  <p className="text-foreground/60">No quizzes available yet. Your teacher may add placement tests or quizzes soon.</p>
+                <div className="flex min-h-[min(28rem,calc(100dvh-18rem))] w-full flex-col items-center justify-center px-4 py-12 text-zinc-400">
+                  <Loader2 className="mb-4 h-10 w-10 animate-spin" />
+                  <p className="text-sm">Loading quizzes…</p>
                 </div>
+              ) : quizzes.length === 0 ? (
+                <StudentQuizListEmptyState
+                  title="No quizzes yet"
+                  description="When your teacher adds quizzes to your enrolled classes, they'll appear here."
+                  action={
+                    <Button
+                      asChild
+                      className="mx-auto h-10 rounded-xl bg-[#3954d0] px-4 text-sm font-medium hover:bg-[#2f47b3]"
+                    >
+                      <Link to="/dashboard/courses">Go to My Class</Link>
+                    </Button>
+                  }
+                />
               ) : (
-                <div className="space-y-4">
+                <div className="mx-auto w-full max-w-3xl">
+                  <div className="mb-8">
+                    <p className="text-sm text-foreground/70">
+                      Choose a quiz and answer multiple choice questions (A, B, C, D).
+                    </p>
+                  </div>
+                  <div className="space-y-4">
                   {quizzes.map((quiz) => {
                     const completed = completedQuizIds.has(quiz.id);
                     return (
@@ -174,6 +186,7 @@ export default function StudentQuiz() {
                       </div>
                     );
                   })}
+                  </div>
                 </div>
               )}
             </>

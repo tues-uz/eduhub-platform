@@ -7,7 +7,6 @@ import {
   Settings,
   Bell,
   ClipboardList,
-  ListChecks,
   GraduationCap,
   Library,
   Users,
@@ -34,7 +33,6 @@ export const studentMenuItems: FlatMenuItem[] = [
   { icon: BookOpen, label: "My Class", path: "/dashboard/courses" },
   { icon: Library, label: "Available Classes", path: "/dashboard/available-courses" },
   { icon: CreditCard, label: "Payment history", path: "/dashboard/payment" },
-  { icon: ListChecks, label: "Placement Test", path: "/dashboard/placement-tests" },
   { icon: ClipboardList, label: "Quiz", path: "/dashboard/quiz" },
   { icon: Award, label: "Certificates", path: "/dashboard/certificates" },
   { icon: Settings, label: "Settings", path: "/dashboard/settings" },
@@ -64,6 +62,8 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
       { label: "Enrollment applications", path: "/dashboard/admin/enrollment-applications" },
       { label: "Classes & rosters", path: "/dashboard/admin/classes" },
       { label: "Student promos", path: "/dashboard/admin/promos" },
+      { label: "Referral & discount codes", path: "/dashboard/admin/referral-codes" },
+      { label: "Special tuition grants", path: "/dashboard/admin/special-tuition" },
     ],
   },
   {
@@ -72,8 +72,6 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
     children: [
       { label: "Payments & reminders", path: "/dashboard/admin/payments" },
       { label: "Payroll", path: "/dashboard/admin/payroll" },
-      { label: "Instructor payroll requests", path: "/dashboard/admin/payroll/instructor-requests" },
-      { label: "Payout proof log", path: "/dashboard/admin/payroll/submissions" },
       { label: "Transactions", path: "/dashboard/admin/transactions" },
       { label: "Attendance & progress", path: "/dashboard/admin/attendance" },
       { label: "Placement tests", path: "/dashboard/admin/placement-tests" },
@@ -102,13 +100,6 @@ export const teacherMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
   },
   { icon: Calendar, label: "Schedule approvals", path: "/dashboard/teacher/schedule" },
   { icon: Bell, label: "Notifications", path: "/dashboard/teacher/notifications" },
-  {
-    icon: CreditCard,
-    label: "Payroll",
-    children: [
-      { label: "Overview", path: "/dashboard/teacher/payroll" },
-      { label: "Submissions", path: "/dashboard/teacher/payroll/submissions" },
-    ],
-  },
+  { icon: CreditCard, label: "Payroll", path: "/dashboard/teacher/payroll" },
   { icon: Settings, label: "Settings", path: "/dashboard/teacher/settings" },
 ];

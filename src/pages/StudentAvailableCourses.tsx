@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { BookOpen, Search, Loader2, PlayCircle } from "@/lib/icons";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { BookOpen, Search, Loader2, PlayCircle, CalendarDays } from "@/lib/icons";
 import { InstructorAvatar } from "@/components/InstructorAvatar";
 import { StudentAvatarGroup } from "@/components/StudentAvatarGroup";
 import type { StudentAvatarPreview } from "@/components/StudentAvatarGroup";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useAuthSession } from "@/features/auth/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
+import { useStudentCourseScheduleSummaries } from "@/features/student/hooks/useStudentCourseScheduleSummaries";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { eduhubCourses } from "@/api/eduhubClient";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
@@ -29,6 +30,9 @@ import { resolveEnrolledStudentPreviews } from "@/features/student/enrolledStude
 import { StudentPromoCarousel } from "@/features/student/components/StudentPromoCarousel";
 import { COURSE_CATEGORY_OPTIONS } from "@/features/courses/courseCategories";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
+import { tuitionForJoinFromMeeting } from "@/features/enrollment/enrollmentSessionTuition";
+import { resolveInstructorAvatarUrl } from "@/features/teacher/resolveInstructorAvatarUrl";
+import type { CourseScheduleSummary } from "@/features/student/courseScheduleSummary";
 
 type AvailableCourseItem = {
   id: string;
@@ -57,6 +61,37 @@ function formatPrice(price: number | undefined, currency = "USD"): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
 }
 
+function resolveCardTuition(
+  price: number | undefined,
+  scheduleSummary: CourseScheduleSummary | undefined,
+  enrollmentStatus: StudentCourseEnrollmentDisplayStatus,
+): {
+  amount: number | undefined;
+  listedAmount?: number;
+  allSessionsFinished: boolean;
+} {
+  const allSessionsFinished = scheduleSummary?.allSessionsFinished ?? false;
+  if (price == null || price <= 0) {
+    return { amount: price, allSessionsFinished };
+  }
+  if (enrollmentStatus === "enrolled" || !scheduleSummary) {
+    return { amount: price, allSessionsFinished };
+  }
+  const quote = tuitionForJoinFromMeeting(
+    price,
+    scheduleSummary.total,
+    scheduleSummary.joinFromMeeting,
+  );
+  if (!quote) {
+    return { amount: price, allSessionsFinished };
+  }
+  return {
+    amount: quote.amountDue,
+    listedAmount: quote.amountDue < quote.listedTotal ? quote.listedTotal : undefined,
+    allSessionsFinished,
+  };
+}
+
 async function enrichWithEnrolledStudents(items: AvailableCourseItem[]): Promise<AvailableCourseItem[]> {
   return Promise.all(
     items.map(async (item) => {
@@ -78,29 +113,51 @@ async function enrichWithEnrolledStudents(items: AvailableCourseItem[]): Promise
 async function enrichWithInstructorAvatars(items: AvailableCourseItem[]): Promise<AvailableCourseItem[]> {
   return Promise.all(
     items.map(async (item) => {
-      if (item.instructorAvatarUrl || item.linkId.startsWith("teacher_")) return item;
-      try {
-        const detail = await eduhubCourses.getById(item.id);
-        const url = detail.lecturer?.avatarUrl?.trim();
-        return url ? { ...item, instructorAvatarUrl: url } : item;
-      } catch {
-        return item;
-      }
+      const instructorAvatarUrl = await resolveInstructorAvatarUrl({
+        instructorName: item.instructor,
+        existingUrl: item.instructorAvatarUrl,
+        courseId: item.id,
+        linkId: item.linkId,
+      });
+      return instructorAvatarUrl ? { ...item, instructorAvatarUrl } : item;
     }),
   );
 }
 
 const StudentAvailableCourses = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuthSession();
   const emailNorm = user.email.trim().toLowerCase();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const { byCourse: applicationsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") ?? "");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [courses, setCourses] = useState<AvailableCourseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrollmentStoreTick, setEnrollmentStoreTick] = useState(0);
+
+  const scheduleCourseItems = useMemo(
+    () =>
+      courses.map((course) => ({
+        id: course.linkId,
+        title: course.title,
+        instructor: course.instructor,
+        progress: course.progress ?? 0,
+        status: course.status ?? "In Progress",
+        nextLesson: course.nextLesson ?? "—",
+        category: course.category,
+        duration: course.duration,
+        modules: course.modules,
+        enrolledDate: "",
+      })),
+    [courses],
+  );
+  const scheduleSummaries = useStudentCourseScheduleSummaries(scheduleCourseItems);
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get("q") ?? "");
+  }, [searchParams]);
 
   useEffect(() => {
     const bump = () => setEnrollmentStoreTick((n) => n + 1);
@@ -245,7 +302,7 @@ const StudentAvailableCourses = () => {
           <div className="mb-8">
             <h1
               className="mb-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-              style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.02em" }}
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Available Classes
             </h1>
@@ -259,7 +316,20 @@ const StudentAvailableCourses = () => {
                   type="search"
                   placeholder="Search by class name, instructor, or category..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSearchQuery(value);
+                    setSearchParams(
+                      (prev) => {
+                        const next = new URLSearchParams(prev);
+                        const trimmed = value.trim();
+                        if (trimmed) next.set("q", trimmed);
+                        else next.delete("q");
+                        return next;
+                      },
+                      { replace: true },
+                    );
+                  }}
                   className="h-11 rounded-xl border-gray-200 pl-10"
                 />
               </div>
@@ -298,6 +368,12 @@ const StudentAvailableCourses = () => {
                     metaParts.push(course.duration.trim());
                   }
                   const metaLabel = metaParts.length > 0 ? metaParts.join(" · ") : null;
+                  const scheduleSummary = scheduleSummaries.get(course.linkId);
+                  const tuitionDisplay = resolveCardTuition(
+                    course.price,
+                    scheduleSummary,
+                    course.enrollmentStatus,
+                  );
 
                   return (
                   <div
@@ -387,11 +463,37 @@ const StudentAvailableCourses = () => {
                           </div>
                         ) : null}
 
+                        {scheduleSummary ? (
+                          <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                            <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+                              <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#3954d0]/70" aria-hidden />
+                              Schedule
+                            </span>
+                            <span className="text-xs tabular-nums text-slate-700">
+                              <span className="font-semibold text-slate-900">{scheduleSummary.reached}</span>
+                              <span className="text-slate-400"> / </span>
+                              <span className="font-medium">{scheduleSummary.total}</span>
+                              <span className="text-slate-500">{" sessions"}</span>
+                            </span>
+                          </div>
+                        ) : null}
+
                         <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
                           <span className="text-xs font-medium text-slate-500">Tuition</span>
-                          <span className="text-base font-bold tabular-nums tracking-tight text-slate-900">
-                            {formatPrice(course.price, course.currency)}
-                          </span>
+                          {tuitionDisplay.allSessionsFinished ? (
+                            <span className="text-sm font-medium text-slate-500">Schedule complete</span>
+                          ) : (
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="text-sm font-bold tabular-nums tracking-tight text-slate-900">
+                                {formatPrice(tuitionDisplay.amount, course.currency)}
+                              </span>
+                              {tuitionDisplay.listedAmount ? (
+                                <span className="text-[11px] tabular-nums text-slate-400 line-through">
+                                  {formatPrice(tuitionDisplay.listedAmount, course.currency)}
+                                </span>
+                              ) : null}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -414,7 +516,7 @@ const StudentAvailableCourses = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-auto w-full rounded-xl border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+                              className="h-auto w-full rounded-xl border-zinc-200 bg-white px-5 py-2.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
                             >
                               View application
                             </Button>

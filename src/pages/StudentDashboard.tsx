@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import DashboardSidebar from "@/components/DashboardSidebar";
-import { DashboardPageHeader } from "@/components/DashboardPageHeader";
+import { DashboardPageHeader, MOBILE_STUDENT_HEADER_OFFSET } from "@/components/DashboardPageHeader";
 import { InstructorAvatar } from "@/components/InstructorAvatar";
 import { useAuthSession } from "@/features/auth/context";
 import { useLayoutContext } from "@/features/layout/context";
@@ -60,7 +60,7 @@ function UpcomingScheduleCard({ item }: { item: UpcomingScheduleItem }) {
   return (
     <Link
       to={`/dashboard/courses/${encodeURIComponent(item.courseId)}`}
-      className="group flex gap-4 rounded-2xl border border-zinc-200/80 bg-white p-4 transition-all hover:border-[#3954d0]/25 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3954d0] focus-visible:ring-offset-2"
+      className="group flex gap-4 rounded-2xl border border-zinc-200/80 bg-white p-ov-16 transition-all hover:border-[#3954d0]/25 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3954d0] focus-visible:ring-offset-2"
     >
       <div
         className={cn(
@@ -95,7 +95,7 @@ function UpcomingScheduleCard({ item }: { item: UpcomingScheduleItem }) {
               Live
             </span>
           ) : countdownShort ? (
-            <span className="shrink-0 rounded-full bg-[#3954d0]/10 px-2.5 py-1 text-xs font-semibold text-[#3954d0]">
+            <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900 ring-1 ring-amber-200/80">
               {countdownShort}
             </span>
           ) : null}
@@ -245,7 +245,7 @@ const StudentDashboard = () => {
       <DashboardSidebar />
 
       <main
-        className={`flex min-h-[calc(100dvh-4rem)] flex-col lg:h-dvh lg:max-h-dvh lg:overflow-hidden lg:min-h-0 pt-16 lg:pt-0 pb-0 transition-all duration-300 ${
+        className={`flex min-h-[calc(100dvh-4rem)] flex-col lg:h-dvh lg:max-h-dvh lg:overflow-hidden lg:min-h-0 ${MOBILE_STUDENT_HEADER_OFFSET} lg:pt-0 pb-0 transition-all duration-300 ${
           isSidebarCollapsed ? "lg:ml-20 lg:w-[calc(100%-5rem)]" : "lg:ml-64 lg:w-[calc(100%-16rem)]"
         }`}
       >
@@ -255,10 +255,7 @@ const StudentDashboard = () => {
           {/* Dashboard Header */}
           <div className="mb-8">
             <div className="mb-6 space-y-1">
-              <h1
-                className="flex flex-wrap items-center gap-x-2 text-[32px] font-bold leading-tight text-foreground"
-                style={{ fontFamily: "'DM Sans', sans-serif" }}
-              >
+              <h1 className="flex flex-wrap items-center gap-x-2 text-[32px] font-bold leading-tight tracking-tight text-foreground">
                 <span>Hi {displayName}, welcome back</span>
                 <WelcomeWave />
               </h1>
@@ -295,7 +292,7 @@ const StudentDashboard = () => {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>Upcoming Schedule</h2>
                   <Link to="/dashboard/schedule">
-                    <Button variant="ghost" className="text-sm hover:bg-transparent hover:text-foreground">
+                    <Button variant="ghost" className="h-auto px-0 py-0 text-sm text-zinc-400 hover:bg-transparent hover:text-zinc-500">
                       View All
                     </Button>
                   </Link>
@@ -337,7 +334,7 @@ const StudentDashboard = () => {
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 px-4 py-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>Upcoming Assignments</h2>
-                  <Button variant="ghost" className="text-sm hover:bg-transparent hover:text-foreground">
+                  <Button variant="ghost" className="h-auto px-0 py-0 text-sm text-zinc-400 hover:bg-transparent hover:text-zinc-500">
                     View Calendar
                   </Button>
                 </div>

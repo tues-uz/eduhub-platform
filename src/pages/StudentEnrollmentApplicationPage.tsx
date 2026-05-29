@@ -41,6 +41,8 @@ import {
 import { eduhubCourses, eduhubSchedule, eduhubUploadFile, eduhubEnrollmentApplications } from "@/api/eduhubClient";
 import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
+import { computeDiscountedPrice, readAdminCourseCatalog } from "@/features/admin/utils/adminCourseCatalog";
+import { findActiveSpecialTuitionGrant, SPECIAL_TUITION_GRANTS_CHANGED_EVENT } from "@/features/admin/data/specialTuitionGrantsStore";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import {
   enrollmentRecordToPdfData,
@@ -211,13 +213,36 @@ const StudentEnrollmentApplicationPage = () => {
   );
   const [paymentMethod, setPaymentMethod] = useState<EnrollmentPaymentMethod>("BANK_TRANSFER");
   const [paymentPlan, setPaymentPlan] = useState<EnrollmentPaymentPlan>("FULL");
-  const requiresVerificationUploads = enrollmentRequiresVerificationUploads(paymentMethod);
+  const [grantsTick, setGrantsTick] = useState(0);
   const [installmentCount, setInstallmentCount] = useState<EnrollmentInstallmentCount>(2);
   const [downPaymentRaw, setDownPaymentRaw] = useState("");
   const [viewingScheduleMonth, setViewingScheduleMonth] = useState<TuitionPlanMonths>(1);
   const [phoneSecondary, setPhoneSecondary] = useState(() =>
     registrationParentPhoneForEmail(user.email),
   );
+  const [referralCodeInput, setReferralCodeInput] = useState("");
+
+  useEffect(() => {
+    const refresh = () => setGrantsTick((n) => n + 1);
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "eduhub_special_tuition_grants") refresh();
+    };
+    window.addEventListener(SPECIAL_TUITION_GRANTS_CHANGED_EVENT, refresh);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(SPECIAL_TUITION_GRANTS_CHANGED_EVENT, refresh);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  const specialTuitionGrant = useMemo(() => {
+    void grantsTick;
+    if (!courseId) return null;
+    return findActiveSpecialTuitionGrant(user.email, courseId);
+  }, [courseId, user.email, grantsTick]);
+
+  const requiresVerificationUploads =
+    !specialTuitionGrant && enrollmentRequiresVerificationUploads(paymentMethod);
 
   const primaryPhone = useMemo(
     () => (user.phoneNumber ?? registrationPhoneForEmail(user.email)).trim(),
@@ -273,15 +298,62 @@ const StudentEnrollmentApplicationPage = () => {
     return resolveJoinFromMeeting(n, timings);
   }, [sessionSlotsPreview, scheduleAttendance]);
 
+  const courseReferralMeta = useMemo(() => {
+    if (apiCourse?.pricing) {
+      const pricing = apiCourse.pricing;
+      return {
+        code: pricing.referralCode?.trim() ?? "",
+        discountPercent: pricing.discountPercent ?? 0,
+        listedAmount: pricing.amount,
+      };
+    }
+    if (courseId && isUuid(courseId)) {
+      const meta = readAdminCourseCatalog()[courseId];
+      if (meta) {
+        return {
+          code: meta.referralCode,
+          discountPercent: meta.discountPercent,
+          listedAmount: meta.amount,
+        };
+      }
+    }
+    return null;
+  }, [apiCourse, courseId]);
+
+  const referralDiscountApplied = useMemo(() => {
+    const entered = referralCodeInput.trim();
+    if (!entered || !courseReferralMeta?.code) return false;
+    return entered.toLowerCase() === courseReferralMeta.code.toLowerCase();
+  }, [referralCodeInput, courseReferralMeta]);
+
+  const listedTuitionBase = useMemo(() => {
+    if (courseReferralMeta?.listedAmount != null && courseReferralMeta.listedAmount > 0) {
+      return courseReferralMeta.listedAmount;
+    }
+    return coursePriceAmount;
+  }, [courseReferralMeta, coursePriceAmount]);
+
+  const effectiveListedTuition = useMemo(() => {
+    if (specialTuitionGrant) return 0;
+    const base = listedTuitionBase;
+    if (base == null || base <= 0) return base;
+    if (referralDiscountApplied && courseReferralMeta && courseReferralMeta.discountPercent > 0) {
+      return computeDiscountedPrice(base, courseReferralMeta.discountPercent);
+    }
+    return base;
+  }, [listedTuitionBase, referralDiscountApplied, courseReferralMeta, specialTuitionGrant]);
+
   const sessionTuitionQuote = useMemo(() => {
-    const listed = coursePriceAmount;
+    const listed = effectiveListedTuition;
     const n = sessionSlotsPreview.length;
     if (listed == null || listed <= 0 || n < 1) return null;
     return tuitionForJoinFromMeeting(listed, n, sessionJoin.joinFromMeeting);
-  }, [coursePriceAmount, sessionSlotsPreview.length, sessionJoin.joinFromMeeting]);
+  }, [effectiveListedTuition, sessionSlotsPreview.length, sessionJoin.joinFromMeeting]);
 
   /** Tuition base for this enrollment: prorated when schedule exists, else full listed price. */
-  const tuitionDueTotal = sessionTuitionQuote?.amountDue ?? coursePriceAmount;
+  const tuitionDueTotal = specialTuitionGrant
+    ? 0
+    : sessionTuitionQuote?.amountDue ?? coursePriceAmount;
 
   useEffect(() => {
     const join = sessionTuitionQuote?.joinFromMeeting;
@@ -396,11 +468,11 @@ const StudentEnrollmentApplicationPage = () => {
         setApiCourse(c);
         setScheduleProposal(proposal);
         setCourseTitle(c.title);
-        const amt = c.pricing?.discountedAmount ?? c.pricing?.amount;
+        const listed = c.pricing?.amount;
         const cur = c.pricing?.currency ?? "USD";
         setPriceCurrency(cur);
-        setPriceDisplay(formatPrice(amt, cur));
-        setCoursePriceAmount(amt != null && amt > 0 ? amt : undefined);
+        setPriceDisplay(formatPrice(listed, cur));
+        setCoursePriceAmount(listed != null && listed > 0 ? listed : undefined);
         setCourseThumbnailUrl(c.thumbnailUrl?.trim() || undefined);
       })
       .catch(() => {
@@ -525,16 +597,20 @@ const StudentEnrollmentApplicationPage = () => {
         downAmount = tuitionDueTotal;
       }
     } else if (paymentPlan === "DOWN_PAYMENT") {
-      const parsed = parseAmountInput(downPaymentRaw);
-      if (parsed == null || parsed <= 0) {
-        toast.error("Enter a valid down payment amount (greater than zero).");
-        return;
+      if (tuitionDueTotal != null && tuitionDueTotal <= 0) {
+        downAmount = 0;
+      } else {
+        const parsed = parseAmountInput(downPaymentRaw);
+        if (parsed == null || parsed <= 0) {
+          toast.error("Enter a valid down payment amount (greater than zero).");
+          return;
+        }
+        if (tuitionDueTotal != null && parsed > tuitionDueTotal) {
+          toast.error("Down payment cannot exceed your prorated tuition for this schedule.");
+          return;
+        }
+        downAmount = parsed;
       }
-      if (tuitionDueTotal != null && parsed > tuitionDueTotal) {
-        toast.error("Down payment cannot exceed your prorated tuition for this schedule.");
-        return;
-      }
-      downAmount = parsed;
     }
 
     setSubmitting(true);
@@ -561,6 +637,21 @@ const StudentEnrollmentApplicationPage = () => {
           : "Payment plan: Down payment (instalments apply to remaining balance where offered)",
       );
       paymentDetailLines.push(`Listed class price: ${priceDisplay || "—"}`);
+      const referralEntered = referralCodeInput.trim();
+      if (referralEntered) {
+        paymentDetailLines.push(`Referral code entered: ${referralEntered}`);
+      }
+      if (referralDiscountApplied && courseReferralMeta && courseReferralMeta.discountPercent > 0) {
+        paymentDetailLines.push(
+          `Referral discount applied: ${courseReferralMeta.discountPercent}% off listed tuition`,
+        );
+      }
+      if (specialTuitionGrant) {
+        paymentDetailLines.push("Special tuition grant: free enrollment for this account.");
+        if (specialTuitionGrant.note.trim()) {
+          paymentDetailLines.push(`Grant note: ${specialTuitionGrant.note.trim()}`);
+        }
+      }
       if (sessionTuitionQuote) {
         paymentDetailLines.push(
           `Schedule: ${sessionTuitionQuote.totalSessions} meetings · tuition from meeting ${sessionTuitionQuote.joinFromMeeting} (next upcoming on schedule)`,
@@ -620,6 +711,7 @@ const StudentEnrollmentApplicationPage = () => {
         scheduleSessionCount:
           sessionTuitionQuote?.totalSessions ??
           (sessionSlotsPreview.length > 0 ? sessionSlotsPreview.length : undefined),
+        referralCode: referralCodeInput.trim() || undefined,
       });
 
       const pdfData: EnrollmentApplicationPdfData = {
@@ -793,7 +885,11 @@ const StudentEnrollmentApplicationPage = () => {
                           <div className="flex shrink-0 flex-col items-end gap-1.5">
                             <div className="flex w-fit items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3.5 py-2 text-sm font-semibold tabular-nums text-white backdrop-blur-sm">
                               <DollarSign className="h-4 w-4 text-white/80" aria-hidden />
-                              {loadingCourse && !priceDisplay ? "…" : priceDisplay || "—"}
+                              {loadingCourse && !priceDisplay && !specialTuitionGrant
+                                ? "…"
+                                : specialTuitionGrant
+                                  ? "Free"
+                                  : priceDisplay || "—"}
                             </div>
                             {transferDueSummary.amount != null ? (
                               <div className="rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-xs font-semibold tabular-nums text-white/95 backdrop-blur-sm">
@@ -827,6 +923,16 @@ const StudentEnrollmentApplicationPage = () => {
                         : ""}
                       . We will review everything before you can join the class.
                     </p>
+                    {specialTuitionGrant ? (
+                      <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-900">
+                        <p className="font-medium">Special tuition grant applied</p>
+                        <p className="mt-1 text-emerald-800/90">
+                          This class is free for your account
+                          {specialTuitionGrant.note.trim() ? ` (${specialTuitionGrant.note.trim()})` : ""}. No payment
+                          proof is required.
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
                   <form
                     id="enrollment-application-form"
@@ -1340,6 +1446,41 @@ const StudentEnrollmentApplicationPage = () => {
                       </label>
                     )}
                   </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-zinc-100 pt-8">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-zinc-500" aria-hidden />
+                    <h3 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                      Referral code
+                    </h3>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Optional. Enter a code from your school or referrer to apply a tuition discount.
+                  </p>
+                  <div className="mt-5">
+                    <Label htmlFor="enrollment-referral" className="text-zinc-700">
+                      Referral code
+                    </Label>
+                    <Input
+                      id="enrollment-referral"
+                      value={referralCodeInput}
+                      onChange={(e) => setReferralCodeInput(e.target.value)}
+                      placeholder="Optional"
+                      maxLength={64}
+                      autoComplete="off"
+                      className="mt-1.5 h-11 rounded-xl border-zinc-200"
+                    />
+                    {referralCodeInput.trim() && courseReferralMeta?.code ? (
+                      referralDiscountApplied ? (
+                        <p className="mt-2 text-xs text-emerald-700">
+                          Referral applied — {courseReferralMeta.discountPercent}% off listed tuition.
+                        </p>
+                      ) : (
+                        <p className="mt-2 text-xs text-amber-800">This code is not valid for this class.</p>
+                      )
+                    ) : null}
                   </div>
                 </div>
               </div>

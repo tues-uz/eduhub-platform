@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Award, Download, GraduationCap, Loader2, Star } from "@/lib/icons";
+import { Award, Download, Eye, GraduationCap, Loader2, Star } from "@/lib/icons";
 import { toast } from "sonner";
 import { eduhubCompletion } from "@/api/eduhubClient";
 import type { CourseGradebookRowResponse } from "@/api/eduhubTypes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -30,6 +37,7 @@ import { formatDisplayPersonName } from "@/lib/formatPersonName";
 import {
   COURSE_REVIEWS_CHANGED,
   getStudentCourseReviewSummary,
+  type StudentCourseReviewSummary,
 } from "@/features/student/courseReviewsStorage";
 import {
   computeAttendanceScore,
@@ -105,6 +113,107 @@ function draftFromApiRow(row?: CourseGradebookRowResponse): DraftRow {
   };
 }
 
+function ReviewStarsRow({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-0.5" aria-label={`${rating} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          className={`h-4 w-4 shrink-0 ${
+            n <= rating ? "fill-amber-400 text-amber-400" : "text-slate-200"
+          }`}
+          aria-hidden
+        />
+      ))}
+      <span className="ml-1.5 text-sm font-medium tabular-nums text-foreground">{rating}/5</span>
+    </div>
+  );
+}
+
+function formatReviewDate(iso?: string): string | null {
+  if (!iso?.trim()) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function StudentReviewDialog({
+  open,
+  onOpenChange,
+  studentName,
+  studentEmail,
+  reviews,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  studentName: string;
+  studentEmail: string;
+  reviews: StudentCourseReviewSummary;
+}) {
+  const instructorDate = formatReviewDate(reviews.instructorSubmittedAt);
+  const platformDate = formatReviewDate(reviews.platformSubmittedAt);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md rounded-2xl sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Student review</DialogTitle>
+          <DialogDescription>
+            Feedback from {formatDisplayPersonName(studentName)} ({studentEmail}) after completing this class.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-5 pt-1">
+          {reviews.instructorRating != null ? (
+            <section className="space-y-2">
+              <h3 className="text-sm font-medium text-foreground">Instructor rating</h3>
+              <ReviewStarsRow rating={reviews.instructorRating} />
+              {reviews.instructorComment?.trim() ? (
+                <p className="text-sm leading-relaxed text-muted-foreground">{reviews.instructorComment.trim()}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">No comment.</p>
+              )}
+              {instructorDate ? (
+                <p className="text-xs text-muted-foreground">Submitted {instructorDate}</p>
+              ) : null}
+            </section>
+          ) : (
+            <p className="text-sm text-muted-foreground">No instructor review yet.</p>
+          )}
+          {reviews.platformRating != null ? (
+            <section className="space-y-2 border-t border-slate-100 pt-4">
+              <h3 className="text-sm font-medium text-foreground">Platform rating</h3>
+              <ReviewStarsRow rating={reviews.platformRating} />
+              {reviews.platformComment?.trim() ? (
+                <p className="text-sm leading-relaxed text-muted-foreground">{reviews.platformComment.trim()}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">No comment.</p>
+              )}
+              {platformDate ? (
+                <p className="text-xs text-muted-foreground">Submitted {platformDate}</p>
+              ) : null}
+            </section>
+          ) : null}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function gradeReviewToSummary(reviews: GradeReviewSummary): StudentCourseReviewSummary {
+  return {
+    instructorRating: reviews.instructorRating,
+    platformRating: reviews.platformRating,
+    instructorComment: reviews.instructorComment,
+    platformComment: reviews.platformComment,
+  };
+}
+
 function RosterEmptyState({
   isSubstituteViewer,
   isApiCourse,
@@ -172,6 +281,11 @@ export function TeacherCourseGradesPanel({
   const [publishingId, setPublishingId] = useState<string | "all" | null>(null);
   const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, DraftRow>>({});
+  const [reviewStudent, setReviewStudent] = useState<{
+    name: string;
+    email: string;
+    reviews: StudentCourseReviewSummary;
+  } | null>(null);
 
   const apiGradesQuery = useQuery({
     queryKey: ["teacher", "course-gradebook", courseId],
@@ -655,34 +769,55 @@ export function TeacherCourseGradesPanel({
                       </TableCell>
                       <TableCell className="align-middle whitespace-nowrap">
                         {row.reviews.instructorRating != null ? (
-                          <div
-                            className="inline-flex flex-col gap-0.5"
-                            title={[
-                              `Instructor: ${row.reviews.instructorRating}/5`,
-                              row.reviews.instructorComment
-                                ? `"${row.reviews.instructorComment}"`
-                                : null,
-                              row.reviews.platformRating != null
-                                ? `Platform: ${row.reviews.platformRating}/5`
-                                : "Platform review pending",
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          >
-                            <span className="inline-flex items-center gap-1 text-sm font-medium text-foreground">
-                              <Star
-                                className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400"
-                                aria-hidden
-                              />
-                              {row.reviews.instructorRating}/5
-                            </span>
-                            {row.reviews.platformRating != null ? (
-                              <span className="text-[10px] text-emerald-700 font-medium">
-                                + platform
+                          <div className="inline-flex flex-col gap-1">
+                            <div
+                              className="inline-flex flex-col gap-0.5"
+                              title={[
+                                `Instructor: ${row.reviews.instructorRating}/5`,
+                                row.reviews.instructorComment
+                                  ? `"${row.reviews.instructorComment}"`
+                                  : null,
+                                row.reviews.platformRating != null
+                                  ? `Platform: ${row.reviews.platformRating}/5`
+                                  : "Platform review pending",
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            >
+                              <span className="inline-flex items-center gap-1 text-sm font-medium text-foreground">
+                                <Star
+                                  className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400"
+                                  aria-hidden
+                                />
+                                {row.reviews.instructorRating}/5
                               </span>
-                            ) : (
-                              <span className="text-[10px] text-muted-foreground">Platform pending</span>
-                            )}
+                              {row.reviews.platformRating != null ? (
+                                <span className="text-[10px] font-medium text-emerald-700">+ platform</span>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground">Platform pending</span>
+                              )}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-fit px-2 text-xs text-[#3954d0] hover:bg-[#3954d0]/5 hover:text-[#3954d0]"
+                              onClick={() =>
+                                setReviewStudent({
+                                  name: row.fullName,
+                                  email: row.email,
+                                  reviews: isApiCourse
+                                    ? gradeReviewToSummary(row.reviews)
+                                    : getStudentCourseReviewSummary(
+                                        courseId,
+                                        row.email.trim().toLowerCase(),
+                                      ),
+                                })
+                              }
+                            >
+                              <Eye className="mr-1 h-3.5 w-3.5" aria-hidden />
+                              Read review
+                            </Button>
                           </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">Pending</span>
@@ -798,6 +933,17 @@ export function TeacherCourseGradesPanel({
             {isApiCourse ? "." : " (demo: this browser)."}
           </p>
         </div>
+      ) : null}
+      {reviewStudent ? (
+        <StudentReviewDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setReviewStudent(null);
+          }}
+          studentName={reviewStudent.name}
+          studentEmail={reviewStudent.email}
+          reviews={reviewStudent.reviews}
+        />
       ) : null}
     </div>
   );

@@ -33,8 +33,6 @@ import AdminAttendancePage from "@/features/admin/pages/AdminAttendancePage";
 import AdminPaymentsPage from "@/features/admin/pages/AdminPaymentsPage";
 import AdminPayrollPage from "@/features/admin/pages/AdminPayrollPage";
 import AdminPayrollProofPage from "@/features/admin/pages/AdminPayrollProofPage";
-import AdminPayrollSubmissionsPage from "@/features/admin/pages/AdminPayrollSubmissionsPage";
-import AdminInstructorPayrollRequestsPage from "@/features/admin/pages/AdminInstructorPayrollRequestsPage";
 import AdminInstructorPayrollRequestDetailPage from "@/features/admin/pages/AdminInstructorPayrollRequestDetailPage";
 import AdminPlacementTestsPage from "@/features/admin/pages/AdminPlacementTestsPage";
 import AdminCertificationsPage from "@/features/admin/pages/AdminCertificationsPage";
@@ -52,8 +50,9 @@ import AdminTransactionsPage from "@/features/admin/pages/AdminTransactionsPage"
 import AdminReportsPage from "@/features/admin/pages/AdminReportsPage";
 import AdminSettingsPage from "@/features/admin/pages/AdminSettingsPage";
 import AdminPromosPage from "@/features/admin/pages/AdminPromosPage";
+import AdminReferralCodesPage from "@/features/admin/pages/AdminReferralCodesPage";
+import AdminSpecialTuitionPage from "@/features/admin/pages/AdminSpecialTuitionPage";
 import TeacherDashboard from "@/pages/TeacherDashboard";
-import TeacherPlaceholder from "@/pages/TeacherPlaceholder";
 import TeacherCoursesPage from "@/features/teacher/pages/TeacherCoursesPage";
 import TeacherCourseFormLayout from "@/features/teacher/pages/TeacherCourseFormLayout";
 import TeacherCourseFormDetailsPage from "@/features/teacher/pages/TeacherCourseFormDetailsPage";
@@ -67,7 +66,7 @@ import TeacherStudentsPage from "@/features/teacher/pages/TeacherStudentsPage";
 import TeacherAssignmentsPage from "@/features/teacher/pages/TeacherAssignmentsPage";
 import TeacherAttendanceQrPage from "@/features/teacher/pages/TeacherAttendanceQrPage";
 import TeacherPayrollPage from "@/features/teacher/pages/TeacherPayrollPage";
-import TeacherPayrollSubmissionsPage from "@/features/teacher/pages/TeacherPayrollSubmissionsPage";
+import TeacherSettingsPage from "@/features/teacher/pages/TeacherSettingsPage";
 import TeacherNotifications from "@/pages/TeacherNotifications";
 import TeacherSubstituteInviteReviewPage from "@/features/teacher/pages/TeacherSubstituteInviteReviewPage";
 import TeacherScheduleApprovalsPage from "@/features/teacher/pages/TeacherScheduleApprovalsPage";
@@ -107,9 +106,15 @@ export function AppRoutes() {
       <Route path="/dashboard/admin/payments" element={<AdminPaymentsPage />} />
       <Route path="/dashboard/admin/payroll" element={<AdminPayrollPage />} />
       <Route path="/dashboard/admin/payroll/instructor-request/:requestId" element={<AdminInstructorPayrollRequestDetailPage />} />
-      <Route path="/dashboard/admin/payroll/instructor-requests" element={<AdminInstructorPayrollRequestsPage />} />
+      <Route
+        path="/dashboard/admin/payroll/instructor-requests"
+        element={<Navigate to="/dashboard/admin/payroll?tab=requests" replace />}
+      />
       <Route path="/dashboard/admin/payroll/proof" element={<AdminPayrollProofPage />} />
-      <Route path="/dashboard/admin/payroll/submissions" element={<AdminPayrollSubmissionsPage />} />
+      <Route
+        path="/dashboard/admin/payroll/submissions"
+        element={<Navigate to="/dashboard/admin/payroll?tab=proof" replace />}
+      />
       <Route path="/dashboard/admin/placement-tests" element={<AdminPlacementTestsPage />} />
       <Route path="/dashboard/admin/certifications" element={<AdminCertificationsPage />} />
       <Route path="/dashboard/admin/calendar" element={<AdminCalendarPage />} />
@@ -126,6 +131,8 @@ export function AppRoutes() {
       <Route path="/dashboard/admin/users" element={<AdminUsersPage />} />
       <Route path="/dashboard/admin/settings" element={<AdminSettingsPage />} />
       <Route path="/dashboard/admin/promos" element={<AdminPromosPage />} />
+      <Route path="/dashboard/admin/referral-codes" element={<AdminReferralCodesPage />} />
+      <Route path="/dashboard/admin/special-tuition" element={<AdminSpecialTuitionPage />} />
 
       <Route path={appRoutes.dashboardTeacher} element={<TeacherDashboard />} />
       <Route path="/dashboard/teacher/courses" element={<TeacherCoursesPage />} />
@@ -161,8 +168,8 @@ export function AppRoutes() {
       <Route path="/dashboard/teacher/notifications" element={<TeacherNotifications />} />
       <Route path="/dashboard/teacher/substitute-requests/:inviteId" element={<TeacherSubstituteInviteReviewPage />} />
       <Route path="/dashboard/teacher/payroll" element={<TeacherPayrollPage />} />
-      <Route path="/dashboard/teacher/payroll/submissions" element={<TeacherPayrollSubmissionsPage />} />
-      <Route path="/dashboard/teacher/settings" element={<TeacherPlaceholder />} />
+      <Route path="/dashboard/teacher/payroll/submissions" element={<Navigate to="/dashboard/teacher/payroll" replace />} />
+      <Route path="/dashboard/teacher/settings" element={<TeacherSettingsPage />} />
 
       <Route path="/dashboard/available-courses/enroll/:courseId/success" element={<StudentEnrollmentSuccessPage />} />
       <Route path="/dashboard/available-courses/enroll/:courseId" element={<StudentEnrollmentApplicationPage />} />

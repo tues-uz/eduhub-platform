@@ -64,7 +64,7 @@ export function resolveStudentPageHeader(pathname: string): StudentPageHeaderRes
   }
 
   if (pathname.startsWith("/dashboard/attendance/join")) {
-    return { kind: "title", title: "Attendance check-in" };
+    return { kind: "empty" };
   }
 
   const extraPages: { path: string; title: string }[] = [
@@ -94,4 +94,31 @@ export function resolveStudentPageHeader(pathname: string): StudentPageHeaderRes
   }
 
   return { kind: "title", title: "EduHub" };
+}
+
+/** Sidebar-aligned page name for the sticky dashboard header bar. */
+export function resolveStudentNavLabel(pathname: string): string {
+  const extraPages: { path: string; title: string }[] = [
+    { path: "/dashboard/notifications", title: "Notifications" },
+    { path: "/dashboard/assignments", title: "Assignments" },
+    { path: "/dashboard/schedule", title: "Schedule" },
+    { path: "/dashboard/progress", title: "Progress" },
+    { path: "/dashboard/congrats-preview", title: "Congratulations" },
+    { path: "/dashboard/attendance/join", title: "Attendance check-in" },
+  ];
+  const extraSorted = [...extraPages].sort((a, b) => b.path.length - a.path.length);
+  for (const page of extraSorted) {
+    if (pathname === page.path || pathname.startsWith(`${page.path}/`)) {
+      return page.title;
+    }
+  }
+
+  const sorted = [...studentMenuItems].sort((a, b) => b.path.length - a.path.length);
+  for (const item of sorted) {
+    if (pathname === item.path || pathname.startsWith(`${item.path}/`)) {
+      return item.label;
+    }
+  }
+
+  return "EduHub";
 }

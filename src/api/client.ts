@@ -17,6 +17,7 @@ import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
 import { getAccessToken, eduhubAdmin, eduhubCourses, eduhubEnrollments } from "./eduhubClient";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
+import { resolveInstructorAvatarUrl } from "@/features/teacher/resolveInstructorAvatarUrl";
 
 /** Admin dashboard stat row — `icon` must be a component (JSON APIs send strings; we resolve those below). */
 export type AdminDashboardStat = {
@@ -353,20 +354,13 @@ function enrichMockCourseProgress(course: StudentCourseListItem): StudentCourseL
 }
 
 async function enrichStudentCourseInstructorAvatar(item: StudentCourseListItem): Promise<StudentCourseListItem> {
-  if (item.instructorAvatarUrl || String(item.id).startsWith("teacher_")) return item;
-  try {
-    const course = await eduhubCourses.getById(String(item.id));
-    const instructorAvatarUrl = course.lecturer?.avatarUrl?.trim();
-    return instructorAvatarUrl
-      ? {
-          ...item,
-          instructor: course.lecturer?.fullName?.trim() || item.instructor,
-          instructorAvatarUrl,
-        }
-      : item;
-  } catch {
-    return item;
-  }
+  const instructorAvatarUrl = await resolveInstructorAvatarUrl({
+    instructorName: item.instructor,
+    existingUrl: item.instructorAvatarUrl,
+    courseId: String(item.id).startsWith("teacher_") ? String(item.id).slice("teacher_".length) : String(item.id),
+    linkId: String(item.id),
+  });
+  return instructorAvatarUrl ? { ...item, instructorAvatarUrl } : item;
 }
 
 async function enrichStudentCoursesInstructorAvatars(

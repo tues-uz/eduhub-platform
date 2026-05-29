@@ -1,11 +1,21 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, ChevronDown } from "@/lib/icons";
+import { ArrowLeft, CheckCircle2, ChevronDown, Loader2 } from "@/lib/icons";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { PayrollInstructorProofPanel } from "@/features/admin/components/PayrollInstructorProofPanel";
+import { usePayrollRequestSchedule } from "@/features/admin/hooks/usePayrollRequestSchedule";
 import { buildPayrollProofPagePath } from "@/features/admin/data/adminPayrollProofStore";
 import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
+import { ClassSchedulePreviewPanel } from "@/features/courses/ClassSchedulePreviewPanel";
+import {
+  formatClassDateLabel,
+  formatSessionTimeLabel,
+  resolveEnrollmentSessionTimingStatus,
+  yearMonthKey,
+} from "@/features/courses/classSchedulePreview";
+import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
+import { getScheduleAttendanceState } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 import {
   instructorPayrollRequestStore,
   useInstructorPayrollRequests,
@@ -56,9 +66,35 @@ export default function AdminInstructorPayrollRequestDetailPage() {
   );
 
   const [submissionOpen, setSubmissionOpen] = useState(false);
+  const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectDialogNote, setRejectDialogNote] = useState("");
   const [adminActionCode, setAdminActionCode] = useAdminActionCodeState();
+  const [viewingScheduleMonth, setViewingScheduleMonth] = useState<1 | 2 | 3>(1);
+
+  const payrollSchedule = usePayrollRequestSchedule({
+    classSection: record?.classSection ?? "",
+    course: record?.course ?? "",
+    periodLabel: record?.periodLabel ?? "",
+    submittedAt: record?.submittedAt ?? "",
+  });
+
+  useEffect(() => {
+    setViewingScheduleMonth(payrollSchedule.monthCompletion.viewingMonth);
+  }, [payrollSchedule.monthCompletion.viewingMonth, record?.id]);
+
+  const scheduleAttendance = useMemo(() => {
+    if (!payrollSchedule.courseId) {
+      return { heldSlotKeys: new Set<string>(), activeSlotKeys: new Set<string>() };
+    }
+    return getScheduleAttendanceState(payrollSchedule.courseId);
+  }, [payrollSchedule.courseId, payrollSchedule.slots.length, payrollSchedule.monthCompletion.finishedInPeriod]);
+
+  const periodScheduleSessions = useMemo(() => {
+    const ym = payrollSchedule.monthCompletion.periodYearMonth;
+    if (!ym) return [];
+    return payrollSchedule.slots.filter((slot) => yearMonthKey(slot.sessionDate) === ym);
+  }, [payrollSchedule.slots, payrollSchedule.monthCompletion.periodYearMonth]);
 
   const payrollSummary = useMemo(() => {
     if (!record) return "";
@@ -87,7 +123,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
         <div className="container mx-auto px-6 max-w-3xl py-8">
           <p className="text-sm text-slate-600">Missing submission id.</p>
           <Button asChild variant="outline" className="mt-4">
-            <Link to="/dashboard/admin/payroll">Back to payroll</Link>
+            <Link to="/dashboard/admin/payroll?tab=requests">Back to payroll</Link>
           </Button>
         </div>
       </AdminLayout>
@@ -101,7 +137,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
           <p className="text-sm font-medium text-slate-900">Submission not found</p>
           <p className="text-sm text-slate-600 mt-1">It may have been removed or the link is invalid.</p>
           <Button asChild variant="outline" className="mt-6">
-            <Link to="/dashboard/admin/payroll">Back to payroll</Link>
+            <Link to="/dashboard/admin/payroll?tab=requests">Back to payroll</Link>
           </Button>
         </div>
       </AdminLayout>
@@ -112,18 +148,20 @@ export default function AdminInstructorPayrollRequestDetailPage() {
 
   return (
     <AdminLayout>
-      <div className="container mx-auto max-w-2xl px-6 pb-12">
+      <div className="container mx-auto max-w-3xl px-6 pb-12">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <Link
-            to="/dashboard/admin/payroll"
+            to="/dashboard/admin/payroll?tab=requests"
             className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
           >
             <ArrowLeft className="h-4 w-4" />
-            Payroll
+            Instructor requests
           </Link>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/dashboard/admin/payroll/instructor-requests">Pending queue</Link>
-          </Button>
+          {record.status === "pending" ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/dashboard/admin/payroll?tab=requests">All requests</Link>
+            </Button>
+          ) : null}
         </div>
 
         {/* At-a-glance */}
@@ -170,6 +208,125 @@ export default function AdminInstructorPayrollRequestDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Class schedule — payroll eligibility is all sessions finished in the request month */}
+        <Card className="rounded-xl border-slate-200 shadow-sm overflow-hidden mb-6">
+          <CardHeader className="border-b border-slate-100 bg-slate-50/60 pb-4">
+            <CardTitle className="text-lg">Class schedule</CardTitle>
+            <CardDescription>
+              Admin-proposed schedule, approved by the instructor. Payroll for{" "}
+              {record.periodLabel ? (
+                <span className="font-medium text-slate-800">{record.periodLabel}</span>
+              ) : (
+                "the requested period"
+              )}{" "}
+              is eligible only when every session in that calendar month is marked finished (attendance held).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-5 pt-5">
+            {payrollSchedule.loading ? (
+              <div className="flex items-center gap-2 text-sm text-slate-600 py-4">
+                <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+                Loading class schedule…
+              </div>
+            ) : !payrollSchedule.courseId ? (
+              <p className="text-sm leading-relaxed text-slate-600">
+                Could not match this class to a course schedule. Check that the class section and course title align
+                with an admin course or teacher course in the demo.
+              </p>
+            ) : (
+              <>
+                {payrollSchedule.usingDemoSchedule ? (
+                  <p className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
+                    Showing the demo schedule for this class so you can verify sessions before approving payroll. When
+                    the API returns live course data, this panel updates automatically.
+                  </p>
+                ) : null}
+                {payrollSchedule.monthCompletion.periodLabel ? (
+                  <div
+                    className={cn(
+                      "mb-4 rounded-xl border px-4 py-3 text-sm",
+                      payrollSchedule.monthCompletion.eligible
+                        ? "border-emerald-200/90 bg-emerald-50/60 text-emerald-950"
+                        : payrollSchedule.monthCompletion.totalInPeriod > 0
+                          ? "border-amber-200/80 bg-amber-50/60 text-amber-950"
+                          : "border-slate-200 bg-slate-50/80 text-slate-700",
+                    )}
+                  >
+                    <p className="font-medium">
+                      {payrollSchedule.monthCompletion.periodLabel}
+                      {payrollSchedule.monthCompletion.totalInPeriod > 0 ? (
+                        <>
+                          {": "}
+                          <span className="tabular-nums">
+                            {payrollSchedule.monthCompletion.finishedInPeriod}/
+                            {payrollSchedule.monthCompletion.totalInPeriod}
+                          </span>{" "}
+                          sessions finished
+                        </>
+                      ) : (
+                        ": no sessions in this month"
+                      )}
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed opacity-90">
+                      {payrollSchedule.monthCompletion.eligible
+                        ? "All sessions in this month are finished — eligible for payroll for this period."
+                        : payrollSchedule.monthCompletion.totalInPeriod > 0
+                          ? "Payroll should be processed after the remaining sessions in this month are finished."
+                          : "Confirm the period label matches a month that has scheduled sessions."}
+                    </p>
+                  </div>
+                ) : null}
+                {periodScheduleSessions.length > 0 ? (
+                  <div className="mb-4 rounded-xl border border-[#3954d0]/20 bg-[#3954d0]/[0.04] px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#3954d0]/90">
+                      Sessions in {payrollSchedule.monthCompletion.periodLabel ?? record.periodLabel}
+                    </p>
+                    <ul className="mt-2 space-y-2">
+                      {periodScheduleSessions.map((slot, idx) => {
+                        const timingStatus = resolveEnrollmentSessionTimingStatus(
+                          slot,
+                          scheduleAttendance.heldSlotKeys,
+                          scheduleAttendance.activeSlotKeys,
+                        );
+                        const dateLabel = formatClassDateLabel(slot.sessionDate) ?? "Date TBA";
+                        const timeLabel = formatSessionTimeLabel(slot.sessionTime);
+                        return (
+                          <li
+                            key={`${slot.sessionDate}-${slot.sessionTime}-${idx}`}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/80 bg-white px-3 py-2 text-sm shadow-sm"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-medium text-slate-900">
+                                {slot.title?.trim() || `Meeting ${idx + 1}`}
+                              </p>
+                              <p className="text-xs text-slate-500 tabular-nums mt-0.5">
+                                {dateLabel}
+                                {timeLabel ? ` · ${timeLabel}` : ""}
+                              </p>
+                            </div>
+                            <SessionTimingChip status={timingStatus} />
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ) : null}
+                <ClassSchedulePreviewPanel
+                  courseId={payrollSchedule.courseId}
+                  apiCourse={payrollSchedule.apiCourse}
+                  scheduleProposal={payrollSchedule.scheduleProposal}
+                  teacherCourse={payrollSchedule.teacherCourse}
+                  viewingMonth={viewingScheduleMonth}
+                  onViewingMonthChange={setViewingScheduleMonth}
+                  heldSlotKeys={scheduleAttendance.heldSlotKeys}
+                  activeSlotKeys={scheduleAttendance.activeSlotKeys}
+                  className="rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3"
+                />
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Optional deep read */}
         <Collapsible open={submissionOpen} onOpenChange={setSubmissionOpen} className="mb-6">
@@ -301,27 +458,11 @@ export default function AdminInstructorPayrollRequestDetailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <AdminActionCodeField
-                id="payroll-detail-admin-code"
-                value={adminActionCode}
-                onChange={setAdminActionCode}
-              />
               <Button
                 type="button"
                 size="lg"
                 className="w-full bg-emerald-600 text-base font-medium hover:bg-emerald-700"
-                onClick={() => {
-                  let code: string;
-                  try {
-                    code = validateAdminActionCodeOrThrow(adminActionCode);
-                  } catch (e) {
-                    toast.error(e instanceof Error ? e.message : "Enter your admin code");
-                    return;
-                  }
-                  const ok = instructorPayrollRequestStore.approve(record.id, code);
-                  if (ok) toast.success("Approved", { description: `${record.instructorName} was notified.` });
-                  else toast.error("Could not approve");
-                }}
+                onClick={() => setApproveOpen(true)}
               >
                 <CheckCircle2 className="mr-2 h-5 w-5" aria-hidden />
                 Approve this request
@@ -333,7 +474,55 @@ export default function AdminInstructorPayrollRequestDetailPage() {
           </Card>
         ) : null}
 
-        <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <AlertDialog open={approveOpen} onOpenChange={setApproveOpen}>
+          <AlertDialogContent className="sm:max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Approve this payroll request?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Confirm you accept {record.instructorName}&apos;s figures for {record.classSection}. The instructor
+                will be notified in Teacher → Notifications.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-2">
+              <AdminActionCodeField
+                id="payroll-approve-admin-code"
+                value={adminActionCode}
+                onChange={setAdminActionCode}
+              />
+            </div>
+            <AlertDialogFooter className="gap-2 sm:gap-0">
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <Button
+                type="button"
+                className="bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => {
+                  let code: string;
+                  try {
+                    code = validateAdminActionCodeOrThrow(adminActionCode);
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "Enter your admin code");
+                    return;
+                  }
+                  const ok = instructorPayrollRequestStore.approve(record.id, code);
+                  if (ok) {
+                    toast.success("Approved", { description: `${record.instructorName} was notified.` });
+                    setApproveOpen(false);
+                  } else toast.error("Could not approve");
+                }}
+              >
+                Approve request
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog
+          open={rejectOpen}
+          onOpenChange={(open) => {
+            setRejectOpen(open);
+            if (!open) setRejectDialogNote("");
+          }}
+        >
           <AlertDialogContent className="sm:max-w-md">
             <AlertDialogHeader>
               <AlertDialogTitle>Decline this payroll request?</AlertDialogTitle>

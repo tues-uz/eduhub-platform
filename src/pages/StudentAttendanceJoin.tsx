@@ -1,19 +1,82 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { CheckCircle2, GraduationCap } from "@/lib/icons";
+import { AlertCircle, ArrowLeft, Loader2 } from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { appRoutes } from "@/app/routes";
 import { eduhubAttendance, getAccessToken } from "@/api/eduhubClient";
 import type { AttendanceJoinInfoResponse } from "@/api/eduhubTypes";
 import { useAuthSession } from "@/features/auth/context";
+import { cn } from "@/lib/utils";
 
 function formatTime(value?: string): string {
   if (!value) return "";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+const ATTENDANCE_ILLUSTRATION = "/attendance-check-in-illustration.svg";
+
+function AttendanceJoinShell({
+  tone = "default",
+  eyebrow,
+  title,
+  description,
+  children,
+}: {
+  tone?: "default" | "success" | "warning" | "fun";
+  eyebrow?: string;
+  title: string;
+  description: ReactNode;
+  children?: ReactNode;
+}) {
+  const toneStyles = {
+    default: "from-[#3954d0]/10 via-white to-sky-50/80",
+    success: "from-emerald-50 via-white to-teal-50/70",
+    warning: "from-amber-50/80 via-white to-orange-50/60",
+    fun: "from-violet-50/80 via-white to-sky-50/90",
+  } as const;
+
+  return (
+    <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-[1.75rem] bg-white p-6 shadow-[0_8px_32px_-8px_rgba(24,24,27,0.12)] sm:p-8">
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-gradient-to-br opacity-80 blur-2xl",
+          toneStyles[tone],
+        )}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-8 -left-8 h-28 w-28 rounded-full bg-[#3954d0]/5 blur-2xl"
+      />
+
+      <div className="relative">
+        <img
+          src={ATTENDANCE_ILLUSTRATION}
+          alt=""
+          className="mx-auto mb-4 h-36 w-auto max-w-[220px] object-contain sm:h-40"
+        />
+
+        {eyebrow ? (
+          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3954d0]">
+            {eyebrow}
+          </p>
+        ) : null}
+
+        <h1
+          className="mt-2 text-center text-2xl font-bold tracking-tight text-zinc-900"
+          style={{ fontFamily: "'DM Sans', sans-serif" }}
+        >
+          {title}
+        </h1>
+        <div className="mx-auto mt-3 max-w-sm text-center text-sm leading-relaxed text-zinc-600">{description}</div>
+
+        {children ? <div className="relative mt-6 space-y-3">{children}</div> : null}
+      </div>
+    </div>
+  );
 }
 
 export default function StudentAttendanceJoin() {
@@ -98,98 +161,116 @@ export default function StudentAttendanceJoin() {
   }, [confirmed, hasToken, loadError, processing, token, user.role, validParams]);
 
   return (
-    <div className="flex min-h-[min(70dvh,calc(100dvh-12rem))] items-center justify-center bg-slate-50 py-8">
-      <div className="w-full max-w-lg">
+    <div className="mx-auto w-full max-w-md px-2 sm:px-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         {!validParams ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Invalid link</CardTitle>
-              <CardDescription>
-                This attendance link is missing details. Ask your instructor to generate a new QR code.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild variant="outline">
-                <Link to="/dashboard">Go to dashboard</Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <AttendanceJoinShell
+            tone="fun"
+            eyebrow="Attendance check-in"
+            title="Invalid check-in link"
+            description="This QR code is missing session information. Scan the code shown in class, or ask your instructor to display it again."
+          >
+            <Button asChild className="h-11 w-full rounded-full text-white hover:bg-[#2f47b3]" style={{ backgroundColor: "#3954d0" }}>
+              <Link to="/dashboard">
+                <ArrowLeft className="h-4 w-4" aria-hidden />
+                Back to dashboard
+              </Link>
+            </Button>
+          </AttendanceJoinShell>
         ) : !hasToken ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Sign in to check in</CardTitle>
-              <CardDescription>Use your student account so we can record attendance for this session.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <Button asChild className="rounded-full">
-                <Link to={signInLink}>Sign in</Link>
-              </Button>
-              <Button asChild variant="ghost" className="rounded-full text-slate-600">
-                <Link to="/dashboard">Cancel</Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <AttendanceJoinShell
+            tone="default"
+            eyebrow="Almost there"
+            title="Sign in to check in"
+            description="Use your student account so we can match this scan to you and record attendance for class."
+          >
+            <Button asChild className="h-11 w-full rounded-full text-white hover:bg-[#2f47b3]" style={{ backgroundColor: "#3954d0" }}>
+              <Link to={signInLink}>Sign in & check in</Link>
+            </Button>
+            <Button asChild variant="ghost" className="h-11 w-full rounded-full text-zinc-600">
+              <Link to="/dashboard">Maybe later</Link>
+            </Button>
+          </AttendanceJoinShell>
         ) : user.role === "student" ? (
-          <Card className="border-emerald-100 shadow-sm">
-            <CardHeader className="text-center pb-2">
-              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
-                <GraduationCap className="h-7 w-7 text-emerald-700" />
-              </div>
-              <CardTitle className="text-xl">Attendance</CardTitle>
-              <CardDescription>
-                {info ? `${info.courseTitle} · ${info.meetingName}` : loadError ? "Class" : "Loading class..."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-center">
-              {loadError ? (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-5 text-sm text-amber-950">
-                  {loadError}
-                </div>
-              ) : checkInExpired && !confirmed ? (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-5 text-sm text-amber-950">
-                  Check-in is closed{info?.endsAt ? ` since ${formatTime(info.endsAt)}` : ""}. Ask your instructor to generate a new QR if attendance is still open.
-                </div>
-              ) : confirmed ? (
-                <div className="flex flex-col items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/80 px-4 py-6">
-                  <CheckCircle2 className="h-10 w-10 text-emerald-600" />
-                  <p className="text-sm font-medium text-emerald-900">
-                    {alreadyRecorded ? "You're already checked in for this session." : "You're checked in for this session."}
-                  </p>
-                  <p className="text-xs text-emerald-800/80 max-w-sm">
-                    Your check-in is saved on the EduHub attendance roster.
-                  </p>
-                </div>
+          <AttendanceJoinShell
+            tone={confirmed ? "success" : checkInExpired || loadError ? "warning" : "default"}
+            eyebrow={confirmed ? "You're in!" : "Class check-in"}
+            title={
+              confirmed
+                ? alreadyRecorded
+                  ? "Already checked in"
+                  : "Check-in complete!"
+                : loadError
+                  ? "Something went wrong"
+                  : checkInExpired
+                    ? "Check-in closed"
+                    : processing
+                      ? "Recording you..."
+                      : "Getting ready..."
+            }
+            description={
+              info ? (
+                <span className="inline-flex flex-col gap-1">
+                  <span className="font-semibold text-zinc-800">{info.courseTitle}</span>
+                  <span>{info.meetingName}</span>
+                </span>
+              ) : loadError ? (
+                "We couldn't load this session."
               ) : (
-                <p className="text-sm text-slate-600">{processing ? "Recording check-in..." : "Preparing check-in..."}</p>
-              )}
-              <Button asChild className="w-full rounded-full">
-                <Link to="/dashboard">Back to dashboard</Link>
-              </Button>
-            </CardContent>
-          </Card>
+                "Hang tight while we load your class session."
+              )
+            }
+          >
+            {loadError ? (
+              <div className="flex items-start gap-2 rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                <span>{loadError}</span>
+              </div>
+            ) : checkInExpired && !confirmed ? (
+              <div className="rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950">
+                Check-in is closed{info?.endsAt ? ` since ${formatTime(info.endsAt)}` : ""}. Ask your instructor
+                for a new QR if the session is still running.
+              </div>
+            ) : confirmed ? (
+              <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-4 text-center">
+                <p className="text-sm font-medium text-emerald-900">
+                  {alreadyRecorded
+                    ? "You're already on the roster for this session."
+                    : "Nice — your attendance is saved on the class roster."}
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2 rounded-2xl bg-zinc-50 px-4 py-4 text-sm text-zinc-600">
+                <Loader2 className="h-4 w-4 animate-spin text-[#3954d0]" aria-hidden />
+                {processing ? "Saving your check-in..." : "One moment..."}
+              </div>
+            )}
+            <Button asChild variant="outline" className="h-11 w-full rounded-full border-zinc-200">
+              <Link to="/dashboard">Back to dashboard</Link>
+            </Button>
+          </AttendanceJoinShell>
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Student check-in</CardTitle>
-              <CardDescription>
-                This QR link is for enrolled students. Sign in as a student to complete check-in, or open the teacher{" "}
-                <Link to="/dashboard/teacher/attendance" className="text-[#1e40af] underline font-medium">
+          <AttendanceJoinShell
+            tone="default"
+            eyebrow="Student check-in"
+            title="This QR is for students"
+            description={
+              <>
+                Sign in with a student account to complete check-in, or open the teacher{" "}
+                <Link to="/dashboard/teacher/attendance" className="font-semibold text-[#3954d0] underline-offset-2 hover:underline">
                   Attendance QR
                 </Link>{" "}
-                page to create a code.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 sm:flex-row">
-              <Button asChild className="rounded-full">
-                <Link to={signInLink}>Sign in as student</Link>
-              </Button>
-              <Button asChild variant="outline" className="rounded-full">
-                <Link to="/dashboard/teacher/attendance">Teacher QR tool</Link>
-              </Button>
-            </CardContent>
-          </Card>
+                tool to generate a new code.
+              </>
+            }
+          >
+            <Button asChild className="h-11 w-full rounded-full text-white hover:bg-[#2f47b3]" style={{ backgroundColor: "#3954d0" }}>
+              <Link to={signInLink}>Sign in as student</Link>
+            </Button>
+            <Button asChild variant="outline" className="h-11 w-full rounded-full">
+              <Link to="/dashboard/teacher/attendance">Teacher QR tool</Link>
+            </Button>
+          </AttendanceJoinShell>
         )}
-      </div>
     </div>
   );
 }

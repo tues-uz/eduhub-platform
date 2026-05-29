@@ -3,6 +3,8 @@ import type { SessionUser, UserRole } from "./types";
 import { getAccessToken } from "@/api/eduhubClient";
 import { eduhubAuth } from "@/api/eduhubClient";
 import { resolveInstructorCategory } from "@/features/teacher/resolveInstructorCategory";
+import { instructorProfileAvatarsStore } from "@/features/teacher/data/instructorProfileAvatarsStore";
+import { syncInstructorProfileAvatar } from "@/features/teacher/syncInstructorProfileAvatar";
 
 const USER_ID_KEY = "userId";
 const USER_AVATAR_URL_KEY = "userAvatarUrl";
@@ -13,6 +15,30 @@ function mapApiRoleToApp(apiRole: string): UserRole {
   if (apiRole === "LECTURER") return "teacher";
   if (apiRole === "ADMIN") return "admin";
   return "student";
+}
+
+function coalesceAvatarUrl(...candidates: (string | null | undefined)[]): string | undefined {
+  for (const candidate of candidates) {
+    const trimmed = candidate?.trim();
+    if (trimmed) return trimmed;
+  }
+  return undefined;
+}
+
+function mergeSessionAvatarUrl(
+  apiAvatarUrl: string | null | undefined,
+  previous: SessionUser,
+  nextEmail: string,
+): string | undefined {
+  const sameUser = previous.email.trim().toLowerCase() === nextEmail.trim().toLowerCase();
+  return coalesceAvatarUrl(apiAvatarUrl, sameUser ? previous.avatarUrl : undefined);
+}
+
+export function resolveAvatarFromAuthResponse(
+  apiAvatarUrl: string | null | undefined,
+  email: string,
+): string | undefined {
+  return mergeSessionAvatarUrl(apiAvatarUrl, readSessionUser(), email);
 }
 
 function readSessionUser(): SessionUser {
@@ -47,6 +73,7 @@ export function clearSessionUser(): void {
   localStorage.removeItem("userName");
   localStorage.removeItem("userEmail");
   localStorage.removeItem("userRole");
+  localStorage.removeItem(USER_AVATAR_URL_KEY);
   localStorage.removeItem(USER_PHONE_KEY);
   localStorage.removeItem(USER_CATEGORY_KEY);
 }
@@ -67,6 +94,14 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
 
   // On mount: if we have a token, fetch current user from API so role/profile are correct without hard refresh
   useEffect(() => {
+    const session = readSessionUser();
+    if (session.avatarUrl?.trim()) {
+      instructorProfileAvatarsStore.set(session.email, session.name, session.avatarUrl);
+      if (session.role === "teacher") {
+        syncInstructorProfileAvatar(session.email, session.name, session.avatarUrl);
+      }
+    }
+
     if (!getAccessToken()) return;
     eduhubAuth
       .me()
@@ -75,15 +110,19 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
         const prev = readSessionUser();
         const category =
           role === "teacher" ? resolveInstructorCategory(me.email, me.category ?? prev.category) : undefined;
+        const avatarUrl = mergeSessionAvatarUrl(me.avatarUrl, prev, me.email);
         setSessionUser({
           id: me.id,
           name: me.fullName,
           email: me.email,
           role,
-          avatarUrl: me.avatarUrl ?? prev.avatarUrl,
+          avatarUrl,
           phoneNumber: me.phoneNumber ?? prev.phoneNumber,
           category,
         });
+        if (role === "teacher") {
+          syncInstructorProfileAvatar(me.email, me.fullName, avatarUrl);
+        }
         setUser(readSessionUser());
       })
       .catch(() => {

@@ -30,6 +30,8 @@ export interface EnrollmentApplicationRecord {
   priceCurrency?: string;
   /** Chosen when paymentPlan is DOWN_PAYMENT (1, 2, 4, 6, or 8). */
   installmentCount?: EnrollmentInstallmentCount;
+  /** Referral code entered at enrollment (optional). */
+  referralCode?: string;
   status: EnrollmentApplicationStatus;
   submittedAt: string;
   reviewedAt?: string;
