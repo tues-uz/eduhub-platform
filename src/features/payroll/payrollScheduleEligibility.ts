@@ -231,7 +231,7 @@ export function buildPayrollPeriodOptions(slots: SessionSlotLike[], courseId: st
   const { heldSlotKeys, activeSlotKeys } = getScheduleAttendanceState(courseId);
 
   return tabs
-    .map((tab) => {
+    .map((tab): PayrollPeriodOption | null => {
       if (tab.slots.length === 0) return null;
 
       let finishedCount = 0;

@@ -1,4 +1,6 @@
 import { useSyncExternalStore } from "react";
+import { useEffect } from "react";
+import { eduhubPayroll } from "@/api/eduhubClient";
 
 const STORAGE_KEY = "eduhub.adminPayrollProofs.v1";
 /** Base64 data URLs — demo/local only; replace with API upload. */
@@ -6,6 +8,7 @@ export const PAYROLL_PROOF_MAX_FILE_BYTES = 4 * 1024 * 1024;
 export const PAYROLL_INFORMATION_MAX_CHARS = 2000;
 
 export type PayrollProofRecord = {
+  requestId?: string;
   /** Admin context: bank ref, period, rate notes, cautions for finance. */
   informationNotes?: string;
   fileName?: string;
@@ -52,6 +55,7 @@ export function buildPayrollProofPagePath(
 }
 
 let snapshot: Record<string, PayrollProofRecord> = {};
+let loadingPromise: Promise<void> | null = null;
 
 function normalizeRecord(r: Record<string, unknown>): PayrollProofRecord | null {
   const informationNotes =
@@ -139,7 +143,34 @@ export const adminPayrollProofStore = {
     return snapshot[payrollProofKey(className, course)];
   },
 
-  setInformationNotes(className: string, course: string, text: string): void {
+  load(): Promise<void> {
+    if (loadingPromise) return loadingPromise;
+    loadingPromise = eduhubPayroll
+      .listRequests()
+      .then((rows) => {
+        const next: Record<string, PayrollProofRecord> = {};
+        for (const row of rows ?? []) {
+          if (!row.proof) continue;
+          next[payrollProofKey(row.classSection, row.course)] = {
+            requestId: row.id,
+            informationNotes: row.proof.informationNotes,
+            fileName: row.proof.fileName,
+            mimeType: row.proof.mimeType,
+            uploadedAt: row.proof.uploadedAt,
+            dataUrl: row.proof.proofUrl,
+            approvedAt: row.proof.approvedAt,
+          };
+        }
+        snapshot = next;
+        emit();
+      })
+      .finally(() => {
+        loadingPromise = null;
+      });
+    return loadingPromise;
+  },
+
+  async setInformationNotes(className: string, course: string, text: string, requestId?: string): Promise<void> {
     const key = payrollProofKey(className, course);
     const prev = snapshot[key] ?? {};
     const trimmed = text.trim();
@@ -157,9 +188,20 @@ export const adminPayrollProofStore = {
     }
     persist();
     emit();
+    const id = requestId ?? next.requestId ?? prev.requestId;
+    if (id) {
+      await eduhubPayroll.updateProof(id, {
+        informationNotes: next.informationNotes,
+        fileName: next.fileName,
+        mimeType: next.mimeType,
+        proofUrl: next.dataUrl,
+        uploadedAt: next.uploadedAt,
+      });
+      void adminPayrollProofStore.load();
+    }
   },
 
-  async upload(className: string, course: string, file: File): Promise<{ ok: true } | { ok: false; reason: string }> {
+  async upload(className: string, course: string, file: File, requestId?: string): Promise<{ ok: true } | { ok: false; reason: string }> {
     if (!isAllowedFile(file)) {
       return { ok: false, reason: "Use a PDF or image (JPG, PNG, WebP)." };
     }
@@ -185,10 +227,25 @@ export const adminPayrollProofStore = {
     };
     persist();
     emit();
+    const id = requestId ?? prev.requestId;
+    if (id) {
+      try {
+        await eduhubPayroll.updateProof(id, {
+          informationNotes: snapshot[key]?.informationNotes,
+          fileName: file.name,
+          mimeType: file.type || "application/octet-stream",
+          proofUrl: dataUrl,
+          uploadedAt: snapshot[key]?.uploadedAt,
+        });
+        void adminPayrollProofStore.load();
+      } catch (e) {
+        return { ok: false, reason: e instanceof Error ? e.message : "Please try again." };
+      }
+    }
     return { ok: true };
   },
 
-  approve(className: string, course: string): boolean {
+  async approve(className: string, course: string, requestId?: string): Promise<boolean> {
     const key = payrollProofKey(className, course);
     const prev = snapshot[key];
     if (!hasPayrollProofFile(prev)) return false;
@@ -198,6 +255,15 @@ export const adminPayrollProofStore = {
     };
     persist();
     emit();
+    const id = requestId ?? prev.requestId;
+    if (id) {
+      try {
+        await eduhubPayroll.approveProof(id);
+        void adminPayrollProofStore.load();
+      } catch {
+        return false;
+      }
+    }
     return true;
   },
 
@@ -218,6 +284,9 @@ export const adminPayrollProofStore = {
 };
 
 export function usePayrollProofMap(): Record<string, PayrollProofRecord> {
+  useEffect(() => {
+    void adminPayrollProofStore.load();
+  }, []);
   return useSyncExternalStore(
     adminPayrollProofStore.subscribe,
     adminPayrollProofStore.getSnapshot,

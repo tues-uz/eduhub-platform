@@ -1,8 +1,7 @@
 import { useSyncExternalStore } from "react";
-import {
-  notifyAdminInstructorPayrollRequest,
-  notifyInstructorPayrollRequestDecision,
-} from "@/features/notifications/appNotificationStore";
+import { useEffect } from "react";
+import { eduhubPayroll } from "@/api/eduhubClient";
+import type { PayrollRequestResponse } from "@/api/eduhubTypes";
 import { parsePayrollPeriodYearMonth } from "@/features/payroll/payrollScheduleEligibility";
 
 const STORAGE_KEY = "eduhub.instructorPayrollRequests.v1";
@@ -14,6 +13,7 @@ export type InstructorPayrollRequestStatus = "pending" | "approved" | "rejected"
 export type InstructorPayrollRequestRecord = {
   id: string;
   submittedAt: string;
+  courseId?: string;
   classSection: string;
   course: string;
   instructorName: string;
@@ -101,6 +101,29 @@ function save(rows: InstructorPayrollRequestRecord[]) {
 }
 
 let snapshot: InstructorPayrollRequestRecord[] = load();
+let loadingPromise: Promise<void> | null = null;
+
+function fromApi(r: PayrollRequestResponse): InstructorPayrollRequestRecord {
+  return {
+    id: r.id,
+    submittedAt: r.submittedAt,
+    courseId: r.courseId,
+    classSection: r.classSection,
+    course: r.course,
+    instructorName: r.instructorName,
+    instructorEmailNorm: r.instructorEmailNorm,
+    periodLabel: r.periodLabel,
+    sessionsTaught: r.sessionsTaught,
+    requestedPayout: r.requestedPayout,
+    payoutDetails: r.payoutDetails,
+    summary: r.summary,
+    instructorNotes: r.instructorNotes,
+    status: r.status,
+    resolvedAt: r.resolvedAt,
+    adminNote: r.adminNote,
+    reviewedByCode: r.reviewedByCode,
+  };
+}
 
 function hydrate() {
   snapshot = load();
@@ -133,7 +156,22 @@ export const instructorPayrollRequestStore = {
     });
   },
 
-  submit(opts: {
+  load(): Promise<void> {
+    if (loadingPromise) return loadingPromise;
+    loadingPromise = eduhubPayroll
+      .listRequests()
+      .then((rows) => {
+        snapshot = (rows ?? []).map(fromApi);
+        emit();
+      })
+      .finally(() => {
+        loadingPromise = null;
+      });
+    return loadingPromise;
+  },
+
+  async submit(opts: {
+    courseId: string;
     classSection: string;
     course: string;
     instructorName: string;
@@ -144,7 +182,7 @@ export const instructorPayrollRequestStore = {
     payoutDetails: string;
     summary: string;
     instructorNotes: string;
-  }): { ok: true; record: InstructorPayrollRequestRecord } | { ok: false; reason: string } {
+  }): Promise<{ ok: true; record: InstructorPayrollRequestRecord } | { ok: false; reason: string }> {
     const classKey = instructorPayrollRequestDedupeKey(
       opts.classSection,
       opts.course,
@@ -171,102 +209,59 @@ export const instructorPayrollRequestStore = {
       };
     }
 
-    const record: InstructorPayrollRequestRecord = {
-      id: crypto.randomUUID(),
-      submittedAt: new Date().toISOString(),
-      classSection: opts.classSection.trim(),
-      course: opts.course.trim(),
-      instructorName: opts.instructorName.trim(),
-      instructorEmailNorm: opts.instructorEmailNorm.trim().toLowerCase(),
-      periodLabel: opts.periodLabel.trim(),
-      sessionsTaught: opts.sessionsTaught.trim(),
-      requestedPayout: opts.requestedPayout.trim(),
-      payoutDetails: opts.payoutDetails.trim(),
-      summary: opts.summary.trim(),
-      instructorNotes: opts.instructorNotes.trim(),
-      status: "pending",
-    };
-    snapshot = [record, ...snapshot].slice(0, 500);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-    } catch {
-      //
+      const api = await eduhubPayroll.submitRequest({
+        courseId: opts.courseId,
+        period: periodYm ?? undefined,
+        periodLabel: opts.periodLabel.trim(),
+        sessionsTaught: opts.sessionsTaught.trim(),
+        requestedPayout: opts.requestedPayout.trim(),
+        currency: opts.requestedPayout.trim().split(/\s+/).pop() || "UZS",
+        payoutDetails: opts.payoutDetails.trim(),
+        summary: opts.summary.trim(),
+        instructorNotes: opts.instructorNotes.trim(),
+      });
+      const record = fromApi(api);
+      snapshot = [record, ...snapshot.filter((r) => r.id !== record.id)].slice(0, 500);
+      emit();
+      return { ok: true, record };
+    } catch (e) {
+      return { ok: false, reason: e instanceof Error ? e.message : "Please try again." };
     }
-    emit();
-
-    notifyAdminInstructorPayrollRequest({
-      instructorName: record.instructorName,
-      classSection: record.classSection,
-      course: record.course,
-      periodLabel: record.periodLabel || undefined,
-      sessionsTaught: record.sessionsTaught || undefined,
-      requestedPayout: record.requestedPayout || undefined,
-      payoutDetails: record.payoutDetails || undefined,
-      summary: record.summary,
-      instructorNotes: record.instructorNotes || undefined,
-    });
-
-    return { ok: true, record };
   },
 
-  approve(id: string, adminActionCode: string): boolean {
-    const i = snapshot.findIndex((r) => r.id === id && r.status === "pending");
-    if (i === -1) return false;
-    const resolvedAt = new Date().toISOString();
-    const code = adminActionCode.trim().toUpperCase();
-    snapshot = snapshot.map((r) =>
-      r.id === id ? { ...r, status: "approved" as const, resolvedAt, reviewedByCode: code } : r,
-    );
+  async approve(id: string, adminActionCode: string): Promise<boolean> {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+      const api = await eduhubPayroll.approveRequest(id, { adminActionCode: adminActionCode.trim().toUpperCase() });
+      const record = fromApi(api);
+      snapshot = snapshot.map((r) => (r.id === id ? record : r));
+      emit();
+      return true;
     } catch {
-      //
+      return false;
     }
-    emit();
-    const r = snapshot.find((x) => x.id === id);
-    if (r) {
-      notifyInstructorPayrollRequestDecision({
-        instructorEmailNorm: r.instructorEmailNorm,
-        instructorName: r.instructorName,
-        classSection: r.classSection,
-        course: r.course,
-        decision: "approved",
-      });
-    }
-    return true;
   },
 
-  reject(id: string, adminActionCode: string, adminNote?: string): boolean {
-    const i = snapshot.findIndex((r) => r.id === id && r.status === "pending");
-    if (i === -1) return false;
-    const resolvedAt = new Date().toISOString();
-    const note = adminNote?.trim() || undefined;
-    const code = adminActionCode.trim().toUpperCase();
-    snapshot = snapshot.map((r) =>
-      r.id === id ? { ...r, status: "rejected" as const, resolvedAt, adminNote: note, reviewedByCode: code } : r,
-    );
+  async reject(id: string, adminActionCode: string, adminNote?: string): Promise<boolean> {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-    } catch {
-      //
-    }
-    emit();
-    const r = snapshot.find((x) => x.id === id);
-    if (r) {
-      notifyInstructorPayrollRequestDecision({
-        instructorEmailNorm: r.instructorEmailNorm,
-        instructorName: r.instructorName,
-        classSection: r.classSection,
-        course: r.course,
-        decision: "rejected",
-        adminNote: note,
+      const api = await eduhubPayroll.rejectRequest(id, {
+        adminActionCode: adminActionCode.trim().toUpperCase(),
+        adminNote: adminNote?.trim() || undefined,
       });
+      const record = fromApi(api);
+      snapshot = snapshot.map((r) => (r.id === id ? record : r));
+      emit();
+      return true;
+    } catch {
+      return false;
     }
-    return true;
   },
 };
 
 export function useInstructorPayrollRequests(): InstructorPayrollRequestRecord[] {
+  useEffect(() => {
+    void instructorPayrollRequestStore.load();
+  }, []);
   return useSyncExternalStore(
     instructorPayrollRequestStore.subscribe,
     instructorPayrollRequestStore.getSnapshot,

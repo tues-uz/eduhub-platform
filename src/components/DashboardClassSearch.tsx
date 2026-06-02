@@ -84,7 +84,7 @@ export function DashboardClassSearch({
   useEffect(() => {
     if (variant !== "header" || compact) return;
 
-    const onKeyDown = (event: KeyboardEvent) => {
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
       if (

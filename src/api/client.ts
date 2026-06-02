@@ -15,7 +15,7 @@ import type { LucideIcon } from "@/lib/icons";
 import { Users, GraduationCap, BookOpen, TrendingUp } from "@/lib/icons";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
-import { getAccessToken, eduhubAdmin, eduhubCourses, eduhubEnrollments } from "./eduhubClient";
+import { getAccessToken, eduhubAdmin, eduhubEnrollments } from "./eduhubClient";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import { resolveInstructorAvatarUrl } from "@/features/teacher/resolveInstructorAvatarUrl";
 
@@ -386,6 +386,7 @@ export const coursesApi = {
           id: e.course.id,
           title: e.course.title,
           instructor: e.course.lecturerName,
+          instructorAvatarUrl: e.course.lecturerAvatarUrl?.trim() || undefined,
           progress: e.progress ?? 0,
           status: e.status === "COMPLETED" ? "Completed" : "In Progress",
           nextLesson: "—",
@@ -423,29 +424,7 @@ export const coursesApi = {
                 }))
             : [];
 
-        const localApprovedWithThumbs = await Promise.all(
-          localApprovedApi.map(async (item) => {
-            try {
-              const course = await eduhubCourses.getById(String(item.id));
-              const thumb = course.thumbnailUrl?.trim();
-              const instructorAvatarUrl = course.lecturer?.avatarUrl?.trim();
-              return {
-                ...item,
-                instructor: course.lecturer?.fullName?.trim() || item.instructor,
-                ...(thumb ? { thumbnailUrl: thumb } : {}),
-                ...(instructorAvatarUrl ? { instructorAvatarUrl } : {}),
-              };
-            } catch {
-              return item;
-            }
-          }),
-        );
-
-        return enrichStudentCoursesInstructorAvatars([
-          ...apiList,
-          ...localApprovedWithThumbs,
-          ...localTeacher,
-        ]);
+        return [...apiList, ...localApprovedApi, ...localTeacher];
       } catch {
         return [...enrolledCourses.map(enrichMockCourseProgress), ...localTeacher];
       }

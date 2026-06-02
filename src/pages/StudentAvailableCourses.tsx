@@ -2,8 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BookOpen, Search, Loader2, PlayCircle, CalendarDays } from "@/lib/icons";
 import { InstructorAvatar } from "@/components/InstructorAvatar";
-import { StudentAvatarGroup } from "@/components/StudentAvatarGroup";
-import type { StudentAvatarPreview } from "@/components/StudentAvatarGroup";
+import { StudentAvatarGroup, type StudentAvatarPreview } from "@/components/StudentAvatarGroup";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -26,13 +25,13 @@ import {
   type StudentCourseEnrollmentDisplayStatus,
 } from "@/features/enrollment/studentCourseEnrollmentStatus";
 import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
-import { resolveEnrolledStudentPreviews } from "@/features/student/enrolledStudentPreviews";
 import { StudentPromoCarousel } from "@/features/student/components/StudentPromoCarousel";
 import { COURSE_CATEGORY_OPTIONS } from "@/features/courses/courseCategories";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
 import { tuitionForJoinFromMeeting } from "@/features/enrollment/enrollmentSessionTuition";
 import { resolveInstructorAvatarUrl } from "@/features/teacher/resolveInstructorAvatarUrl";
 import type { CourseScheduleSummary } from "@/features/student/courseScheduleSummary";
+import { resolveEnrolledStudentPreviews } from "@/features/student/enrolledStudentPreviews";
 
 type AvailableCourseItem = {
   id: string;
@@ -208,7 +207,7 @@ const StudentAvailableCourses = () => {
         };
       });
 
-      const mapApiToItem = (c: CourseSummaryResponse & { lecturer?: { avatarUrl?: string } }) => {
+      const mapApiToItem = (c: CourseSummaryResponse) => {
         const enrolledData = enrolledByLinkId.get(c.id);
         const price = c.pricing?.discountedAmount ?? c.pricing?.amount;
         return {
@@ -216,7 +215,7 @@ const StudentAvailableCourses = () => {
           linkId: c.id,
           title: c.title,
           instructor: c.lecturerName,
-          instructorAvatarUrl: c.lecturer?.avatarUrl?.trim() || undefined,
+          instructorAvatarUrl: c.lecturerAvatarUrl?.trim() || undefined,
           category: c.category ?? "Class",
           duration: "—",
           modules: 0,
@@ -249,11 +248,9 @@ const StudentAvailableCourses = () => {
         }
 
         const localOnly = localItems.filter((c) => !seenIds.has(c.id));
-        const merged = [...apiItems, ...localOnly];
-        const withAvatars = await enrichWithInstructorAvatars(merged);
-        const withStudents = await enrichWithEnrolledStudents(withAvatars);
+        const merged = await enrichWithInstructorAvatars(await enrichWithEnrolledStudents([...apiItems, ...localOnly]));
         if (!cancelled) {
-          setCourses(withStudents);
+          setCourses(merged);
         }
       } catch {
         if (!cancelled) setCourses(localItems);

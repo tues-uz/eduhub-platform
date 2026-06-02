@@ -405,7 +405,7 @@ export default function TeacherPayrollPage() {
     });
   };
 
-  const onSubmitRequest = (className: string, course: string, summary: string) => {
+  const onSubmitRequest = async (courseId: string, className: string, course: string, summary: string) => {
     const ck = classCardKey(className, course);
     initFormIfMissing(ck);
     const f = formByClass[ck];
@@ -415,7 +415,8 @@ export default function TeacherPayrollPage() {
       return;
     }
     const instructorNotes = f.instructorNotes.trim();
-    const result = instructorPayrollRequestStore.submit({
+    const result = await instructorPayrollRequestStore.submit({
+      courseId,
       classSection: className,
       course,
       instructorName: instructorLabel,
@@ -762,7 +763,7 @@ export default function TeacherPayrollPage() {
                             paymentCurrency={paymentCurrency}
                             paidPaymentAmounts={paidPaymentAmounts}
                             existingClassRequests={classPayrollRequests}
-                            onSubmit={() => onSubmitRequest(agg.className, agg.course, summaryText)}
+                            onSubmit={() => void onSubmitRequest(agg.courseId, agg.className, agg.course, summaryText)}
                           />
                         </Fragment>
                       );

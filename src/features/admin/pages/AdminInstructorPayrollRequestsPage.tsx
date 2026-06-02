@@ -134,10 +134,10 @@ export default function AdminInstructorPayrollRequestsPage() {
                         type="button"
                         size="sm"
                         className="bg-emerald-600 hover:bg-emerald-700"
-                        onClick={() => {
+                        onClick={async () => {
                           const code = requireAdminCode();
                           if (!code) return;
-                          const ok = instructorPayrollRequestStore.approve(r.id, code);
+                          const ok = await instructorPayrollRequestStore.approve(r.id, code);
                           if (ok) toast.success("Request approved", { description: r.instructorName });
                           else toast.error("Could not approve", { description: "Request may have been removed." });
                         }}
@@ -148,11 +148,11 @@ export default function AdminInstructorPayrollRequestsPage() {
                         type="button"
                         size="sm"
                         variant="destructive"
-                        onClick={() => {
+                        onClick={async () => {
                           const code = requireAdminCode();
                           if (!code) return;
                           const note = rejectNotes[r.id]?.trim();
-                          const ok = instructorPayrollRequestStore.reject(r.id, code, note);
+                          const ok = await instructorPayrollRequestStore.reject(r.id, code, note);
                           if (ok) {
                             toast.message("Request rejected", { description: r.instructorName });
                             setRejectNotes((prev) => {

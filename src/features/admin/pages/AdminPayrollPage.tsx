@@ -6,7 +6,6 @@ import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
 import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock";
 import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
-import { usePayrollSubmissions } from "@/features/admin/data/adminPayrollHistoryStore";
 import { aggregatePaymentsByClass, formatMoney, sumAmountsForStatuses } from "@/features/payroll/classPayrollAggregate";
 import { formatThousandsInText } from "@/lib/utils";
 import { useInstructorPayrollRequests } from "@/features/teacher/data/instructorPayrollRequestStore";
@@ -94,7 +93,22 @@ export default function AdminPayrollPage() {
 
   const payments = useAdminPayments();
   const payrollRequests = useInstructorPayrollRequests();
-  const proofRows = usePayrollSubmissions();
+  const proofRows = useMemo(
+    () =>
+      payrollRequests
+        .filter((r) => r.status === "approved")
+        .map((r) => ({
+          id: r.id,
+          submittedAt: r.resolvedAt ?? r.submittedAt,
+          classSection: r.classSection,
+          course: r.course,
+          instructorName: r.instructorName,
+          instructorEmail: r.instructorEmailNorm || undefined,
+          summary: r.summary,
+          notesPreview: r.adminNote,
+        })),
+    [payrollRequests],
+  );
 
   const pendingPayrollCount = useMemo(
     () => payrollRequests.filter((r) => r.status === "pending").length,

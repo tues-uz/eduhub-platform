@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { eduhubAuth } from "@/api/eduhubClient";
+import { eduhubAuth, setAuthTokens } from "@/api/eduhubClient";
 import { saveRegistrationPhones } from "@/features/auth/registrationPhoneStorage";
+import { setSessionUser, useAuthSession } from "@/features/auth/context";
+import type { UserRole } from "@/features/auth/types";
 
 const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -25,10 +27,10 @@ const SignUp = () => {
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { refreshUser } = useAuthSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +43,7 @@ const SignUp = () => {
 
     setIsLoading(true);
     try {
-      await eduhubAuth.register({
+      const res = await eduhubAuth.register({
         fullName: formData.fullName,
         email: formData.email,
         phoneNumber: formData.phoneNumber,
@@ -53,6 +55,8 @@ const SignUp = () => {
         password: formData.password,
         role: "STUDENT",
       });
+
+      // Persist extra fields locally as backup (API may not return all of them yet)
       saveRegistrationPhones(formData.email, {
         phoneNumber: formData.phoneNumber,
         parentPhoneNumber: formData.parentPhoneNumber,
@@ -61,8 +65,22 @@ const SignUp = () => {
         birthCity: formData.birthCity,
         latestSchool: formData.latestSchool,
       });
-      setIsSuccess(true);
-      toast({ title: "Registration successful", description: "Please check your email to verify your account." });
+
+      // Auto-login using the tokens returned from registration
+      setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);
+      const role: UserRole = "student";
+      setSessionUser({
+        id: res.user.id,
+        name: res.user.fullName,
+        email: res.user.email,
+        role,
+        avatarUrl: res.user.avatarUrl,
+        phoneNumber: res.user.phoneNumber ?? formData.phoneNumber,
+      });
+      refreshUser();
+
+      toast({ title: "Welcome!", description: "Your account has been created." });
+      navigate("/dashboard");
     } catch (err: any) {
       setError(err.message || "Failed to register. Please try again.");
     } finally {
@@ -95,41 +113,20 @@ const SignUp = () => {
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
               </Button>
-              {/* Success Message UI */}
-              {isSuccess ? (
-                <div className="text-center space-y-6 py-8">
-                  <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Mail className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-foreground">Check Your Email</h2>
-                  <p className="text-foreground/70">
-                    We've sent a verification link to <strong>{formData.email}</strong>.
-                    Please verify your email address before signing in.
+              {/* Header */}
+              <div className="mb-6 border-b border-gray-200/60 pb-6 text-center">
+                <img
+                  src="/logo-eduhub.png"
+                  alt="EduHub"
+                  className="mx-auto mb-4 h-12 w-auto object-contain"
+                />
+                <div className="space-y-1">
+                  <h1 className="text-3xl font-bold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.5px' }}>Create Account</h1>
+                  <p className="text-sm text-foreground/70">
+                    Join us and start your learning journey today
                   </p>
-                  <Button
-                    onClick={() => navigate("/signin")}
-                    className="w-full h-12 rounded-full text-white font-semibold mt-4"
-                    style={{ backgroundColor: '#1e40af' }}
-                  >
-                    Go to Sign In
-                  </Button>
                 </div>
-              ) : (
-                <>
-                  {/* Header */}
-                  <div className="mb-6 border-b border-gray-200/60 pb-6 text-center">
-                    <img
-                      src="/logo-eduhub.png"
-                      alt="EduHub"
-                      className="mx-auto mb-4 h-12 w-auto object-contain"
-                    />
-                    <div className="space-y-1">
-                      <h1 className="text-3xl font-bold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.5px' }}>Create Account</h1>
-                      <p className="text-sm text-foreground/70">
-                        Join us and start your learning journey today
-                      </p>
-                    </div>
-                  </div>
+              </div>
 
                   {/* Error Message */}
                   {error && (
@@ -432,8 +429,6 @@ const SignUp = () => {
                       Sign in
                     </Link>
                   </div>
-                </>
-              )}
             </div>
           </div>
         </div>

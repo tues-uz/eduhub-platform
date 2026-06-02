@@ -40,6 +40,11 @@ import type {
   CourseReviewResponse,
   CourseReviewSummaryResponse,
   FinalGradeRequest,
+  PayrollClassSummaryResponse,
+  PayrollDecisionRequest,
+  PayrollProofUpdateRequest,
+  PayrollRequestCreateRequest,
+  PayrollRequestResponse,
 } from "./eduhubTypes";
 
 const BASE = EDUHUB_API_BASE_URL + EDUHUB_API_PREFIX;
@@ -249,7 +254,7 @@ export const eduhubAuth = {
     request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify(body), skipAuth: true }),
 
   register: (body: RegisterRequest) =>
-    request<{ message: string }>("/auth/register", { method: "POST", body: JSON.stringify(body), skipAuth: true }),
+    request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify(body), skipAuth: true }),
 
   verifyEmail: (token: string) =>
     request<void>(`/auth/verify-email?token=${token}`, { method: "POST", skipAuth: true }),
@@ -695,6 +700,36 @@ export const eduhubAdmin = {
     request<ScheduleProposalResponse>(`/admin/courses/${courseId}/schedule`, { method: "POST", body: JSON.stringify(body) }),
 };
 
+export const eduhubPayroll = {
+  getClasses: () => request<PayrollClassSummaryResponse[]>("/payroll/classes"),
+
+  listRequests: (params?: { status?: "PENDING" | "APPROVED" | "REJECTED"; instructorId?: string; courseId?: string }) => {
+    const sp = new URLSearchParams();
+    if (params?.status) sp.set("status", params.status);
+    if (params?.instructorId) sp.set("instructorId", params.instructorId);
+    if (params?.courseId) sp.set("courseId", params.courseId);
+    const qs = sp.toString();
+    return request<PayrollRequestResponse[]>(`/payroll/requests${qs ? `?${qs}` : ""}`);
+  },
+
+  submitRequest: (body: PayrollRequestCreateRequest) =>
+    request<PayrollRequestResponse>("/payroll/requests", { method: "POST", body: JSON.stringify(body) }),
+
+  getRequest: (id: string) => request<PayrollRequestResponse>(`/payroll/requests/${id}`),
+
+  approveRequest: (id: string, body: PayrollDecisionRequest) =>
+    request<PayrollRequestResponse>(`/payroll/requests/${id}/approve`, { method: "PATCH", body: JSON.stringify(body) }),
+
+  rejectRequest: (id: string, body: PayrollDecisionRequest) =>
+    request<PayrollRequestResponse>(`/payroll/requests/${id}/reject`, { method: "PATCH", body: JSON.stringify(body) }),
+
+  updateProof: (id: string, body: PayrollProofUpdateRequest) =>
+    request<PayrollRequestResponse>(`/payroll/requests/${id}/proof`, { method: "PATCH", body: JSON.stringify(body) }),
+
+  approveProof: (id: string) =>
+    request<PayrollRequestResponse>(`/payroll/requests/${id}/proof/approve`, { method: "POST" }),
+};
+
 /** Schedule Workflow */
 export const eduhubSchedule = {
   getProposal: (courseId: string) =>
@@ -796,6 +831,13 @@ export const eduhubCompletion = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+
+  listCourseReviews: (courseId: string, params?: { target?: "INSTRUCTOR" | "PLATFORM"; limit?: number }) => {
+    const sp = new URLSearchParams();
+    sp.set("target", params?.target ?? "INSTRUCTOR");
+    sp.set("limit", String(params?.limit ?? 3));
+    return request<CourseReviewResponse[]>(`/courses/${courseId}/reviews?${sp}`);
+  },
 
   myReviewSummary: (courseId: string) =>
     request<CourseReviewSummaryResponse>(`/courses/${courseId}/reviews/me`),

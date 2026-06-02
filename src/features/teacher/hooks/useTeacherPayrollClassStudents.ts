@@ -188,7 +188,7 @@ export function useTeacherPayrollClassStudents(
               })),
             ] as const;
           } catch {
-            return [course.id, []] as const;
+            return [course.id, [] as EnrolledStudent[]] as const;
           }
         }),
       );

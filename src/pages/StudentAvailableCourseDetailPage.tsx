@@ -23,8 +23,8 @@ import { cn } from "@/lib/utils";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { instructorProfileAvatarsStore } from "@/features/teacher/data/instructorProfileAvatarsStore";
 import type { TeacherCourse } from "@/features/teacher/types";
-import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
-import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
+import { eduhubCompletion, eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
+import type { CourseResponse, CourseReviewResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import {
   boundsFromMeetingSlots,
@@ -134,17 +134,21 @@ function formatReviewAuthorName(courseId: string, emailNorm: string): string {
   return "Student";
 }
 
-function formatReviewDateLabel(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const diffDays = Math.floor((Date.now() - d.getTime()) / (24 * 60 * 60 * 1000));
-  if (diffDays < 1) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 14) return "1 week ago";
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  if (diffDays < 60) return "Last month";
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+function formatReviewDateLabel(iso: string | undefined): string {
+  if (!iso?.trim()) return "Recently";
+  const submitted = new Date(iso.trim());
+  if (Number.isNaN(submitted.getTime())) return "Recently";
+  const diffMs = submitted.getTime() - Date.now();
+  const absMs = Math.abs(diffMs);
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const month = 30 * day;
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+  if (absMs < hour) return rtf.format(Math.round(diffMs / minute), "minute");
+  if (absMs < day) return rtf.format(Math.round(diffMs / hour), "hour");
+  if (absMs < month) return rtf.format(Math.round(diffMs / day), "day");
+  return submitted.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
 function ReviewStars({ rating }: { rating: number }) {
@@ -179,6 +183,8 @@ const StudentAvailableCourseDetailPage = () => {
   const [apiCourse, setApiCourse] = useState<CourseResponse | null>(null);
   const [lessonRows, setLessonRows] = useState<LessonPreview[]>([]);
   const [scheduleProposal, setScheduleProposal] = useState<ScheduleProposalResponse | null>(null);
+  const [studentReviews, setStudentReviews] = useState<CourseReviewResponse[]>([]);
+  const [reviewsError, setReviewsError] = useState(false);
 
   const isTeacher = linkId.startsWith(TEACHER_PREFIX);
   const teacherId = isTeacher ? linkId.slice(TEACHER_PREFIX.length) : null;
@@ -232,6 +238,8 @@ const StudentAvailableCourseDetailPage = () => {
     setApiCourse(null);
     setLessonRows([]);
     setScheduleProposal(null);
+    setStudentReviews([]);
+    setReviewsError(false);
 
     if (isTeacher && teacherId) {
       const tc = teacherCoursesStore.getById(teacherId);
@@ -260,12 +268,18 @@ const StudentAvailableCourseDetailPage = () => {
         eduhubCourses.getById(linkId),
         eduhubCourses.getAllLessons(linkId).catch(() => [] as LessonPreview[]),
         eduhubSchedule.getProposal(linkId).catch(() => null),
+        eduhubCompletion
+          .listCourseReviews(linkId, { target: "INSTRUCTOR", limit: 3 })
+          .then((reviews) => ({ reviews, failed: false }))
+          .catch(() => ({ reviews: [] as CourseReviewResponse[], failed: true })),
       ])
-        .then(([c, allLessons, proposal]) => {
+        .then(([c, allLessons, proposal, reviewsResult]) => {
           if (cancelled) return;
           setApiCourse(c);
           setScheduleProposal(proposal);
           setLessonRows(allLessons.map((l) => ({ id: l.id, title: l.title })));
+          setStudentReviews(reviewsResult.reviews);
+          setReviewsError(reviewsResult.failed);
         })
         .catch(() => {
           if (!cancelled) setNotFound(true);
@@ -694,13 +708,69 @@ const StudentAvailableCourseDetailPage = () => {
                       <h2 className="text-base font-semibold tracking-tight text-foreground">
                         Reviews from students
                       </h2>
-                      {instructorReviews.length > 0 ? (
+                      {studentReviews.length > 0 || instructorReviews.length > 0 ? (
                         <p className="text-xs text-foreground/55">
-                          {instructorReviews.length} review{instructorReviews.length === 1 ? "" : "s"}
+                          {studentReviews.length + instructorReviews.length} review
+                          {studentReviews.length + instructorReviews.length === 1 ? "" : "s"}
                         </p>
                       ) : null}
                     </div>
-                    {instructorReviews.length > 0 ? (
+                    {reviewsError ? (
+                      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <p className="text-sm font-medium text-amber-950">Reviews could not be loaded.</p>
+                        <p className="mt-1 text-sm leading-relaxed text-amber-900/80">
+                          The class details are still available. Try again if you want to check student feedback.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="mt-3 h-10 rounded-xl border-amber-300 bg-white text-sm font-semibold text-amber-950 hover:bg-amber-100"
+                          onClick={() => window.location.reload()}
+                        >
+                          Retry
+                        </Button>
+                      </div>
+                    ) : studentReviews.length > 0 ? (
+                      <ul className="mt-3 divide-y divide-zinc-100">
+                        {studentReviews.map((r) => {
+                          const authorName = r.studentName?.trim() || "Student";
+                          const reviewBody = r.comment?.trim() || "Rated this class after completing the course.";
+                          return (
+                            <li key={r.id} className="py-4 first:pt-0 last:pb-0">
+                              <div className="flex gap-3">
+                                {r.studentAvatarUrl?.trim() ? (
+                                  <img
+                                    src={r.studentAvatarUrl}
+                                    alt=""
+                                    className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-zinc-200"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <div
+                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[11px] font-semibold tracking-wide text-zinc-600"
+                                    aria-hidden
+                                  >
+                                    {nameInitials(authorName)}
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1 space-y-2">
+                                  <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-medium text-zinc-900">{authorName}</p>
+                                      <p className="mt-0.5 text-xs text-zinc-500">
+                                        {formatReviewDateLabel(r.submittedAt)}
+                                      </p>
+                                    </div>
+                                    <ReviewStars rating={r.rating} />
+                                  </div>
+                                  <p className="line-clamp-3 text-sm leading-relaxed text-zinc-600">{reviewBody}</p>
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : instructorReviews.length > 0 ? (
                       <ul className="mt-3 divide-y divide-zinc-100">
                         {instructorReviews.map((r) => (
                           <li key={r.id} className="py-4 first:pt-0 last:pb-0">
@@ -728,10 +798,12 @@ const StudentAvailableCourseDetailPage = () => {
                         ))}
                       </ul>
                     ) : (
-                      <p className="mt-3 text-sm leading-relaxed text-zinc-500">
-                        No instructor reviews yet. Students can rate their instructor after they finish the class
-                        (demo: saved in this browser until an API exists).
-                      </p>
+                      <div className="mt-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4">
+                        <p className="text-sm font-medium text-zinc-900">No student reviews yet.</p>
+                        <p className="mt-1 text-sm leading-relaxed text-zinc-600">
+                          Feedback from students will appear here after they finish and review this class.
+                        </p>
+                      </div>
                     )}
                   </div>
                 </aside>

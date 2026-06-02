@@ -14,6 +14,14 @@ export interface UserResponse {
   category?: string;
   /** Parent or guardian contact from registration. */
   parentPhoneNumber?: string;
+  /** Student passport / ID document number from registration. */
+  passportNumber?: string;
+  /** `YYYY-MM-DD` — student date of birth from registration. */
+  dateOfBirth?: string;
+  /** City where the student was born. */
+  birthCity?: string;
+  /** Most recent school the student attended. */
+  latestSchool?: string;
   enabled?: boolean;
   passwordChanged?: boolean;
   createdAt?: string;
@@ -145,6 +153,7 @@ export interface CourseSummaryResponse {
   status: CourseStatus;
   category: string;
   lecturerName: string;
+  lecturerAvatarUrl?: string;
   enrollmentCount?: number;
   /** Present when the API includes it on list endpoints; otherwise filled via GET /courses/{id}. */
   classMeetingsInSixMonths?: number;
@@ -505,6 +514,8 @@ export interface CourseReviewResponse {
   id: string;
   courseId: string;
   studentId: string;
+  studentName: string;
+  studentAvatarUrl?: string;
   target: CourseReviewTarget;
   rating: number;
   comment?: string;
@@ -556,6 +567,95 @@ export interface CourseGradebookRowResponse {
   gradedByEmail?: string;
   certificate?: CourseCertificateResponse;
   reviewSummary: CourseReviewSummaryResponse;
+}
+
+export type PayrollRequestStatus = "pending" | "approved" | "rejected";
+
+export interface PayrollProofResponse {
+  informationNotes?: string;
+  fileName?: string;
+  mimeType?: string;
+  proofUrl?: string;
+  uploadedAt?: string;
+  approvedAt?: string;
+}
+
+export interface PayrollRequestResponse {
+  id: string;
+  submittedAt: string;
+  courseId: string;
+  classSection: string;
+  course: string;
+  instructor: UserResponse;
+  instructorName: string;
+  instructorEmailNorm: string;
+  period?: string;
+  periodLabel: string;
+  sessionsTaught: string;
+  requestedPayoutAmount?: number;
+  requestedPayout: string;
+  currency: string;
+  payoutDetails: string;
+  summary: string;
+  instructorNotes: string;
+  status: PayrollRequestStatus;
+  resolvedAt?: string;
+  adminNote?: string;
+  reviewedByCode?: string;
+  proof?: PayrollProofResponse;
+}
+
+export interface PayrollRequestCreateRequest {
+  courseId: string;
+  period?: string;
+  periodLabel: string;
+  sessionsTaught?: string;
+  requestedPayoutAmount?: number;
+  requestedPayout?: string;
+  currency?: string;
+  payoutDetails?: string;
+  summary?: string;
+  instructorNotes?: string;
+}
+
+export interface PayrollDecisionRequest {
+  adminActionCode: string;
+  adminNote?: string;
+}
+
+export interface PayrollProofUpdateRequest {
+  informationNotes?: string;
+  fileName?: string;
+  mimeType?: string;
+  proofUrl?: string;
+  uploadedAt?: string;
+}
+
+export interface PayrollClassStudentResponse {
+  id: string;
+  fullName: string;
+  email: string;
+  amount?: number;
+  currency: string;
+  status: "paid" | "pending" | "overdue" | "enrolled";
+  dueDate?: string | null;
+  paidAt?: string | null;
+  enrolledAt?: string;
+}
+
+export interface PayrollClassSummaryResponse {
+  courseId: string;
+  className: string;
+  course: string;
+  lecturerName: string;
+  lecturerEmail?: string;
+  enrollmentCount: number;
+  tuitionPerStudent: number;
+  currency: string;
+  totalTuition: number;
+  instructorShare: number;
+  pricing?: CoursePricingResponse;
+  students: PayrollClassStudentResponse[];
 }
 
 // Notification Types

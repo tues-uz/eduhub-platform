@@ -71,6 +71,17 @@ export default function AdminInstructorPayrollRequestDetailPage() {
   const [rejectDialogNote, setRejectDialogNote] = useState("");
   const [adminActionCode, setAdminActionCode] = useAdminActionCodeState();
   const [viewingScheduleMonth, setViewingScheduleMonth] = useState<1 | 2 | 3>(1);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    instructorPayrollRequestStore.load().finally(() => {
+      if (!cancelled) setRequestsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const payrollSchedule = usePayrollRequestSchedule({
     classSection: record?.classSection ?? "",
@@ -125,6 +136,16 @@ export default function AdminInstructorPayrollRequestDetailPage() {
           <Button asChild variant="outline" className="mt-4">
             <Link to="/dashboard/admin/payroll?tab=requests">Back to payroll</Link>
           </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!record && requestsLoading) {
+    return (
+      <AdminLayout>
+        <div className="container mx-auto px-6 max-w-3xl py-8">
+          <p className="text-sm text-slate-600">Loading payroll submission…</p>
         </div>
       </AdminLayout>
     );
@@ -428,6 +449,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
             <PayrollInstructorProofPanel
               className={record.classSection}
               course={record.course}
+              requestId={record.id}
               embedded={false}
               instructorName={record.instructorName}
               instructorEmail={record.instructorEmailNorm}
@@ -495,7 +517,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
               <Button
                 type="button"
                 className="bg-emerald-600 hover:bg-emerald-700"
-                onClick={() => {
+                onClick={async () => {
                   let code: string;
                   try {
                     code = validateAdminActionCodeOrThrow(adminActionCode);
@@ -503,7 +525,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
                     toast.error(e instanceof Error ? e.message : "Enter your admin code");
                     return;
                   }
-                  const ok = instructorPayrollRequestStore.approve(record.id, code);
+                  const ok = await instructorPayrollRequestStore.approve(record.id, code);
                   if (ok) {
                     toast.success("Approved", { description: `${record.instructorName} was notified.` });
                     setApproveOpen(false);
@@ -552,7 +574,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
               <Button
                 type="button"
                 variant="destructive"
-                onClick={() => {
+                onClick={async () => {
                   let code: string;
                   try {
                     code = validateAdminActionCodeOrThrow(adminActionCode);
@@ -560,7 +582,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
                     toast.error(e instanceof Error ? e.message : "Enter your admin code");
                     return;
                   }
-                  const ok = instructorPayrollRequestStore.reject(record.id, code, rejectDialogNote.trim());
+                  const ok = await instructorPayrollRequestStore.reject(record.id, code, rejectDialogNote.trim());
                   if (ok) {
                     toast.message("Request declined", { description: record.instructorName });
                     setRejectDialogNote("");

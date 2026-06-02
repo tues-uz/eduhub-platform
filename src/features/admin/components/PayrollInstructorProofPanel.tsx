@@ -34,6 +34,7 @@ type Props = {
   /** When true, show top divider for use inside a payroll card. */
   embedded?: boolean;
   /** Shown in instructor notification & submission log. */
+  requestId?: string;
   instructorName?: string;
   instructorEmail?: string;
   /** e.g. collected / outstanding / est. payout — from payment rows. */
@@ -44,6 +45,7 @@ export function PayrollInstructorProofPanel({
   className,
   course,
   embedded = false,
+  requestId,
   instructorName,
   instructorEmail,
   payrollSummary,
@@ -63,21 +65,21 @@ export function PayrollInstructorProofPanel({
   }, [key, bundle?.informationNotes]);
 
   const saveNotes = () => {
-    adminPayrollProofStore.setInformationNotes(className, course, notesDraft);
+    void adminPayrollProofStore.setInformationNotes(className, course, notesDraft, requestId);
     toast.success("Information saved");
   };
 
   const handleProofFile = useCallback(
     async (file: File | undefined | null) => {
       if (!file) return;
-      const result = await adminPayrollProofStore.upload(className, course, file);
+      const result = await adminPayrollProofStore.upload(className, course, file, requestId);
       if (result.ok) {
         toast.success("Proof saved", { description: file.name });
       } else {
         toast.error("Could not upload", { description: "reason" in result ? result.reason : "Please try again." });
       }
     },
-    [className, course],
+    [className, course, requestId],
   );
 
   const onProofInputChange = useCallback(
@@ -89,14 +91,14 @@ export function PayrollInstructorProofPanel({
     [handleProofFile],
   );
 
-  const onApprove = () => {
-    const ok = adminPayrollProofStore.approve(className, course);
+  const onApprove = async () => {
+    const ok = await adminPayrollProofStore.approve(className, course, requestId);
     if (ok) toast.success("Payout record approved");
     else toast.error("Upload proof first");
   };
 
-  const handleSubmitAll = () => {
-    adminPayrollProofStore.setInformationNotes(className, course, notesDraft);
+  const handleSubmitAll = async () => {
+    await adminPayrollProofStore.setInformationNotes(className, course, notesDraft, requestId);
     const b = adminPayrollProofStore.get(className, course);
     if (!hasPayrollProofFile(b)) {
       toast.error("Upload transfer proof before submitting.");
@@ -106,7 +108,11 @@ export function PayrollInstructorProofPanel({
       toast.success("Changes saved.");
       return;
     }
-    adminPayrollProofStore.approve(className, course);
+    const approved = await adminPayrollProofStore.approve(className, course, requestId);
+    if (!approved) {
+      toast.error("Could not approve payout proof.");
+      return;
+    }
     adminPayrollHistoryStore.add({
       classSection: className,
       course,
@@ -255,7 +261,7 @@ export function PayrollInstructorProofPanel({
                   variant="default"
                   size="sm"
                   className="w-full bg-slate-900 font-normal text-white hover:bg-slate-800"
-                  onClick={onApprove}
+                  onClick={() => void onApprove()}
                 >
                   Approve payout record
                 </Button>
@@ -294,7 +300,7 @@ export function PayrollInstructorProofPanel({
               size="lg"
               disabled={!hasFile}
               className="w-full shrink-0 rounded-xl bg-[#3954d0] px-8 text-[15px] font-semibold text-white shadow-sm hover:bg-[#3954d0]/92 disabled:opacity-50 sm:w-auto sm:min-w-[200px]"
-              onClick={handleSubmitAll}
+              onClick={() => void handleSubmitAll()}
             >
               {bundle?.approvedAt ? "Save changes" : "Submit payout proof"}
             </Button>
