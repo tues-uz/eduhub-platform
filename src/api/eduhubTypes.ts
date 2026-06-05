@@ -83,6 +83,14 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  newPassword: string;
+}
+
 /** Planned session row from lecturer (API may ignore unknown fields until backend supports). */
 export interface ClassMeetingSlotDto {
   title?: string;

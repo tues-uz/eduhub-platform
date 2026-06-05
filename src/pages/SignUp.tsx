@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, User, Phone, IdCard, Calendar, MapPin, GraduationCap, AlertCircle, ShieldCheck, ArrowLeft } from "@/lib/icons";
+import { Mail, Lock, Eye, EyeOff, User, Phone, IdCard, MapPin, GraduationCap, AlertCircle, ShieldCheck, ArrowLeft } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
+import { DateOfBirthPicker } from "@/components/ui/date-of-birth-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -266,19 +267,14 @@ const SignUp = () => {
                             <Label htmlFor="dateOfBirth" className="text-sm font-medium text-foreground">
                               Date of Birth
                             </Label>
-                            <div className="relative">
-                              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40 pointer-events-none" />
-                              <Input
-                                id="dateOfBirth"
-                                name="dateOfBirth"
-                                type="date"
-                                value={formData.dateOfBirth}
-                                onChange={handleChange}
-                                max={new Date().toISOString().slice(0, 10)}
-                                className="pl-10 h-12 rounded-xl border-gray-200 focus:border-primary focus:ring-primary"
-                                required
-                              />
-                            </div>
+                            <DateOfBirthPicker
+                              id="dateOfBirth"
+                              value={formData.dateOfBirth}
+                              onChange={(dateOfBirth) =>
+                                setFormData((prev) => ({ ...prev, dateOfBirth }))
+                              }
+                              required
+                            />
                           </div>
 
                           <div className="space-y-2">

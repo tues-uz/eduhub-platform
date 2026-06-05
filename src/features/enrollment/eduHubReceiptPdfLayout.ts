@@ -42,9 +42,10 @@ const FONT = {
 } as const;
 
 const M = 20;
-const PAGE_BOTTOM = 282;
 const LOGO_W = 28;
-const STAMP_W = 34;
+const STAMP_W = 40;
+/** 16px at 96dpi → mm for jsPDF */
+const STAMP_FOOTER_GAP_MM = (16 * 25.4) / 96;
 
 export type EduHubReceiptPdfInput = {
   variant: "official" | "submission";
@@ -150,7 +151,7 @@ export function renderEduHubReceiptPdf(
   logos?: EduHubReceiptPdfLogos | null,
 ): void {
   const headerLogo = logos?.header ?? null;
-  const stampLogo = logos?.stamp ?? null;
+  const stampAsset = logos?.stamp ?? null;
 
   const pageW = doc.internal.pageSize.getWidth();
   const rightX = pageW - M;
@@ -316,6 +317,7 @@ export function renderEduHubReceiptPdf(
   y += 17;
   rule(doc, y, M, rightX, 0.15);
   y += 9;
+  const legalTopY = y;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(FONT.legalTitle);
@@ -336,17 +338,23 @@ export function renderEduHubReceiptPdf(
   ink(doc, INK);
   doc.text(ENROLLMENT_DOCUMENT_ORG.helpLine, M, y, { maxWidth: contentW * 0.58 });
 
-  const nameY = PAGE_BOTTOM - 8;
   const stampX = rightX - STAMP_W;
   const sigX = stampX + STAMP_W / 2;
+  const signatoryTopY = legalTopY;
+  const stampToNameGap = STAMP_FOOTER_GAP_MM;
+  const titleOffset = 2;
 
-  if (stampLogo) {
-    const stampH = STAMP_W * EDUHUB_RECEIPT_STAMP_ASPECT;
-    doc.addImage(stampLogo, "PNG", stampX, nameY - stampH - 2, STAMP_W, stampH);
+  let nameY = signatoryTopY + stampToNameGap;
+  if (stampAsset) {
+    const stampAspect = stampAsset.aspect > 0 ? stampAsset.aspect : EDUHUB_RECEIPT_STAMP_ASPECT;
+    const stampH = STAMP_W * stampAspect;
+    doc.addImage(stampAsset.dataUrl, "PNG", stampX, signatoryTopY, STAMP_W, stampH);
+    nameY = signatoryTopY + stampH + stampToNameGap;
   } else {
     doc.setDrawColor(BRAND.r, BRAND.g, BRAND.b);
     doc.setLineWidth(0.25);
-    doc.circle(sigX, nameY - 8, 9, "S");
+    doc.circle(sigX, signatoryTopY + 9, 9, "S");
+    nameY = signatoryTopY + 18 + stampToNameGap;
   }
 
   doc.setFont("helvetica", "bold");
@@ -356,7 +364,7 @@ export function renderEduHubReceiptPdf(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(FONT.signTitle);
   ink(doc, MUTED);
-  doc.text(ENROLLMENT_DOCUMENT_ORG.signatoryTitle, sigX, nameY + 4, { align: "center" });
+  doc.text(ENROLLMENT_DOCUMENT_ORG.signatoryTitle, sigX, nameY + titleOffset, { align: "center" });
 }
 
 export async function downloadEduHubReceiptPdf(

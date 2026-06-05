@@ -4,9 +4,29 @@ import { AlertCircle, ArrowLeft, Loader2 } from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { appRoutes } from "@/app/routes";
-import { eduhubAttendance, getAccessToken } from "@/api/eduhubClient";
+import {
+  eduhubAttendance,
+  eduhubCourses,
+  eduhubEnrollmentApplications,
+  eduhubSchedule,
+  getAccessToken,
+} from "@/api/eduhubClient";
 import type { AttendanceJoinInfoResponse } from "@/api/eduhubTypes";
 import { useAuthSession } from "@/features/auth/context";
+import { buildCourseScheduleSlots } from "@/features/courses/courseScheduleSlots";
+import {
+  buildScheduleMonthTabs,
+  orderSessionSlotsChronologically,
+} from "@/features/courses/classSchedulePreview";
+import {
+  attendanceTuitionBlockMessage,
+  isAttendanceMonthPaid,
+  paymentMonthForMeetingName,
+  paymentMonthForScheduleSlotKey,
+  resolvePaidTuitionMonths,
+} from "@/features/enrollment/enrollmentPaidMonths";
+import { installmentPaymentPath } from "@/features/enrollment/enrollmentInstallmentPayments";
+import type { TuitionPlanMonths } from "@/features/enrollment/enrollmentTuitionThirds";
 import { cn } from "@/lib/utils";
 
 function formatTime(value?: string): string {
@@ -89,6 +109,9 @@ export default function StudentAttendanceJoin() {
   const [alreadyRecorded, setAlreadyRecorded] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [joinClock, setJoinClock] = useState(() => Date.now());
+  const [tuitionBlock, setTuitionBlock] = useState<string | null>(null);
+  const [tuitionCheckDone, setTuitionCheckDone] = useState(false);
+  const [tuitionPayHref, setTuitionPayHref] = useState("/dashboard/payment");
   const checkInStartedRef = useRef(false);
 
   const hasToken = Boolean(getAccessToken());
@@ -131,7 +154,65 @@ export default function StudentAttendanceJoin() {
   }, [hasToken, token, validParams]);
 
   useEffect(() => {
-    if (!validParams || !hasToken || user.role !== "student" || confirmed || processing || loadError) return;
+    if (!validParams || !hasToken || !info || user.role !== "student") {
+      setTuitionBlock(null);
+      setTuitionCheckDone(false);
+      return;
+    }
+    let cancelled = false;
+    setTuitionCheckDone(false);
+    setTuitionBlock(null);
+
+    const emailNorm = user.email.trim().toLowerCase();
+    void (async () => {
+      try {
+        const [apps, sessions, course, proposal] = await Promise.all([
+          eduhubEnrollmentApplications.getMy(emailNorm),
+          eduhubAttendance.listSessions(info.courseId).catch(() => []),
+          eduhubCourses.getById(info.courseId).catch(() => null),
+          eduhubSchedule.getProposal(info.courseId).catch(() => null),
+        ]);
+        if (cancelled) return;
+        const approved = apps.find((a) => a.courseId === info.courseId && a.status === "APPROVED");
+        const slots = buildCourseScheduleSlots(course ?? {}, proposal, info.courseId);
+        const ordered = orderSessionSlotsChronologically(slots);
+        const session = sessions.find((s) => s.id === info.sessionId);
+        const paymentMonth = session?.scheduleSlotKey
+          ? paymentMonthForScheduleSlotKey(ordered, session.scheduleSlotKey)
+          : paymentMonthForMeetingName(ordered, info.meetingName);
+        const paidMonths = resolvePaidTuitionMonths(approved, ordered, approved?.id);
+        if (!isAttendanceMonthPaid(paidMonths, paymentMonth) && paymentMonth) {
+          const tabs = buildScheduleMonthTabs(ordered);
+          setTuitionBlock(attendanceTuitionBlockMessage(paymentMonth, tabs));
+          if (approved?.id) {
+            setTuitionPayHref(installmentPaymentPath(approved.id, paymentMonth as TuitionPlanMonths));
+          }
+        }
+      } catch {
+        // Allow check-in when tuition context cannot be loaded.
+      } finally {
+        if (!cancelled) setTuitionCheckDone(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasToken, info, user.email, user.role, validParams]);
+
+  useEffect(() => {
+    if (
+      !validParams ||
+      !hasToken ||
+      user.role !== "student" ||
+      confirmed ||
+      processing ||
+      loadError ||
+      tuitionBlock ||
+      !tuitionCheckDone
+    ) {
+      return;
+    }
     if (checkInStartedRef.current) return;
     let cancelled = false;
     checkInStartedRef.current = true;
@@ -158,7 +239,7 @@ export default function StudentAttendanceJoin() {
     return () => {
       cancelled = true;
     };
-  }, [confirmed, hasToken, loadError, processing, token, user.role, validParams]);
+  }, [confirmed, hasToken, loadError, processing, token, tuitionBlock, tuitionCheckDone, user.role, validParams]);
 
   return (
     <div className="mx-auto w-full max-w-md px-2 sm:px-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -199,13 +280,17 @@ export default function StudentAttendanceJoin() {
                 ? alreadyRecorded
                   ? "Already checked in"
                   : "Check-in complete!"
+                : tuitionBlock
+                  ? "Tuition required"
                 : loadError
                   ? "Something went wrong"
                   : checkInExpired
                     ? "Check-in closed"
                     : processing
                       ? "Recording you..."
-                      : "Getting ready..."
+                      : !tuitionCheckDone
+                        ? "Checking access..."
+                        : "Getting ready..."
             }
             description={
               info ? (
@@ -220,7 +305,17 @@ export default function StudentAttendanceJoin() {
               )
             }
           >
-            {loadError ? (
+            {tuitionBlock ? (
+              <div className="space-y-3">
+                <div className="flex items-start gap-2 rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  <span>{tuitionBlock}</span>
+                </div>
+                <Button asChild className="h-11 w-full rounded-full text-white hover:bg-[#2f47b3]" style={{ backgroundColor: "#3954d0" }}>
+                  <Link to={tuitionPayHref}>Pay this schedule month</Link>
+                </Button>
+              </div>
+            ) : loadError ? (
               <div className="flex items-start gap-2 rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                 <span>{loadError}</span>
@@ -241,7 +336,11 @@ export default function StudentAttendanceJoin() {
             ) : (
               <div className="flex items-center justify-center gap-2 rounded-2xl bg-zinc-50 px-4 py-4 text-sm text-zinc-600">
                 <Loader2 className="h-4 w-4 animate-spin text-[#3954d0]" aria-hidden />
-                {processing ? "Saving your check-in..." : "One moment..."}
+                {processing
+                  ? "Saving your check-in..."
+                  : !tuitionCheckDone
+                    ? "Checking tuition for this session..."
+                    : "One moment..."}
               </div>
             )}
             <Button asChild variant="outline" className="h-11 w-full rounded-full border-zinc-200">

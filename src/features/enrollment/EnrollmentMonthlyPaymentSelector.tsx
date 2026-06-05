@@ -1,6 +1,5 @@
 /**
- * Alternate enrollment tuition UI: pick schedule months (1–3) with checkboxes.
- * Not used on the live form — kept so the month-card flow can be restored without digging git history.
+ * Enrollment tuition UI: pick schedule months (1–3) with checkboxes.
  */
 import { useMemo, type Dispatch, type SetStateAction } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,27 +8,22 @@ import {
   buildScheduleMonthTabs,
   resolvePreviewSessionSlots,
   scheduleMonthSessionCounts,
+  scheduleTabToPaymentMonths,
   sessionDateMs,
   type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
-import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
+import type { CourseResponse, ScheduleProposalResponse, EnrollmentInstallmentCount } from "@/api/eduhubTypes";
 import type { TeacherCourse } from "@/features/teacher/types";
 import { isUuid } from "@/api/utils";
 import {
+  activeScheduleMonthCount,
   payNowForSelectedCalendarMonths,
-  tuitionThirds,
+  tuitionPartsForSchedule,
   type TuitionPlanMonths,
 } from "@/features/enrollment/enrollmentTuitionThirds";
-import type { EnrollmentInstallmentCount } from "@/api/eduhubTypes";
 import { cn } from "@/lib/utils";
 
 export type MonthlyPlanMonthCount = TuitionPlanMonths;
-
-const MONTH_PLAN_OPTIONS: { months: MonthlyPlanMonthCount; label: string }[] = [
-  { months: 1, label: "1 month" },
-  { months: 2, label: "2 months" },
-  { months: 3, label: "3 months" },
-];
 
 function formatPrice(price: number | undefined, currency = "USD"): string {
   if (price == null || price <= 0) return "Free";
@@ -39,12 +33,13 @@ function formatPrice(price: number | undefined, currency = "USD"): string {
 function planCardMonthPrice(
   total: number | undefined,
   month: MonthlyPlanMonthCount,
+  scheduleMonthCounts: [number, number, number],
   currency: string,
 ): string | null {
   if (total == null || total <= 0) return null;
-  const parts = tuitionThirds(total);
-  if (!parts) return null;
-  return formatPrice(parts[month - 1], currency);
+  const split = tuitionPartsForSchedule(total, scheduleMonthCounts);
+  if (!split) return null;
+  return formatPrice(split.parts[month - 1], currency);
 }
 
 export type MonthlyPaySummary =
@@ -54,12 +49,14 @@ export type MonthlyPaySummary =
       total: number;
       monthParts: [number, number, number];
       monthSessionCounts: [number, number, number];
+      scheduleMonthCount: number;
     }
   | {
       kind: "ok";
       total: number;
       monthParts: [number, number, number];
       monthSessionCounts: [number, number, number];
+      scheduleMonthCount: number;
       selectedMonths: Set<MonthlyPlanMonthCount>;
       selectedCount: number;
       payNow: number;
@@ -71,32 +68,40 @@ export function useEnrollmentMonthlyPaySummary(
   coursePriceAmount: number | undefined,
   selectedPaymentMonths: Set<MonthlyPlanMonthCount>,
   scheduleMonthCounts: [number, number, number],
+  scheduleMonthCount: number,
 ): MonthlyPaySummary {
   return useMemo(() => {
     const total = coursePriceAmount;
     if (total == null || total <= 0) return { kind: "noPrice" };
-    const priced = payNowForSelectedCalendarMonths(total, selectedPaymentMonths);
+    const priced = payNowForSelectedCalendarMonths(total, selectedPaymentMonths, scheduleMonthCounts);
     if (!priced) return { kind: "noPrice" };
     const { payNow, parts } = priced;
+    const activeMonthCount = scheduleMonthCount > 0 ? scheduleMonthCount : activeScheduleMonthCount(scheduleMonthCounts);
     if (selectedPaymentMonths.size === 0) {
-      return { kind: "emptySelection", total, monthParts: parts, monthSessionCounts: scheduleMonthCounts };
+      return {
+        kind: "emptySelection",
+        total,
+        monthParts: parts,
+        monthSessionCounts: scheduleMonthCounts,
+        scheduleMonthCount: activeMonthCount,
+      };
     }
     const remaining = total - payNow;
-    const unselectedCount = 3 - selectedPaymentMonths.size;
-    const apiInstallmentCount: EnrollmentInstallmentCount =
-      unselectedCount === 0 ? 2 : unselectedCount === 2 ? 2 : 1;
+    const unselectedCount = Math.max(0, activeMonthCount - selectedPaymentMonths.size);
+    const apiInstallmentCount: EnrollmentInstallmentCount = unselectedCount >= 2 ? 2 : 1;
     return {
       kind: "ok",
       total,
       monthParts: parts,
       monthSessionCounts: scheduleMonthCounts,
+      scheduleMonthCount: activeMonthCount,
       selectedMonths: selectedPaymentMonths,
       selectedCount: selectedPaymentMonths.size,
       payNow,
       remaining,
       apiInstallmentCount,
     };
-  }, [coursePriceAmount, selectedPaymentMonths, scheduleMonthCounts]);
+  }, [coursePriceAmount, selectedPaymentMonths, scheduleMonthCounts, scheduleMonthCount]);
 }
 
 export type EnrollmentMonthlyPaymentSelectorProps = {
@@ -113,6 +118,8 @@ export type EnrollmentMonthlyPaymentSelectorProps = {
   onViewingScheduleMonthChange: (month: MonthlyPlanMonthCount) => void;
   monthlyPaySummary: MonthlyPaySummary;
   schedulePanelClassName?: string;
+  heldSlotKeys?: ReadonlySet<string>;
+  activeSlotKeys?: ReadonlySet<string>;
 };
 
 export function EnrollmentMonthlyPaymentSelector({
@@ -129,6 +136,8 @@ export function EnrollmentMonthlyPaymentSelector({
   onViewingScheduleMonthChange,
   monthlyPaySummary,
   schedulePanelClassName = "rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3",
+  heldSlotKeys,
+  activeSlotKeys,
 }: EnrollmentMonthlyPaymentSelectorProps) {
   const enrollmentScheduleSlots = useMemo(() => {
     if (!courseId) return [] as SessionSlotLike[];
@@ -161,6 +170,14 @@ export function EnrollmentMonthlyPaymentSelector({
     [enrollmentScheduleSlots],
   );
 
+  const sessionTotal = scheduleMonthCounts[0] + scheduleMonthCounts[1] + scheduleMonthCounts[2];
+  const paymentMonthGridClass =
+    scheduleMonthTabs.length <= 1
+      ? "grid-cols-1"
+      : scheduleMonthTabs.length === 2
+        ? "sm:grid-cols-2"
+        : "sm:grid-cols-3";
+
   const togglePaymentMonth = (month: MonthlyPlanMonthCount) => {
     onSelectedPaymentMonthsChange((prev) => {
       const next = new Set(prev);
@@ -178,74 +195,89 @@ export function EnrollmentMonthlyPaymentSelector({
   return (
     <>
       <p className="text-xs text-zinc-500">
-        Each card is one third of the listed tuition. Check every month you are paying for in this transfer — the
-        total due is the sum of the months you select.
+        Each card matches a schedule month below. Check every month you are paying for in this transfer — the total
+        due is the sum of the months you select (weighted by sessions when the schedule spans multiple months).
       </p>
       <p className="mt-4 text-xs font-medium text-zinc-700">Pay over</p>
       <div className="mt-2 space-y-2">
-        <div role="group" aria-label="Select months to pay" className="grid gap-2 sm:grid-cols-3">
-          {MONTH_PLAN_OPTIONS.map(({ months, label }) => {
-            const priceLine = planCardMonthPrice(coursePriceAmount, months, priceCurrency);
-            const sessionTotal =
-              scheduleMonthCounts[0] + scheduleMonthCounts[1] + scheduleMonthCounts[2];
-            const sessionsInMonth = scheduleMonthCounts[months - 1];
-            const isSelected = selectedPaymentMonths.has(months);
-            const isViewing = viewingScheduleMonth === months;
-            const monthTab = scheduleMonthTabs[months - 1];
-            const checkboxId = `pay-months-${months}`;
-            return (
-              <label
-                key={months}
-                htmlFor={checkboxId}
-                onClick={() => focusScheduleMonth(months)}
-                className={cn(
-                  "flex cursor-pointer items-start gap-3 rounded-xl border bg-zinc-50/40 px-4 py-3 transition-colors hover:bg-zinc-50",
-                  isViewing ? "border-[#3954d0]/45 ring-1 ring-[#3954d0]/20" : "border-zinc-200",
-                  isSelected &&
-                    "has-[[data-state=checked]]:border-[#3954d0]/40 has-[[data-state=checked]]:bg-[#3954d0]/[0.06]",
-                )}
-              >
-                <Checkbox
-                  id={checkboxId}
-                  checked={isSelected}
-                  onCheckedChange={() => togglePaymentMonth(months)}
-                  onClick={(e) => e.stopPropagation()}
+        {scheduleMonthTabs.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50/60 px-4 py-3 text-sm text-zinc-600">
+            {loadingCourse
+              ? "Loading class schedule…"
+              : "No schedule months are listed yet. The school will confirm how much to pay when you apply."}
+          </p>
+        ) : (
+          <div
+            role="group"
+            aria-label="Select months to pay"
+            className={cn("grid gap-2", paymentMonthGridClass)}
+          >
+            {scheduleMonthTabs.map((monthTab) => {
+              const months = scheduleTabToPaymentMonths(monthTab.value);
+              const priceLine = planCardMonthPrice(
+                coursePriceAmount,
+                months,
+                scheduleMonthCounts,
+                priceCurrency,
+              );
+              const sessionsInMonth = monthTab.slots.length;
+              const isSelected = selectedPaymentMonths.has(months);
+              const isViewing = viewingScheduleMonth === months;
+              const checkboxId = `pay-months-${monthTab.value}`;
+              return (
+                <label
+                  key={monthTab.value}
+                  htmlFor={checkboxId}
+                  onClick={() => focusScheduleMonth(months)}
                   className={cn(
-                    "mt-0.5 h-[1.125rem] w-[1.125rem] shrink-0 rounded-full border-2 border-zinc-300/90 bg-white shadow-none",
-                    "transition-[border-color,background-color,box-shadow] duration-150",
-                    "hover:border-zinc-400",
-                    "data-[state=checked]:border-[#3954d0] data-[state=checked]:bg-[#3954d0] data-[state=checked]:text-white",
-                    "focus-visible:ring-2 focus-visible:ring-[#3954d0]/25 focus-visible:ring-offset-0",
-                    "[&_svg]:h-2.5 [&_svg]:w-2.5 [&_svg]:stroke-[2.5]",
+                    "flex cursor-pointer items-start gap-3 rounded-xl border bg-zinc-50/40 px-4 py-3 transition-colors hover:bg-zinc-50",
+                    isViewing ? "border-[#3954d0]/45 ring-1 ring-[#3954d0]/20" : "border-zinc-200",
+                    isSelected &&
+                      "has-[[data-state=checked]]:border-[#3954d0]/40 has-[[data-state=checked]]:bg-[#3954d0]/[0.06]",
                   )}
-                  aria-label={`Pay for ${monthTab?.tabLabel ?? label}`}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-zinc-900">{monthTab?.tabLabel ?? label}</span>
-                  {monthTab?.monthLine ? (
-                    <span className="mt-0.5 block text-[10px] font-medium leading-snug text-zinc-500">
-                      {monthTab.monthLine}
-                    </span>
-                  ) : null}
-                  <span className="mt-0.5 block text-[11px] font-medium text-zinc-500">Due now</span>
-                  {sessionTotal > 0 ? (
-                    <span className="mt-0.5 block text-[10px] font-medium text-zinc-500">
-                      {sessionsInMonth} of {sessionTotal} sessions
-                    </span>
-                  ) : null}
-                  <span
+                >
+                  <Checkbox
+                    id={checkboxId}
+                    checked={isSelected}
+                    onCheckedChange={() => togglePaymentMonth(months)}
+                    onClick={(e) => e.stopPropagation()}
                     className={cn(
-                      "mt-0.5 block text-xs font-semibold tabular-nums tracking-tight",
-                      priceLine ? "text-[#3954d0]" : "font-medium text-zinc-400",
+                      "mt-0.5 h-[1.125rem] w-[1.125rem] shrink-0 rounded-full border-2 border-zinc-300/90 bg-white shadow-none",
+                      "transition-[border-color,background-color,box-shadow] duration-150",
+                      "hover:border-zinc-400",
+                      "data-[state=checked]:border-[#3954d0] data-[state=checked]:bg-[#3954d0] data-[state=checked]:text-white",
+                      "focus-visible:ring-2 focus-visible:ring-[#3954d0]/25 focus-visible:ring-offset-0",
+                      "[&_svg]:h-2.5 [&_svg]:w-2.5 [&_svg]:stroke-[2.5]",
                     )}
-                  >
-                    {priceLine ?? (loadingCourse ? "Loading…" : "Price not listed")}
+                    aria-label={`Pay for ${monthTab.tabLabel}`}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium text-zinc-900">{monthTab.tabLabel}</span>
+                    {monthTab.monthLine ? (
+                      <span className="mt-0.5 block text-[10px] font-medium leading-snug text-zinc-500">
+                        {monthTab.monthLine}
+                      </span>
+                    ) : null}
+                    <span className="mt-0.5 block text-[11px] font-medium text-zinc-500">Due now</span>
+                    {sessionTotal > 0 ? (
+                      <span className="mt-0.5 block text-[10px] font-medium text-zinc-500">
+                        {sessionsInMonth} of {sessionTotal} sessions
+                      </span>
+                    ) : null}
+                    <span
+                      className={cn(
+                        "mt-0.5 block text-xs font-semibold tabular-nums tracking-tight",
+                        priceLine ? "text-[#3954d0]" : "font-medium text-zinc-400",
+                      )}
+                    >
+                      {priceLine ?? (loadingCourse ? "Loading…" : "Price not listed")}
+                    </span>
                   </span>
-                </span>
-              </label>
-            );
-          })}
-        </div>
+                </label>
+              );
+            })}
+          </div>
+        )}
         <ClassSchedulePreviewPanel
           courseId={courseId}
           apiCourse={apiCourse}
@@ -255,12 +287,15 @@ export function EnrollmentMonthlyPaymentSelector({
           onViewingMonthChange={onViewingScheduleMonthChange}
           selectedPaymentMonths={selectedPaymentMonths}
           linkPaymentMonths
+          heldSlotKeys={heldSlotKeys}
+          activeSlotKeys={activeSlotKeys}
           className={schedulePanelClassName}
         />
       </div>
       <p className="mt-3 text-[11px] leading-relaxed text-zinc-500">
-        Tuition is split into three equal monthly parts (total ÷ 3). Check each month you are paying for, then use the
-        matching tab below to review that month&apos;s classes. Your transfer should match the combined total.
+        Tuition is split across the schedule months shown below (by session count when dates span multiple months).
+        Check each month you are paying for, then use the matching tab to review that month&apos;s classes. Your
+        transfer should match the combined total.
       </p>
       <MonthlyPaymentBreakdown summary={monthlyPaySummary} priceCurrency={priceCurrency} />
     </>
@@ -294,16 +329,19 @@ export function MonthlyPaymentBreakdown({
           </li>
           <li className="flex flex-wrap justify-between gap-x-4 gap-y-0.5 border-t border-zinc-200/90 pt-2">
             <span className="text-zinc-500">Months selected</span>
-            <span className="font-medium tabular-nums text-zinc-900">{summary.selectedCount} of 3</span>
+            <span className="font-medium tabular-nums text-zinc-900">
+              {summary.selectedCount} of {summary.scheduleMonthCount}
+            </span>
           </li>
           <li className="border-t border-zinc-200/90 pt-2 text-zinc-700">
-            <span className="text-zinc-500">Three equal monthly parts</span>
+            <span className="text-zinc-500">Schedule month shares</span>
             <ul className="mt-2 space-y-1.5 text-xs">
               {(["1st", "2nd", "3rd"] as const).map((label, i) => {
                 const [x, y, z] = summary.monthParts;
                 const amounts = [x, y, z];
                 const [c0, c1, c2] = summary.monthSessionCounts;
                 const counts = [c0, c1, c2];
+                if (counts[i]! <= 0) return null;
                 const monthNum = (i + 1) as MonthlyPlanMonthCount;
                 const selected = summary.selectedMonths.has(monthNum);
                 return (
@@ -321,7 +359,7 @@ export function MonthlyPaymentBreakdown({
               })}
             </ul>
             <span className="mt-1.5 block text-xs font-normal text-zinc-500">
-              Each part is one third of the total (rounded so all three add up exactly).
+              Shares follow the class schedule (weighted by sessions per month when applicable).
             </span>
           </li>
           <li className="flex flex-wrap justify-between gap-x-4 gap-y-0.5 border-t border-zinc-200/90 pt-2">

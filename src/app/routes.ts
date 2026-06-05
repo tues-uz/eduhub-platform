@@ -5,6 +5,9 @@ export const appRoutes = {
   signIn: "/signin",
   register: "/register",
   changePassword: "/change-password",
+  forgotPassword: "/forgot-password",
+  /** Use this path in password-reset email links so the SPA route matches. */
+  resetPassword: "/reset-password",
   /** Use this path in email verification links so the SPA route matches. */
   verifyEmail: "/verify-email",
   dashboard: "/dashboard",

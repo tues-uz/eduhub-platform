@@ -12,14 +12,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { eduhubAdminEnrollmentApplications } from "@/api/eduhubClient";
+import { eduhubAdminEnrollmentApplications, eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
-import { formatPaymentMethodLabel } from "@/features/enrollment/enrollmentDocumentConfig";
+import { isUuid } from "@/api/utils";
+import { buildCourseScheduleSlots } from "@/features/courses/courseScheduleSlots";
 import {
-  enrollmentPaymentListSummary,
-  enrollmentPaymentPlanLabel,
-  formatEnrollmentMoney,
-} from "@/features/enrollment/enrollmentPaymentDisplay";
+  buildScheduleMonthTabs,
+  orderSessionSlotsChronologically,
+} from "@/features/courses/classSchedulePreview";
+import { formatPaymentMethodLabel } from "@/features/enrollment/enrollmentDocumentConfig";
+import { ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
+import { ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED } from "@/features/admin/data/adminEnrollmentPaidMonthsStore";
+import { formatEnrollmentMoney } from "@/features/enrollment/enrollmentPaymentDisplay";
+import { buildEnrollmentTablePaymentSummary } from "@/features/enrollment/enrollmentPaymentHistory";
+import { cn } from "@/lib/utils";
 
 function formatDate(iso: string) {
   try {
@@ -32,30 +38,42 @@ function formatDate(iso: string) {
   }
 }
 
-function paymentListCell(r: EnrollmentApplicationResponse) {
+function tuitionTableCell(
+  r: EnrollmentApplicationResponse,
+  summary: ReturnType<typeof buildEnrollmentTablePaymentSummary>,
+) {
   const cur = r.priceCurrency ?? "USD";
+
   return (
-    <div className="text-sm leading-snug">
-      {r.paymentMethod ? (
-        <span className="block text-xs font-medium text-slate-700">
-          {formatPaymentMethodLabel(r.paymentMethod)}
+    <div className="space-y-1.5 text-sm leading-snug">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-semibold tabular-nums text-slate-900">{summary.headline}</span>
+        {summary.pendingInstallmentCount > 0 ? (
+          <span className="inline-flex rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-800 ring-1 ring-sky-200/80">
+            Review follow-up
+          </span>
+        ) : null}
+      </div>
+
+      {summary.sublines.map((line) => (
+        <span key={line} className="block text-xs text-slate-500">
+          {line}
         </span>
-      ) : null}
-      <span className="font-medium text-slate-900">{enrollmentPaymentPlanLabel(r.paymentPlan)}</span>
-      {r.downPaymentAmount != null && r.downPaymentAmount > 0 ? (
-        <span className="mt-0.5 block text-xs tabular-nums text-slate-600">
-          {formatEnrollmentMoney(r.downPaymentAmount, cur)}
-        </span>
-      ) : null}
-      {r.paymentPlan === "DOWN_PAYMENT" && r.installmentCount != null ? (
-        <span className="mt-0.5 block text-xs text-slate-500">{r.installmentCount} further instalments</span>
-      ) : null}
-      {r.scheduleSessionCount != null && r.scheduleSessionCount > 0 ? (
-        <span className="mt-0.5 block text-xs text-slate-500">
-          {r.joinFromSessionNumber != null && r.joinFromSessionNumber > 1
-            ? `From meeting ${r.joinFromSessionNumber} of ${r.scheduleSessionCount}`
-            : `${r.scheduleSessionCount} meetings`}
-        </span>
+      ))}
+
+      {!summary.showCurrentProgress ? (
+        <>
+          {r.paymentMethod ? (
+            <span className="block text-xs font-medium text-slate-600">
+              {formatPaymentMethodLabel(r.paymentMethod)}
+            </span>
+          ) : null}
+          {r.downPaymentAmount != null && r.downPaymentAmount > 0 ? (
+            <span className="block text-xs tabular-nums text-slate-600">
+              {formatEnrollmentMoney(r.downPaymentAmount, cur)}
+            </span>
+          ) : null}
+        </>
       ) : null}
     </div>
   );
@@ -65,6 +83,20 @@ export default function AdminEnrollmentApplicationsPage() {
   const [rows, setRows] = useState<EnrollmentApplicationResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tuitionTick, setTuitionTick] = useState(0);
+  const [scheduleMonthsByCourse, setScheduleMonthsByCourse] = useState<Map<string, number>>(
+    () => new Map(),
+  );
+
+  useEffect(() => {
+    const bump = () => setTuitionTick((n) => n + 1);
+    window.addEventListener(ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED, bump);
+    window.addEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
+    return () => {
+      window.removeEventListener(ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED, bump);
+      window.removeEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
+    };
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -80,7 +112,61 @@ export default function AdminEnrollmentApplicationsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (!rows.length) {
+      setScheduleMonthsByCourse(new Map());
+      return;
+    }
+
+    const courseIds = [
+      ...new Set(rows.map((r) => r.courseId).filter((id) => isUuid(id))),
+    ];
+    if (!courseIds.length) {
+      setScheduleMonthsByCourse(new Map());
+      return;
+    }
+
+    let cancelled = false;
+    void Promise.all(
+      courseIds.map(async (courseId) => {
+        try {
+          const [course, proposal] = await Promise.all([
+            eduhubCourses.getById(courseId),
+            eduhubSchedule.getProposal(courseId).catch(() => null),
+          ]);
+          const slots = buildCourseScheduleSlots(course, proposal, courseId);
+          const tabs = buildScheduleMonthTabs(orderSessionSlotsChronologically(slots));
+          return [courseId, tabs.length] as const;
+        } catch {
+          return [courseId, 0] as const;
+        }
+      }),
+    ).then((entries) => {
+      if (cancelled) return;
+      const next = new Map<string, number>();
+      for (const [courseId, count] of entries) {
+        if (count > 0) next.set(courseId, count);
+      }
+      setScheduleMonthsByCourse(next);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [rows]);
+
   const pending = useMemo(() => rows.filter((r) => r.status === "PENDING"), [rows]);
+  const followUpReviewCount = useMemo(
+    () =>
+      rows.filter(
+        (r) =>
+          r.status === "APPROVED" &&
+          buildEnrollmentTablePaymentSummary(r, scheduleMonthsByCourse.get(r.courseId))
+            .pendingInstallmentCount > 0,
+      ).length,
+    // tuitionTick keeps follow-up badges in sync with local installment store
+    [rows, tuitionTick, scheduleMonthsByCourse],
+  );
 
   return (
     <AdminLayout>
@@ -95,13 +181,21 @@ export default function AdminEnrollmentApplicationsPage() {
           description="Review student requests (full or down payment, schedule-based tuition). Approve to enroll or reject with feedback."
         />
 
-        {pending.length > 0 ? (
-          <p className="mb-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 inline-block">
-            {pending.length} pending review
-          </p>
-        ) : (
-          <p className="mb-4 text-sm text-slate-600">No pending applications.</p>
-        )}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          {pending.length > 0 ? (
+            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              {pending.length} enrollment{pending.length === 1 ? "" : "s"} pending review
+            </p>
+          ) : (
+            <p className="text-sm text-slate-600">No pending enrollments.</p>
+          )}
+          {followUpReviewCount > 0 ? (
+            <p className="text-sm text-sky-800 bg-sky-50 border border-sky-200 rounded-lg px-3 py-2">
+              {followUpReviewCount} approved enrollment{followUpReviewCount === 1 ? "" : "s"} with follow-up
+              tuition to review
+            </p>
+          ) : null}
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -134,7 +228,7 @@ export default function AdminEnrollmentApplicationsPage() {
                   <TableHead>Submitted</TableHead>
                   <TableHead>Class</TableHead>
                   <TableHead>Student</TableHead>
-                  <TableHead>Payment</TableHead>
+                  <TableHead>Tuition</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right w-[140px]">Actions</TableHead>
                 </TableRow>
@@ -147,44 +241,69 @@ export default function AdminEnrollmentApplicationsPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  rows.map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="text-sm whitespace-nowrap align-middle">{formatDate(r.submittedAt)}</TableCell>
-                      <TableCell className="max-w-[220px] align-middle">
-                        <span className="font-medium text-slate-900 line-clamp-2">{r.courseTitle ?? r.courseId}</span>
-                      </TableCell>
-                      <TableCell className="align-middle">
-                        <span className="font-medium text-slate-900">{r.fullName}</span>
-                        <span className="mt-0.5 block text-xs text-slate-500 truncate max-w-[200px]" title={r.email}>
-                          {r.email}
-                        </span>
-                      </TableCell>
-                      <TableCell className="align-middle max-w-[220px]" title={enrollmentPaymentListSummary(r)}>
-                        {paymentListCell(r)}
-                      </TableCell>
-                      <TableCell className="align-middle">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                            r.status === "PENDING"
-                              ? "bg-amber-100 text-amber-800"
-                              : r.status === "APPROVED"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {r.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right align-middle">
-                        <Button asChild size="sm" variant="outline" className="gap-1.5">
-                          <Link to={`/dashboard/admin/enrollment-applications/${encodeURIComponent(r.id)}`}>
-                            <Eye className="h-3.5 w-3.5" aria-hidden />
-                            Review
-                          </Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  rows.map((r) => {
+                    const tuition = buildEnrollmentTablePaymentSummary(
+                      r,
+                      scheduleMonthsByCourse.get(r.courseId),
+                    );
+                    const hasFollowUp = tuition.pendingInstallmentCount > 0;
+                    return (
+                      <TableRow key={r.id}>
+                        <TableCell className="text-sm whitespace-nowrap align-middle">
+                          {formatDate(r.submittedAt)}
+                        </TableCell>
+                        <TableCell className="max-w-[220px] align-middle">
+                          <span className="font-medium text-slate-900 line-clamp-2">
+                            {r.courseTitle ?? r.courseId}
+                          </span>
+                        </TableCell>
+                        <TableCell className="align-middle">
+                          <span className="font-medium text-slate-900">{r.fullName}</span>
+                          <span
+                            className="mt-0.5 block text-xs text-slate-500 truncate max-w-[200px]"
+                            title={r.email}
+                          >
+                            {r.email}
+                          </span>
+                        </TableCell>
+                        <TableCell className="align-middle max-w-[260px]">
+                          {tuitionTableCell(r, tuition)}
+                        </TableCell>
+                        <TableCell className="align-middle">
+                          <div className="flex flex-col items-start gap-1.5">
+                            <span
+                              className={cn(
+                                "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
+                                r.status === "PENDING"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : r.status === "APPROVED"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800",
+                              )}
+                            >
+                              {r.status}
+                            </span>
+                            {r.status === "APPROVED" && hasFollowUp ? (
+                              <span className="text-[11px] font-medium text-sky-700">Follow-up payment</span>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right align-middle">
+                          <Button
+                            asChild
+                            size="sm"
+                            variant={r.status === "APPROVED" && hasFollowUp ? "default" : "outline"}
+                            className="gap-1.5"
+                          >
+                            <Link to={`/dashboard/admin/enrollment-applications/${encodeURIComponent(r.id)}`}>
+                              <Eye className="h-3.5 w-3.5" aria-hidden />
+                              {r.status === "APPROVED" && hasFollowUp ? "Review payment" : "Review"}
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

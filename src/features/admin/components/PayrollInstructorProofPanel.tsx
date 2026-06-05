@@ -177,11 +177,13 @@ export function PayrollInstructorProofPanel({
       <div className={embedded ? "" : "border-t border-slate-100 pt-6"}>
         <div className="flex items-center gap-2">
           <Upload className="h-4 w-4 text-zinc-500" aria-hidden />
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500">Transfer proof</h3>
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500">
+            Bank transfer receipt
+          </h3>
         </div>
         <p className="mt-1 text-xs text-zinc-500">
-          Same style as student enrollment: drop a receipt or screenshot, or browse. Stored in this browser until
-          payroll upload API exists.
+          Upload the bank transfer confirmation for the instructor payout (screenshot or PDF). Not student course
+          certificates — instructors only see this after you submit payout proof below.
         </p>
 
         <div className="mt-5">
@@ -221,7 +223,7 @@ export function PayrollInstructorProofPanel({
                   Drop a file here or <span className="text-[#3954d0]">browse</span>
                 </p>
                 <p className="text-xs leading-relaxed text-zinc-500">
-                  PNG, JPG, WebP, or PDF · max {proofMaxMb} MB. Clear screenshots or PDFs speed up verification.
+                  Bank receipt only (PNG, JPG, WebP, or PDF · max {proofMaxMb} MB). Do not upload course certificates.
                 </p>
               </div>
             </label>

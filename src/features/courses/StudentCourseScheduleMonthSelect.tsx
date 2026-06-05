@@ -233,7 +233,7 @@ export function StudentCourseScheduleMonthSelect({
                   to={paymentHref}
                   className="font-semibold text-[#3954d0] underline-offset-2 hover:underline"
                 >
-                  View payment
+                  Pay remaining month
                 </Link>
               </>
             ) : null}

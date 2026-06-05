@@ -7,7 +7,10 @@ import {
   type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
 import { resolveJoinFromMeeting } from "@/features/enrollment/enrollmentSessionTuition";
-import { resolvedAdminScheduleSessionTotal } from "@/features/admin/utils/adminCourseScheduleDisplay";
+import {
+  boundsFromMeetingSlots,
+  resolvedAdminScheduleSessionTotal,
+} from "@/features/admin/utils/adminCourseScheduleDisplay";
 import { getScheduleAttendanceState } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 
@@ -22,9 +25,18 @@ export type CourseScheduleSummary = {
   joinFromMeeting: number;
   /** All meetings on the schedule have already finished. */
   allSessionsFinished: boolean;
+  /** ISO date for first session / cohort start when known. */
+  classStartDate?: string;
+  /** ISO date for last session / cohort end when known. */
+  classEndDate?: string;
 };
 
-function buildSummary(slots: SessionSlotLike[], courseId: string, total: number): CourseScheduleSummary | null {
+function buildSummary(
+  slots: SessionSlotLike[],
+  courseId: string,
+  total: number,
+  explicitDates?: { classStartDate?: string; classEndDate?: string },
+): CourseScheduleSummary | null {
   if (total <= 0) return null;
   const { heldSlotKeys, activeSlotKeys } = getScheduleAttendanceState(courseId);
   const timings = slots.map((slot) =>
@@ -33,12 +45,17 @@ function buildSummary(slots: SessionSlotLike[], courseId: string, total: number)
   const effectiveTotal = Math.max(total, slots.length);
   const { joinFromMeeting, allSessionsFinished } = resolveJoinFromMeeting(effectiveTotal, timings);
   const reached = timings.filter((status) => status === "finished" || status === "ongoing").length;
+  const slotBounds = boundsFromMeetingSlots(slots);
+  const classStartDate = explicitDates?.classStartDate?.trim() || slotBounds.start;
+  const classEndDate = explicitDates?.classEndDate?.trim() || slotBounds.end;
 
   return {
     reached,
     total: effectiveTotal,
     joinFromMeeting,
     allSessionsFinished,
+    classStartDate,
+    classEndDate,
   };
 }
 
@@ -52,7 +69,10 @@ export async function fetchCourseScheduleSummary(
     if (!teacherCourse) return null;
 
     const slots = buildCourseScheduleSlots(teacherCourse, null, id);
-    return buildSummary(slots, id, slots.length);
+    return buildSummary(slots, id, slots.length, {
+      classStartDate: teacherCourse.classStartDate,
+      classEndDate: teacherCourse.classEndDate,
+    });
   }
 
   if (!isUuid(id)) return null;
@@ -68,7 +88,10 @@ export async function fetchCourseScheduleSummary(
       (proposal?.sessionCount && proposal.sessionCount > 0 ? proposal.sessionCount : undefined) ??
       slots.length;
 
-    return buildSummary(slots, id, total ?? 0);
+    return buildSummary(slots, id, total ?? 0, {
+      classStartDate: detail.classStartDate,
+      classEndDate: detail.classEndDate,
+    });
   } catch {
     return null;
   }

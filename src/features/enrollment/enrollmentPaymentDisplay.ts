@@ -5,6 +5,7 @@ import {
   payNowMatchesDeclaredForEnrollment,
   tuitionForJoinFromMeeting,
 } from "@/features/enrollment/enrollmentSessionTuition";
+import { enrollmentMonthsPaidLabel } from "@/features/enrollment/enrollmentTuitionThirds";
 
 export function formatEnrollmentMoney(amount: number | undefined, currency = "USD"): string {
   if (amount == null || amount <= 0) return "—";
@@ -19,10 +20,18 @@ export function formatEnrollmentMoney(amount: number | undefined, currency = "US
   }
 }
 
+/** @deprecated Prefer enrollmentPaymentPlanLabelForRecord when the full application is available. */
 export function enrollmentPaymentPlanLabel(plan: EnrollmentApplicationResponse["paymentPlan"]): string {
   if (plan === "FULL") return "Full payment";
-  if (plan === "DOWN_PAYMENT") return "Down payment";
+  if (plan === "DOWN_PAYMENT") return "Monthly payment";
   return plan;
+}
+
+export function enrollmentPaymentPlanLabelForRecord(
+  r: EnrollmentApplicationResponse,
+  scheduleMonthCount?: number,
+): string {
+  return enrollmentMonthsPaidLabel(r, scheduleMonthCount);
 }
 
 export function enrollmentScheduleScopeLine(r: EnrollmentApplicationResponse): string | null {
@@ -62,6 +71,7 @@ export type EnrollmentPaymentDisplay = {
 export function buildEnrollmentPaymentDisplay(
   r: EnrollmentApplicationResponse,
   listedTuition?: number | null,
+  scheduleMonthCount?: number,
 ): EnrollmentPaymentDisplay {
   const currency = r.priceCurrency ?? "USD";
   const quote = enrollmentProrationQuote(r, listedTuition ?? undefined);
@@ -69,7 +79,7 @@ export function buildEnrollmentPaymentDisplay(
   const expectedTransfer = expectedPayNowForEnrollmentRecord(r, listedTuition ?? undefined);
   return {
     methodLabel: formatPaymentMethodLabel(r.paymentMethod),
-    planLabel: enrollmentPaymentPlanLabel(r.paymentPlan),
+    planLabel: enrollmentPaymentPlanLabelForRecord(r, scheduleMonthCount),
     currency,
     declaredAmount: r.downPaymentAmount ?? null,
     installmentCount: r.paymentPlan === "DOWN_PAYMENT" ? (r.installmentCount ?? null) : null,
@@ -82,11 +92,14 @@ export function buildEnrollmentPaymentDisplay(
 }
 
 /** One-line summary for tables (no listed tuition required). */
-export function enrollmentPaymentListSummary(r: EnrollmentApplicationResponse): string {
+export function enrollmentPaymentListSummary(
+  r: EnrollmentApplicationResponse,
+  scheduleMonthCount?: number,
+): string {
   const cur = r.priceCurrency ?? "USD";
   const parts: string[] = [];
   if (r.paymentMethod) parts.push(formatPaymentMethodLabel(r.paymentMethod));
-  parts.push(enrollmentPaymentPlanLabel(r.paymentPlan));
+  parts.push(enrollmentPaymentPlanLabelForRecord(r, scheduleMonthCount));
   if (r.downPaymentAmount != null && r.downPaymentAmount > 0) {
     parts.push(formatEnrollmentMoney(r.downPaymentAmount, cur));
   }

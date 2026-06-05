@@ -15,6 +15,10 @@ import { useTeacherCoursesQuery } from "@/features/teacher/hooks/useTeacherQueri
 import { resolveInstructorCategory } from "@/features/teacher/resolveInstructorCategory";
 import { syncInstructorProfileAvatar } from "@/features/teacher/syncInstructorProfileAvatar";
 import { formatDisplayPersonName, profileInitials } from "@/lib/formatPersonName";
+import {
+  LanguageSettingsSection,
+  persistUiLanguagePreference,
+} from "@/features/settings/LanguageSettingsSection";
 
 function DetailCard({ icon: Icon, label, value }: { icon: typeof User; label: string; value: string }) {
   return (
@@ -152,8 +156,9 @@ export default function TeacherSettingsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    persistUiLanguagePreference();
     await persistProfile({ name });
-    toast.success("Profile saved");
+    toast.success("Settings saved");
   };
 
   return (
@@ -282,6 +287,12 @@ export default function TeacherSettingsPage() {
                 </div>
               </div>
             </div>
+
+            <LanguageSettingsSection
+              selectId="teacher-language"
+              className="border-zinc-200/80 bg-white p-6 shadow-sm ring-1 ring-zinc-100/80"
+              headingClassName="text-base font-semibold"
+            />
 
             <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm ring-1 ring-zinc-100/80">
               <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">

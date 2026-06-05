@@ -25,13 +25,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthSession } from "@/features/auth/context";
 import {
@@ -59,21 +52,23 @@ import {
 } from "@/features/enrollment/enrollmentDocumentConfig";
 import { EnrollmentBankTransferPanel } from "@/features/enrollment/EnrollmentBankTransferPanel";
 import { cn } from "@/lib/utils";
-import { ClassSchedulePreviewPanel } from "@/features/courses/ClassSchedulePreviewPanel";
 import {
   buildScheduleMonthTabs,
   orderSessionSlotsChronologically,
   resolveEnrollmentSessionTimingStatus,
   resolvePreviewSessionSlots,
+  scheduleMonthSessionCounts,
   scheduleTabToPaymentMonths,
 } from "@/features/courses/classSchedulePreview";
-import {
-  getScheduleAttendanceState,
-  HELD_SCHEDULE_MEETINGS_CHANGED,
-} from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
+import { useScheduleAttendanceState } from "@/features/courses/useScheduleAttendanceState";
 import type { SessionSlotLike } from "@/features/courses/classSchedulePreview";
 import type { TeacherCourse } from "@/features/teacher/types";
 import type { TuitionPlanMonths } from "@/features/enrollment/enrollmentTuitionThirds";
+import {
+  EnrollmentMonthlyPaymentSelector,
+  useEnrollmentMonthlyPaySummary,
+  type MonthlyPlanMonthCount,
+} from "@/features/enrollment/EnrollmentMonthlyPaymentSelector";
 import {
   resolveJoinFromMeeting,
   tuitionForJoinFromMeeting,
@@ -86,15 +81,17 @@ function formatPrice(price: number | undefined, currency = "USD"): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
 }
 
-function parseAmountInput(raw: string): number | null {
-  const t = raw.replace(/,/g, "").trim();
-  if (!t) return null;
-  const n = Number(t);
-  return Number.isFinite(n) ? n : null;
-}
-
 function enrollSuccessSessionKey(courseId: string, emailNorm: string): string {
   return `${ENROLL_SUCCESS_SESSION_PREFIX}${encodeURIComponent(courseId)}__${emailNorm}`;
+}
+
+function monthlyPaymentPlanLabel(selectedCount: number, scheduleMonthCount: number): string {
+  if (scheduleMonthCount > 0 && selectedCount >= scheduleMonthCount) {
+    return scheduleMonthCount === 1 ? "Full tuition" : `Full tuition (${scheduleMonthCount} months)`;
+  }
+  if (selectedCount === 2) return "2 months";
+  if (selectedCount === 1) return "1 month";
+  return "Monthly payment";
 }
 
 function EnrollmentFormGroup({
@@ -212,10 +209,10 @@ const StudentEnrollmentApplicationPage = () => {
     resolveCourseThumbnail(courseId),
   );
   const [paymentMethod, setPaymentMethod] = useState<EnrollmentPaymentMethod>("BANK_TRANSFER");
-  const [paymentPlan, setPaymentPlan] = useState<EnrollmentPaymentPlan>("FULL");
   const [grantsTick, setGrantsTick] = useState(0);
-  const [installmentCount, setInstallmentCount] = useState<EnrollmentInstallmentCount>(2);
-  const [downPaymentRaw, setDownPaymentRaw] = useState("");
+  const [selectedPaymentMonths, setSelectedPaymentMonths] = useState<Set<MonthlyPlanMonthCount>>(
+    () => new Set([1]),
+  );
   const [viewingScheduleMonth, setViewingScheduleMonth] = useState<TuitionPlanMonths>(1);
   const [phoneSecondary, setPhoneSecondary] = useState(() =>
     registrationParentPhoneForEmail(user.email),
@@ -262,31 +259,7 @@ const StudentEnrollmentApplicationPage = () => {
     );
   }, [courseId, apiCourse, scheduleProposal, teacherCourse, isApiCourse]);
 
-  const [heldMeetingsTick, setHeldMeetingsTick] = useState(0);
-
-  const scheduleAttendance = useMemo(() => {
-    void heldMeetingsTick;
-    if (!courseId) return { heldSlotKeys: new Set<string>(), activeSlotKeys: new Set<string>() };
-    return getScheduleAttendanceState(courseId);
-  }, [courseId, heldMeetingsTick]);
-
-  useEffect(() => {
-    if (!courseId) return;
-    const bump = () => setHeldMeetingsTick((t) => t + 1);
-    const onHeld = (e: Event) => {
-      const ce = e as CustomEvent<{ courseId?: string }>;
-      if (!ce.detail?.courseId || ce.detail.courseId === courseId) bump();
-    };
-    const onStorage = (e: StorageEvent) => {
-      if (e.key?.includes(courseId)) bump();
-    };
-    window.addEventListener(HELD_SCHEDULE_MEETINGS_CHANGED, onHeld);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(HELD_SCHEDULE_MEETINGS_CHANGED, onHeld);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, [courseId]);
+  const scheduleAttendance = useScheduleAttendanceState(courseId);
 
   const sessionJoin = useMemo(() => {
     const n = sessionSlotsPreview.length;
@@ -363,54 +336,97 @@ const StudentEnrollmentApplicationPage = () => {
     for (const tab of tabs) {
       seen += tab.slots.length;
       if (join <= seen) {
-        setViewingScheduleMonth(scheduleTabToPaymentMonths(tab.value));
+        const month = scheduleTabToPaymentMonths(tab.value);
+        setViewingScheduleMonth(month);
+        setSelectedPaymentMonths(new Set([month]));
         break;
       }
     }
   }, [courseId, sessionSlotsPreview, sessionTuitionQuote?.joinFromMeeting, sessionJoin.allSessionsFinished]);
 
-  const downPaymentSummary = useMemo(() => {
-    if (paymentPlan !== "DOWN_PAYMENT") return null;
-    const total = tuitionDueTotal;
-    const down = parseAmountInput(downPaymentRaw);
-    const n = installmentCount;
-    if (total == null || total <= 0) {
-      return { kind: "noPrice" as const };
+  const scheduleMonthCounts = useMemo(
+    () => scheduleMonthSessionCounts(sessionSlotsPreview),
+    [sessionSlotsPreview],
+  );
+
+  const scheduleMonthTabs = useMemo(
+    () => buildScheduleMonthTabs(sessionSlotsPreview),
+    [sessionSlotsPreview],
+  );
+
+  const scheduleMonthCount = scheduleMonthTabs.length;
+
+  useEffect(() => {
+    if (scheduleMonthTabs.length === 0) return;
+    const validMonths = new Set(
+      scheduleMonthTabs.map((tab) => scheduleTabToPaymentMonths(tab.value)),
+    );
+    setSelectedPaymentMonths((prev) => {
+      const next = new Set([...prev].filter((m) => validMonths.has(m)));
+      if (next.size === 0) {
+        next.add(scheduleTabToPaymentMonths(scheduleMonthTabs[0]!.value));
+      }
+      if (next.size === prev.size && [...next].every((m) => prev.has(m))) return prev;
+      return next;
+    });
+    setViewingScheduleMonth((prev) => (validMonths.has(prev) ? prev : scheduleTabToPaymentMonths(scheduleMonthTabs[0]!.value)));
+  }, [scheduleMonthTabs]);
+
+  const monthlyPaySummary = useEnrollmentMonthlyPaySummary(
+    tuitionDueTotal,
+    selectedPaymentMonths,
+    scheduleMonthCounts,
+    scheduleMonthCount,
+  );
+
+  const monthlyPaymentFields = useMemo(():
+    | {
+        paymentPlan: EnrollmentPaymentPlan;
+        installmentCount?: EnrollmentInstallmentCount;
+        payNow: number | null;
+        selectedCount: number;
+        scheduleMonthCount: number;
+      }
+    | null => {
+    if (monthlyPaySummary.kind === "emptySelection") return null;
+    if (monthlyPaySummary.kind === "noPrice") {
+      return {
+        paymentPlan: "FULL",
+        installmentCount: undefined,
+        payNow: null,
+        selectedCount: 0,
+        scheduleMonthCount,
+      };
     }
-    if (down == null || down <= 0) {
-      return { kind: "needDown" as const, total, n };
+    const activeCount = monthlyPaySummary.scheduleMonthCount;
+    if (activeCount > 0 && monthlyPaySummary.selectedCount >= activeCount) {
+      return {
+        paymentPlan: "FULL",
+        installmentCount: undefined,
+        payNow: monthlyPaySummary.payNow,
+        selectedCount: monthlyPaySummary.selectedCount,
+        scheduleMonthCount: activeCount,
+      };
     }
-    if (down > total) {
-      return { kind: "downExceeds" as const, total, down, n };
-    }
-    const remaining = total - down;
-    if (remaining <= 0) {
-      return { kind: "fullyCovered" as const, total, down, n };
-    }
-    const perInstalment = Math.round(remaining / n);
     return {
-      kind: "schedule" as const,
-      total,
-      down,
-      remaining,
-      n,
-      perInstalment,
+      paymentPlan: "DOWN_PAYMENT",
+      installmentCount: monthlyPaySummary.apiInstallmentCount,
+      payNow: monthlyPaySummary.payNow,
+      selectedCount: monthlyPaySummary.selectedCount,
+      scheduleMonthCount: activeCount,
     };
-  }, [paymentPlan, tuitionDueTotal, downPaymentRaw, installmentCount]);
+  }, [monthlyPaySummary, scheduleMonthCount]);
 
   const transferDueSummary = useMemo(() => {
-    if (paymentPlan === "FULL") {
-      if (tuitionDueTotal != null && tuitionDueTotal > 0) {
-        return { label: "Full payment", amount: tuitionDueTotal };
-      }
-      return { label: "Full payment", amount: null as number | null };
+    if (!monthlyPaymentFields) {
+      return { label: "Monthly payment", amount: null as number | null };
     }
-    const down = parseAmountInput(downPaymentRaw);
-    if (down != null && down > 0) {
-      return { label: "Down payment", amount: down };
-    }
-    return { label: "Down payment", amount: null as number | null };
-  }, [paymentPlan, tuitionDueTotal, downPaymentRaw]);
+    const label = monthlyPaymentPlanLabel(
+      monthlyPaymentFields.selectedCount,
+      monthlyPaymentFields.scheduleMonthCount,
+    );
+    return { label, amount: monthlyPaymentFields.payNow };
+  }, [monthlyPaymentFields]);
 
   const [address, setAddress] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -507,8 +523,8 @@ const StudentEnrollmentApplicationPage = () => {
             address: app.address,
             paymentDetailLines: [
               app.paymentPlan === "FULL"
-                ? "Payment plan: Full payment"
-                : `Payment plan: Down payment (${app.installmentCount ?? 2} instalments)`,
+                ? "Payment plan: Full tuition (3 months)"
+                : `Payment plan: Monthly (${app.installmentCount === 1 ? "2 months remaining" : "1 month remaining"})`,
             ],
             proofFileName: "payment-proof",
             idFileName: "id-document",
@@ -523,10 +539,6 @@ const StudentEnrollmentApplicationPage = () => {
         // Ignore errors - user can still submit
       });
   }, [courseId, user.email, navigate, priceDisplay]);
-
-  useEffect(() => {
-    if (paymentPlan === "FULL") setInstallmentCount(2);
-  }, [paymentPlan]);
 
   useEffect(() => {
     if (!requiresVerificationUploads) {
@@ -591,26 +603,21 @@ const StudentEnrollmentApplicationPage = () => {
         return;
       }
     }
+    if (!monthlyPaymentFields) {
+      toast.error("Select at least one month to pay for.");
+      return;
+    }
+    const { paymentPlan, installmentCount, payNow } = monthlyPaymentFields;
     let downAmount: number | undefined;
-    if (paymentPlan === "FULL") {
-      if (tuitionDueTotal != null && tuitionDueTotal > 0) {
-        downAmount = tuitionDueTotal;
-      }
-    } else if (paymentPlan === "DOWN_PAYMENT") {
-      if (tuitionDueTotal != null && tuitionDueTotal <= 0) {
-        downAmount = 0;
-      } else {
-        const parsed = parseAmountInput(downPaymentRaw);
-        if (parsed == null || parsed <= 0) {
-          toast.error("Enter a valid down payment amount (greater than zero).");
-          return;
-        }
-        if (tuitionDueTotal != null && parsed > tuitionDueTotal) {
-          toast.error("Down payment cannot exceed your prorated tuition for this schedule.");
-          return;
-        }
-        downAmount = parsed;
-      }
+    if (tuitionDueTotal != null && tuitionDueTotal <= 0) {
+      downAmount = 0;
+    } else if (payNow != null && payNow > 0) {
+      downAmount = payNow;
+    } else if (monthlyPaySummary.kind === "noPrice") {
+      downAmount = undefined;
+    } else {
+      toast.error("Select at least one month to pay for.");
+      return;
     }
 
     setSubmitting(true);
@@ -633,9 +640,25 @@ const StudentEnrollmentApplicationPage = () => {
       paymentDetailLines.push(`Payment method: ${formatPaymentMethodLabel(paymentMethod)}`);
       paymentDetailLines.push(
         paymentPlan === "FULL"
-          ? "Payment plan: Full payment"
-          : "Payment plan: Down payment (instalments apply to remaining balance where offered)",
+          ? `Payment plan: ${monthlyPaymentPlanLabel(monthlyPaymentFields.selectedCount, monthlyPaymentFields.scheduleMonthCount)}`
+          : `Payment plan: ${monthlyPaymentPlanLabel(monthlyPaymentFields.selectedCount, monthlyPaymentFields.scheduleMonthCount)} (remaining balance in instalments)`,
       );
+      if (monthlyPaySummary.kind === "ok") {
+        paymentDetailLines.push(
+          `Months paying now: ${[...monthlyPaySummary.selectedMonths].sort((a, b) => a - b).join(", ")}`,
+        );
+        paymentDetailLines.push(
+          `Due with this application: ${formatPrice(monthlyPaySummary.payNow, priceCurrency)}`,
+        );
+        if (monthlyPaySummary.remaining > 0) {
+          paymentDetailLines.push(
+            `Remaining tuition after this transfer: ${formatPrice(monthlyPaySummary.remaining, priceCurrency)}`,
+          );
+          paymentDetailLines.push(
+            `Instalments for remaining balance: ${monthlyPaySummary.apiInstallmentCount}`,
+          );
+        }
+      }
       paymentDetailLines.push(`Listed class price: ${priceDisplay || "—"}`);
       const referralEntered = referralCodeInput.trim();
       if (referralEntered) {
@@ -660,39 +683,7 @@ const StudentEnrollmentApplicationPage = () => {
           `Your tuition (${sessionTuitionQuote.sessionsIncluded} meetings): ${formatPrice(sessionTuitionQuote.amountDue, priceCurrency)}`,
         );
       }
-      if (paymentPlan === "DOWN_PAYMENT") {
-        paymentDetailLines.push(`Instalment count selected: ${installmentCount}`);
-        const rawDown = downPaymentRaw.trim();
-        if (rawDown) {
-          paymentDetailLines.push(`Down payment amount (entered): ${rawDown} (${priceCurrency})`);
-        }
-        const dps = downPaymentSummary;
-        if (dps?.kind === "needDown" || dps?.kind === "noPrice") {
-          paymentDetailLines.push(
-            "Note: Instalment amounts will follow school policy once your payment is verified.",
-          );
-        }
-        if (dps?.kind === "downExceeds") {
-          paymentDetailLines.push(
-            "Note: Entered down payment exceeds the listed tuition — an administrator will review.",
-          );
-        }
-        if (dps?.kind === "fullyCovered") {
-          paymentDetailLines.push(
-            "Down payment covers the full listed tuition; no further tuition instalments for that amount.",
-          );
-        }
-        if (dps?.kind === "schedule") {
-          paymentDetailLines.push(
-            `Remaining balance after down payment: ${formatPrice(dps.remaining, priceCurrency)}`,
-          );
-          paymentDetailLines.push(
-            `Each of ${dps.n} instalments (estimated): ${formatPrice(dps.perInstalment, priceCurrency)}`,
-          );
-        }
-      }
 
-      // Submit application to API
       await eduhubEnrollmentApplications.submit({
         courseId,
         fullName: user.name.trim(),
@@ -1087,182 +1078,22 @@ const StudentEnrollmentApplicationPage = () => {
                     </div>
                   </div>
                 ) : null}
-                <RadioGroup
-                  value={paymentPlan}
-                  onValueChange={(v) => setPaymentPlan(v as EnrollmentPaymentPlan)}
-                  className="mt-4 grid gap-2 sm:grid-cols-2"
-                >
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50/40 px-4 py-3 transition-colors hover:bg-zinc-50 has-[[data-state=checked]]:border-[#3954d0]/40 has-[[data-state=checked]]:bg-[#3954d0]/[0.06]">
-                    <RadioGroupItem value="FULL" id="pay-full" />
-                    <span className="text-sm font-medium text-zinc-900">Full payment</span>
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50/40 px-4 py-3 transition-colors hover:bg-zinc-50 has-[[data-state=checked]]:border-[#3954d0]/40 has-[[data-state=checked]]:bg-[#3954d0]/[0.06]">
-                    <RadioGroupItem value="DOWN_PAYMENT" id="pay-down" />
-                    <span className="text-sm font-medium text-zinc-900">Down payment</span>
-                  </label>
-                </RadioGroup>
-                {paymentPlan === "DOWN_PAYMENT" ? (
-                  <div>
-                    <div className="mt-5 border-t border-zinc-100 pt-5">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-4">
-                        <div className="min-w-0 flex-1">
-                          <Label htmlFor="downPayment" className="text-zinc-700">
-                            Down payment ({priceCurrency})
-                          </Label>
-                          <Input
-                            id="downPayment"
-                            inputMode="decimal"
-                            autoComplete="off"
-                            className={inputEditClass}
-                            placeholder="Amount on your transfer"
-                            value={downPaymentRaw}
-                            onChange={(e) => setDownPaymentRaw(e.target.value)}
-                          />
-                          <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-                            {requiresVerificationUploads
-                              ? "Must match your transfer proof. Any remaining balance follows school policy."
-                              : "Amount you will pay in cash. Any remaining balance follows school policy."}
-                          </p>
-                        </div>
-                        <div className="w-full shrink-0 sm:w-16 sm:min-w-0">
-                          <Label
-                            htmlFor="installments"
-                            className="text-[11px] font-medium leading-tight text-zinc-600 sm:text-xs"
-                          >
-                            Instalments
-                          </Label>
-                          <Select
-                            value={String(installmentCount)}
-                            onValueChange={(v) => setInstallmentCount(Number(v) as EnrollmentInstallmentCount)}
-                          >
-                            <SelectTrigger
-                              id="installments"
-                              className="mt-1.5 h-11 w-full min-w-0 rounded-xl border-zinc-200 px-1.5 text-sm [&>svg]:h-3 [&>svg]:w-3 [&>svg]:shrink-0"
-                            >
-                              <SelectValue placeholder="2" />
-                            </SelectTrigger>
-                            <SelectContent
-                              position="popper"
-                              className="min-w-0 w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)] p-0"
-                            >
-                              <SelectItem value="2" className="justify-center py-2 pl-2 pr-2 text-center text-sm">
-                                2
-                              </SelectItem>
-                              <SelectItem value="4" className="justify-center py-2 pl-2 pr-2 text-center text-sm">
-                                4
-                              </SelectItem>
-                              <SelectItem value="6" className="justify-center py-2 pl-2 pr-2 text-center text-sm">
-                                6
-                              </SelectItem>
-                              <SelectItem value="8" className="justify-center py-2 pl-2 pr-2 text-center text-sm">
-                                8
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      {downPaymentSummary ? (
-                        <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-800">
-                          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-600">Summary</p>
-                          {downPaymentSummary.kind === "noPrice" && (
-                            <p className="text-zinc-600">
-                              Class price is unavailable or free — instalment amounts can&apos;t be calculated here.
-                            </p>
-                          )}
-                          {downPaymentSummary.kind === "needDown" && (
-                            <div className="space-y-1.5 text-zinc-700">
-                              <p>
-                                <span className="text-zinc-500">Class price:</span>{" "}
-                                <span className="font-semibold text-zinc-900">
-                                  {formatPrice(downPaymentSummary.total, priceCurrency)}
-                                </span>
-                              </p>
-                              <p className="text-zinc-600">
-                                Enter your down payment amount to see the remaining balance split across{" "}
-                                {downPaymentSummary.n} instalments.
-                              </p>
-                            </div>
-                          )}
-                          {downPaymentSummary.kind === "downExceeds" && (
-                            <p className="text-amber-800">
-                              Down payment ({formatPrice(downPaymentSummary.down, priceCurrency)}) is higher than your
-                              tuition ({formatPrice(downPaymentSummary.total, priceCurrency)}). Please correct the
-                              amount.
-                            </p>
-                          )}
-                          {downPaymentSummary.kind === "fullyCovered" && (
-                            <p className="text-zinc-700">
-                              Your down payment covers your full tuition (
-                              {formatPrice(downPaymentSummary.total, priceCurrency)}). No further instalments are
-                              needed for tuition.
-                            </p>
-                          )}
-                          {downPaymentSummary.kind === "schedule" && (
-                            <ul className="space-y-2 text-zinc-800">
-                              <li className="flex flex-wrap justify-between gap-x-4 gap-y-0.5">
-                                <span className="text-zinc-500">Your tuition</span>
-                                <span className="font-medium tabular-nums text-zinc-900">
-                                  {formatPrice(downPaymentSummary.total, priceCurrency)}
-                                </span>
-                              </li>
-                              <li className="flex flex-wrap justify-between gap-x-4 gap-y-0.5">
-                                <span className="text-zinc-500">Down payment (this transfer)</span>
-                                <span className="font-medium tabular-nums text-zinc-900">
-                                  {formatPrice(downPaymentSummary.down, priceCurrency)}
-                                </span>
-                              </li>
-                              <li className="flex flex-wrap justify-between gap-x-4 gap-y-0.5 border-t border-zinc-200/90 pt-2">
-                                <span className="text-zinc-500">Remaining balance</span>
-                                <span className="font-semibold tabular-nums text-zinc-900">
-                                  {formatPrice(downPaymentSummary.remaining, priceCurrency)}
-                                </span>
-                              </li>
-                              <li className="pt-0.5 text-zinc-900">
-                                <span className="text-zinc-500">Each of {downPaymentSummary.n} instalments</span>
-                                <span className="mx-1.5 text-zinc-300">·</span>
-                                <span className="font-semibold tabular-nums">
-                                  {formatPrice(downPaymentSummary.perInstalment, priceCurrency)}
-                                </span>
-                                <span className="mt-1 block text-xs font-normal text-zinc-500">
-                                  Remaining balance divided equally ({downPaymentSummary.n} payments). Final dates
-                                  follow school policy.
-                                </span>
-                              </li>
-                            </ul>
-                          )}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="mt-4 text-sm text-zinc-700">
-                    {tuitionDueTotal != null && tuitionDueTotal > 0 ? (
-                      <>
-                        Pay your tuition ({formatPrice(tuitionDueTotal, priceCurrency)}
-                        {sessionTuitionQuote && sessionTuitionQuote.joinFromMeeting > 1
-                          ? ` — ${sessionTuitionQuote.sessionsIncluded} of ${sessionTuitionQuote.totalSessions} meetings`
-                          : ""}
-                        ){" "}
-                        {requiresVerificationUploads ? "with this transfer." : "in cash at the school office."}
-                      </>
-                    ) : (
-                      <>
-                        Pay the full amount the school quoted for this class
-                        {requiresVerificationUploads ? " with this transfer." : " in cash at the school office."}
-                      </>
-                    )}
-                  </p>
-                )}
-                <ClassSchedulePreviewPanel
+                <EnrollmentMonthlyPaymentSelector
                   courseId={courseId}
                   apiCourse={apiCourse}
                   scheduleProposal={scheduleProposal}
                   teacherCourse={teacherCourse}
-                  viewingMonth={viewingScheduleMonth}
-                  onViewingMonthChange={setViewingScheduleMonth}
+                  coursePriceAmount={tuitionDueTotal}
+                  priceCurrency={priceCurrency}
+                  loadingCourse={loadingCourse}
+                  selectedPaymentMonths={selectedPaymentMonths}
+                  onSelectedPaymentMonthsChange={setSelectedPaymentMonths}
+                  viewingScheduleMonth={viewingScheduleMonth}
+                  onViewingScheduleMonthChange={setViewingScheduleMonth}
+                  monthlyPaySummary={monthlyPaySummary}
                   heldSlotKeys={scheduleAttendance.heldSlotKeys}
                   activeSlotKeys={scheduleAttendance.activeSlotKeys}
-                  className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3"
+                  schedulePanelClassName="mt-5 rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3"
                 />
               </fieldset>
             </EnrollmentFormGroup>

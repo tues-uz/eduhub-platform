@@ -15,9 +15,9 @@ import {
   scheduleTabToPaymentMonths,
   orderSessionSlotsChronologically,
   resolveEnrollmentSessionTimingStatus,
-  resolveSessionTimingStatus,
   type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
+import { useScheduleAttendanceState } from "@/features/courses/useScheduleAttendanceState";
 import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
 import { formatDisplayTitle } from "@/lib/formatPersonName";
 
@@ -57,6 +57,9 @@ export function ClassSchedulePreviewPanel({
 }: Props) {
   const isTeacher = Boolean(courseId?.startsWith("teacher_"));
   const isApiCourse = Boolean(courseId && isUuid(courseId) && !isTeacher);
+  const attendanceFromHook = useScheduleAttendanceState(courseId);
+  const effectiveHeldSlotKeys = heldSlotKeys ?? attendanceFromHook.heldSlotKeys;
+  const effectiveActiveSlotKeys = activeSlotKeys ?? attendanceFromHook.activeSlotKeys;
 
   const sessionSlotsPreview = useMemo(() => {
     if (!courseId) return [] as SessionSlotLike[];
@@ -162,14 +165,11 @@ export function ClassSchedulePreviewPanel({
                     const meetingNum = offset + idx + 1;
                     const customTitle = row.title?.trim();
                     const dateIsTba = dateLabel === "Date TBA";
-                    const timingStatus =
-                      heldSlotKeys != null || activeSlotKeys != null
-                        ? resolveEnrollmentSessionTimingStatus(
-                            row,
-                            heldSlotKeys ?? new Set(),
-                            activeSlotKeys ?? new Set(),
-                          )
-                        : resolveSessionTimingStatus(row);
+                    const timingStatus = resolveEnrollmentSessionTimingStatus(
+                      row,
+                      effectiveHeldSlotKeys,
+                      effectiveActiveSlotKeys,
+                    );
                     return (
                       <li
                         key={`${t.value}-${row.sessionDate}-${idx}-${meetingNum}`}

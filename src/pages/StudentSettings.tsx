@@ -18,6 +18,10 @@ import {
 import { setSessionUser, useAuthSession } from "@/features/auth/context";
 import { instructorProfileAvatarsStore } from "@/features/teacher/data/instructorProfileAvatarsStore";
 import { formatDisplayPersonName, profileInitials } from "@/lib/formatPersonName";
+import {
+  LanguageSettingsSection,
+  persistUiLanguagePreference,
+} from "@/features/settings/LanguageSettingsSection";
 
 function formatRegistrationDate(value: string): string {
   if (!value.trim()) return "—";
@@ -144,8 +148,9 @@ const StudentSettings = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    persistUiLanguagePreference();
     await persistProfile({ name, email });
-    toast.success("Profile saved");
+    toast.success("Settings saved");
   };
 
   return (
@@ -267,6 +272,7 @@ const StudentSettings = () => {
             </div>
           </div>
         </div>
+        <LanguageSettingsSection selectId="student-language" />
         <div className="rounded-xl border border-gray-200/50 bg-white/80 p-4 shadow-sm sm:p-6">
           <h2
             className="mb-4 flex items-center gap-2 font-semibold text-foreground"

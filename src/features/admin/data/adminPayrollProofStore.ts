@@ -29,6 +29,37 @@ export function payrollProofKey(className: string, course: string): string {
   return `${className}\t${course}`;
 }
 
+/** Match proof saved under class/course labels that may differ slightly between admin and instructor UIs. */
+export function resolvePayrollProofBundle(
+  proofMap: Record<string, PayrollProofRecord>,
+  classSection: string,
+  course: string,
+): PayrollProofRecord | undefined {
+  const candidates = [
+    payrollProofKey(classSection, course),
+    payrollProofKey(course, classSection),
+    payrollProofKey(classSection, classSection),
+    payrollProofKey(course, course),
+  ];
+  const seen = new Set<string>();
+  for (const key of candidates) {
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const bundle = proofMap[key];
+    if (bundle) return bundle;
+  }
+  return undefined;
+}
+
+/** Instructor may open the bank receipt after admin approved the payroll request and attached a file. */
+export function canInstructorViewTransferProof(
+  submission: { status: string } | undefined,
+  proof: PayrollProofRecord | undefined,
+): boolean {
+  if (submission?.status !== "approved") return false;
+  return hasPayrollProofFile(proof);
+}
+
 export function hasPayrollProofFile(r: PayrollProofRecord | undefined): boolean {
   return !!(
     r &&
@@ -37,6 +68,20 @@ export function hasPayrollProofFile(r: PayrollProofRecord | undefined): boolean 
     typeof r.fileName === "string" &&
     typeof r.uploadedAt === "string"
   );
+}
+
+/** Admin attached a file but has not submitted payout proof to the instructor yet. */
+export function hasDraftPayrollTransferFile(r: PayrollProofRecord | undefined): boolean {
+  return hasPayrollProofFile(r) && !r?.approvedAt;
+}
+
+/** Bank receipt released to instructor after admin submits payout proof (not student certificates). */
+export function isReleasedInstructorTransferProof(r: PayrollProofRecord | undefined): boolean {
+  return hasPayrollProofFile(r) && Boolean(r?.approvedAt?.trim());
+}
+
+export function looksLikeCourseCertificateFileName(fileName: string): boolean {
+  return /certificate/i.test(fileName.trim());
 }
 
 /** Path + query for the dedicated payout proof page. */
@@ -202,6 +247,13 @@ export const adminPayrollProofStore = {
   },
 
   async upload(className: string, course: string, file: File, requestId?: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+    if (looksLikeCourseCertificateFileName(file.name)) {
+      return {
+        ok: false,
+        reason:
+          "This looks like a student course certificate. Upload a bank transfer receipt (screenshot or PDF) instead.",
+      };
+    }
     if (!isAllowedFile(file)) {
       return { ok: false, reason: "Use a PDF or image (JPG, PNG, WebP)." };
     }
