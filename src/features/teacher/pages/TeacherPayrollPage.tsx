@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/table";
 import { PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
 import {
-  hasPayrollProofFile,
-  payrollProofKey,
+  canInstructorViewTransferProof,
+  resolvePayrollProofBundle,
   usePayrollProofMap,
 } from "@/features/admin/data/adminPayrollProofStore";
 import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock";
@@ -43,6 +43,7 @@ import {
   useInstructorPayrollRequests,
   type InstructorPayrollRequestRecord,
 } from "@/features/teacher/data/instructorPayrollRequestStore";
+import { TeacherPayrollPayoutDetailsDialog } from "@/features/teacher/components/TeacherPayrollPayoutDetailsDialog";
 import { TeacherPayrollSubmitDialog } from "@/features/teacher/components/TeacherPayrollSubmitDialog";
 import {
   buildTeacherPayrollStudentRows,
@@ -170,6 +171,10 @@ export default function TeacherPayrollPage() {
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [openSubmitKey, setOpenSubmitKey] = useState<string | null>(null);
+  const [payoutDetailsTarget, setPayoutDetailsTarget] = useState<{
+    classSection: string;
+    course: string;
+  } | null>(null);
   const [expandedClassKey, setExpandedClassKey] = useState<string | null>(null);
   const [formByClass, setFormByClass] = useState<Record<string, TeacherPayrollFormFields>>({});
 
@@ -597,6 +602,12 @@ export default function TeacherPayrollPage() {
                           ),
                       );
                       const isExpanded = expandedClassKey === ck;
+                      const proofBundle = resolvePayrollProofBundle(proofMap, agg.className, agg.course);
+                      const canViewTransfer = canInstructorViewTransferProof(latest, proofBundle);
+                      const canViewPayout =
+                        latest?.status === "approved" ||
+                        canViewTransfer ||
+                        Boolean(proofBundle?.informationNotes?.trim());
 
                       return (
                         <Fragment key={ck}>
@@ -670,17 +681,35 @@ export default function TeacherPayrollPage() {
                               </span>
                             </TableCell>
                             <TableCell className="py-4 text-right">
-                              <Button
-                                type="button"
-                                size="sm"
-                                className="bg-[#3954d0] hover:bg-[#2f46b3] whitespace-nowrap"
-                                onClick={() => {
-                                  initFormIfMissing(ck);
-                                  setOpenSubmitKey(ck);
-                                }}
-                              >
-                                Submit payroll
-                              </Button>
+                              <div className="flex flex-col items-end gap-1.5">
+                                {canViewPayout ? (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="whitespace-nowrap border-[#3954d0]/35 text-[#3954d0] hover:bg-[#3954d0]/5"
+                                    onClick={() =>
+                                      setPayoutDetailsTarget({
+                                        classSection: agg.className,
+                                        course: agg.course,
+                                      })
+                                    }
+                                  >
+                                    View payout
+                                  </Button>
+                                ) : null}
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  className="bg-[#3954d0] hover:bg-[#2f46b3] whitespace-nowrap"
+                                  onClick={() => {
+                                    initFormIfMissing(ck);
+                                    setOpenSubmitKey(ck);
+                                  }}
+                                >
+                                  Submit payroll
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                           {isExpanded ? (
@@ -781,8 +810,8 @@ export default function TeacherPayrollPage() {
               <div>
                 <h2 className="text-xl font-bold text-foreground tracking-tight">My submissions</h2>
                 <p className="text-foreground/60 text-sm mt-1 max-w-2xl">
-                  Track your monthly submissions (pending / approved / not approved). After admin records a bank transfer,{" "}
-                  <span className="text-foreground/75">Transfer proof</span> shows here and you get a notification.
+                  Track your monthly submissions (pending / approved / not approved). After admin submits payout proof,{" "}
+                  <span className="text-foreground/75">Bank transfer receipt</span> shows here and you get a notification.
                 </p>
               </div>
               <Button asChild variant="outline" className="rounded-full w-full sm:w-auto">
@@ -842,7 +871,7 @@ export default function TeacherPayrollPage() {
                       <TableHead>Period</TableHead>
                       <TableHead>Requested</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Transfer proof</TableHead>
+                      <TableHead>Bank receipt</TableHead>
                       <TableHead>Submitted</TableHead>
                       <TableHead>Admin note</TableHead>
                     </TableRow>
@@ -857,7 +886,8 @@ export default function TeacherPayrollPage() {
                           : matchedCourse?.status
                             ? matchedCourse.status.replace(/_/g, " ").toLowerCase()
                             : null;
-                      const proofOnFile = hasPayrollProofFile(proofMap[payrollProofKey(r.classSection, r.course)]);
+                      const submissionProof = resolvePayrollProofBundle(proofMap, r.classSection, r.course);
+                      const canViewTransfer = canInstructorViewTransferProof(r, submissionProof);
                       return (
                         <TableRow key={r.id}>
                           <TableCell className="font-medium text-slate-900">
@@ -876,14 +906,21 @@ export default function TeacherPayrollPage() {
                             <SubmissionStatusPill status={r.status} />
                           </TableCell>
                           <TableCell className="text-slate-600">
-                            {proofOnFile ? (
-                              <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-900">
-                                On file
-                              </span>
-                            ) : r.status === "approved" ? (
-                              <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                                Awaiting admin
-                              </span>
+                            {canViewTransfer || r.status === "approved" ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 px-2 text-xs text-[#3954d0] hover:bg-[#3954d0]/5 hover:text-[#3954d0]"
+                                onClick={() =>
+                                  setPayoutDetailsTarget({
+                                    classSection: r.classSection,
+                                    course: r.course,
+                                  })
+                                }
+                              >
+                                {canViewTransfer ? "View receipt" : "View status"}
+                              </Button>
                             ) : (
                               <span className="text-slate-400">—</span>
                             )}
@@ -902,6 +939,29 @@ export default function TeacherPayrollPage() {
           </section>
             </TabsContent>
           </Tabs>
+
+          {payoutDetailsTarget ? (
+            <TeacherPayrollPayoutDetailsDialog
+              open
+              onOpenChange={(open) => {
+                if (!open) setPayoutDetailsTarget(null);
+              }}
+              classSection={payoutDetailsTarget.classSection}
+              course={payoutDetailsTarget.course}
+              submission={latestRequestForClass(
+                payrollRequests,
+                payoutDetailsTarget.classSection,
+                payoutDetailsTarget.course,
+                emailNorm,
+                instructorLabel,
+              )}
+              proof={resolvePayrollProofBundle(
+                proofMap,
+                payoutDetailsTarget.classSection,
+                payoutDetailsTarget.course,
+              )}
+            />
+          ) : null}
         </div>
       </main>
     </div>

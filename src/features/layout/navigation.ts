@@ -71,6 +71,7 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
     label: "Operations",
     children: [
       { label: "Payments & reminders", path: "/dashboard/admin/payments" },
+      { label: "Schedule month payments", path: "/dashboard/admin/installment-payments" },
       { label: "Payroll", path: "/dashboard/admin/payroll" },
       { label: "Transactions", path: "/dashboard/admin/transactions" },
       { label: "Attendance & progress", path: "/dashboard/admin/attendance" },

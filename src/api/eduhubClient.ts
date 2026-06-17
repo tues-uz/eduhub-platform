@@ -4,6 +4,8 @@ import type {
   UserResponse,
   LoginRequest,
   RegisterRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
   CourseRequest,
   CourseResponse,
   CourseSummaryResponse,
@@ -258,6 +260,20 @@ export const eduhubAuth = {
 
   verifyEmail: (token: string) =>
     request<void>(`/auth/verify-email?token=${token}`, { method: "POST", skipAuth: true }),
+
+  requestPasswordReset: (body: ForgotPasswordRequest) =>
+    request<{ message: string }>("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify(body),
+      skipAuth: true,
+    }),
+
+  resetPassword: (token: string, body: ResetPasswordRequest) =>
+    request<void>(`/auth/reset-password?token=${encodeURIComponent(token)}`, {
+      method: "POST",
+      body: JSON.stringify(body),
+      skipAuth: true,
+    }),
 
   me: () => request<UserResponse>("/auth/me"),
 

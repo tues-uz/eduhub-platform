@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { eduhubAdminEnrollmentApplications, eduhubCourses } from "@/api/eduhubClient";
+import { eduhubAdminEnrollmentApplications, eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
+import { buildCourseScheduleSlots } from "@/features/courses/courseScheduleSlots";
+import { buildScheduleMonthTabs, orderSessionSlotsChronologically } from "@/features/courses/classSchedulePreview";
 import {
   approveEnrollmentApplication,
   notifyEnrollmentRejection,
@@ -35,6 +37,8 @@ import {
   useAdminActionCodeState,
 } from "@/features/admin/components/AdminActionCodeField";
 import { formatReviewedByLabel, validateAdminActionCodeOrThrow } from "@/features/admin/adminStaffCode";
+import { AdminEnrollmentPaidMonthsPanel } from "@/features/admin/components/AdminEnrollmentPaidMonthsPanel";
+import { EnrollmentPaymentHistorySection } from "@/features/enrollment/EnrollmentPaymentHistorySection";
 
 function formatDate(iso: string) {
   try {
@@ -59,6 +63,7 @@ export default function AdminEnrollmentApplicationDetailPage() {
   const [listedTuition, setListedTuition] = useState<number | null>(null);
   const [listedCurrency, setListedCurrency] = useState("USD");
   const [coursePriceLoading, setCoursePriceLoading] = useState(false);
+  const [scheduleMonthCount, setScheduleMonthCount] = useState<number | undefined>();
 
   const fetchRecord = useCallback(() => {
     if (!applicationId) {
@@ -84,19 +89,28 @@ export default function AdminEnrollmentApplicationDetailPage() {
   useEffect(() => {
     if (!record?.courseId || !isUuid(record.courseId)) {
       setListedTuition(null);
+      setScheduleMonthCount(undefined);
       setCoursePriceLoading(false);
       return;
     }
     setCoursePriceLoading(true);
-    eduhubCourses
-      .getById(record.courseId)
-      .then((c) => {
+    Promise.all([
+      eduhubCourses.getById(record.courseId),
+      eduhubSchedule.getProposal(record.courseId).catch(() => null),
+    ])
+      .then(([c, proposal]) => {
         const amt = c.pricing?.discountedAmount ?? c.pricing?.amount;
         const cur = c.pricing?.currency ?? "USD";
         setListedCurrency(cur);
         setListedTuition(amt != null && amt > 0 ? amt : null);
+        const slots = buildCourseScheduleSlots(c, proposal, record.courseId);
+        const tabs = buildScheduleMonthTabs(orderSessionSlotsChronologically(slots));
+        setScheduleMonthCount(tabs.length > 0 ? tabs.length : undefined);
       })
-      .catch(() => setListedTuition(null))
+      .catch(() => {
+        setListedTuition(null);
+        setScheduleMonthCount(undefined);
+      })
       .finally(() => setCoursePriceLoading(false));
   }, [record?.courseId]);
 
@@ -297,7 +311,7 @@ export default function AdminEnrollmentApplicationDetailPage() {
             ) : null}
 
             {(() => {
-              const pay = buildEnrollmentPaymentDisplay(record, listedTuition);
+              const pay = buildEnrollmentPaymentDisplay(record, listedTuition, scheduleMonthCount);
               const moneyCur = pay.listedTuition != null ? listedCurrency : pay.currency;
               return (
                 <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 space-y-3">
@@ -308,7 +322,9 @@ export default function AdminEnrollmentApplicationDetailPage() {
                       <dd className="font-medium text-slate-900">{pay.methodLabel}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs text-slate-500">Plan</dt>
+                      <dt className="text-xs text-slate-500">
+                        {record.status === "APPROVED" ? "Months paid at enrollment" : "Months paid"}
+                      </dt>
                       <dd className="font-medium text-slate-900">{pay.planLabel}</dd>
                     </div>
                     <div>
@@ -430,6 +446,17 @@ export default function AdminEnrollmentApplicationDetailPage() {
                 {formatPaymentMethodLabel(record.paymentMethod)} — no transfer proof or ID upload required.
               </p>
             )}
+
+            {record.status === "APPROVED" ? (
+              <>
+                <EnrollmentPaymentHistorySection
+                  record={record}
+                  variant="admin"
+                  listedTuition={listedTuition}
+                />
+                <AdminEnrollmentPaidMonthsPanel record={record} />
+              </>
+            ) : null}
 
             {record.adminNote ? (
               <div className="rounded-lg border border-red-100 bg-red-50/60 px-4 py-3">

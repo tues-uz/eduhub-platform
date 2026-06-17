@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useEnrollmentInstallmentPayments } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
 import { ArrowLeft, FileCheck } from "@/lib/icons";
 import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
@@ -42,6 +43,8 @@ function formatMoney(amount: number, currency: string) {
 
 export default function AdminPaymentsPage() {
   const payments = useAdminPayments();
+  const installmentPayments = useEnrollmentInstallmentPayments();
+  const pendingInstallments = installmentPayments.filter((p) => p.status === "PENDING").length;
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -131,6 +134,18 @@ export default function AdminPaymentsPage() {
             </Button>
           }
         />
+
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+          <p className="text-sm text-slate-600">
+            Enrolled students paying tuition month-by-month submit follow-up transfers for review.
+          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/dashboard/admin/installment-payments">
+              Schedule month payments
+              {pendingInstallments > 0 ? ` (${pendingInstallments} pending)` : ""}
+            </Link>
+          </Button>
+        </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input

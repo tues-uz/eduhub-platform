@@ -213,7 +213,7 @@ const SignIn = () => {
                     <span className="text-foreground/70">Remember me</span>
                   </label>
                   <Link
-                    to="#"
+                    to={appRoutes.forgotPassword}
                     className="text-primary hover:text-primary/80 font-medium transition-colors"
                   >
                     Forgot password?

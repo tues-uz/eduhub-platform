@@ -37,6 +37,8 @@ import type { EnrollmentApplicationResponse, EnrollmentApplicationStatus } from 
 import { isUuid } from "@/api/utils";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { OutstandingTuitionSection } from "@/features/enrollment/OutstandingTuitionSection";
+import { enrollmentPaymentPlanLabelForRecord } from "@/features/enrollment/enrollmentPaymentDisplay";
 
 type PaymentStatusFilter = "all" | EnrollmentApplicationStatus;
 
@@ -69,13 +71,14 @@ function formatSubmittedAt(iso: string): string {
 }
 
 function planSummary(r: EnrollmentApplicationResponse): string {
+  const label = enrollmentPaymentPlanLabelForRecord(r);
   if (r.paymentPlan === "DOWN_PAYMENT") {
     const amt = formatMoney(r.downPaymentAmount, r.priceCurrency ?? "USD");
     const inst =
-      r.installmentCount != null ? ` · ${r.installmentCount} instalments` : "";
-    return amt !== "—" ? `Down payment ${amt}${inst}` : `Down payment${inst}`;
+      r.installmentCount != null ? ` · ${r.installmentCount} instalments left` : "";
+    return amt !== "—" ? `${label} ${amt}${inst}` : `${label}${inst}`;
   }
-  return "Full payment";
+  return label;
 }
 
 function statusStyles(status: EnrollmentApplicationResponse["status"]): string {
@@ -312,6 +315,8 @@ const StudentPaymentInfo = () => {
           </div>
         ) : (
           <>
+            <OutstandingTuitionSection applications={rows} />
+
             <div className="mb-4 flex items-center gap-2 sm:gap-3">
               <div className="relative w-full max-w-xs sm:max-w-sm">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" aria-hidden />

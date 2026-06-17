@@ -14,8 +14,8 @@ import {
   resolveEnrollmentSessionTimingStatus,
   yearMonthKey,
 } from "@/features/courses/classSchedulePreview";
+import { useScheduleAttendanceState } from "@/features/courses/useScheduleAttendanceState";
 import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
-import { getScheduleAttendanceState } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 import {
   instructorPayrollRequestStore,
   useInstructorPayrollRequests,
@@ -94,12 +94,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
     setViewingScheduleMonth(payrollSchedule.monthCompletion.viewingMonth);
   }, [payrollSchedule.monthCompletion.viewingMonth, record?.id]);
 
-  const scheduleAttendance = useMemo(() => {
-    if (!payrollSchedule.courseId) {
-      return { heldSlotKeys: new Set<string>(), activeSlotKeys: new Set<string>() };
-    }
-    return getScheduleAttendanceState(payrollSchedule.courseId);
-  }, [payrollSchedule.courseId, payrollSchedule.slots.length, payrollSchedule.monthCompletion.finishedInPeriod]);
+  const scheduleAttendance = useScheduleAttendanceState(payrollSchedule.courseId);
 
   const periodScheduleSessions = useMemo(() => {
     const ym = payrollSchedule.monthCompletion.periodYearMonth;

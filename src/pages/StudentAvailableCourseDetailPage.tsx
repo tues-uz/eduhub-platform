@@ -34,7 +34,8 @@ import {
 } from "@/features/admin/utils/adminCourseScheduleDisplay";
 import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
 import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
-import { formatSessionTimeLabel, resolveSessionTimingStatus, buildScheduleMonthTabs, sessionDateMs } from "@/features/courses/classSchedulePreview";
+import { formatSessionTimeLabel, resolveEnrollmentSessionTimingStatus, buildScheduleMonthTabs, sessionDateMs } from "@/features/courses/classSchedulePreview";
+import { useScheduleAttendanceState } from "@/features/courses/useScheduleAttendanceState";
 import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import {
@@ -176,6 +177,7 @@ const StudentAvailableCourseDetailPage = () => {
   const [, setEnrollmentStoreTick] = useState(0);
   const [reviewsTick, setReviewsTick] = useState(0);
   const scheduleLocalTick = useAdminCourseLocalDataVersion();
+  const scheduleAttendance = useScheduleAttendanceState(linkId || undefined);
 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -637,7 +639,11 @@ const StudentAvailableCourseDetailPage = () => {
                                       ? `${weekdayLabel} · ${timeLabel}`
                                       : timeLabel;
                                   const title = formatDisplayTitle(row.title?.trim() || `Session ${idx + 1}`);
-                                  const timingStatus = resolveSessionTimingStatus(row);
+                                  const timingStatus = resolveEnrollmentSessionTimingStatus(
+                                    row,
+                                    scheduleAttendance.heldSlotKeys,
+                                    scheduleAttendance.activeSlotKeys,
+                                  );
                                   return (
                                     <li
                                       key={`${t.value}-${row.sessionDate}-${idx}-${title}`}

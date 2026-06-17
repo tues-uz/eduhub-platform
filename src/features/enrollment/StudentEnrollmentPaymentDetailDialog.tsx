@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
+  ArrowRight,
   Calendar,
   CheckCircle2,
   Clock,
@@ -16,8 +18,13 @@ import {
   XCircle,
 } from "@/lib/icons";
 import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
-import { eduhubCourses } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
+import { buildCourseScheduleSlots } from "@/features/courses/courseScheduleSlots";
+import {
+  buildScheduleMonthTabs,
+  orderSessionSlotsChronologically,
+} from "@/features/courses/classSchedulePreview";
 import { InstructorAvatar } from "@/components/InstructorAvatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,10 +43,16 @@ import {
   hasOfficialEnrollmentDocuments,
 } from "@/features/enrollment/enrollmentDocuments";
 import {
-  enrollmentPaymentPlanLabel,
+  enrollmentPaymentPlanLabelForRecord,
   enrollmentScheduleScopeLine,
   formatEnrollmentMoney,
 } from "@/features/enrollment/enrollmentPaymentDisplay";
+import { installmentPaymentPath } from "@/features/enrollment/enrollmentInstallmentPayments";
+import { EnrollmentPaymentHistorySection } from "@/features/enrollment/EnrollmentPaymentHistorySection";
+import { ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
+import { ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED } from "@/features/admin/data/adminEnrollmentPaidMonthsStore";
+import { resolvePaidTuitionMonths } from "@/features/enrollment/enrollmentPaidMonths";
+import { resolvedMonthsPaidLabel } from "@/features/enrollment/enrollmentPaymentHistory";
 import { cn } from "@/lib/utils";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
@@ -218,16 +231,72 @@ function PaymentDetailDialogBody({
   const hasOfficial = hasOfficialEnrollmentDocuments(enriched);
   const amount = paymentAmountLabel(enriched);
   const scheduleScope = enrollmentScheduleScopeLine(enriched);
-  const planLabel = enrollmentPaymentPlanLabel(enriched.paymentPlan);
-  const planDetail =
+  const [planLabel, setPlanLabel] = useState(() => enrollmentPaymentPlanLabelForRecord(enriched));
+  const [planDetail, setPlanDetail] = useState<string | null>(
     enriched.paymentPlan === "DOWN_PAYMENT" && enriched.installmentCount != null
-      ? `${enriched.installmentCount} instalments`
-      : null;
+      ? `${enriched.installmentCount} further instalments at enrollment`
+      : null,
+  );
   const methodLabel = enriched.paymentMethod
     ? formatPaymentMethodLabel(enriched.paymentMethod)
     : null;
 
   const [instructor, setInstructor] = useState<{ name: string; avatarUrl?: string } | null>(null);
+
+  useEffect(() => {
+    if (enriched.status !== "APPROVED") {
+      setPlanLabel(enrollmentPaymentPlanLabelForRecord(enriched));
+      setPlanDetail(
+        enriched.paymentPlan === "DOWN_PAYMENT" && enriched.installmentCount != null
+          ? `${enriched.installmentCount} further instalments at enrollment`
+          : null,
+      );
+      return;
+    }
+
+    let cancelled = false;
+    const bump = () => {
+      if (cancelled) return;
+      void refreshPlanLabel();
+    };
+
+    async function refreshPlanLabel() {
+      if (!enriched.courseId || !isUuid(enriched.courseId)) {
+        const paid = resolvePaidTuitionMonths(enriched, [], enriched.id);
+        if (paid) setPlanLabel(resolvedMonthsPaidLabel(paid, paid.size));
+        return;
+      }
+      try {
+        const [course, proposal] = await Promise.all([
+          eduhubCourses.getById(enriched.courseId),
+          eduhubSchedule.getProposal(enriched.courseId).catch(() => null),
+        ]);
+        if (cancelled) return;
+        const slots = buildCourseScheduleSlots(course, proposal, enriched.courseId);
+        const tabs = buildScheduleMonthTabs(orderSessionSlotsChronologically(slots));
+        const paid = resolvePaidTuitionMonths(enriched, slots, enriched.id);
+        if (!paid) return;
+        setPlanLabel(resolvedMonthsPaidLabel(paid, tabs.length || paid.size));
+        const remaining = Math.max(0, (tabs.length || 0) - paid.size);
+        setPlanDetail(
+          remaining > 0
+            ? `${remaining} schedule month${remaining === 1 ? "" : "s"} still due`
+            : "All schedule months paid",
+        );
+      } catch {
+        /* keep enrollment label */
+      }
+    }
+
+    void refreshPlanLabel();
+    window.addEventListener(ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED, bump);
+    window.addEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED, bump);
+      window.removeEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
+    };
+  }, [enriched]);
 
   useEffect(() => {
     let cancelled = false;
@@ -333,7 +402,7 @@ function PaymentDetailDialogBody({
               )}
             >
               <div>
-                <p className="text-[11px] font-medium text-zinc-500">Payment plan</p>
+                <p className="text-[11px] font-medium text-zinc-500">Months paid</p>
                 <p className="mt-0.5 text-sm font-semibold text-zinc-900">{planLabel}</p>
                 {planDetail ? (
                   <p className="mt-0.5 text-xs text-zinc-500">{planDetail}</p>
@@ -431,6 +500,12 @@ function PaymentDetailDialogBody({
             </div>
           </section>
 
+          {enriched.status === "APPROVED" ? (
+            <section className="mb-5">
+              <EnrollmentPaymentHistorySection record={enriched} variant="student" />
+            </section>
+          ) : null}
+
           <section>
             <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
               Verification documents
@@ -471,6 +546,19 @@ function PaymentDetailDialogBody({
         </div>
 
         <div className="flex shrink-0 flex-col gap-2 border-t border-zinc-100 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          {enriched.status === "APPROVED" &&
+          (enriched.paymentPlan === "DOWN_PAYMENT" || enriched.installmentCount != null) ? (
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 w-full rounded-xl border-[#3954d0]/30 text-[#3954d0] hover:bg-[#3954d0]/5"
+            >
+              <Link to={installmentPaymentPath(enriched.id)} onClick={() => onOpenChange(false)}>
+                Pay remaining schedule month
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+              </Link>
+            </Button>
+          ) : null}
           <Button
             type="button"
             className="h-11 w-full rounded-xl bg-[#3954d0] text-sm font-medium hover:bg-[#2f47b3]"

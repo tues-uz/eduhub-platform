@@ -65,22 +65,24 @@ import {
   formatSessionTimeLabel,
   buildScheduleMonthTabs,
   resolveEnrollmentSessionTimingStatus,
-  resolveSessionTimingStatus,
 } from "@/features/courses/classSchedulePreview";
+import { useScheduleAttendanceState } from "@/features/courses/useScheduleAttendanceState";
 import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
-import {
-  getScheduleAttendanceState,
-  HELD_SCHEDULE_MEETINGS_CHANGED,
-} from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 import {
   StudentCourseScheduleMonthSelect,
   type ScheduleMonthSelectAccess,
 } from "@/features/courses/StudentCourseScheduleMonthSelect";
 import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
 import {
-  paidTuitionMonthsFromPaymentFields,
-  type TuitionPlanMonths,
-} from "@/features/enrollment/enrollmentTuitionThirds";
+  attendanceTuitionBlockMessage,
+  isAttendanceMonthPaid,
+  paymentMonthForMeetingName,
+  paymentMonthForScheduleSlotKey,
+  resolvePaidTuitionMonths,
+} from "@/features/enrollment/enrollmentPaidMonths";
+import { installmentPaymentPath } from "@/features/enrollment/enrollmentInstallmentPayments";
+import type { TuitionPlanMonths } from "@/features/enrollment/enrollmentTuitionThirds";
+import { ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED } from "@/features/admin/data/adminEnrollmentPaidMonthsStore";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { formatDisplayPersonName, formatDisplayTitle } from "@/lib/formatPersonName";
 import { cn } from "@/lib/utils";
@@ -320,14 +322,11 @@ function StudentSessionScheduleCard({
     sessionDate: slot.sessionDate ?? "",
     sessionTime: slot.sessionTime ?? "",
   };
-  const timingStatus =
-    heldSlotKeys != null || activeSlotKeys != null
-      ? resolveEnrollmentSessionTimingStatus(
-          { ...slotWhen, title: slot.title ?? label },
-          heldSlotKeys ?? new Set(),
-          activeSlotKeys ?? new Set(),
-        )
-      : resolveSessionTimingStatus(slotWhen);
+  const timingStatus = resolveEnrollmentSessionTimingStatus(
+    { ...slotWhen, title: slot.title ?? label },
+    heldSlotKeys ?? new Set(),
+    activeSlotKeys ?? new Set(),
+  );
 
   let weekdayLong: string | null = null;
   let dateValue: string | null = null;
@@ -540,12 +539,21 @@ const StudentCourseDetail = () => {
     enabled: Boolean(courseId && isUuid(courseId) && isEnrolled),
   });
 
+  const attendanceSessionsQuery = useQuery({
+    queryKey: ["student", "attendance-sessions", courseId],
+    queryFn: () => eduhubAttendance.listSessions(courseId!),
+    enabled: Boolean(courseId && isUuid(courseId) && isEnrolled),
+    refetchInterval: 30_000,
+  });
+
   useEffect(() => {
     const bump = () => setEnrollmentStoreTick((n) => n + 1);
     window.addEventListener("eduhub-enrollment-applications-changed", bump);
+    window.addEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
     window.addEventListener("storage", bump);
     return () => {
       window.removeEventListener("eduhub-enrollment-applications-changed", bump);
+      window.removeEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
       window.removeEventListener("storage", bump);
     };
   }, []);
@@ -580,38 +588,6 @@ const StudentCourseDetail = () => {
   const enrollApplicationHref = courseId
     ? `/dashboard/available-courses/enroll/${encodeURIComponent(courseId)}`
     : undefined;
-
-  const paidTuitionMonths = useMemo((): ReadonlySet<TuitionPlanMonths> | null => {
-    void enrollmentStoreTick;
-    if (scheduleMonthAccess !== "full" || !courseId) return null;
-    const apiApp = enrollmentAppsByCourse.get(courseId);
-    const localLatest = emailNorm
-      ? enrollmentApplicationStore.findLatestForCourseAndEmail(courseId, emailNorm)
-      : undefined;
-    const approved =
-      apiApp?.status === "APPROVED"
-        ? apiApp
-        : localLatest?.status === "APPROVED"
-          ? localLatest
-          : undefined;
-    if (approved) {
-      return paidTuitionMonthsFromPaymentFields(approved);
-    }
-    if (
-      isEnrolled ||
-      (emailNorm && enrollmentApplicationStore.isApprovedForCourse(courseId, emailNorm))
-    ) {
-      return new Set<TuitionPlanMonths>([1, 2, 3]);
-    }
-    return null;
-  }, [
-    scheduleMonthAccess,
-    courseId,
-    emailNorm,
-    isEnrolled,
-    enrollmentAppsByCourse,
-    enrollmentStoreTick,
-  ]);
 
   const tabRaw = searchParams.get("tab");
   const activeCourseTab =
@@ -772,33 +748,7 @@ const StudentCourseDetail = () => {
     return decorated.map((x) => x.slot);
   }, [courseId, apiCourseDetail, apiScheduleProposal, isTeacherCourse, teacherCourse, scheduleLocalTick]);
 
-  const [heldMeetingsTick, setHeldMeetingsTick] = useState(0);
-
-  const scheduleAttendance = useMemo(() => {
-    void heldMeetingsTick;
-    if (!courseId) {
-      return { heldSlotKeys: new Set<string>(), activeSlotKeys: new Set<string>() };
-    }
-    return getScheduleAttendanceState(courseId);
-  }, [courseId, heldMeetingsTick]);
-
-  useEffect(() => {
-    if (!courseId) return;
-    const bump = () => setHeldMeetingsTick((t) => t + 1);
-    const onHeld = (e: Event) => {
-      const ce = e as CustomEvent<{ courseId?: string }>;
-      if (!ce.detail?.courseId || ce.detail.courseId === courseId) bump();
-    };
-    const onStorage = (e: StorageEvent) => {
-      if (e.key?.includes(courseId)) bump();
-    };
-    window.addEventListener(HELD_SCHEDULE_MEETINGS_CHANGED, onHeld);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(HELD_SCHEDULE_MEETINGS_CHANGED, onHeld);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, [courseId]);
+  const scheduleAttendance = useScheduleAttendanceState(courseId);
 
   const scheduleStatusHint = useMemo(() => {
     const isApi = Boolean(apiCourseDetail && courseId && isUuid(courseId) && !isTeacherCourse);
@@ -816,6 +766,67 @@ const StudentCourseDetail = () => {
     if (allSessionSlots.length === 0) return 0;
     return buildScheduleMonthTabs(allSessionSlots).length;
   }, [allSessionSlots]);
+
+  const approvedEnrollment = useMemo(() => {
+    void enrollmentStoreTick;
+    if (!courseId) return undefined;
+    const apiApp = enrollmentAppsByCourse.get(courseId);
+    const localLatest = emailNorm
+      ? enrollmentApplicationStore.findLatestForCourseAndEmail(courseId, emailNorm)
+      : undefined;
+    if (apiApp?.status === "APPROVED") return apiApp;
+    if (localLatest?.status === "APPROVED") return localLatest;
+    return undefined;
+  }, [courseId, emailNorm, enrollmentAppsByCourse, enrollmentStoreTick]);
+
+  const paidTuitionMonths = useMemo((): ReadonlySet<TuitionPlanMonths> | null => {
+    void enrollmentStoreTick;
+    if (scheduleMonthAccess !== "full" || !courseId) return null;
+    if (approvedEnrollment) {
+      return resolvePaidTuitionMonths(approvedEnrollment, allSessionSlots, approvedEnrollment.id);
+    }
+    if (
+      isEnrolled ||
+      (emailNorm && enrollmentApplicationStore.isApprovedForCourse(courseId, emailNorm))
+    ) {
+      return new Set<TuitionPlanMonths>([1, 2, 3]);
+    }
+    return null;
+  }, [
+    scheduleMonthAccess,
+    courseId,
+    emailNorm,
+    isEnrolled,
+    approvedEnrollment,
+    allSessionSlots,
+    enrollmentStoreTick,
+  ]);
+
+  const attendanceTuitionBlock = useMemo(() => {
+    if (!paidTuitionMonths || !allSessionSlots.length || !attendanceSessionsQuery.data?.length) {
+      return null;
+    }
+    const openSessions = attendanceSessionsQuery.data.filter((s) => s.status !== "CLOSED");
+    const tabs = buildScheduleMonthTabs(allSessionSlots);
+    for (const session of openSessions) {
+      const paymentMonth = session.scheduleSlotKey
+        ? paymentMonthForScheduleSlotKey(allSessionSlots, session.scheduleSlotKey)
+        : paymentMonthForMeetingName(allSessionSlots, session.meetingName);
+      if (!isAttendanceMonthPaid(paidTuitionMonths, paymentMonth) && paymentMonth) {
+        return attendanceTuitionBlockMessage(paymentMonth, tabs);
+      }
+    }
+    return null;
+  }, [allSessionSlots, attendanceSessionsQuery.data, paidTuitionMonths]);
+
+  const openScanner = () => {
+    if (attendanceTuitionBlock) return;
+    setScannerOpen(true);
+  };
+
+  const installmentPaymentHref = approvedEnrollment
+    ? installmentPaymentPath(approvedEnrollment.id)
+    : "/dashboard/payment";
 
   const lessonsFromApi = apiLessons.map((l) => ({
     ...l,
@@ -1367,8 +1378,9 @@ const StudentCourseDetail = () => {
                 size="sm"
                 variant="outline"
                 className="hidden shrink-0 rounded-full sm:inline-flex"
-                onClick={() => setScannerOpen(true)}
-                title="Scan attendance QR"
+                onClick={openScanner}
+                disabled={Boolean(attendanceTuitionBlock)}
+                title={attendanceTuitionBlock ?? "Scan attendance QR"}
               >
                 <Camera className="h-4 w-4" aria-hidden />
                 Scan QR
@@ -1683,11 +1695,23 @@ const StudentCourseDetail = () => {
                       </h2>
                       <p className="mt-1 max-w-xl text-sm leading-relaxed text-zinc-600">
                         When class starts, tap <span className="font-medium text-zinc-800">Scan QR</span> and point
-                        your camera at the code on screen. Your records sync from the EduHub attendance API after
-                        check-in.
+                        your camera at the code on screen. Check-in is only available for schedule months you have
+                        paid tuition for.
                       </p>
                     </div>
                   </div>
+
+                  {attendanceTuitionBlock ? (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                      <p>{attendanceTuitionBlock}</p>
+                      <Link
+                        to={installmentPaymentHref}
+                        className="mt-2 inline-block font-semibold text-[#3954d0] underline-offset-2 hover:underline"
+                      >
+                        Pay remaining month
+                      </Link>
+                    </div>
+                  ) : null}
 
                   {attendanceTableRows.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 px-5 py-10 text-center">
@@ -1828,7 +1852,7 @@ const StudentCourseDetail = () => {
                             access={scheduleMonthAccess}
                             enrollHref={enrollApplicationHref}
                             paidTuitionMonths={paidTuitionMonths}
-                            paymentHref="/dashboard/payment"
+                            paymentHref={installmentPaymentHref}
                             renderSession={(slot, idx) => (
                               <StudentSessionScheduleCard
                                 slot={slot}
@@ -1870,10 +1894,11 @@ const StudentCourseDetail = () => {
           <div className="flex w-full min-w-0 items-center justify-center px-4 py-3 sm:px-6">
             <Button
               type="button"
-              className="h-10 w-full max-w-none rounded-xl border-0 px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#2f47b3] hover:text-white sm:px-5"
+              className="h-10 w-full max-w-none rounded-xl border-0 px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#2f47b3] hover:text-white sm:px-5 disabled:opacity-60"
               style={{ backgroundColor: "#3954d0" }}
-              onClick={() => setScannerOpen(true)}
-              title="Scan attendance QR"
+              onClick={openScanner}
+              disabled={Boolean(attendanceTuitionBlock)}
+              title={attendanceTuitionBlock ?? "Scan attendance QR"}
             >
               <Camera className="h-4 w-4" aria-hidden />
               Scan QR

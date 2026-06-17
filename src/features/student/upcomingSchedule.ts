@@ -6,10 +6,11 @@ import {
   formatSessionTimeLabel,
   orderSessionSlotsChronologically,
   resolvePreviewSessionSlots,
-  resolveSessionTimingStatus,
+  resolveEnrollmentSessionTimingStatus,
   sessionStartMs,
   type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
+import { getScheduleAttendanceState } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 
 const TEACHER_PREFIX = "teacher_";
@@ -60,8 +61,15 @@ export async function fetchStudentUpcomingSchedule(
   await Promise.all(
     courses.map(async (course) => {
       const slots = orderSessionSlotsChronologically(await fetchSessionSlotsForCourse(course));
+      const courseId = String(course.id);
+      const { heldSlotKeys, activeSlotKeys } = getScheduleAttendanceState(courseId);
       for (const slot of slots) {
-        const timingStatus = resolveSessionTimingStatus(slot, now);
+        const timingStatus = resolveEnrollmentSessionTimingStatus(
+          slot,
+          heldSlotKeys,
+          activeSlotKeys,
+          now,
+        );
         if (timingStatus !== "upcoming" && timingStatus !== "ongoing") continue;
 
         const startMs = sessionStartMs(slot.sessionDate, slot.sessionTime);

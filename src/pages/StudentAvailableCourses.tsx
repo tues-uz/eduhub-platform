@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { BookOpen, Search, Loader2, PlayCircle, CalendarDays } from "@/lib/icons";
+import { BookOpen, Search, Loader2, PlayCircle } from "@/lib/icons";
 import { InstructorAvatar } from "@/components/InstructorAvatar";
 import { StudentAvatarGroup, type StudentAvatarPreview } from "@/components/StudentAvatarGroup";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import { formatDisplayPersonName } from "@/lib/formatPersonName";
 import { tuitionForJoinFromMeeting } from "@/features/enrollment/enrollmentSessionTuition";
 import { resolveInstructorAvatarUrl } from "@/features/teacher/resolveInstructorAvatarUrl";
 import type { CourseScheduleSummary } from "@/features/student/courseScheduleSummary";
+import { formatClassDateLabel } from "@/features/courses/classSchedulePreview";
 import { resolveEnrolledStudentPreviews } from "@/features/student/enrolledStudentPreviews";
 
 type AvailableCourseItem = {
@@ -371,6 +372,12 @@ const StudentAvailableCourses = () => {
                     scheduleSummary,
                     course.enrollmentStatus,
                   );
+                  const classStartLabel = scheduleSummary
+                    ? formatClassDateLabel(scheduleSummary.classStartDate)
+                    : null;
+                  const classEndLabel = scheduleSummary
+                    ? formatClassDateLabel(scheduleSummary.classEndDate)
+                    : null;
 
                   return (
                   <div
@@ -427,6 +434,27 @@ const StudentAvailableCourses = () => {
                           {course.title}
                         </h3>
 
+                        {scheduleSummary ? (
+                          <dl className="mt-2.5 grid grid-cols-2 gap-x-4">
+                            <div className="min-w-0">
+                              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Starts</dt>
+                              <dd className="mt-0.5 text-xs font-semibold leading-snug tabular-nums text-slate-800">
+                                {classStartLabel ?? (
+                                  <span className="font-normal text-slate-400">TBA</span>
+                                )}
+                              </dd>
+                            </div>
+                            <div className="min-w-0">
+                              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Ends</dt>
+                              <dd className="mt-0.5 text-xs font-semibold leading-snug tabular-nums text-slate-800">
+                                {classEndLabel ?? (
+                                  <span className="font-normal text-slate-400">TBA</span>
+                                )}
+                              </dd>
+                            </div>
+                          </dl>
+                        ) : null}
+
                         <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
                           <div className="flex min-w-0 items-center gap-2">
                             <InstructorAvatar
@@ -446,6 +474,18 @@ const StudentAvailableCourses = () => {
                           ) : null}
                         </div>
 
+                        {scheduleSummary ? (
+                          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                            <span className="text-xs font-medium text-slate-500">Sessions</span>
+                            <span className="text-xs tabular-nums text-slate-700">
+                              <span className="font-semibold text-slate-900">{scheduleSummary.reached}</span>
+                              <span className="text-slate-400"> / </span>
+                              <span className="font-medium">{scheduleSummary.total}</span>
+                              <span className="text-slate-500"> sessions</span>
+                            </span>
+                          </div>
+                        ) : null}
+
                         {course.enrolledStudents && course.enrolledStudents.length > 0 ? (
                           <div
                             className="mt-3"
@@ -457,21 +497,6 @@ const StudentAvailableCourses = () => {
                               totalCount={course.enrollmentCount}
                               size="sm"
                             />
-                          </div>
-                        ) : null}
-
-                        {scheduleSummary ? (
-                          <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                            <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
-                              <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#3954d0]/70" aria-hidden />
-                              Schedule
-                            </span>
-                            <span className="text-xs tabular-nums text-slate-700">
-                              <span className="font-semibold text-slate-900">{scheduleSummary.reached}</span>
-                              <span className="text-slate-400"> / </span>
-                              <span className="font-medium">{scheduleSummary.total}</span>
-                              <span className="text-slate-500">{" sessions"}</span>
-                            </span>
                           </div>
                         ) : null}
 

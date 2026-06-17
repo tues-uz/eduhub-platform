@@ -5,6 +5,7 @@ import {
   buildReceiptDescriptionLines,
   resolveEnrollmentTuitionQuote,
 } from "@/features/enrollment/enrollmentReceiptTuition";
+import { enrollmentMonthsPaidLabel } from "@/features/enrollment/enrollmentTuitionThirds";
 
 export type EnrollmentApplicationPdfData = {
   submittedAtIso: string;
@@ -103,19 +104,16 @@ function applicationPdfDataToReceiptInput(data: EnrollmentApplicationPdfData): E
 /** Rebuild PDF payload from a stored application (e.g. pending review). */
 export function enrollmentRecordToPdfData(record: EnrollmentApplicationRecord): EnrollmentApplicationPdfData {
   const cur = record.priceCurrency ?? "UZS";
-  const plan = record.paymentPlan ?? "FULL";
   const lines: string[] = [];
-  if (plan === "FULL") {
-    lines.push("Payment plan: Full payment");
-  } else {
-    lines.push("Payment plan: Down payment");
+  lines.push(`Months paid: ${enrollmentMonthsPaidLabel(record)}`);
+  if (record.paymentPlan === "DOWN_PAYMENT") {
     if (record.installmentCount != null) {
-      lines.push(`Instalment count selected: ${record.installmentCount}`);
+      lines.push(`Further instalments: ${record.installmentCount}`);
     }
     if (record.downPaymentAmount != null && record.downPaymentAmount > 0) {
-      lines.push(`Down payment amount: ${formatMoneyLine(record.downPaymentAmount, cur)}`);
+      lines.push(`Amount on transfer: ${formatMoneyLine(record.downPaymentAmount, cur)}`);
     }
-    lines.push("Remaining balance and instalment dates follow school policy after verification.");
+    lines.push("Remaining balance follows school policy after verification.");
   }
   lines.push("Submitted for administrator review.");
 

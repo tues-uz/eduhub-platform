@@ -1,7 +1,8 @@
 /**
  * EduHub Platform API — staging base URL.
  * Staging API: https://eduhub-staging.kubeletto.app (Swagger: /swagger-ui/index.html)
- * Auth: login (POST /auth/login), me (GET /auth/me), refresh (POST /auth/refresh).
+ * Auth: login (POST /auth/login), me (GET /auth/me), refresh (POST /auth/refresh),
+ * forgot-password (POST /auth/forgot-password), reset-password (POST /auth/reset-password?token=).
  * Verify request/response shapes in Swagger when the API is available.
  *
  * Local dev: if `VITE_EDUHUB_API_BASE_URL` is unset, the client uses a relative origin

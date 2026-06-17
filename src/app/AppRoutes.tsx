@@ -5,6 +5,8 @@ import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
 import VerifyEmail from "@/pages/VerifyEmail";
 import ChangePassword from "@/pages/ChangePassword";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import DashboardRedirect from "@/pages/DashboardRedirect";
 import StudentCoursesPage from "@/features/student/pages/StudentCoursesPage";
 import StudentAvailableCourses from "@/pages/StudentAvailableCourses";
@@ -20,6 +22,7 @@ import StudentNotifications from "@/pages/StudentNotifications";
 import StudentQuiz from "@/pages/StudentQuiz";
 import StudentPlacementTests from "@/pages/StudentPlacementTests";
 import StudentPaymentInfo from "@/pages/StudentPaymentInfo";
+import StudentInstallmentPaymentPage from "@/pages/StudentInstallmentPaymentPage";
 import AdminDashboardPage from "@/features/admin/pages/AdminDashboardPage";
 import AdminNotificationsPage from "@/features/admin/pages/AdminNotificationsPage";
 import AdminSubstituteCoverRequestsPage from "@/features/admin/pages/AdminSubstituteCoverRequestsPage";
@@ -31,6 +34,7 @@ import AdminEnrollmentApplicationDetailPage from "@/features/admin/pages/AdminEn
 import AdminClassesPage from "@/features/admin/pages/AdminClassesPage";
 import AdminAttendancePage from "@/features/admin/pages/AdminAttendancePage";
 import AdminPaymentsPage from "@/features/admin/pages/AdminPaymentsPage";
+import AdminInstallmentPaymentsPage from "@/features/admin/pages/AdminInstallmentPaymentsPage";
 import AdminPayrollPage from "@/features/admin/pages/AdminPayrollPage";
 import AdminPayrollProofPage from "@/features/admin/pages/AdminPayrollProofPage";
 import AdminInstructorPayrollRequestDetailPage from "@/features/admin/pages/AdminInstructorPayrollRequestDetailPage";
@@ -85,6 +89,8 @@ export function AppRoutes() {
       <Route path={appRoutes.signIn} element={<SignIn />} />
       <Route path={appRoutes.register} element={<SignUp />} />
       <Route path={appRoutes.changePassword} element={<ChangePassword />} />
+      <Route path={appRoutes.forgotPassword} element={<ForgotPassword />} />
+      <Route path={appRoutes.resetPassword} element={<ResetPassword />} />
       <Route path={appRoutes.verifyEmail} element={<VerifyEmail />} />
       <Route path="/verifyemail" element={<VerifyEmail />} />
 
@@ -104,6 +110,7 @@ export function AppRoutes() {
       <Route path="/dashboard/admin/classes" element={<AdminClassesPage />} />
       <Route path="/dashboard/admin/attendance" element={<AdminAttendancePage />} />
       <Route path="/dashboard/admin/payments" element={<AdminPaymentsPage />} />
+      <Route path="/dashboard/admin/installment-payments" element={<AdminInstallmentPaymentsPage />} />
       <Route path="/dashboard/admin/payroll" element={<AdminPayrollPage />} />
       <Route path="/dashboard/admin/payroll/instructor-request/:requestId" element={<AdminInstructorPayrollRequestDetailPage />} />
       <Route
@@ -183,6 +190,7 @@ export function AppRoutes() {
         <Route path="/dashboard/available-courses" element={<StudentAvailableCourses />} />
         <Route path="/dashboard/available-courses/class/:courseId" element={<StudentAvailableCourseDetailPage />} />
         <Route path="/dashboard/payment" element={<StudentPaymentInfo />} />
+        <Route path="/dashboard/payment/remaining/:applicationId" element={<StudentInstallmentPaymentPage />} />
         <Route path="/dashboard/courses/:courseId" element={<StudentCourseDetail />} />
         <Route path="/dashboard/courses/:courseId/resume/:resumeId" element={<StudentCourseResumePage />} />
         <Route path="/dashboard/courses/:courseId/lessons/:lessonId" element={<StudentLessonPage />} />

@@ -1,0 +1,51 @@
+/* EduHub tweaks on top of flowbite-datepicker */
+.datepicker-dropdown {
+  z-index: 50;
+}
+
+.datepicker-dropdown .datepicker-picker {
+  border-radius: 1rem;
+  border: 1px solid rgb(226 232 240);
+  box-shadow:
+    0 10px 15px -3px rgb(15 23 42 / 0.08),
+    0 4px 6px -4px rgb(15 23 42 / 0.06);
+  overflow: hidden;
+}
+
+.datepicker-header .datepicker-controls .button,
+.datepicker-footer .datepicker-controls .button {
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.datepicker-controls .button:focus,
+.datepicker-controls .button:focus:not(:active) {
+  border-color: #1e40af;
+  box-shadow: 0 0 0 3px rgb(30 64 175 / 0.15);
+}
+
+.datepicker-cell {
+  border-radius: 0.5rem;
+}
+
+.datepicker-cell.selected,
+.datepicker-cell.selected:hover {
+  background-color: #1e40af !important;
+  color: #fff !important;
+}
+
+.datepicker-cell.today:not(.selected) {
+  background-color: rgb(30 64 175 / 0.12);
+  color: #1e40af;
+}
+
+.datepicker-cell.today.focused:not(.selected) {
+  background-color: rgb(30 64 175 / 0.18);
+}
+
+.datepicker-input.in-edit,
+.datepicker-input.in-edit:focus,
+.datepicker-input.in-edit:active {
+  border-color: #1e40af;
+  box-shadow: 0 0 0 3px rgb(30 64 175 / 0.15);
+}
