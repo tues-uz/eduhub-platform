@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { eduhubAuth, setAuthTokens } from "@/api/eduhubClient";
+import { eduhubAuth, setAuthTokens, ApiError } from "@/api/eduhubClient";
 import { appRoutes } from "@/app/routes";
 import { resolveAvatarFromAuthResponse, setSessionUser, useAuthSession } from "@/features/auth/context";
 import type { UserRole } from "@/features/auth/types";
@@ -79,8 +79,17 @@ const SignIn = () => {
       const fallback =
         role === "admin" ? "/dashboard/admin" : role === "teacher" ? "/dashboard/teacher" : "/dashboard";
       navigate(role === "student" && nextPath ? nextPath : fallback);
-    } catch {
-      // Fallback to dummy accounts
+    } catch (err: any) {
+      // If it is an explicit server error/rejection (e.g. 401 Unauthorized), do not fall back to dummy accounts
+      const isApiError = err instanceof ApiError || (err && typeof err.status === "number");
+      if (isApiError) {
+        setError(err.message || "Invalid email or password. Please try again.");
+        toast({ title: "Sign in failed", description: err.message || "Invalid email or password.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+
+      // Fallback to dummy accounts (only if server is unreachable / network error)
       const account = DUMMY_ACCOUNTS.find(
         (acc) => acc.email.toLowerCase().trim() === email.toLowerCase().trim() && acc.password === password
       );

@@ -50,6 +50,15 @@ import type {
   CategoryResponse,
 } from "./eduhubTypes";
 
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 const BASE = EDUHUB_API_BASE_URL + EDUHUB_API_PREFIX;
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 45_000;
@@ -189,7 +198,7 @@ async function request<T>(
   }
 
   if (res.status === 403) {
-    throw new Error("Access denied. You don't have permission to perform this action.");
+    throw new ApiError("Access denied. You don't have permission to perform this action.", 403);
   }
 
   if (res.status === 204) return undefined as T;
@@ -211,7 +220,7 @@ async function request<T>(
     } else if (text) {
       message = text;
     }
-    throw new Error(message);
+    throw new ApiError(message, res.status);
   }
 
   if (!json) return undefined as T;
