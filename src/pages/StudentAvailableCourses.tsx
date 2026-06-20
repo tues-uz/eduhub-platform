@@ -17,7 +17,7 @@ import { useAuthSession } from "@/features/auth/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { useStudentCourseScheduleSummaries } from "@/features/student/hooks/useStudentCourseScheduleSummaries";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
-import { eduhubCourses } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubCategories } from "@/api/eduhubClient";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
 import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
 import {
@@ -26,7 +26,6 @@ import {
 } from "@/features/enrollment/studentCourseEnrollmentStatus";
 import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
 import { StudentPromoCarousel } from "@/features/student/components/StudentPromoCarousel";
-import { COURSE_CATEGORY_OPTIONS } from "@/features/courses/courseCategories";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
 import { tuitionForJoinFromMeeting } from "@/features/enrollment/enrollmentSessionTuition";
 import { resolveInstructorAvatarUrl } from "@/features/teacher/resolveInstructorAvatarUrl";
@@ -134,8 +133,15 @@ const StudentAvailableCourses = () => {
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") ?? "");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [courses, setCourses] = useState<AvailableCourseItem[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrollmentStoreTick, setEnrollmentStoreTick] = useState(0);
+
+  useEffect(() => {
+    eduhubCategories.getAll()
+      .then((res) => setCategories((res || []).map((c) => c.name)))
+      .catch((err) => console.error("Failed to load categories", err));
+  }, []);
 
   const scheduleCourseItems = useMemo(
     () =>
@@ -263,20 +269,20 @@ const StudentAvailableCourses = () => {
   }, [enrolledCourses, enrollmentStoreTick, emailNorm, applicationsByCourse]);
 
   const categoryOptions = useMemo(() => {
-    const options = new Set<string>(COURSE_CATEGORY_OPTIONS);
+    const options = new Set<string>(categories);
     for (const course of courses) {
       const value = course.category.trim();
       if (value) options.add(value);
     }
     return Array.from(options).sort((a, b) => {
-      const aIndex = COURSE_CATEGORY_OPTIONS.indexOf(a as (typeof COURSE_CATEGORY_OPTIONS)[number]);
-      const bIndex = COURSE_CATEGORY_OPTIONS.indexOf(b as (typeof COURSE_CATEGORY_OPTIONS)[number]);
+      const aIndex = categories.indexOf(a);
+      const bIndex = categories.indexOf(b);
       if (aIndex >= 0 && bIndex >= 0) return aIndex - bIndex;
       if (aIndex >= 0) return -1;
       if (bIndex >= 0) return 1;
       return a.localeCompare(b);
     });
-  }, [courses]);
+  }, [courses, categories]);
 
   const filteredCourses = useMemo(() => {
     const q = searchQuery.toLowerCase();

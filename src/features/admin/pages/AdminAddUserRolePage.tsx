@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Check, Phone, Square2Stack, User } from "@/lib/icons";
 import { toast } from "sonner";
@@ -22,14 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { eduhubAdmin } from "@/api/eduhubClient";
+import { eduhubAdmin, eduhubCategories } from "@/api/eduhubClient";
 import { adminTeachersStore } from "@/features/admin/data/adminTeachersStore";
 import {
   isValidAdminActionCode,
   normalizeAdminCode,
   registerAdminStaffCode,
 } from "@/features/admin/adminStaffCode";
-import { COURSE_CATEGORY_OPTIONS } from "@/features/courses/courseCategories";
 
 /** Values are sent to `POST /admin/users`. Align with your API’s role enum (e.g. Spring `Role` names). */
 const ADD_USER_ROLE_OPTIONS: { value: string; label: string }[] = [
@@ -53,7 +52,20 @@ export default function AdminAddUserRolePage() {
     adminCode: "",
     teacherCategory: "",
   });
+  const [categories, setCategories] = useState<string[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await eduhubCategories.getAll();
+        setCategories((res || []).map((c) => c.name));
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const isTeacherRole = formData.role === "LECTURER";
   const isAdminRole = formData.role !== "" && !isTeacherRole;
@@ -236,7 +248,7 @@ export default function AdminAddUserRolePage() {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {COURSE_CATEGORY_OPTIONS.map((category) => (
+                  {categories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>

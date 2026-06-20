@@ -67,6 +67,7 @@ export default function AdminTeachersPage() {
       const haystack = [
         t.fullName,
         t.email,
+        t.category || "",
         String(t.courses.length),
         String(t.totalStudents),
         t.enabled ? "Active" : "Inactive",
@@ -207,6 +208,12 @@ export default function AdminTeachersPage() {
                     <span className="text-slate-500">Email</span>
                     <span className="text-slate-800 text-right break-all">{profileTeacher.email}</span>
                   </div>
+                  {profileTeacher.category && (
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-500">Category</span>
+                      <span className="text-slate-800 text-right">{profileTeacher.category}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between gap-4">
                     <span className="text-slate-500">Assigned courses</span>
                     <span className="text-slate-800">{profileTeacher.courses.length}</span>

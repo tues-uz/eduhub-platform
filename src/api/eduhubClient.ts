@@ -47,6 +47,7 @@ import type {
   PayrollProofUpdateRequest,
   PayrollRequestCreateRequest,
   PayrollRequestResponse,
+  CategoryResponse,
 } from "./eduhubTypes";
 
 const BASE = EDUHUB_API_BASE_URL + EDUHUB_API_PREFIX;
@@ -1010,3 +1011,8 @@ export async function eduhubUploadFile(file: File, folder = "materials"): Promis
   // Step 3: Return the public URL
   return { url: presignedResponse.publicUrl };
 }
+
+export const eduhubCategories = {
+  getAll: () => request<CategoryResponse[]>("/categories"),
+};
+

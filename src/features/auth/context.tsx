@@ -49,7 +49,8 @@ function readSessionUser(): SessionUser {
   const avatarUrl = localStorage.getItem(USER_AVATAR_URL_KEY) || undefined;
   const phoneNumber = localStorage.getItem(USER_PHONE_KEY) || undefined;
   const category = localStorage.getItem(USER_CATEGORY_KEY) || undefined;
-  return { id, name, email, role, avatarUrl, phoneNumber, category };
+  const adminCode = localStorage.getItem("userAdminCode") || undefined;
+  return { id, name, email, role, avatarUrl, phoneNumber, category, adminCode };
 }
 
 export function setSessionUser(user: SessionUser): void {
@@ -66,6 +67,8 @@ export function setSessionUser(user: SessionUser): void {
   } else {
     localStorage.removeItem(USER_CATEGORY_KEY);
   }
+  if (user.adminCode) localStorage.setItem("userAdminCode", user.adminCode);
+  else localStorage.removeItem("userAdminCode");
 }
 
 export function clearSessionUser(): void {
@@ -76,6 +79,7 @@ export function clearSessionUser(): void {
   localStorage.removeItem(USER_AVATAR_URL_KEY);
   localStorage.removeItem(USER_PHONE_KEY);
   localStorage.removeItem(USER_CATEGORY_KEY);
+  localStorage.removeItem("userAdminCode");
 }
 
 type AuthSessionValue = {
@@ -119,6 +123,7 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
           avatarUrl,
           phoneNumber: me.phoneNumber ?? prev.phoneNumber,
           category,
+          adminCode: me.adminCode,
         });
         if (role === "teacher") {
           syncInstructorProfileAvatar(me.email, me.fullName, avatarUrl);

@@ -26,6 +26,7 @@ export interface UserResponse {
   passwordChanged?: boolean;
   createdAt?: string;
   coursesCount?: number;
+  adminCode?: string;
 }
 
 export interface AdminCreateUserResponse {
@@ -67,7 +68,9 @@ export interface TeacherResponse {
   createdAt: string;
   courses: TeacherCourseRef[];
   totalStudents: number;
+  category?: string;
 }
+
 
 export interface AuthResponse {
   accessToken: string;
@@ -139,6 +142,7 @@ export interface CourseResponse {
   rejectionReason?: string;
   scheduleRejectionNote?: string;
   reviewedAt?: string;
+  reviewedByCode?: string;
   createdAt: string;
   updatedAt: string;
   /** When returned by API, mirrors lecturer input from course create/update. */
@@ -678,3 +682,9 @@ export interface NotificationResponse {
   read: boolean;
   createdAt: string;
 }
+
+export interface CategoryResponse {
+  id: string;
+  name: string;
+}
+
