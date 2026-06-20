@@ -18,12 +18,12 @@ export function AdminActionCodeField({ id, value, onChange, className }: Props) 
 
   useEffect(() => {
     if (seeded || value.trim()) return;
-    const defaultCode = getDefaultAdminActionCode(user.email);
+    const defaultCode = user.adminCode || getDefaultAdminActionCode(user.email);
     if (defaultCode) {
       onChange(defaultCode);
     }
     setSeeded(true);
-  }, [seeded, user.email, value, onChange]);
+  }, [seeded, user.email, user.adminCode, value, onChange]);
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -48,11 +48,11 @@ export function AdminActionCodeField({ id, value, onChange, className }: Props) 
 
 export function useAdminActionCodeState(): [string, (value: string) => void] {
   const { user } = useAuthSession();
-  const [adminActionCode, setAdminActionCode] = useState(() => getDefaultAdminActionCode(user.email));
+  const [adminActionCode, setAdminActionCode] = useState(() => user.adminCode || getDefaultAdminActionCode(user.email));
 
   useEffect(() => {
-    setAdminActionCode((prev) => (prev.trim() ? prev : getDefaultAdminActionCode(user.email)));
-  }, [user.email]);
+    setAdminActionCode((prev) => (prev.trim() ? prev : (user.adminCode || getDefaultAdminActionCode(user.email))));
+  }, [user.email, user.adminCode]);
 
   return [adminActionCode, setAdminActionCode];
 }

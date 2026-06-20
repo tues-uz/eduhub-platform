@@ -11,4 +11,6 @@ export interface SessionUser {
   phoneNumber?: string;
   /** Teaching category assigned by admin (lecturers only). */
   category?: string;
+  /** Admin code assigned by default/registration (admins only). */
+  adminCode?: string;
 }
