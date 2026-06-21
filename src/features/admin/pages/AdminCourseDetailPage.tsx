@@ -7,6 +7,7 @@ import { isUuid } from "@/api/utils";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminCourseReviewDialog } from "@/features/admin/components/AdminCourseReviewDialog";
 import { CourseStatusBadge } from "@/features/admin/components/AdminStatusBadges";
+import { useTranslation } from "react-i18next";
 import {
   mergeScheduleDisplayForAdminReview,
   useAdminCourseLocalDataVersion,
@@ -43,6 +44,7 @@ function DetailRow({ label, children }: { label: string; children: ReactNode }) 
 }
 
 export default function AdminCourseDetailPage() {
+  const { t } = useTranslation();
   const { courseId = "" } = useParams<{ courseId: string }>();
   const [reviewOpen, setReviewOpen] = useState(false);
   const adminLocalDataVersion = useAdminCourseLocalDataVersion();
@@ -76,7 +78,7 @@ export default function AdminCourseDetailPage() {
     return (
       <AdminLayout>
         <div className="container mx-auto px-6">
-          <p className="text-sm text-red-600">Invalid class id.</p>
+          <p className="text-sm text-red-600">{t("admin.courses.detail.invalidId")}</p>
           <Link to="/dashboard/admin/courses" className="text-sm text-slate-600 hover:underline mt-4 inline-block">
             ← Back to all classes
           </Link>
@@ -100,15 +102,15 @@ export default function AdminCourseDetailPage() {
         </Link>
 
         {isLoading ? (
-          <p className="text-sm text-slate-600">Loading class…</p>
+          <p className="text-sm text-slate-600">{t("admin.shared.loadingClass")}</p>
         ) : error || !detail ? (
-          <p className="text-sm text-red-600">Could not load this class.</p>
+          <p className="text-sm text-red-600">{t("admin.courses.detail.loadError")}</p>
         ) : (
           <>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
               <div>
                 <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">{detail.title}</h1>
-                <p className="text-sm text-slate-600 mt-1">Catalog, schedule workflow, and review tools.</p>
+                <p className="text-sm text-slate-600 mt-1">{t("admin.courses.detail.subtitle")}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button type="button" variant="outline" size="sm" className="gap-1.5" asChild>
@@ -119,7 +121,7 @@ export default function AdminCourseDetailPage() {
                 </Button>
                 <Button type="button" size="sm" className="gap-1.5 bg-slate-900 hover:bg-slate-800" onClick={() => setReviewOpen(true)}>
                   <FileText className="h-4 w-4" />
-                  {isDraftOrRejected ? "Review & pricing" : "Catalog & pricing"}
+                  {isDraftOrRejected ? t("admin.courses.detail.reviewPricing") : t("admin.courses.detail.catalogPricing")}
                 </Button>
               </div>
             </div>
@@ -127,20 +129,20 @@ export default function AdminCourseDetailPage() {
             <div className="space-y-4">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Overview</CardTitle>
+                  <CardTitle className="text-base">{t("admin.courses.detail.overview")}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 text-sm">
-                  <DetailRow label="Category">{detail.category ?? "—"}</DetailRow>
-                  <DetailRow label="Lecturer">{detail.lecturer?.fullName ?? "—"}</DetailRow>
-                  <DetailRow label="Status">
+                  <DetailRow label={t("admin.shared.category")}>{detail.category ?? "—"}</DetailRow>
+                  <DetailRow label={t("admin.shared.lecturer")}>{detail.lecturer?.fullName ?? "—"}</DetailRow>
+                  <DetailRow label={t("admin.dashboard.recentUsers.statusPlaceholder")}>
                     <CourseStatusBadge status={detail.status} />
                   </DetailRow>
-                  <DetailRow label="Submitted (draft created)">
+                  <DetailRow label={t("admin.courses.detail.fields.submitted")}>
                     <span className="tabular-nums whitespace-nowrap" title={detail.createdAt}>
                       {formatSubmitted(detail.createdAt)}
                     </span>
                   </DetailRow>
-                  <DetailRow label="Enrollments">
+                  <DetailRow label={t("admin.courses.detail.fields.enrollments")}>
                     <span className="tabular-nums">{detail.enrollmentCount ?? "—"}</span>
                   </DetailRow>
                 </CardContent>
@@ -148,19 +150,19 @@ export default function AdminCourseDetailPage() {
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Pricing</CardTitle>
+                  <CardTitle className="text-base">{t("admin.courses.detail.pricing")}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 text-sm">
-                  <DetailRow label="Catalog price">
+                  <DetailRow label={t("admin.courses.detail.fields.catalogPrice")}>
                     {meta ? formatMoney(meta.amount, meta.currency) : "—"}
                   </DetailRow>
-                  <DetailRow label="Referral code">
+                  <DetailRow label={t("admin.courses.detail.fields.referralCode")}>
                     <span className="font-mono text-xs">{meta?.referralCode?.trim() ? meta.referralCode : "—"}</span>
                   </DetailRow>
-                  <DetailRow label="Discount">
+                  <DetailRow label={t("admin.courses.detail.fields.discount")}>
                     {meta && meta.discountPercent > 0 ? `${meta.discountPercent}%` : "—"}
                   </DetailRow>
-                  <DetailRow label="Discounted price">
+                  <DetailRow label={t("admin.courses.detail.fields.discountedPrice")}>
                     {meta && meta.discountPercent > 0 ? formatMoney(meta.discountedAmount, meta.currency) : "—"}
                   </DetailRow>
                 </CardContent>
@@ -168,7 +170,7 @@ export default function AdminCourseDetailPage() {
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Schedule</CardTitle>
+                  <CardTitle className="text-base">{t("admin.courses.detail.schedule")}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 text-sm space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
@@ -197,25 +199,25 @@ export default function AdminCourseDetailPage() {
                         title={scheduleWorkflow.rejectionNote}
                       >
                         <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">Changes requested</span>
+                        <span className="truncate">{t("admin.courses.detail.scheduleBadges.changesRequested")}</span>
                       </Badge>
                     ) : (
-                      <span className="text-slate-600">No schedule approval step recorded (this browser).</span>
+                      <span className="text-slate-600">{t("admin.courses.detail.scheduleBadges.noApprovalRecorded")}</span>
                     )}
                   </div>
                   <div className="rounded-md border border-slate-100 bg-slate-50/80 px-3 py-2 space-y-2 text-sm">
                     <div className="flex justify-between gap-4">
-                      <span className="text-slate-500">Total sessions (6 mo.)</span>
+                      <span className="text-slate-500">{t("admin.courses.detail.fields.totalSessions")}</span>
                       <span className="tabular-nums font-medium text-slate-900">
                         {scheduleDisplay?.sessionsSixMo != null ? scheduleDisplay.sessionsSixMo : "—"}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-slate-500">Class start</span>
+                      <span className="text-slate-500">{t("admin.courses.detail.fields.classStart")}</span>
                       <span className="tabular-nums text-slate-900">{formatClassDate(scheduleDisplay?.classStartDate)}</span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-slate-500">Class end</span>
+                      <span className="text-slate-500">{t("admin.courses.detail.fields.classEnd")}</span>
                       <span className="tabular-nums text-slate-900">{formatClassDate(scheduleDisplay?.classEndDate)}</span>
                     </div>
                   </div>
@@ -224,7 +226,7 @@ export default function AdminCourseDetailPage() {
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Description</CardTitle>
+                  <CardTitle className="text-base">{t("admin.courses.detail.description")}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 text-sm text-slate-800 whitespace-pre-wrap break-words">
                   {detail.description?.trim() ? detail.description : "—"}

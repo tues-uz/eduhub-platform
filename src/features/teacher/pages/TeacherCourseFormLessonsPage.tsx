@@ -25,8 +25,10 @@ import {
 import { useTeacherCourseForm } from "./TeacherCourseFormContext";
 import type { LessonContentType } from "../types";
 import { getVideoEmbed, getPdfPreviewUrl } from "./teacherCourseFormHelpers";
+import { useTranslation } from "react-i18next";
 
 const TeacherCourseFormLessonsPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
   const [confirmCreateOpen, setConfirmCreateOpen] = useState(false);
@@ -69,9 +71,7 @@ const TeacherCourseFormLessonsPage = () => {
               Lessons (PDF or video link)
             </CardTitle>
             <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={handleAddLessonClick}>
-              <Plus className="h-4 w-4 mr-1" />
-              Add lesson
-            </Button>
+              <Plus className="h-4 w-4 mr-1" />{t("teacher.courseForm.lessons.addLesson")}</Button>
           </CardHeader>
           <CardContent className="space-y-4 pt-6 px-6 pb-6">
             {lessons.map((lesson, index) => {
@@ -185,9 +185,7 @@ const TeacherCourseFormLessonsPage = () => {
                                 />
                                 {uploadingIndex === index && (
                                   <span className="text-sm text-foreground/60 inline-flex items-center gap-1">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Uploading…
-                                  </span>
+                                    <Loader2 className="h-4 w-4 animate-spin" />{t("teacherSettings.uploading")}</span>
                                 )}
                               </div>
                               {uploadError && uploadingIndex === null && (
@@ -353,12 +351,8 @@ const TeacherCourseFormLessonsPage = () => {
 
         <div className="flex w-full flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-3">
-            <Button type="button" variant="outline" className="rounded-full" onClick={() => navigate(`${basePath}/schedule`)}>
-              Back
-            </Button>
-            <Button type="button" variant="outline" className="rounded-full" onClick={() => navigate(`${basePath}/schedule`)}>
-              Edit schedule
-            </Button>
+            <Button type="button" variant="outline" className="rounded-full" onClick={() => navigate(`${basePath}/schedule`)}>{t("common.back")}</Button>
+            <Button type="button" variant="outline" className="rounded-full" onClick={() => navigate(`${basePath}/schedule`)}>{t("teacher.courses.scheduleTab.editSchedule")}</Button>
           </div>
           <Button
             type={isEdit ? "submit" : "button"}
@@ -386,9 +380,7 @@ const TeacherCourseFormLessonsPage = () => {
               <AlertDialogAction
                 className="bg-[#1e40af] text-white hover:bg-[#1e40af]/90"
                 onClick={confirmCreateAndSubmit}
-              >
-                Create class
-              </AlertDialogAction>
+              >{t("teacher.courseForm.lessons.createClass")}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   BookOpen,
   CalendarDays,
@@ -26,12 +28,12 @@ const formatDate = (dateString: string) => {
 
 type StatusFilter = "all" | "In Progress" | "Almost Complete" | "Completed";
 
-const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "In Progress", label: "In Progress" },
-  { value: "Almost Complete", label: "Almost Complete" },
-  { value: "Completed", label: "Completed" },
-];
+function translateCourseStatus(status: string, t: TFunction) {
+  if (status === "In Progress") return t("status.inProgress");
+  if (status === "Almost Complete") return t("status.almostComplete");
+  if (status === "Completed") return t("status.completed");
+  return status;
+}
 
 type EnrollmentStat = {
   label: string;
@@ -67,10 +69,10 @@ function isEmptyMeta(value: string | undefined): boolean {
   return !t || t === "—" || t === "-";
 }
 
-function lessonSummary(modules: number, duration: string): string | null {
+function lessonSummary(modules: number, duration: string, t: TFunction): string | null {
   const parts: string[] = [];
   if (modules > 0) {
-    parts.push(`${modules} lesson${modules === 1 ? "" : "s"}`);
+    parts.push(`${modules} ${t("courses.lesson", { count: modules })}`);
   }
   if (!isEmptyMeta(duration)) {
     parts.push(duration.trim());
@@ -79,11 +81,22 @@ function lessonSummary(modules: number, duration: string): string | null {
 }
 
 const StudentCourses = () => {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const scheduleSummaries = useStudentCourseScheduleSummaries(enrolledCourses);
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") ?? "");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  const statusFilters = useMemo(
+    (): { value: StatusFilter; label: string }[] => [
+      { value: "all", label: t("courses.filterAll") },
+      { value: "In Progress", label: t("status.inProgress") },
+      { value: "Almost Complete", label: t("status.almostComplete") },
+      { value: "Completed", label: t("status.completed") },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     setSearchQuery(searchParams.get("q") ?? "");
@@ -101,11 +114,14 @@ const StudentCourses = () => {
   const inProgressCount = enrolledCourses.filter((c) => c.status !== "Completed").length;
   const completedCount = enrolledCourses.filter((c) => c.status === "Completed").length;
 
-  const enrollmentStats: EnrollmentStat[] = [
-    { label: "Total enrolled", value: enrolledCourses.length, icon: BookOpen },
-    { label: "In progress", value: inProgressCount, icon: PlayCircle },
-    { label: "Completed", value: completedCount, icon: CheckCircle2 },
-  ];
+  const enrollmentStats: EnrollmentStat[] = useMemo(
+    () => [
+      { label: t("courses.totalEnrolled"), value: enrolledCourses.length, icon: BookOpen },
+      { label: t("courses.inProgress"), value: inProgressCount, icon: PlayCircle },
+      { label: t("courses.completed"), value: completedCount, icon: CheckCircle2 },
+    ],
+    [t, enrolledCourses.length, inProgressCount, completedCount],
+  );
 
   return (
     <div className="min-h-0 pb-8">
@@ -119,10 +135,10 @@ const StudentCourses = () => {
                   className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
-                  My Class
+                  {t("courses.title")}
                 </h1>
                 <p className="mt-2 text-sm text-foreground/70">
-                  Information about the classes you are enrolled in. Continue learning or review completed classes.
+                  {t("courses.subtitle")}
                 </p>
               </div>
               <Link to="/eduhub" className="shrink-0">
@@ -130,7 +146,7 @@ const StudentCourses = () => {
                   variant="outline"
                   className="rounded-full border-gray-200 bg-white text-foreground hover:bg-gray-50"
                 >
-                  More Classes
+                  {t("courses.moreClasses")}
                 </Button>
               </Link>
             </div>
@@ -147,7 +163,7 @@ const StudentCourses = () => {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
               <Input
                 type="search"
-                placeholder="Search by class name, instructor, or category..."
+                placeholder={t("courses.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -170,7 +186,7 @@ const StudentCourses = () => {
 
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              {STATUS_FILTERS.map(({ value, label }) => (
+              {statusFilters.map(({ value, label }) => (
                 <Button
                   key={value}
                   variant={statusFilter === value ? "default" : "outline"}
@@ -184,14 +200,14 @@ const StudentCourses = () => {
               ))}
             </div>
             <p className="text-sm text-foreground/60">
-              {filteredCourses.length} class{filteredCourses.length !== 1 ? "es" : ""} found
+              {t("courses.classesFound", { count: filteredCourses.length })}
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 min-[1300px]:grid-cols-4">
             {filteredCourses.map((course) => {
               const hasNextLesson = !isEmptyMeta(course.nextLesson);
-              const lessonsLabel = lessonSummary(course.modules, course.duration);
+              const lessonsLabel = lessonSummary(course.modules, course.duration, t);
               const category = course.category.trim();
               const scheduleSummary = scheduleSummaries.get(String(course.id));
 
@@ -220,7 +236,7 @@ const StudentCourses = () => {
                   <span
                     className={`absolute left-0 top-0 m-2 rounded-full px-2.5 py-0.5 text-xs font-semibold shadow-sm ${statusBadgeClass(course.status)}`}
                   >
-                    {course.status}
+                    {translateCourseStatus(course.status, t)}
                   </span>
                 </Link>
 
@@ -238,7 +254,7 @@ const StudentCourses = () => {
                       className="shrink-0 text-xs text-slate-400"
                       dateTime={course.enrolledDate}
                     >
-                      Joined {formatDate(course.enrolledDate)}
+                      {t("courses.joined", { date: formatDate(course.enrolledDate) })}
                     </time>
                   </div>
 
@@ -262,7 +278,7 @@ const StudentCourses = () => {
                         <p className="truncate text-sm font-medium text-slate-800">
                           {formatDisplayPersonName(course.instructor)}
                         </p>
-                        <p className="text-xs text-slate-500">Instructor</p>
+                        <p className="text-xs text-slate-500">{t("courses.instructor")}</p>
                       </div>
                     </div>
                     {lessonsLabel ? (
@@ -276,13 +292,13 @@ const StudentCourses = () => {
                     <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
                       <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
                         <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#3954d0]/70" aria-hidden />
-                        Schedule
+                        {t("courses.schedule")}
                       </span>
                       <span className="text-xs font-semibold tabular-nums text-slate-900">
                         {scheduleSummary.reached}
                         <span className="text-slate-500"> / </span>
                         {scheduleSummary.total}
-                        <span className="text-slate-700"> sessions</span>
+                        <span className="text-slate-700"> {t("courses.sessions")}</span>
                       </span>
                     </div>
                   ) : null}
@@ -292,7 +308,7 @@ const StudentCourses = () => {
                       <PlayCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#3954d0]" aria-hidden />
                       <span className="min-w-0">
                         <span className="block text-xs font-medium uppercase tracking-wide text-slate-500">
-                          Up next
+                          {t("courses.upNext")}
                         </span>
                         <span className="line-clamp-2 font-medium text-slate-800">{course.nextLesson}</span>
                       </span>
@@ -303,7 +319,7 @@ const StudentCourses = () => {
                   <div className="mt-4 space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs font-medium text-slate-600">
-                      <span>Your progress</span>
+                      <span>{t("courses.yourProgress")}</span>
                       <span className="tabular-nums text-slate-900">{course.progress}%</span>
                     </div>
                     <Progress value={course.progress} className="h-2 bg-slate-100" />
@@ -314,7 +330,7 @@ const StudentCourses = () => {
                     className="flex w-full items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300"
                   >
                     <PlayCircle className="mr-2 h-5 w-5" aria-hidden />
-                    {course.status === "Completed" ? "Review class" : "Continue learning"}
+                    {course.status === "Completed" ? t("courses.reviewClass") : t("courses.continueLearning")}
                   </Link>
                   </div>
                 </div>
@@ -326,8 +342,8 @@ const StudentCourses = () => {
           {filteredCourses.length === 0 && (
             <div className="rounded-xl border border-gray-200/50 bg-white/50 py-16 text-center">
               <BookOpen className="mx-auto mb-4 h-12 w-12 text-foreground/30" />
-              <p className="font-medium text-foreground/70">No classes match your filters.</p>
-              <p className="mt-1 text-sm text-foreground/50">Try a different search or status filter.</p>
+              <p className="font-medium text-foreground/70">{t("courses.emptyTitle")}</p>
+              <p className="mt-1 text-sm text-foreground/50">{t("courses.emptyHint")}</p>
               <Button
                 variant="outline"
                 className="mt-4 rounded-full"
@@ -344,7 +360,7 @@ const StudentCourses = () => {
                   );
                 }}
               >
-                Clear filters
+                {t("courses.clearFilters")}
               </Button>
             </div>
           )}

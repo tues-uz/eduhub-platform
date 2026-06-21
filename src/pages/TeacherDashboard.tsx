@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   BookOpen,
   FileText,
@@ -80,6 +81,7 @@ function formatCollectedPaymentsTotal(payments: AdminPaymentRow[], emailNorm: st
 }
 
 const TeacherDashboard = () => {
+  const { t } = useTranslation();
   const { user } = useAuthSession();
   const payments = useAdminPayments();
   const userName = user.name || "Teacher";
@@ -172,9 +174,7 @@ const TeacherDashboard = () => {
                 <h1 className="text-3xl font-semibold text-slate-900 mb-1.5 tracking-tight">
                   {userName}
                 </h1>
-                <p className="text-slate-600 text-sm font-medium">
-                  Instructor Dashboard
-                </p>
+                <p className="text-slate-600 text-sm font-medium">{t("teacher.dashboard.subtitle")}</p>
               </div>
               <div className="flex items-center gap-3">
                 <span className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md uppercase tracking-wide">
@@ -225,7 +225,7 @@ const TeacherDashboard = () => {
               <QrCode className="h-6 w-6 text-[#1e40af]" />
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <p className="text-sm font-semibold text-slate-900">Attendance QR (projector)</p>
+              <p className="text-sm font-semibold text-slate-900">{t("teacher.dashboard.attendanceQr.title")}</p>
               <p className="text-xs text-slate-600 mt-0.5">
                 Generate a session QR code to show on the whiteboard—students scan to check in on their phones.
               </p>
@@ -239,9 +239,7 @@ const TeacherDashboard = () => {
               {/* Upcoming Classes */}
               <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
                 <div className="px-6 py-4 border-b border-slate-200">
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    Upcoming Sessions
-                  </h2>
+                  <h2 className="text-lg font-semibold text-slate-900">{t("teacher.dashboard.upcomingSessions.title")}</h2>
                 </div>
                 <div className="p-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -271,12 +269,9 @@ const TeacherDashboard = () => {
               {/* Classes table */}
               <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
                 <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    Teaching classes
-                  </h2>
+                  <h2 className="text-lg font-semibold text-slate-900">{t("teacher.dashboard.classesTable.title")}</h2>
                   <Link to="/dashboard/teacher/courses">
-                    <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 h-8">
-                      View All <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                    <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 h-8">{t("common.viewAll")}<ArrowRight className="h-3.5 w-3.5 ml-1.5" />
                     </Button>
                   </Link>
                 </div>
@@ -284,24 +279,21 @@ const TeacherDashboard = () => {
                   <table className="w-full">
                     <thead className="bg-slate-50 border-b border-slate-200">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Class</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Students</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Progress</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Completion</th>
-                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Actions</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">{t("teacher.dashboard.classesTable.header.class")}</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">{t("teacher.dashboard.classesTable.header.students")}</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">{t("teacher.dashboard.classesTable.header.progress")}</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">{t("teacher.dashboard.classesTable.header.completion")}</th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">{t("common.actions")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                       {coursesLoading ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-8 text-center text-xs text-slate-500">
-                            Loading classes…
-                          </td>
+                          <td colSpan={5} className="px-6 py-8 text-center text-xs text-slate-500">{t("teacher.courses.loading")}</td>
                         </tr>
                       ) : courses.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-8 text-center text-xs text-slate-500">
-                            No classes yet. <Link to="/dashboard/teacher/courses/new" className="text-slate-900 font-medium underline">Create your first class</Link>
+                          <td colSpan={5} className="px-6 py-8 text-center text-xs text-slate-500">{t("teacher.dashboard.classesTable.emptyPrefix")}<Link to="/dashboard/teacher/courses/new" className="text-slate-900 font-medium underline">{t("teacher.dashboard.classesTable.createFirstClass")}</Link>
                           </td>
                         </tr>
                       ) : (
@@ -336,10 +328,10 @@ const TeacherDashboard = () => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem asChild>
-                                    <Link to={`/dashboard/teacher/courses/${course.id}/edit`}>Edit class</Link>
+                                    <Link to={`/dashboard/teacher/courses/${course.id}/edit`}>{t("teacher.dashboard.classesTable.action.editClass")}</Link>
                                   </DropdownMenuItem>
                                   <DropdownMenuItem asChild>
-                                    <Link to="/dashboard/teacher/students">Manage Students</Link>
+                                    <Link to="/dashboard/teacher/students">{t("teacher.dashboard.classesTable.action.manageStudents")}</Link>
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -356,14 +348,11 @@ const TeacherDashboard = () => {
               <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
                 <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-slate-900">
-                      Pending Grading
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Review and grade student submissions</p>
+                    <h2 className="text-lg font-semibold text-slate-900">{t("teacher.dashboard.pendingGrading.title")}</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">{t("teacher.dashboard.pendingGrading.subtitle")}</p>
                   </div>
                   <Link to="/dashboard/teacher/assignments">
-                    <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 h-8">
-                      View All <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                    <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 h-8">{t("common.viewAll")}<ArrowRight className="h-3.5 w-3.5 ml-1.5" />
                     </Button>
                   </Link>
                 </div>
@@ -396,9 +385,7 @@ const TeacherDashboard = () => {
                           </span>
                         </div>
                       </div>
-                      <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white h-8 px-4">
-                        Grade
-                      </Button>
+                      <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white h-8 px-4">{t("teacher.dashboard.pendingGrading.gradeButton")}</Button>
                     </div>
                   ))}
                 </div>

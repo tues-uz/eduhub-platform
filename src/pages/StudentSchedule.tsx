@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Calendar, Clock, BookOpen, FileText } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 
@@ -11,15 +12,17 @@ const SCHEDULE_ITEMS = [
 ];
 
 const StudentSchedule = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="container mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-foreground/70 text-sm">Your upcoming classes and assignment deadlines.</p>
+              <p className="text-foreground/70 text-sm">{t("schedulePage.subtitle")}</p>
             </div>
             <Button variant="outline" className="rounded-full">
               <Calendar className="mr-2 h-4 w-4" />
-              View calendar
+              {t("schedulePage.viewCalendar")}
             </Button>
           </div>
           <div className="space-y-4">
@@ -48,12 +51,12 @@ const StudentSchedule = () => {
                   {item.type === "assignment" && "due" in item && (
                     <p className="mt-1 flex items-center gap-2 text-sm text-foreground/60">
                       <Calendar className="h-4 w-4" />
-                      Due {item.due}
+                      {t("schedulePage.due", { date: item.due })}
                     </p>
                   )}
                 </div>
                 <Button size="sm" className="rounded-full flex-shrink-0" style={{ backgroundColor: "#1e40af" }}>
-                  {item.type === "class" ? "Join" : "Open"}
+                  {item.type === "class" ? t("schedulePage.join") : t("schedulePage.open")}
                 </Button>
               </div>
             ))}

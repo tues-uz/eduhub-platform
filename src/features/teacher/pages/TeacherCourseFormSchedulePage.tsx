@@ -23,6 +23,7 @@ import { isUuid } from "@/api/utils";
 import type { ScheduleProposalResponse } from "@/api/eduhubTypes";
 import type { CourseStatus } from "@/api/eduhubTypes";
 import { toDateInputValue } from "@/features/admin/utils/adminCourseScheduleDisplay";
+import { useTranslation } from "react-i18next";
 import {
   distributeSessionsIntoThreeMonths,
   padScheduleSlots,
@@ -70,6 +71,7 @@ function ReadOnlySessionRow({
 }
 
 export default function TeacherCourseFormSchedulePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
@@ -202,7 +204,7 @@ export default function TeacherCourseFormSchedulePage() {
         {!isEdit ? (
           <Card className="w-full overflow-hidden rounded-2xl border-slate-200/90 shadow-sm">
             <CardContent className="space-y-4 p-6">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Schedule</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{t("teacher.roster.tabs.schedule")}</p>
               <p className="text-sm leading-relaxed text-slate-700">
                 After you create this class, an <span className="font-medium text-slate-900">administrator</span> will
                 propose the session schedule (how many sessions in six months and optional dates/times). You will{" "}
@@ -323,9 +325,7 @@ export default function TeacherCourseFormSchedulePage() {
                         >
                           {approveSaving ? "Saving…" : "Approve schedule"}
                         </Button>
-                        <Button type="button" variant="outline" className="rounded-full" onClick={() => setRejectOpen(true)}>
-                          Request changes
-                        </Button>
+                        <Button type="button" variant="outline" className="rounded-full" onClick={() => setRejectOpen(true)}>{t("teacher.courseForm.schedule.requestChanges")}</Button>
                       </div>
                     ) : null}
                     {courseStatus === "SCHEDULE_APPROVED" ? (
@@ -341,12 +341,8 @@ export default function TeacherCourseFormSchedulePage() {
         ) : null}
 
         <div className="mt-6 flex w-full flex-wrap items-center justify-between gap-3">
-          <Button type="button" variant="outline" className="rounded-full" onClick={() => navigate(`${basePath}/details`)}>
-            Back
-          </Button>
-          <Button type="button" onClick={continueToLessons} className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
-            Continue to lessons
-          </Button>
+          <Button type="button" variant="outline" className="rounded-full" onClick={() => navigate(`${basePath}/details`)}>{t("common.back")}</Button>
+          <Button type="button" onClick={continueToLessons} className="rounded-full" style={{ backgroundColor: "#1e40af" }}>{t("teacher.courseForm.schedule.continueToLessons")}</Button>
         </div>
       </div>
 
@@ -367,7 +363,7 @@ export default function TeacherCourseFormSchedulePage() {
             className="resize-none"
           />
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setRejectNote("")}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setRejectNote("")}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={() => void handleRejectConfirm()}>Send to admin</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

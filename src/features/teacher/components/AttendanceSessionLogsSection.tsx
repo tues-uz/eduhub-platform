@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardList } from "@/lib/icons";
+import { useTranslation } from "react-i18next";
 import {
   ATTENDANCE_SESSION_LOGS_CHANGED,
   endReasonLabel,
@@ -55,7 +56,7 @@ export function AttendanceSessionLogsSection({
                 <th className="px-3 py-2.5">Started</th>
                 <th className="px-3 py-2.5">Ended</th>
                 <th className="px-3 py-2.5">Time in class</th>
-                <th className="px-3 py-2.5">Class</th>
+                <th className="px-3 py-2.5">{t("teacher.dashboard.classesTable.header.class")}</th>
                 <th className="px-3 py-2.5">Meeting</th>
                 {showInstructorColumn ? <th className="px-3 py-2.5">Instructor</th> : null}
                 <th className="px-3 py-2.5">How it ended</th>

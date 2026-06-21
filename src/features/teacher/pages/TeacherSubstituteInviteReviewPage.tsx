@@ -11,6 +11,7 @@ import {
   type SubstituteInviteRecord,
   type SubstituteInviteStatus,
 } from "@/features/teacher/data/substituteInviteWorkflowStore";
+import { useTranslation } from "react-i18next";
 import {
   appNotificationStore,
   APP_NOTIFICATIONS_CHANGE_EVENT,
@@ -44,6 +45,7 @@ function statusLabel(status: SubstituteInviteStatus): string {
 }
 
 export default function TeacherSubstituteInviteReviewPage() {
+  const { t } = useTranslation();
   const { inviteId } = useParams<{ inviteId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthSession();
@@ -104,7 +106,7 @@ export default function TeacherSubstituteInviteReviewPage() {
           <div className="mx-auto max-w-lg px-6 py-10">
             <p className="text-sm text-foreground/70">Missing request id.</p>
             <Button type="button" variant="outline" className="mt-4 rounded-full" asChild>
-              <Link to="/dashboard/teacher/notifications">Back to notifications</Link>
+              <Link to="/dashboard/teacher/notifications">{t("teacher.substituteReview.backToNotifications")}</Link>
             </Button>
           </div>
         </main>
@@ -124,7 +126,7 @@ export default function TeacherSubstituteInviteReviewPage() {
           <div className="mx-auto max-w-lg px-6 py-10">
             <p className="text-sm text-foreground/70">This cover request could not be found. It may have been removed.</p>
             <Button type="button" variant="outline" className="mt-4 rounded-full" asChild>
-              <Link to="/dashboard/teacher/notifications">Back to notifications</Link>
+              <Link to="/dashboard/teacher/notifications">{t("teacher.substituteReview.backToNotifications")}</Link>
             </Button>
           </div>
         </main>
@@ -161,15 +163,13 @@ export default function TeacherSubstituteInviteReviewPage() {
             onClick={goNotifications}
             className="mb-6 inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground"
           >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            Notifications
-          </button>
+            <ArrowLeft className="h-4 w-4" aria-hidden />{t("common.notifications")}</button>
 
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Cover request</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("teacher.substituteReview.title")}</h1>
           <p className="mt-1 text-sm text-foreground/65">Review details and respond when you are ready.</p>
 
           <div className="mt-6 rounded-xl border border-slate-200/80 bg-slate-50/40 p-5 shadow-sm sm:p-6">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-foreground/45">Status</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-foreground/45">{t("common.status")}</p>
             <p className="mt-1 text-sm font-medium text-foreground">{statusLabel(rec.status)}</p>
             <div className="mt-6 border-t border-foreground/10 pt-6">
               <SubstituteInviteRequestSummary rec={rec} />
@@ -199,9 +199,7 @@ export default function TeacherSubstituteInviteReviewPage() {
                     bump();
                     goNotifications();
                   }}
-                >
-                  Accept invite
-                </Button>
+                >{t("teacher.substituteReview.acceptInvite")}</Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -220,9 +218,7 @@ export default function TeacherSubstituteInviteReviewPage() {
                     bump();
                     goNotifications();
                   }}
-                >
-                  Decline invite
-                </Button>
+                >{t("teacher.substituteReview.declineInvite")}</Button>
               </div>
             </div>
           ) : null}
@@ -249,9 +245,7 @@ export default function TeacherSubstituteInviteReviewPage() {
                     bump();
                     goNotifications();
                   }}
-                >
-                  Approve cover
-                </Button>
+                >{t("teacher.substituteReview.approveCover")}</Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -269,9 +263,7 @@ export default function TeacherSubstituteInviteReviewPage() {
                     bump();
                     goNotifications();
                   }}
-                >
-                  Reject
-                </Button>
+                >{t("teacher.substituteReview.reject")}</Button>
               </div>
             </div>
           ) : null}

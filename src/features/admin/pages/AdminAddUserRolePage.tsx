@@ -7,6 +7,7 @@ import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ const ADD_USER_ROLE_OPTIONS: { value: string; label: string }[] = [
 ];
 
 export default function AdminAddUserRolePage() {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [temporaryPassword, setTemporaryPassword] = useState("");
   const [createdAccountEmail, setCreatedAccountEmail] = useState("");
@@ -73,15 +75,15 @@ export default function AdminAddUserRolePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.email || !formData.phoneNumber || !formData.role) {
-      toast.error("Please fill in all fields");
+      toast.error(t("admin.addUserRole.toast.fillAllFields"));
       return;
     }
     if (isTeacherRole && !formData.teacherCategory) {
-      toast.error("Please select a teacher category");
+      toast.error(t("admin.addUserRole.toast.selectCategory"));
       return;
     }
     if (isAdminRole && !isValidAdminActionCode(formData.adminCode)) {
-      toast.error("Enter an admin code (2–16 letters or numbers, e.g. AF01)");
+      toast.error(t("admin.addUserRole.toast.invalidAdminCode"));
       return;
     }
 
@@ -128,9 +130,9 @@ export default function AdminAddUserRolePage() {
     try {
       await navigator.clipboard.writeText(temporaryPassword);
       setHasCopiedPassword(true);
-      toast.success("Temporary password copied");
+      toast.success(t("admin.addUserRole.toast.passwordCopied"));
     } catch {
-      toast.error("Could not copy password. Select and copy it manually.");
+      toast.error(t("admin.addUserRole.toast.copyFailed"));
     }
   };
 
@@ -144,12 +146,12 @@ export default function AdminAddUserRolePage() {
       <div className="container mx-auto px-6 max-w-lg">
         <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Add user role"
-          description="Create a new staff account. A secure temporary password will be shown once after creation and the user must change it on first sign-in."
+          title={t("adminNav.addUserRole")}
+          description={t("admin.addUserRole.description")}
         />
 
         <form
@@ -157,7 +159,7 @@ export default function AdminAddUserRolePage() {
           onSubmit={handleSubmit}
         >
           <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name</Label>
+            <Label htmlFor="fullName">{t("admin.addUserRole.form.fullName")}</Label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
@@ -165,7 +167,7 @@ export default function AdminAddUserRolePage() {
                 name="fullName"
                 type="text"
                 required
-                placeholder="Enter full name"
+                placeholder={t("admin.addUserRole.form.fullNamePlaceholder")}
                 value={formData.fullName}
                 onChange={handleChange}
                 autoComplete="name"
@@ -175,13 +177,13 @@ export default function AdminAddUserRolePage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("admin.shared.email")}</Label>
             <Input
               id="email"
               name="email"
               type="email"
               required
-              placeholder="user@school.com"
+              placeholder={t("admin.addUserRole.form.emailPlaceholder")}
               value={formData.email}
               onChange={handleChange}
               autoComplete="email"
@@ -191,7 +193,7 @@ export default function AdminAddUserRolePage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Label htmlFor="phoneNumber">{t("admin.addUserRole.form.phoneNumber")}</Label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
@@ -199,7 +201,7 @@ export default function AdminAddUserRolePage() {
                 name="phoneNumber"
                 type="tel"
                 required
-                placeholder="+6281234567890"
+                placeholder={t("admin.addUserRole.form.phonePlaceholder")}
                 value={formData.phoneNumber}
                 onChange={handleChange}
                 autoComplete="tel"
@@ -210,7 +212,7 @@ export default function AdminAddUserRolePage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Role</Label>
+            <Label>{t("admin.shared.role")}</Label>
             <Select
               required
               value={formData.role}
@@ -224,7 +226,7 @@ export default function AdminAddUserRolePage() {
               }
             >
               <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Select role" />
+                <SelectValue placeholder={t("admin.addUserRole.form.selectRole")} />
               </SelectTrigger>
               <SelectContent>
                 {ADD_USER_ROLE_OPTIONS.map((opt) => (
@@ -238,14 +240,14 @@ export default function AdminAddUserRolePage() {
 
           {isTeacherRole ? (
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label>{t("admin.shared.category")}</Label>
               <Select
                 required
                 value={formData.teacherCategory}
                 onValueChange={(value) => setFormData({ ...formData, teacherCategory: value })}
               >
                 <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder={t("admin.addUserRole.form.selectCategory")} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
@@ -260,13 +262,13 @@ export default function AdminAddUserRolePage() {
 
           {isAdminRole ? (
             <div className="space-y-2">
-              <Label htmlFor="adminCode">Admin code</Label>
+              <Label htmlFor="adminCode">{t("admin.addUserRole.form.adminCode")}</Label>
               <Input
                 id="adminCode"
                 name="adminCode"
                 type="text"
                 required
-                placeholder="e.g. AF01"
+                placeholder={t("admin.addUserRole.form.adminCodePlaceholder")}
                 value={formData.adminCode}
                 onChange={(e) => setFormData({ ...formData, adminCode: e.target.value.toUpperCase() })}
                 className="bg-white font-mono text-sm uppercase max-w-[180px]"
@@ -285,7 +287,7 @@ export default function AdminAddUserRolePage() {
             disabled={isLoading}
             className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800"
           >
-            {isLoading ? "Creating..." : "Create User"}
+            {isLoading ? t("admin.shared.creating") : t("admin.addUserRole.form.createUser")}
           </Button>
         </form>
 
@@ -293,30 +295,30 @@ export default function AdminAddUserRolePage() {
           open={Boolean(temporaryPassword)}
           onOpenChange={(open) => {
             if (!open) {
-              toast.info("Store the temporary password before leaving this screen.");
+              toast.info(t("admin.addUserRole.tempPasswordDialog.leaveWarning"));
             }
           }}
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Temporary password created</DialogTitle>
+              <DialogTitle>{t("admin.addUserRole.tempPasswordDialog.title")}</DialogTitle>
               <DialogDescription>
                 Share this password securely with {createdAccountEmail}. It will not be shown again.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-950">
-              <p className="text-sm font-medium">The user must enter this as their current password on first sign-in.</p>
+              <p className="text-sm font-medium">{t("admin.addUserRole.tempPasswordDialog.instruction")}</p>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
                   value={temporaryPassword}
                   readOnly
                   className="font-mono tracking-wide bg-white"
-                  aria-label="Temporary password"
+                  aria-label={t("admin.addUserRole.tempPasswordDialog.ariaLabel")}
                 />
                 <Button type="button" variant="outline" onClick={handleCopyTemporaryPassword} className="min-h-10 gap-2">
                   {hasCopiedPassword ? <Check className="h-4 w-4" aria-hidden="true" /> : <Square2Stack className="h-4 w-4" aria-hidden="true" />}
-                  {hasCopiedPassword ? "Copied" : "Copy"}
+                  {hasCopiedPassword ? t("admin.shared.copied") : t("admin.shared.copy")}
                 </Button>
               </div>
             </div>

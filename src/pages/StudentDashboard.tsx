@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
   BookOpen,
@@ -26,12 +27,54 @@ import { formatDisplayPersonName } from "@/lib/formatPersonName";
 import { cn } from "@/lib/utils";
 import { formatSessionTimeLabel, sessionStartMs } from "@/features/courses/classSchedulePreview";
 import {
-  formatScheduleCountdown,
   formatUpcomingScheduleDayLabel,
 } from "@/features/student/upcomingSchedule";
 import type { UpcomingScheduleItem } from "@/features/student/upcomingSchedule";
 
+const STAT_LABEL_KEYS: Record<string, string> = {
+  "/dashboard/courses": "dashboard.statsClassesEnrolled",
+  "/dashboard/assignments": "dashboard.statsAssignments",
+  "/dashboard/certificates": "dashboard.statsCertificates",
+  "/dashboard/progress": "dashboard.statsProgress",
+};
+
+function formatScheduleCountdownShort(
+  sessionDate: string,
+  sessionTime: string,
+  nowMs: number,
+  locale: string,
+): string | null {
+  const start = sessionStartMs(sessionDate, sessionTime);
+  if (start == null) return null;
+
+  const diff = start - nowMs;
+  if (diff <= 0) return null;
+
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "always", style: "short" });
+  const minutes = Math.floor(diff / 60_000);
+  const hours = Math.floor(diff / 3_600_000);
+  const days = Math.floor(diff / 86_400_000);
+
+  if (minutes < 1) return rtf.format(1, "minute");
+  if (minutes < 60) return rtf.format(minutes, "minute");
+  if (hours < 24) return rtf.format(hours, "hour");
+  if (days < 7) return rtf.format(days, "day");
+
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return rtf.format(weeks, "week");
+  return rtf.format(days, "day");
+}
+
+function priorityLabel(priority: string, t: (key: string) => string): string {
+  const normalized = priority.toUpperCase();
+  if (normalized === "HIGH") return t("assignments.priorityHigh");
+  if (normalized === "MEDIUM") return t("assignments.priorityMedium");
+  if (normalized === "LOW") return t("assignments.priorityLow");
+  return priority;
+}
+
 function UpcomingScheduleCard({ item }: { item: UpcomingScheduleItem }) {
+  const { t, i18n } = useTranslation();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -41,20 +84,28 @@ function UpcomingScheduleCard({ item }: { item: UpcomingScheduleItem }) {
 
   const startMs = sessionStartMs(item.sessionDate, item.sessionTime);
   const date = startMs != null ? new Date(startMs) : null;
+  const locale = i18n.language;
   const monthLabel = date
-    ? date.toLocaleDateString(undefined, { month: "short" }).toUpperCase()
-    : "TBA";
+    ? date.toLocaleDateString(locale, { month: "short" }).toUpperCase()
+    : t("dashboard.tba");
   const dayLabel = date ? String(date.getDate()) : "—";
   const weekdayLabel = date
-    ? date.toLocaleDateString(undefined, { weekday: "short" })
+    ? date.toLocaleDateString(locale, { weekday: "short" })
     : null;
   const timeLabel = formatSessionTimeLabel(item.sessionTime);
   const relativeDay = formatUpcomingScheduleDayLabel(item.sessionDate);
-  const countdown =
+  const translatedRelativeDay =
+    relativeDay === "Today"
+      ? t("dashboard.today")
+      : relativeDay === "Tomorrow"
+        ? t("dashboard.tomorrow")
+        : relativeDay === "Date TBA"
+          ? null
+          : relativeDay;
+  const countdownShort =
     item.timingStatus === "ongoing"
       ? null
-      : formatScheduleCountdown(item.sessionDate, item.sessionTime, now);
-  const countdownShort = countdown?.replace(/^Starts in /, "In ");
+      : formatScheduleCountdownShort(item.sessionDate, item.sessionTime, now, locale);
   const isOngoing = item.timingStatus === "ongoing";
 
   return (
@@ -92,7 +143,7 @@ function UpcomingScheduleCard({ item }: { item: UpcomingScheduleItem }) {
           </div>
           {isOngoing ? (
             <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-              Live
+              {t("dashboard.live")}
             </span>
           ) : countdownShort ? (
             <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900 ring-1 ring-amber-200/80">
@@ -121,12 +172,12 @@ function UpcomingScheduleCard({ item }: { item: UpcomingScheduleItem }) {
               </span>
             </>
           ) : null}
-          {relativeDay === "Today" || relativeDay === "Tomorrow" ? (
+          {translatedRelativeDay ? (
             <>
               <span className="text-zinc-300" aria-hidden>
                 ·
               </span>
-              <span className="font-medium text-zinc-700">{relativeDay}</span>
+              <span className="font-medium text-zinc-700">{translatedRelativeDay}</span>
             </>
           ) : null}
         </div>
@@ -191,6 +242,7 @@ function WelcomeWave() {
 }
 
 const StudentDashboard = () => {
+  const { t, i18n } = useTranslation();
   const { user } = useAuthSession();
   const { isSidebarCollapsed } = useLayoutContext();
   const { data } = useStudentOverviewQuery();
@@ -211,13 +263,14 @@ const StudentDashboard = () => {
         : null;
 
     return base.map((stat) => {
-      if (stat.label === "Classes enrolled") {
+      const href = "href" in stat && typeof stat.href === "string" ? stat.href : "/dashboard";
+      if (href === "/dashboard/courses") {
         return { ...stat, value: String(courseCount) };
       }
-      if (stat.label === "Assignments") {
+      if (href === "/dashboard/assignments") {
         return { ...stat, value: String(assignmentCount) };
       }
-      if (stat.label === "Progress" && avgProgress != null) {
+      if (href === "/dashboard/progress" && avgProgress != null) {
         return { ...stat, value: `${avgProgress}%` };
       }
       return stat;
@@ -229,7 +282,7 @@ const StudentDashboard = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return date.toLocaleDateString(i18n.language, { month: "short", day: "numeric", year: "numeric" });
   };
 
   const getDaysUntilDue = (dateString: string) => {
@@ -256,11 +309,11 @@ const StudentDashboard = () => {
           <div className="mb-8">
             <div className="mb-6 space-y-1">
               <h1 className="flex flex-wrap items-center gap-x-2 text-[32px] font-bold leading-tight tracking-tight text-foreground">
-                <span>Hi {displayName}, welcome back</span>
+                <span>{t("dashboard.welcome", { name: displayName })}</span>
                 <WelcomeWave />
               </h1>
               <p className="text-foreground/70" style={{ fontSize: "14px" }}>
-                Here&apos;s what&apos;s happening with your classes today
+                {t("dashboard.subtitle")}
               </p>
             </div>
 
@@ -269,10 +322,11 @@ const StudentDashboard = () => {
               <div className="grid grid-cols-2 lg:grid-cols-4">
                 {statCards.map((stat, index) => {
                   const href = "href" in stat && typeof stat.href === "string" ? stat.href : "/dashboard";
+                  const labelKey = STAT_LABEL_KEYS[href];
                   return (
                     <DashboardStatCard
-                      key={stat.label}
-                      label={stat.label}
+                      key={href}
+                      label={labelKey ? t(labelKey) : stat.label}
                       value={stat.value}
                       icon={stat.icon}
                       href={href}
@@ -290,35 +344,35 @@ const StudentDashboard = () => {
               {/* Upcoming Schedule */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 px-4 py-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>Upcoming Schedule</h2>
+                  <h2 className="text-2xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("dashboard.upcomingSchedule")}</h2>
                   <Link to="/dashboard/schedule">
                     <Button variant="ghost" className="h-auto px-0 py-0 text-sm text-zinc-400 hover:bg-transparent hover:text-zinc-500">
-                      View All
+                      {t("dashboard.viewAll")}
                     </Button>
                   </Link>
                 </div>
                 <div className="space-y-3">
                   {coursesLoading || scheduleLoading ? (
-                    <p className="py-8 text-center text-sm text-foreground/60">Loading your schedule…</p>
+                    <p className="py-8 text-center text-sm text-foreground/60">{t("dashboard.loadingSchedule")}</p>
                   ) : enrolledCourses.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-gray-200 py-10 text-center">
                       <Calendar className="mx-auto mb-3 h-10 w-10 text-foreground/30" />
-                      <p className="font-medium text-foreground/70">No enrolled classes yet</p>
-                      <p className="mt-1 text-sm text-foreground/50">Enroll in a class to see your upcoming sessions here.</p>
+                      <p className="font-medium text-foreground/70">{t("dashboard.noEnrolledTitle")}</p>
+                      <p className="mt-1 text-sm text-foreground/50">{t("dashboard.noEnrolledHint")}</p>
                       <Link to="/dashboard/available-courses">
                         <Button className="mt-4 rounded-full" style={{ backgroundColor: "#3954d0" }}>
-                          Browse classes
+                          {t("dashboard.browseClasses")}
                         </Button>
                       </Link>
                     </div>
                   ) : upcomingSchedule.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-gray-200 py-10 text-center">
                       <Calendar className="mx-auto mb-3 h-10 w-10 text-foreground/30" />
-                      <p className="font-medium text-foreground/70">No upcoming sessions scheduled</p>
-                      <p className="mt-1 text-sm text-foreground/50">Your instructor may publish the class schedule soon.</p>
+                      <p className="font-medium text-foreground/70">{t("dashboard.noSessionsTitle")}</p>
+                      <p className="mt-1 text-sm text-foreground/50">{t("dashboard.noSessionsHint")}</p>
                       <Link to="/dashboard/courses">
                         <Button variant="outline" className="mt-4 rounded-full">
-                          View My Class
+                          {t("dashboard.viewMyClass")}
                         </Button>
                       </Link>
                     </div>
@@ -333,9 +387,9 @@ const StudentDashboard = () => {
               {/* Upcoming Assignments */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 px-4 py-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>Upcoming Assignments</h2>
+                  <h2 className="text-2xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("dashboard.upcomingAssignments")}</h2>
                   <Button variant="ghost" className="h-auto px-0 py-0 text-sm text-zinc-400 hover:bg-transparent hover:text-zinc-500">
-                    View Calendar
+                    {t("dashboard.viewCalendar")}
                   </Button>
                 </div>
                 <div className="space-y-3">
@@ -362,7 +416,7 @@ const StudentDashboard = () => {
                           </div>
                           <span
                             className={cn(
-                              "shrink-0 rounded-full px-3 py-1 text-xs font-medium capitalize",
+                              "shrink-0 rounded-full px-3 py-1 text-xs font-medium",
                               assignment.priority === "high"
                                 ? "bg-zinc-100 text-zinc-700"
                                 : assignment.priority === "medium"
@@ -370,23 +424,23 @@ const StudentDashboard = () => {
                                   : "bg-zinc-50 text-zinc-500",
                             )}
                           >
-                            {assignment.priority}
+                            {priorityLabel(assignment.priority, t)}
                           </span>
                         </div>
                         <div className="mt-3 flex items-center justify-between gap-3">
                           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground/70">
                             <Calendar className="h-4 w-4 shrink-0" />
-                            <span>Due {formatDate(assignment.dueDate)}</span>
+                            <span>{t("dashboard.due", { date: formatDate(assignment.dueDate) })}</span>
                             {isOverdue ? (
-                              <span className="font-medium text-zinc-500">· Overdue</span>
+                              <span className="font-medium text-zinc-500">· {t("dashboard.overdue")}</span>
                             ) : isDueSoon ? (
                               <span className="font-medium text-amber-800">
-                                · {daysUntil} {daysUntil === 1 ? "day" : "days"} left
+                                · {t("dashboard.daysLeft", { count: daysUntil })}
                               </span>
                             ) : null}
                           </div>
                           <Button size="sm" variant="outline" className="shrink-0 rounded-full">
-                            {assignment.status === "in-progress" ? "Continue" : "Start"}
+                            {assignment.status === "in-progress" ? t("dashboard.continue") : t("dashboard.start")}
                           </Button>
                         </div>
                       </div>
@@ -400,30 +454,30 @@ const StudentDashboard = () => {
             <div className="space-y-6">
               {/* Quick Actions */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 px-4 py-6">
-                <h2 className="mb-4 text-xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>Quick Actions</h2>
+                <h2 className="mb-4 text-xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("dashboard.quickActions")}</h2>
                 <div className="space-y-2">
                   <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                     <BookOpen className="h-4 w-4 mr-2" />
-                    Browse classes
+                    {t("dashboard.browseClasses")}
                   </Button>
                   <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                     <FileText className="h-4 w-4 mr-2" />
-                    My Assignments
+                    {t("dashboard.myAssignments")}
                   </Button>
                   <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                     <Award className="h-4 w-4 mr-2" />
-                    Certificates
+                    {t("dashboard.statsCertificates")}
                   </Button>
                   <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                     <BarChart3 className="h-4 w-4 mr-2" />
-                    View Progress
+                    {t("dashboard.viewProgress")}
                   </Button>
                 </div>
               </div>
 
               {/* Recent Activity */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
-                <h2 className="mb-4 text-xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>Recent Activity</h2>
+                <h2 className="mb-4 text-xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("dashboard.recentActivity")}</h2>
                 <div className="space-y-4">
                   {recentActivity.map((activity, index) => (
                     <div key={index} className="flex items-start gap-3">
@@ -446,22 +500,22 @@ const StudentDashboard = () => {
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
                 <div className="flex items-center gap-3 mb-4">
                   <Target className="h-6 w-6" />
-                  <h2 className="text-xl font-bold leading-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>Overall Progress</h2>
+                  <h2 className="text-xl font-bold leading-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("dashboard.overallProgress")}</h2>
                 </div>
                 <div className="mb-4">
                   <div className="flex items-center justify-between text-sm mb-2">
-                    <span>Completion Rate</span>
+                    <span>{t("dashboard.completionRate")}</span>
                     <span className="text-2xl font-bold">78%</span>
                   </div>
                   <Progress value={78} className="h-3 bg-white/20" />
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <div>
-                    <p className="text-sm opacity-90">Classes completed</p>
+                    <p className="text-sm opacity-90">{t("dashboard.classesCompleted")}</p>
                     <p className="text-2xl font-bold">9/12</p>
                   </div>
                   <div>
-                    <p className="text-sm opacity-90">Avg. Score</p>
+                    <p className="text-sm opacity-90">{t("dashboard.avgScore")}</p>
                     <p className="text-2xl font-bold">92%</p>
                   </div>
                 </div>

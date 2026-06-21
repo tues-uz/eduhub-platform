@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
 import { ClipboardList, CheckCircle2, Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { eduhubCourseQuizzes, eduhubEnrollments, QuizResponseForStudent, QuizRes
 const LETTER_COLORS = ["bg-blue-500", "bg-red-500", "bg-amber-500", "bg-green-500"] as const;
 
 export default function StudentQuiz() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const filterCourseId = searchParams.get("courseId");
   const [quizzes, setQuizzes] = useState<QuizResponseForStudent[]>([]);
@@ -19,7 +21,7 @@ export default function StudentQuiz() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<{ questionId: string; selectedOptionId: string }[]>([]);
-  
+
   const [quizResult, setQuizResult] = useState<QuizResultResponse | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [quizStartTime, setQuizStartTime] = useState<number | null>(null);
@@ -27,11 +29,9 @@ export default function StudentQuiz() {
   const fetchQuizzes = useCallback(async () => {
     try {
       setLoading(true);
-      // 1. Get enrolled courses
       const enrollments = await eduhubEnrollments.getMy();
       const courseIds = Array.from(new Set(enrollments.map(e => e.course.id)));
 
-      // 2. Fetch quizzes for all enrolled courses in parallel
       const targetCourseIds = filterCourseId ? [filterCourseId] : courseIds;
       const courseQuizResults = await Promise.all(
         targetCourseIds.map(async (cid) => {
@@ -45,8 +45,7 @@ export default function StudentQuiz() {
       );
       const allQuizzes: QuizResponseForStudent[] = courseQuizResults.flat();
       setQuizzes(allQuizzes);
-      
-      // 3. Check which quizzes have been completed by the student using the new batch endpoint
+
       const allResults = await eduhubCourseQuizzes.getAllMyResults();
       const completedList = new Set(allResults.map(r => r.quizId || "unknown"));
       setCompletedQuizIds(completedList);
@@ -56,7 +55,7 @@ export default function StudentQuiz() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filterCourseId]);
 
   useEffect(() => {
     fetchQuizzes();
@@ -88,7 +87,6 @@ export default function StudentQuiz() {
       setCurrentIndex((i) => i + 1);
       setSelectedOptionId(null);
     } else {
-      // Submit the quiz
       try {
         setSubmitting(true);
         if (!currentQuiz.courseId) throw new Error("Class ID missing on quiz");
@@ -99,7 +97,7 @@ export default function StudentQuiz() {
         setScreen("result");
       } catch (e) {
         console.error("Failed to submit quiz", e);
-        alert("Failed to submit quiz. Please try again.");
+        alert(t("quiz.submitFailed"));
       } finally {
         setSubmitting(false);
       }
@@ -123,18 +121,18 @@ export default function StudentQuiz() {
               {loading ? (
                 <div className="flex min-h-[min(28rem,calc(100dvh-18rem))] w-full flex-col items-center justify-center px-4 py-12 text-zinc-400">
                   <Loader2 className="mb-4 h-10 w-10 animate-spin" />
-                  <p className="text-sm">Loading quizzes…</p>
+                  <p className="text-sm">{t("quiz.loading")}</p>
                 </div>
               ) : quizzes.length === 0 ? (
                 <StudentQuizListEmptyState
-                  title="No quizzes yet"
-                  description="When your teacher adds quizzes to your enrolled classes, they'll appear here."
+                  title={t("quiz.emptyTitle")}
+                  description={t("quiz.emptyDescription")}
                   action={
                     <Button
                       asChild
                       className="mx-auto h-10 rounded-xl bg-[#3954d0] px-4 text-sm font-medium hover:bg-[#2f47b3]"
                     >
-                      <Link to="/dashboard/courses">Go to My Class</Link>
+                      <Link to="/dashboard/courses">{t("quiz.goToMyClass")}</Link>
                     </Button>
                   }
                 />
@@ -142,7 +140,7 @@ export default function StudentQuiz() {
                 <div className="mx-auto w-full max-w-3xl">
                   <div className="mb-8">
                     <p className="text-sm text-foreground/70">
-                      Choose a quiz and answer multiple choice questions (A, B, C, D).
+                      {t("quiz.subtitle")}
                     </p>
                   </div>
                   <div className="space-y-4">
@@ -165,22 +163,24 @@ export default function StudentQuiz() {
                               {completed && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
                                   <CheckCircle2 className="h-3.5 w-3.5" />
-                                  Completed
+                                  {t("quiz.completed")}
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-foreground/60">{quiz.questions.length} questions</p>
+                            <p className="text-sm text-foreground/60">
+                              {t("quiz.questions", { count: quiz.questions.length })}
+                            </p>
                           </div>
                         </div>
                         {completed ? (
-                          <span className="text-sm text-muted-foreground font-medium">Done</span>
+                          <span className="text-sm text-muted-foreground font-medium">{t("quiz.done")}</span>
                         ) : (
                           <Button
                             className="rounded-full"
                             style={{ backgroundColor: "#3954d0" }}
                             onClick={() => startQuiz(quiz)}
                           >
-                            Start
+                            {t("quiz.start")}
                           </Button>
                         )}
                       </div>
@@ -196,7 +196,7 @@ export default function StudentQuiz() {
             <>
               <div className="mb-6 flex items-center justify-between text-sm text-foreground/60">
                 <span>{currentQuiz.title}</span>
-                <span>Question {currentIndex + 1} of {currentQuiz.questions.length}</span>
+                <span>{t("quiz.questionProgress", { current: currentIndex + 1, total: currentQuiz.questions.length })}</span>
               </div>
               <div className="rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm mb-6">
                 {question.imageUrl && (
@@ -238,13 +238,17 @@ export default function StudentQuiz() {
                 </div>
               </div>
               <div className="flex justify-end">
-                <Button 
-                  className="rounded-full" 
-                  style={{ backgroundColor: "#3954d0" }} 
+                <Button
+                  className="rounded-full"
+                  style={{ backgroundColor: "#3954d0" }}
                   onClick={handleNext}
                   disabled={!selectedOptionId || submitting}
                 >
-                  {submitting ? "Submitting..." : (currentIndex < currentQuiz.questions.length - 1 ? "Next question" : "Submit")}
+                  {submitting
+                    ? t("quiz.submitting")
+                    : currentIndex < currentQuiz.questions.length - 1
+                      ? t("quiz.nextQuestion")
+                      : t("quiz.submit")}
                 </Button>
               </div>
             </>
@@ -262,20 +266,20 @@ export default function StudentQuiz() {
                   <CheckCircle2 className="h-8 w-8 text-green-600" />
                 </div>
                 <h2 className="mb-2 text-2xl font-bold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
-                  Quiz complete!
+                  {t("quiz.completeTitle")}
                 </h2>
                 <p className="mb-2 text-foreground/70">
-                  Your score
+                  {t("quiz.yourScore")}
                 </p>
                 <p className="mb-6 text-4xl font-bold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                   {score} <span className="text-2xl font-semibold text-foreground/60">/ {maxPoints}</span>
                 </p>
                 <p className="mb-6 text-sm text-foreground/60">
-                  {correctCount} correct out of {totalQuestions} questions.
+                  {t("quiz.correctCount", { correct: correctCount, total: totalQuestions })}
                 </p>
                 <div className="flex flex-wrap justify-center gap-3">
                   <Button variant="outline" className="rounded-full" onClick={resetQuiz}>
-                    Back to quizzes
+                    {t("quiz.backToQuizzes")}
                   </Button>
                 </div>
               </div>

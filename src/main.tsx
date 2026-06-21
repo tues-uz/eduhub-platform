@@ -5,6 +5,7 @@ import App from "./App.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import "./index.css";
 import { applyStoredUiLanguage } from "./features/settings/languagePreference";
+import "./i18n";
 
 applyStoredUiLanguage();
 

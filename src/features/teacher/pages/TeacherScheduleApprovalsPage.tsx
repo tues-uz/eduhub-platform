@@ -8,37 +8,37 @@ import type { CourseSummaryResponse } from "@/api/eduhubTypes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
-function statusBadge(status: string) {
+function statusBadge(t: TFunction, status: string) {
   switch (status) {
     case "SCHEDULE_PENDING":
       return (
-        <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-900">
-          Action needed
-        </Badge>
+        <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-900">{t("teacher.scheduleApprovals.status.actionNeeded")}</Badge>
       );
     case "SCHEDULE_APPROVED":
       return (
         <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-900">
-          Approved
+          {t("teacher.scheduleApprovals.status.approved")}
         </Badge>
       );
     case "REJECTED":
       return (
         <Badge variant="outline" className="border-red-200 bg-red-50 text-red-900">
-          Rejected
+          {t("teacher.scheduleApprovals.status.rejected")}
         </Badge>
       );
     case "DRAFT":
       return (
         <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
-          Draft
+          {t("teacher.scheduleApprovals.status.draft")}
         </Badge>
       );
     case "PUBLISHED":
       return (
         <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-900">
-          Published
+          {t("teacher.scheduleApprovals.status.published")}
         </Badge>
       );
     default:
@@ -51,6 +51,7 @@ function statusBadge(status: string) {
 }
 
 export default function TeacherScheduleApprovalsPage() {
+  const { t } = useTranslation();
   const { user } = useAuthSession();
   const [courses, setCourses] = useState<CourseSummaryResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,28 +100,24 @@ export default function TeacherScheduleApprovalsPage() {
             to="/dashboard/teacher"
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Teacher Dashboard
-          </Link>
+            <ArrowLeft className="h-4 w-4" />{t("teacherSettings.backToDashboard")}</Link>
 
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-foreground" style={{ letterSpacing: "0.5px" }}>
-              Schedule approvals
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground" style={{ letterSpacing: "0.5px" }}>{t("teacherNav.scheduleApprovals")}</h1>
             <p className="text-foreground/60 text-sm mt-1">
               Review schedules proposed by an admin, then approve or request changes on each class.
             </p>
           </div>
 
           {loading ? (
-            <p className="text-sm text-foreground/60">Loading your classes…</p>
+            <p className="text-sm text-foreground/60">{t("teacher.scheduleApprovals.loading")}</p>
           ) : courses.length === 0 ? (
             <Card className="rounded-2xl border-dashed border-2 border-slate-200">
               <CardContent className="py-12 text-center">
                 <CalendarClock className="h-12 w-12 mx-auto text-foreground/30 mb-4" />
-                <p className="text-sm text-foreground/70">No classes yet. Create a class first.</p>
+                <p className="text-sm text-foreground/70">{t("teacher.scheduleApprovals.empty")}</p>
                 <Button asChild className="mt-4 rounded-full" style={{ backgroundColor: "#1e40af" }}>
-                  <Link to="/dashboard/teacher/courses/new">Add class</Link>
+                  <Link to="/dashboard/teacher/courses/new">{t("teacher.courses.addClass")}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -129,9 +126,7 @@ export default function TeacherScheduleApprovalsPage() {
               {pending.length > 0 ? (
                 <section className="space-y-3">
                   <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 flex items-center gap-2">
-                    <CalendarCheck className="h-4 w-4" />
-                    Needs your approval
-                  </h2>
+                    <CalendarCheck className="h-4 w-4" />{t("teacher.scheduleApprovals.pendingSectionTitle")}</h2>
                   <ul className="space-y-3">
                     {pending.map((c) => (
                       <li key={c.id}>
@@ -146,7 +141,7 @@ export default function TeacherScheduleApprovalsPage() {
                             </p>
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
-                            {statusBadge(c.status)}
+                            {statusBadge(t, c.status)}
                             <ChevronRight className="h-5 w-5 text-slate-400" />
                           </div>
                         </Link>
@@ -158,7 +153,7 @@ export default function TeacherScheduleApprovalsPage() {
 
               {other.length > 0 ? (
                 <section className="space-y-3">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">All your classes</h2>
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{t("teacher.scheduleApprovals.allSectionTitle")}</h2>
                   <div className="space-y-2">
                     {other.map((c) => (
                       <Card key={c.id} className="rounded-xl border-slate-200/90 shadow-sm">
@@ -176,9 +171,9 @@ export default function TeacherScheduleApprovalsPage() {
                             </CardDescription>
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
-                            {statusBadge(c.status)}
+                            {statusBadge(t, c.status)}
                             <Button variant="outline" size="sm" className="rounded-full shrink-0" asChild>
-                              <Link to={`/dashboard/teacher/courses/${c.id}/edit/schedule`}>Open</Link>
+                              <Link to={`/dashboard/teacher/courses/${c.id}/edit/schedule`}>{t("teacher.scheduleApprovals.openButton")}</Link>
                             </Button>
                           </div>
                         </CardHeader>

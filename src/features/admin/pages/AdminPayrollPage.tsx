@@ -12,6 +12,7 @@ import { useInstructorPayrollRequests } from "@/features/teacher/data/instructor
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -88,6 +89,7 @@ function RequestStatusBadge({ status }: { status: "pending" | "approved" | "reje
 }
 
 export default function AdminPayrollPage() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = parsePayrollTab(searchParams.get("tab"));
 
@@ -229,15 +231,15 @@ export default function AdminPayrollPage() {
           className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Payroll"
-          description="Review instructor payroll submissions, then record bank transfer proof. Student tuition is available separately for reference when checking figures."
+          title={t("adminNav.payroll")}
+          description={t("admin.payroll.description")}
           actions={
             <Button variant="outline" size="sm" asChild>
-              <Link to="/dashboard/admin/payments">Payments & reminders</Link>
+              <Link to="/dashboard/admin/payments">{t("admin.dashboard.quickActions.paymentsReminders")}</Link>
             </Button>
           }
         />
@@ -262,18 +264,18 @@ export default function AdminPayrollPage() {
 
           <TabsContent value="requests" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
             <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-700">
-              <p className="font-medium text-slate-900">How payroll works</p>
+              <p className="font-medium text-slate-900">{t("admin.payroll.howItWorks.title")}</p>
               <ol className="mt-2 list-decimal list-inside space-y-1 text-slate-600">
-                <li>Open a submission and verify class figures against the schedule month.</li>
+                <li>{t("admin.payroll.howItWorks.step1")}</li>
                 <li>Approve or reject the instructor&apos;s requested payout.</li>
-                <li>After you pay them, record transfer proof on the detail page or Payout proof tab.</li>
+                <li>{t("admin.payroll.howItWorks.step3")}</li>
               </ol>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3 mb-6">
               <Card className="rounded-lg border border-slate-200 shadow-sm">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-slate-700">Pending review</CardTitle>
+                  <CardTitle className="text-sm font-semibold text-slate-700">{t("admin.shared.pendingReview")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-2xl font-semibold tabular-nums text-amber-900">{pendingPayrollCount}</p>
@@ -281,7 +283,7 @@ export default function AdminPayrollPage() {
               </Card>
               <Card className="rounded-lg border border-slate-200 shadow-sm">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-slate-700">Approved</CardTitle>
+                  <CardTitle className="text-sm font-semibold text-slate-700">{t("admin.shared.approved")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-2xl font-semibold tabular-nums text-emerald-800">{approvedPayrollCount}</p>
@@ -289,7 +291,7 @@ export default function AdminPayrollPage() {
               </Card>
               <Card className="rounded-lg border border-slate-200 shadow-sm">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-slate-700">All submissions</CardTitle>
+                  <CardTitle className="text-sm font-semibold text-slate-700">{t("admin.payroll.stats.allSubmissions")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-2xl font-semibold tabular-nums text-slate-900">{payrollRequests.length}</p>
@@ -300,14 +302,14 @@ export default function AdminPayrollPage() {
             {pendingPayrollCount > 0 ? (
               <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950">
                 <span className="font-semibold">{pendingPayrollCount} submission{pendingPayrollCount === 1 ? "" : "s"}</span>{" "}
-                waiting for your decision. Filter by <span className="font-medium">Pending review</span> or open any row
+                waiting for your decision. Filter by <span className="font-medium">{t("admin.shared.pendingReview")}</span> or open any row
                 to review.
               </div>
             ) : null}
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between mb-4">
               <Input
-                placeholder="Search instructor, class, period, amount…"
+                placeholder={t("admin.payroll.requests.searchPlaceholder")}
                 value={requestSearch}
                 onChange={(e) => setRequestSearch(e.target.value)}
                 className="max-w-md bg-white"
@@ -317,13 +319,13 @@ export default function AdminPayrollPage() {
                 onValueChange={(v) => setRequestStatusFilter(v as typeof requestStatusFilter)}
               >
                 <SelectTrigger className="w-full sm:w-[180px] bg-white">
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder={t("common.status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem value="pending">Pending review</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Not approved</SelectItem>
+                  <SelectItem value="all">{t("admin.shared.allStatuses")}</SelectItem>
+                  <SelectItem value="pending">{t("admin.shared.pendingReview")}</SelectItem>
+                  <SelectItem value="approved">{t("admin.shared.approved")}</SelectItem>
+                  <SelectItem value="rejected">{t("admin.shared.notApproved")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -341,13 +343,13 @@ export default function AdminPayrollPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50">
-                      <TableHead className="whitespace-nowrap">Submitted</TableHead>
-                      <TableHead>Instructor</TableHead>
-                      <TableHead>Class</TableHead>
-                      <TableHead className="whitespace-nowrap">Schedule month</TableHead>
-                      <TableHead className="text-right whitespace-nowrap">Requested</TableHead>
-                      <TableHead className="whitespace-nowrap">Status</TableHead>
-                      <TableHead className="text-right whitespace-nowrap">Action</TableHead>
+                      <TableHead className="whitespace-nowrap">{t("admin.shared.submitted")}</TableHead>
+                      <TableHead>{t("admin.shared.instructor")}</TableHead>
+                      <TableHead>{t("admin.shared.class")}</TableHead>
+                      <TableHead className="whitespace-nowrap">{t("admin.installmentPayments.scheduleMonth")}</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">{t("admin.payroll.requests.table.requested")}</TableHead>
+                      <TableHead className="whitespace-nowrap">{t("common.status")}</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">{t("admin.payroll.requests.table.action")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -374,7 +376,7 @@ export default function AdminPayrollPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <Button variant={r.status === "pending" ? "default" : "outline"} size="sm" asChild>
-                            <Link to={`/dashboard/admin/payroll/instructor-request/${r.id}`}>Review</Link>
+                            <Link to={`/dashboard/admin/payroll/instructor-request/${r.id}`}>{t("admin.shared.review")}</Link>
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -393,7 +395,7 @@ export default function AdminPayrollPage() {
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-6">
               <Input
-                placeholder="Search student, class, lecturer, invoice…"
+                placeholder={t("admin.payments.searchPlaceholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="max-w-md bg-white"
@@ -403,7 +405,7 @@ export default function AdminPayrollPage() {
                   <SelectValue placeholder="Class" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All classes</SelectItem>
+                  <SelectItem value="all">{t("admin.shared.allClasses")}</SelectItem>
                   {classOptions.map((name) => (
                     <SelectItem key={name} value={name}>
                       {name}
@@ -413,13 +415,13 @@ export default function AdminPayrollPage() {
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-[160px] bg-white">
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder={t("common.status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="overdue">Overdue</SelectItem>
+                  <SelectItem value="all">{t("admin.shared.allStatuses")}</SelectItem>
+                  <SelectItem value="pending">{t("admin.shared.pending")}</SelectItem>
+                  <SelectItem value="paid">{t("admin.shared.paid")}</SelectItem>
+                  <SelectItem value="overdue">{t("admin.shared.overdue")}</SelectItem>
                 </SelectContent>
               </Select>
               {hasActiveTuitionFilters ? (
@@ -442,23 +444,23 @@ export default function AdminPayrollPage() {
             <div className="grid gap-4 sm:grid-cols-3 mb-6 max-w-4xl">
               <Card className="rounded-lg border border-slate-200 shadow-sm sm:col-span-2">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-slate-700">Totals in current view</CardTitle>
+                  <CardTitle className="text-sm font-semibold text-slate-700">{t("admin.payroll.tuition.totalsTitle")}</CardTitle>
                   <p className="text-xs text-slate-500 font-normal mt-1">
                     Collected counts paid tuition; outstanding is pending and overdue rows that match your filters.
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {filteredPayments.length === 0 ? (
-                    <p className="text-lg font-medium text-slate-500">No payments in this view.</p>
+                    <p className="text-lg font-medium text-slate-500">{t("admin.installmentPayments.empty.noInView")}</p>
                   ) : (
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="rounded-md border border-emerald-200/80 bg-emerald-50/60 px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800 mb-1">Collected</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800 mb-1">{t("admin.payroll.tuition.collected")}</p>
                         <CurrencyAmountLines lines={collectedInView} emptyLabel="—" />
                         <p className="text-xs text-emerald-800/90 mt-2 tabular-nums">{paidRowCount} paid row(s)</p>
                       </div>
                       <div className="rounded-md border border-amber-200/80 bg-amber-50/60 px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-amber-900 mb-1">Outstanding</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-amber-900 mb-1">{t("admin.payroll.tuition.outstanding")}</p>
                         <CurrencyAmountLines lines={outstandingInView} emptyLabel="—" />
                         <p className="text-xs text-amber-900/90 mt-2 tabular-nums">{unpaidRowCount} unpaid row(s)</p>
                       </div>
@@ -476,14 +478,14 @@ export default function AdminPayrollPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50">
-                    <TableHead>Student</TableHead>
-                    <TableHead>Class</TableHead>
-                    <TableHead>Course</TableHead>
-                    <TableHead>Lecturer</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>{t("admin.shared.student")}</TableHead>
+                    <TableHead>{t("admin.shared.class")}</TableHead>
+                    <TableHead>{t("admin.shared.course")}</TableHead>
+                    <TableHead>{t("admin.shared.lecturer")}</TableHead>
+                    <TableHead>{t("admin.shared.amount")}</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
                     <TableHead>Due</TableHead>
-                    <TableHead>Paid</TableHead>
+                    <TableHead>{t("admin.shared.paid")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -527,7 +529,7 @@ export default function AdminPayrollPage() {
 
             <div className="mb-4 max-w-md">
               <Input
-                placeholder="Search class, course, instructor, email…"
+                placeholder={t("admin.payroll.proof.searchPlaceholder")}
                 value={proofSearch}
                 onChange={(e) => setProofSearch(e.target.value)}
                 className="bg-white"
@@ -538,13 +540,13 @@ export default function AdminPayrollPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50">
-                    <TableHead>Submitted</TableHead>
-                    <TableHead>Class</TableHead>
-                    <TableHead>Course</TableHead>
-                    <TableHead>Instructor</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead className="min-w-[200px]">Summary</TableHead>
-                    <TableHead className="min-w-[140px]">Notes</TableHead>
+                    <TableHead>{t("admin.shared.submitted")}</TableHead>
+                    <TableHead>{t("admin.shared.class")}</TableHead>
+                    <TableHead>{t("admin.shared.course")}</TableHead>
+                    <TableHead>{t("admin.shared.instructor")}</TableHead>
+                    <TableHead>{t("admin.shared.email")}</TableHead>
+                    <TableHead className="min-w-[200px]">{t("admin.shared.summary")}</TableHead>
+                    <TableHead className="min-w-[140px]">{t("admin.shared.notes")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -553,7 +555,7 @@ export default function AdminPayrollPage() {
                       <TableCell colSpan={7} className="h-24 text-center text-sm text-slate-500">
                         {proofRows.length === 0
                           ? "No payout proof recorded yet. After approving a request and paying the instructor, record proof from the submission detail page."
-                          : "No rows match your search."}
+                          : t("admin.payroll.proof.emptyNoMatch")}
                       </TableCell>
                     </TableRow>
                   ) : (

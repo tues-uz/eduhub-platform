@@ -10,6 +10,7 @@ import type { ClassStatus, PaymentStatus } from "@/features/admin/data/adminOper
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/table";
 
 export default function AdminEnrollmentsPage() {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("all");
@@ -64,17 +66,17 @@ export default function AdminEnrollmentsPage() {
       <div className="container mx-auto px-6">
         <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Enrollments & waitlist"
-          description="Class enrollment, roster assignment, and waitlist promotion. Server validates capacity and payment rules."
+          title={t("adminNav.enrollmentsWaitlist")}
+          description={t("admin.enrollments.description")}
           actions={
             <Button
               size="sm"
               disabled={selectedWaitlist.length === 0}
-              onClick={() => toast.success("Promotion request sent (demo)", { description: `${selectedWaitlist.length} row(s)` })}
+              onClick={() => toast.success(t("admin.enrollments.promotionSentDemo"), { description: `${selectedWaitlist.length} row(s)` })}
             >
               Promote selected from waitlist
             </Button>
@@ -83,7 +85,7 @@ export default function AdminEnrollmentsPage() {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search student, class…"
+            placeholder={t("admin.shared.searchStudentClass")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
@@ -93,10 +95,10 @@ export default function AdminEnrollmentsPage() {
               <SelectValue placeholder="Payment" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All payments</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="overdue">Overdue</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allPayments")}</SelectItem>
+              <SelectItem value="pending">{t("admin.shared.pending")}</SelectItem>
+              <SelectItem value="paid">{t("admin.shared.paid")}</SelectItem>
+              <SelectItem value="overdue">{t("admin.shared.overdue")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={enrollmentFilter} onValueChange={setEnrollmentFilter}>
@@ -104,9 +106,9 @@ export default function AdminEnrollmentsPage() {
               <SelectValue placeholder="Enrollment" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All enrollments</SelectItem>
-              <SelectItem value="enrolled">Enrolled</SelectItem>
-              <SelectItem value="waiting">Waiting</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allEnrollments")}</SelectItem>
+              <SelectItem value="enrolled">{t("admin.enrollments.enrolled")}</SelectItem>
+              <SelectItem value="waiting">{t("admin.shared.waiting")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={classStatusFilter} onValueChange={setClassStatusFilter}>
@@ -114,10 +116,10 @@ export default function AdminEnrollmentsPage() {
               <SelectValue placeholder="Class status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All class statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="waiting">Waiting</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allClassStatuses")}</SelectItem>
+              <SelectItem value="active">{t("admin.shared.active")}</SelectItem>
+              <SelectItem value="waiting">{t("admin.shared.waiting")}</SelectItem>
+              <SelectItem value="completed">{t("admin.shared.completed")}</SelectItem>
             </SelectContent>
           </Select>
           {hasActiveFilters ? (
@@ -159,20 +161,20 @@ export default function AdminEnrollmentsPage() {
                     }}
                   />
                 </TableHead>
-                <TableHead>Student</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Waitlist #</TableHead>
-                <TableHead>Enrollment</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Class status</TableHead>
+                <TableHead>{t("admin.shared.student")}</TableHead>
+                <TableHead>{t("admin.shared.class")}</TableHead>
+                <TableHead>{t("admin.shared.class")}</TableHead>
+                <TableHead>{t("admin.enrollments.table.waitlistNumber")}</TableHead>
+                <TableHead>{t("admin.enrollments.enrollmentPlaceholder")}</TableHead>
+                <TableHead>{t("admin.enrollments.paymentPlaceholder")}</TableHead>
+                <TableHead>{t("admin.classesRosters.classStatusPlaceholder")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredEnrollments.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-24 text-center text-slate-500">
-                    No enrollments match your search or filters.
+                    {t("admin.enrollments.empty")}
                   </TableCell>
                 </TableRow>
               ) : (

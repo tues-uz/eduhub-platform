@@ -9,6 +9,7 @@ import { eduhubQuizzes, eduhubCourseQuizzes, type QuizResultResponse, type QuizR
 import { getLocalCourseQuiz, isLocalOnlyQuizId } from "../data/localCourseQuizzesStorage";
 import { quizAttemptStore, type QuizAttempt } from "../data/quizAttemptStore";
 import { teacherQuizStore } from "../data/teacherQuizStore";
+import { useTranslation } from "react-i18next";
 
 function mapQuizAttemptsToResults(attempts: QuizAttempt[]): QuizResultResponse[] {
   return attempts.map((a) => ({
@@ -31,6 +32,7 @@ interface LocalQuiz {
 }
 
 export default function TeacherQuizResultsPage() {
+  const { t } = useTranslation();
   const { courseId, moduleId, lessonId, quizId } = useParams<{ courseId: string; moduleId: string; lessonId: string; quizId: string }>();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     () => localStorage.getItem("sidebarCollapsed") === "true"
@@ -155,7 +157,7 @@ export default function TeacherQuizResultsPage() {
           <div className="container mx-auto px-6 max-w-3xl">
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <span className="ml-3 text-muted-foreground">Loading quiz results...</span>
+              <span className="ml-3 text-muted-foreground">{t("teacher.quizResults.loading")}</span>
             </div>
           </div>
         </main>
@@ -175,9 +177,7 @@ export default function TeacherQuizResultsPage() {
               to={`/dashboard/teacher/courses/${courseId}?tab=quiz`}
               className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back to class quizzes
-            </Link>
+              <ArrowLeft className="h-4 w-4" />{t("teacher.quiz.backToQuizzes")}</Link>
             <div className="py-10 text-center">
               <p className="text-red-500">{error || "Quiz not found"}</p>
             </div>
@@ -201,9 +201,7 @@ export default function TeacherQuizResultsPage() {
             to={`/dashboard/teacher/courses/${courseId}?tab=quiz`}
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to class quizzes
-          </Link>
+            <ArrowLeft className="h-4 w-4" />{t("teacher.quiz.backToQuizzes")}</Link>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
@@ -228,17 +226,15 @@ export default function TeacherQuizResultsPage() {
               onClick={exportToExcel}
               title="Export to Excel spreadsheet"
             >
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Export to Excel
-            </Button>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />{t("teacher.quizResults.exportButton")}</Button>
           </div>
 
           <table className="w-full text-xs rounded-xl border border-gray-100 overflow-hidden bg-gray-50/30">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-100/50 text-left text-muted-foreground">
                 <th className="py-3 px-4 font-medium w-12">No.</th>
-                <th className="py-3 px-4 font-medium">Student</th>
-                <th className="py-3 px-4 font-medium">Email</th>
+                <th className="py-3 px-4 font-medium">{t("teacher.assignments.submissions.table.student")}</th>
+                <th className="py-3 px-4 font-medium">{t("teacherSettings.email")}</th>
                 <th className="py-3 px-4 font-medium">Score</th>
                 <th className="py-3 px-4 font-medium">Correct</th>
                 <th className="py-3 px-4 font-medium">Filling date</th>

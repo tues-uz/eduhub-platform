@@ -43,6 +43,7 @@ import {
   getLocalCourseQuiz,
   upsertLocalCourseQuiz,
 } from "@/features/teacher/data/localCourseQuizzesStorage";
+import { useTranslation } from "react-i18next";
 import {
   type QuizQuestion,
   type QuizType,
@@ -74,6 +75,7 @@ type MediaUploadBoxProps = {
 };
 
 function MediaUploadBox({ questionIndex, image, onImageChange }: MediaUploadBoxProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -148,9 +150,7 @@ function MediaUploadBox({ questionIndex, image, onImageChange }: MediaUploadBoxP
               size="sm"
               className="rounded-lg h-8 text-white bg-white/20 hover:bg-white/30 border-0"
               onClick={() => onImageChange(undefined)}
-            >
-              Remove
-            </Button>
+            >{t("teacherSettings.remove")}</Button>
           </div>
         </div>
         <input
@@ -221,6 +221,7 @@ function MediaUploadBox({ questionIndex, image, onImageChange }: MediaUploadBoxP
 }
 
 const TeacherQuizPage = () => {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -529,7 +530,7 @@ const TeacherQuizPage = () => {
         >
           <div className="container mx-auto flex max-w-3xl flex-col items-center justify-center px-6 py-24">
             <Loader2 className="h-9 w-9 animate-spin text-[#1e40af]/70" aria-hidden />
-            <p className="mt-4 text-sm text-muted-foreground">Loading quiz…</p>
+            <p className="mt-4 text-sm text-muted-foreground">{t("teacher.quiz.loading")}</p>
           </div>
         </main>
       </div>
@@ -548,17 +549,13 @@ const TeacherQuizPage = () => {
               to={`/dashboard/teacher/courses/${courseId.trim()}?tab=quiz`}
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
           >
-            <ArrowLeft className="h-4 w-4" />
-              Back to class quizzes
-          </Link>
+            <ArrowLeft className="h-4 w-4" />{t("teacher.quiz.backToQuizzes")}</Link>
           ) : (
                               <Link
               to="/dashboard/teacher"
               className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
                               >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Teacher Dashboard
-                              </Link>
+              <ArrowLeft className="h-4 w-4" />{t("teacherSettings.backToDashboard")}</Link>
           )}
 
             <>
@@ -607,7 +604,7 @@ const TeacherQuizPage = () => {
                         </p>
                       </div>
                       <div className="space-y-2">
-                        <Label>Class</Label>
+                        <Label>{t("teacher.dashboard.classesTable.header.class")}</Label>
                         {classFieldLocked ? (
                           <>
                             <div className="flex min-h-10 items-center rounded-lg border border-input bg-muted/40 px-3 py-2 text-sm font-medium text-foreground">
@@ -848,9 +845,7 @@ const TeacherQuizPage = () => {
                   <Button type="submit" disabled={loading} className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
                     {editingQuizId ? "Save changes" : "Create quiz"}
                   </Button>
-                  <Button type="button" variant="outline" className="rounded-full" onClick={goBackToClassQuizTab}>
-                    Cancel
-                  </Button>
+                  <Button type="button" variant="outline" className="rounded-full" onClick={goBackToClassQuizTab}>{t("common.cancel")}</Button>
                 </div>
               </form>
             </>
@@ -866,7 +861,7 @@ const TeacherQuizPage = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={() => {
@@ -875,9 +870,7 @@ const TeacherQuizPage = () => {
                   setQuestionToRemoveIndex(null);
                 }
               }}
-            >
-              Remove
-            </AlertDialogAction>
+            >{t("teacherSettings.remove")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

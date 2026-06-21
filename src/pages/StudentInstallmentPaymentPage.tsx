@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   ArrowLeft,
   Banknotes,
@@ -21,20 +23,19 @@ import { buildCourseScheduleSlots } from "@/features/courses/courseScheduleSlots
 import {
   buildScheduleMonthTabs,
   orderSessionSlotsChronologically,
+  type ScheduleMonthTab,
 } from "@/features/courses/classSchedulePreview";
 import { useAuthSession } from "@/features/auth/context";
 import { EnrollmentBankTransferPanel } from "@/features/enrollment/EnrollmentBankTransferPanel";
 import {
   DEFAULT_ENROLLMENT_PAYMENT_METHOD,
   enrollmentRequiresVerificationUploads,
-  formatPaymentMethodLabel,
   type EnrollmentPaymentMethod,
 } from "@/features/enrollment/enrollmentDocumentConfig";
 import {
   buildPayableScheduleMonths,
-  installmentPaymentPath,
-  scheduleMonthProgressLabel,
   unpaidPayableMonths,
+  type PayableScheduleMonth,
 } from "@/features/enrollment/enrollmentInstallmentPayments";
 import { enrollmentInstallmentPaymentStore } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
 import type { TuitionPlanMonths } from "@/features/enrollment/enrollmentTuitionThirds";
@@ -52,7 +53,26 @@ function parseMonthParam(raw: string | null): TuitionPlanMonths | null {
   return null;
 }
 
+function paymentMethodLabel(method: EnrollmentPaymentMethod, t: TFunction): string {
+  return method === "CASH"
+    ? t("installmentPayment.paymentMethodCash")
+    : t("installmentPayment.paymentMethodTransfer");
+}
+
+function scheduleMonthProgressLabel(
+  months: PayableScheduleMonth[],
+  scheduleTabs: ScheduleMonthTab[],
+  t: TFunction,
+): string {
+  const paidCount = months.filter((m) => m.state === "paid").length;
+  const total = scheduleTabs.length || months.length;
+  if (total <= 0) return t("installmentPayment.scheduleMonths");
+  if (paidCount >= total) return t("installmentPayment.progressAllPaid", { count: total });
+  return t("installmentPayment.progressPartial", { paid: paidCount, total });
+}
+
 export default function StudentInstallmentPaymentPage() {
+  const { t } = useTranslation();
   const { applicationId } = useParams<{ applicationId: string }>();
   const [searchParams] = useSearchParams();
   const { user } = useAuthSession();
@@ -151,24 +171,24 @@ export default function StudentInstallmentPaymentPage() {
       return;
     }
     if (file.size > PROOF_MAX_BYTES) {
-      toast.error("Proof file must be 2 MB or smaller.");
+      toast.error(t("installmentPayment.toast.proofTooLarge"));
       return;
     }
     setProofFile(file);
-  }, []);
+  }, [t]);
 
   const handleSubmit = async () => {
     if (!application || !selectedRow) return;
     if (selectedRow.state === "paid") {
-      toast.message("This month is already paid.");
+      toast.message(t("installmentPayment.toast.alreadyPaid"));
       return;
     }
     if (selectedRow.state === "pending_review") {
-      toast.message("This month already has a payment awaiting review.");
+      toast.message(t("installmentPayment.toast.alreadyPending"));
       return;
     }
     if (requiresVerificationUploads && !proofFile) {
-      toast.error("Upload your bank transfer receipt.");
+      toast.error(t("installmentPayment.toast.uploadReceiptRequired"));
       return;
     }
 
@@ -176,7 +196,7 @@ export default function StudentInstallmentPaymentPage() {
     try {
       let proofUrl: string | undefined;
       if (requiresVerificationUploads && proofFile) {
-        toast.loading("Uploading receipt…", { id: "installment-upload" });
+        toast.loading(t("installmentPayment.toast.uploadingReceipt"), { id: "installment-upload" });
         const result = await eduhubUploadFile(proofFile, "enrollment-proofs");
         toast.dismiss("installment-upload");
         proofUrl = result.url;
@@ -197,11 +217,11 @@ export default function StudentInstallmentPaymentPage() {
       });
 
       setSubmitted(true);
-      toast.success("Payment submitted", {
-        description: "We'll verify your transfer and unlock attendance for this month.",
+      toast.success(t("installmentPayment.toast.submitted"), {
+        description: t("installmentPayment.toast.submittedHint"),
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not submit payment.");
+      toast.error(e instanceof Error ? e.message : t("installmentPayment.toast.submitFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -211,7 +231,7 @@ export default function StudentInstallmentPaymentPage() {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
-        <span className="ml-2 text-sm text-zinc-500">Loading payment details…</span>
+        <span className="ml-2 text-sm text-zinc-500">{t("installmentPayment.loading")}</span>
       </div>
     );
   }

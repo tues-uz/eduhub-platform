@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, Search } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ export function DashboardClassSearch({
   compact = false,
   variant = "default",
 }: DashboardClassSearchProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
@@ -172,8 +174,8 @@ export function DashboardClassSearch({
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
-        placeholder="Search classes…"
-        aria-label="Search classes"
+        placeholder={t("classSearch.placeholder")}
+        aria-label={t("classSearch.ariaLabel")}
         aria-expanded={showDropdown}
         aria-controls="dashboard-class-search-results"
         aria-autocomplete="list"
@@ -212,7 +214,7 @@ export function DashboardClassSearch({
       {isLoading ? (
         <div className="flex items-center gap-2 px-4 py-3 text-sm text-zinc-500">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Loading classes…
+          {t("classSearch.loading")}
         </div>
       ) : results.length > 0 ? (
         <ul className="max-h-72 overflow-y-auto py-1">
@@ -248,7 +250,7 @@ export function DashboardClassSearch({
                         : "bg-zinc-100 text-zinc-600 ring-1 ring-zinc-200/80",
                     )}
                   >
-                    {course.isEnrolled ? "My class" : "Browse"}
+                    {course.isEnrolled ? t("classSearch.myClass") : t("classSearch.browse")}
                   </span>
                 </button>
               </li>
@@ -256,7 +258,7 @@ export function DashboardClassSearch({
           })}
         </ul>
       ) : (
-        <div className="px-4 py-3 text-sm text-zinc-500">No classes match “{trimmedQuery}”.</div>
+        <div className="px-4 py-3 text-sm text-zinc-500">{t("classSearch.noMatch", { query: trimmedQuery })}</div>
       )}
 
       <button
@@ -264,7 +266,7 @@ export function DashboardClassSearch({
         className="w-full border-t border-zinc-100 px-4 py-2.5 text-right text-sm font-medium text-[#3954d0] hover:bg-zinc-50"
         onClick={() => navigateToCourse(listHref)}
       >
-        View all results
+        {t("classSearch.viewAllResults")}
       </button>
     </div>
   ) : null;
@@ -278,7 +280,7 @@ export function DashboardClassSearch({
           variant="ghost"
           size="icon"
           className={studentHeaderIconButtonClass}
-          aria-label="Search classes"
+          aria-label={t("classSearch.ariaLabel")}
           onClick={() => setPanelOpen(true)}
         >
           <Search className="h-5 w-5" aria-hidden />

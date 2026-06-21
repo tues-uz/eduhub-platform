@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Globe } from "@/lib/icons";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,6 +18,7 @@ import {
   uiLanguageOption,
   type UiLanguageCode,
 } from "@/features/settings/languagePreference";
+import i18n from "@/i18n";
 
 type Props = {
   className?: string;
@@ -29,6 +31,7 @@ export function LanguageSettingsSection({
   selectId = "language",
   headingClassName,
 }: Props) {
+  const { t } = useTranslation();
   const [language, setLanguage] = useState<UiLanguageCode>(() => getUiLanguage());
   const selected = uiLanguageOption(language);
 
@@ -42,8 +45,8 @@ export function LanguageSettingsSection({
     const next = value as UiLanguageCode;
     setLanguage(next);
     setUiLanguage(next);
+    void i18n.changeLanguage(next);
   };
-
   return (
     <div className={cn("rounded-xl border border-gray-200/50 bg-white/80 p-4 shadow-sm sm:p-6", className)}>
       <h2
@@ -54,16 +57,14 @@ export function LanguageSettingsSection({
         style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.5px" }}
       >
         <Globe className="h-5 w-5" aria-hidden />
-        Language
+        {t("language.title")}
       </h2>
       <div className="space-y-2">
-        <Label htmlFor={selectId}>Display language</Label>
-        <p className="text-sm text-foreground/60">
-          Choose the language used across EduHub. More translations will be added over time.
-        </p>
+        <Label htmlFor={selectId}>{t("language.displayLanguage")}</Label>
+        <p className="text-sm text-foreground/60">{t("language.description")}</p>
         <Select value={language} onValueChange={handleLanguageChange}>
           <SelectTrigger id={selectId} className="mt-1.5 h-11 rounded-xl border-gray-200 bg-white">
-            <SelectValue placeholder="Select a language">
+            <SelectValue placeholder={t("language.selectPlaceholder")}>
               {`${selected.flag} ${selected.label}`}
             </SelectValue>
           </SelectTrigger>

@@ -9,6 +9,7 @@ import type { CourseSummaryResponse } from "@/api/eduhubTypes";
 import { CourseStatusBadge } from "@/features/admin/components/AdminStatusBadges";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -50,6 +51,7 @@ function formatAdminCoursesLoadError(err: unknown): string {
 }
 
 export default function AdminCoursesListPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -109,32 +111,32 @@ export default function AdminCoursesListPage() {
           className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="All classes"
-          description="Quick list by title, lecturer, category, and status. Open a class for pricing, schedule workflow, and review."
+          title={t("admin.shared.allClasses")}
+          description={t("admin.courses.list.description")}
         />
 
         {!isLoading && !error ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
             <Input
-              placeholder="Search title, category, lecturer…"
+              placeholder={t("admin.courses.list.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-md bg-white"
             />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[200px] bg-white">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("common.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="DRAFT">Draft (pending review)</SelectItem>
-                <SelectItem value="PUBLISHED">Published</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="ARCHIVED">Archived</SelectItem>
+                <SelectItem value="all">{t("admin.shared.allStatuses")}</SelectItem>
+                <SelectItem value="DRAFT">{t("admin.courses.list.statusDraft")}</SelectItem>
+                <SelectItem value="PUBLISHED">{t("admin.courses.list.statusPublished")}</SelectItem>
+                <SelectItem value="REJECTED">{t("admin.shared.rejected")}</SelectItem>
+                <SelectItem value="ARCHIVED">{t("admin.courses.list.statusArchived")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -142,7 +144,7 @@ export default function AdminCoursesListPage() {
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
+                <SelectItem value="all">{t("admin.shared.allCategories")}</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
                     {cat}
@@ -169,7 +171,7 @@ export default function AdminCoursesListPage() {
         ) : null}
 
         {isLoading ? (
-          <p className="text-sm text-slate-600">Loading classes…</p>
+          <p className="text-sm text-slate-600">{t("admin.shared.loadingClasses")}</p>
         ) : error ? (
           <div className="rounded-lg border border-red-200 bg-red-50/80 px-4 py-3 text-sm text-red-800 space-y-2">
             <p>{formatAdminCoursesLoadError(error)}</p>
@@ -181,7 +183,7 @@ export default function AdminCoursesListPage() {
               disabled={isFetching}
               onClick={() => void refetch()}
             >
-              {isFetching ? "Retrying…" : "Try again"}
+              {isFetching ? t("admin.shared.retrying") : t("admin.shared.tryAgain")}
             </Button>
           </div>
         ) : (
@@ -189,11 +191,11 @@ export default function AdminCoursesListPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50">
-                  <TableHead>Title</TableHead>
-                  <TableHead>Lecturer</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[140px]">Actions</TableHead>
-                  <TableHead>Category</TableHead>
+                  <TableHead>{t("admin.shared.title")}</TableHead>
+                  <TableHead>{t("admin.shared.lecturer")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead className="w-[140px]">{t("common.actions")}</TableHead>
+                  <TableHead>{t("admin.shared.category")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -206,7 +208,7 @@ export default function AdminCoursesListPage() {
                 ) : filteredCourses.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-slate-500">
-                      No classes match your search or filters.
+                      {t("admin.classesRosters.empty")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -230,7 +232,7 @@ export default function AdminCoursesListPage() {
                       </TableCell>
                       <TableCell>
                         <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5" asChild>
-                          <Link to={`/dashboard/admin/courses/${c.id}`} title="View class details">
+                          <Link to={`/dashboard/admin/courses/${c.id}`} title={t("admin.courses.list.detailsTitle")}>
                             <ExternalLink className="h-3.5 w-3.5" />
                             Details
                           </Link>

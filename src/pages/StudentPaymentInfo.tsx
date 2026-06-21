@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Loader2, Receipt, Search, ChevronDown } from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -42,13 +44,6 @@ import { enrollmentPaymentPlanLabelForRecord } from "@/features/enrollment/enrol
 
 type PaymentStatusFilter = "all" | EnrollmentApplicationStatus;
 
-const PAYMENT_STATUS_FILTER_OPTIONS: { value: PaymentStatusFilter; label: string }[] = [
-  { value: "all", label: "All statuses" },
-  { value: "PENDING", label: "Pending review" },
-  { value: "APPROVED", label: "Approved" },
-  { value: "REJECTED", label: "Rejected" },
-];
-
 function formatMoney(price: number | undefined, currency = "USD"): string {
   if (price == null || price <= 0) return "—";
   return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
@@ -70,12 +65,12 @@ function formatSubmittedAt(iso: string): string {
   }
 }
 
-function planSummary(r: EnrollmentApplicationResponse): string {
+function planSummary(r: EnrollmentApplicationResponse, t: TFunction): string {
   const label = enrollmentPaymentPlanLabelForRecord(r);
   if (r.paymentPlan === "DOWN_PAYMENT") {
     const amt = formatMoney(r.downPaymentAmount, r.priceCurrency ?? "USD");
     const inst =
-      r.installmentCount != null ? ` · ${r.installmentCount} instalments left` : "";
+      r.installmentCount != null ? t("payment.installmentsLeft", { count: r.installmentCount }) : "";
     return amt !== "—" ? `${label} ${amt}${inst}` : `${label}${inst}`;
   }
   return label;
@@ -115,7 +110,7 @@ async function fetchCoursePdfContext(courseId: string): Promise<{
 }
 
 
-async function downloadEnrollmentPdf(r: EnrollmentApplicationResponse) {
+async function downloadEnrollmentPdf(r: EnrollmentApplicationResponse, t: TFunction) {
   let listedTuition: number | undefined;
   let teacherName: string | undefined;
   let scheduleSlots: SessionSlotLike[] | undefined;
@@ -144,15 +139,15 @@ async function downloadEnrollmentPdf(r: EnrollmentApplicationResponse) {
     return;
   }
 
-  toast.error("Could not generate PDF", {
-    description: "Tuition amount is missing for this application.",
+  toast.error(t("payment.toastPdfFailed"), {
+    description: t("payment.toastPdfFailedHint"),
   });
 }
 
-function statusLabel(status: EnrollmentApplicationResponse["status"]): string {
-  if (status === "PENDING") return "Pending review";
-  if (status === "APPROVED") return "Approved";
-  return "Rejected";
+function statusLabel(status: EnrollmentApplicationResponse["status"], t: TFunction): string {
+  if (status === "PENDING") return t("payment.filterPending");
+  if (status === "APPROVED") return t("payment.filterApproved");
+  return t("payment.filterRejected");
 }
 
 function PaymentHistoryMobileCard({
@@ -162,6 +157,7 @@ function PaymentHistoryMobileCard({
   record: EnrollmentApplicationResponse;
   onOpenDetails: () => void;
 }) {
+  const { t } = useTranslation();
   const r = enrichEnrollmentApplication(record);
 
   return (
@@ -176,17 +172,17 @@ function PaymentHistoryMobileCard({
             statusStyles(r.status),
           )}
         >
-          {statusLabel(r.status)}
+          {statusLabel(r.status, t)}
         </span>
       </div>
       <p className="mt-2 text-xs tabular-nums text-zinc-500">{formatSubmittedAt(r.submittedAt)}</p>
       <dl className="mt-3 space-y-2 border-t border-zinc-100 pt-3 text-xs">
         <div className="flex items-start justify-between gap-3">
-          <dt className="shrink-0 text-zinc-500">Invoice</dt>
+          <dt className="shrink-0 text-zinc-500">{t("payment.invoice")}</dt>
           <dd className="min-w-0 break-all text-right font-mono text-zinc-800">{r.invoiceNumber ?? "—"}</dd>
         </div>
         <div className="flex items-start justify-between gap-3">
-          <dt className="shrink-0 text-zinc-500">Receipt</dt>
+          <dt className="shrink-0 text-zinc-500">{t("payment.receipt")}</dt>
           <dd className="min-w-0 break-all text-right font-mono text-zinc-800">{r.receiptNumber ?? "—"}</dd>
         </div>
       </dl>
@@ -197,13 +193,14 @@ function PaymentHistoryMobileCard({
         className="mt-4 h-9 w-full rounded-xl text-xs"
         onClick={onOpenDetails}
       >
-        View details
+        {t("payment.viewDetails")}
       </Button>
     </article>
   );
 }
 
 const StudentPaymentInfo = () => {
+  const { t } = useTranslation();
   const { user } = useAuthSession();
   const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState<EnrollmentApplicationResponse[]>([]);
@@ -213,8 +210,19 @@ const StudentPaymentInfo = () => {
   const [statusFilter, setStatusFilter] = useState<PaymentStatusFilter>("all");
   const [receiptLoading, setReceiptLoading] = useState(false);
 
+  const paymentStatusFilterOptions = useMemo(
+    (): { value: PaymentStatusFilter; label: string }[] => [
+      { value: "all", label: t("payment.filterAllStatuses") },
+      { value: "PENDING", label: t("payment.filterPending") },
+      { value: "APPROVED", label: t("payment.filterApproved") },
+      { value: "REJECTED", label: t("payment.filterRejected") },
+    ],
+    [t],
+  );
+
   const statusFilterLabel =
-    PAYMENT_STATUS_FILTER_OPTIONS.find((option) => option.value === statusFilter)?.label ?? "All statuses";
+    paymentStatusFilterOptions.find((option) => option.value === statusFilter)?.label ??
+    t("payment.filterAllStatuses");
 
   const loadRows = useCallback(() => {
     const emailNorm = user.email.trim().toLowerCase();
@@ -266,7 +274,7 @@ const StudentPaymentInfo = () => {
         e.status,
         e.email,
         e.fullName,
-        planSummary(e),
+        planSummary(e, t),
         e.adminNote ?? "",
         e.invoiceNumber ?? "",
         e.receiptNumber ?? "",
@@ -275,7 +283,7 @@ const StudentPaymentInfo = () => {
         .toLowerCase()
         .includes(q);
     });
-  }, [rows, search, statusFilter]);
+  }, [rows, search, statusFilter, t]);
 
   return (
     
@@ -283,34 +291,33 @@ const StudentPaymentInfo = () => {
       <div className="w-full pb-10">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <p className="max-w-2xl text-sm text-zinc-600">
-            Payment history, invoices, and receipts for your enrollment applications. Official invoice and receipt
-            numbers are issued after the school approves your application.
+            {t("payment.subtitle")}
           </p>
           <Button
             asChild
             className="h-10 shrink-0 rounded-xl bg-[#3954d0] text-sm font-medium hover:bg-[#2f47b3]"
           >
-            <Link to="/dashboard/available-courses">Available Classes</Link>
+            <Link to="/dashboard/available-courses">{t("payment.availableClasses")}</Link>
           </Button>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
-            <span className="ml-2 text-sm text-zinc-500">Loading applications...</span>
+            <span className="ml-2 text-sm text-zinc-500">{t("payment.loading")}</span>
           </div>
         ) : rows.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-6 py-12 text-center">
             <Receipt className="mx-auto mb-3 h-10 w-10 text-zinc-300" aria-hidden />
-            <p className="text-sm font-medium text-zinc-800">No payment activity yet</p>
+            <p className="text-sm font-medium text-zinc-800">{t("payment.emptyTitle")}</p>
             <p className="mt-1 text-sm text-zinc-500">
-              When you enroll and upload transfer proof, your submissions will be listed here.
+              {t("payment.emptyHint")}
             </p>
             <Button
               asChild
               className="mt-6 h-10 rounded-xl bg-[#3954d0] text-sm font-medium hover:bg-[#2f47b3]"
             >
-              <Link to="/dashboard/available-courses">Browse classes</Link>
+              <Link to="/dashboard/available-courses">{t("payment.browseClasses")}</Link>
             </Button>
           </div>
         ) : (
@@ -323,7 +330,7 @@ const StudentPaymentInfo = () => {
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search class, invoice, receipt, status…"
+                  placeholder={t("payment.searchPlaceholder")}
                   className="h-10 rounded-xl bg-white pl-10"
                 />
               </div>
@@ -340,7 +347,7 @@ const StudentPaymentInfo = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-[160px] rounded-2xl border-zinc-200 p-2 shadow-lg">
-                  {PAYMENT_STATUS_FILTER_OPTIONS.map((option) => (
+                  {paymentStatusFilterOptions.map((option) => (
                     <DropdownMenuItem
                       key={option.value}
                       className={cn(
@@ -360,7 +367,7 @@ const StudentPaymentInfo = () => {
             <div className="md:hidden">
               {filteredRows.length === 0 ? (
                 <div className="rounded-xl border border-zinc-200 bg-white px-4 py-10 text-center text-sm text-zinc-500">
-                  No payments match your search or filter.
+                  {t("payment.noMatch")}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -380,22 +387,22 @@ const StudentPaymentInfo = () => {
                 <TableHeader>
                   <TableRow className="border-zinc-200 bg-white hover:bg-white">
                     <TableHead className="h-11 px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                      Submitted
+                      {t("payment.submitted")}
                     </TableHead>
                     <TableHead className="h-11 min-w-0 px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                      Class
+                      {t("payment.class")}
                     </TableHead>
                     <TableHead className="h-11 min-w-0 px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                      Invoice #
+                      {t("payment.invoiceNumber")}
                     </TableHead>
                     <TableHead className="h-11 min-w-0 px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                      Receipt #
+                      {t("payment.receiptNumber")}
                     </TableHead>
                     <TableHead className="h-11 px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                      Status
+                      {t("payment.status")}
                     </TableHead>
                     <TableHead className="h-11 px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                      Actions
+                      {t("payment.actions")}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -403,7 +410,7 @@ const StudentPaymentInfo = () => {
                   {filteredRows.length === 0 ? (
                     <TableRow className="border-zinc-100 bg-white hover:bg-white">
                       <TableCell colSpan={6} className="px-3 py-10 text-center text-sm text-zinc-500">
-                        No payments match your search or filter.
+                        {t("payment.noMatch")}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -429,7 +436,7 @@ const StudentPaymentInfo = () => {
                           <span
                             className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles(r.status)}`}
                           >
-                            {statusLabel(r.status)}
+                            {statusLabel(r.status, t)}
                           </span>
                         </TableCell>
                         <TableCell className="align-middle px-3 py-3">
@@ -441,7 +448,7 @@ const StudentPaymentInfo = () => {
                               className="h-8 rounded-xl px-3 text-xs"
                               onClick={() => setDetailRecord(r)}
                             >
-                              Details
+                              {t("payment.details")}
                             </Button>
                           </div>
                         </TableCell>
@@ -461,7 +468,7 @@ const StudentPaymentInfo = () => {
               onDownload={() => {
                 if (!detailRecord) return;
                 setReceiptLoading(true);
-                void downloadEnrollmentPdf(detailRecord).finally(() => setReceiptLoading(false));
+                void downloadEnrollmentPdf(detailRecord, t).finally(() => setReceiptLoading(false));
               }}
             />
           </>

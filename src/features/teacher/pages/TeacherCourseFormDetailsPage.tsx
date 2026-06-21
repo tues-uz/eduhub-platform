@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuthSession } from "@/features/auth/context";
 import { useTeacherCourseForm } from "./TeacherCourseFormContext";
 import { INSTRUCTOR_CATEGORY_MISSING } from "../resolveInstructorCategory";
+import { useTranslation } from "react-i18next";
 
 function profileInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -17,6 +18,7 @@ function profileInitials(name: string): string {
 }
 
 const TeacherCourseFormDetailsPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuthSession();
   const {
@@ -103,9 +105,7 @@ const TeacherCourseFormDetailsPage = () => {
               >
                 {thumbnailUploading ? (
                   <>
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    Uploading…
-                  </>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />{t("teacherSettings.uploading")}</>
                 ) : thumbnailUrl ? (
                   <>
                     <Upload className="mr-1.5 h-3.5 w-3.5 opacity-70" />
@@ -126,9 +126,7 @@ const TeacherCourseFormDetailsPage = () => {
                   className="rounded-full border-0 bg-white/90 text-slate-700 shadow-sm hover:bg-white"
                   onClick={() => setThumbnailUrl("")}
                 >
-                  <X className="mr-1 h-3.5 w-3.5" />
-                  Remove
-                </Button>
+                  <X className="mr-1 h-3.5 w-3.5" />{t("teacherSettings.remove")}</Button>
               ) : null}
             </div>
           </div>
@@ -278,11 +276,9 @@ const TeacherCourseFormDetailsPage = () => {
 
         <div className="mt-6 flex w-full flex-wrap items-center justify-between gap-3">
           <Button type="button" variant="outline" className="rounded-full" asChild>
-            <Link to="/dashboard/teacher/courses">Cancel</Link>
+            <Link to="/dashboard/teacher/courses">{t("common.cancel")}</Link>
           </Button>
-          <Button type="button" onClick={continueToSchedule} className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
-            Continue to schedule
-          </Button>
+          <Button type="button" onClick={continueToSchedule} className="rounded-full" style={{ backgroundColor: "#1e40af" }}>{t("teacher.courseForm.details.continueToSchedule")}</Button>
         </div>
       </div>
     </>

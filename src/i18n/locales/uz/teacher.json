@@ -1,0 +1,1196 @@
+{
+  "teacher": {
+    "fallbackName": "O'qituvchi",
+    "instructorFallback": "O'qituvchi",
+    "courseLeadFallback": "Kurs rahbari",
+    "classFallback": "Sinf",
+    "dashboard": {
+      "subtitle": "O'qituvchi boshqaruv paneli",
+      "roleBadge": "O'qituvchi",
+      "stats": {
+        "activeClasses": "Faol sinflar",
+        "totalStudents": "Jami talabalar",
+        "pendingGrading": "Baholanishi kerak",
+        "collectedPayments": "Yig'ilgan to'lovlar"
+      },
+      "attendanceQr": {
+        "title": "Davomat QR (proyektor)",
+        "description": "Oq doskada ko'rsatish uchun sessiya QR kodini yarating — talabalar telefonlarida skaner qilib ro'yxatdan o'tadi."
+      },
+      "upcomingSessions": {
+        "title": "Yaqinlashayotgan sessiyalar"
+      },
+      "classesTable": {
+        "title": "O'qitilayotgan sinflar",
+        "loading": "Sinflar yuklanmoqda…",
+        "emptyPrefix": "Hali sinflar yo'q.",
+        "createFirstClass": "Birinchi sinfingizni yarating",
+        "lessonCount": "{{count}} dars",
+        "header": {
+          "class": "Sinf",
+          "students": "Talabalar",
+          "progress": "Progress",
+          "completion": "Tugallanish",
+          "actions": "Amallar"
+        },
+        "action": {
+          "editClass": "Sinfni tahrirlash",
+          "manageStudents": "Talabalarni boshqarish"
+        }
+      },
+      "pendingGrading": {
+        "title": "Baholanishi kerak",
+        "subtitle": "Talaba topshiriqlarini ko'rib chiqing va baholang",
+        "gradeButton": "Baholash",
+        "priority": {
+          "high": "high",
+          "medium": "medium",
+          "low": "low"
+        }
+      }
+    },
+    "notifications": {
+      "title": "Bildirishnomalar",
+      "subtitle": "Sinf jadvali, nashr etish va boshqa yangilanishlar.",
+      "unreadCount": "{{count}} o'qilmagan",
+      "markAllRead": "Hammasini o'qilgan deb belgilash",
+      "loading": "Bildirishnomalar yuklanmoqda…",
+      "markRead": "O'qilgan deb belgilash",
+      "receivedPrefix": "Qabul qilindi",
+      "time": {
+        "justNow": "Hozirgina",
+        "minutesAgo": "{{count}} min ago",
+        "hoursAgo_one": "{{count}} hour ago",
+        "hoursAgo_other": "{{count}} hours ago",
+        "daysAgo_one": "{{count}} day ago",
+        "daysAgo_other": "{{count}} days ago"
+      },
+      "cta": {
+        "openClassPage": "Open this sinf page",
+        "viewMyClasses": "View my sinfes",
+        "goToLinkedPage": "Go to linked page"
+      },
+      "empty": {
+        "title": "Hali bildirishnomalar yo'q.",
+        "description": "Jadval takliflari, sinf nashr yangilanishlari va boshqa bildirishnomalar shu yerda paydo bo'ladi."
+      }
+    },
+    "placeholder": {
+      "fallbackTitle": "O'qituvchi",
+      "comingSoon": "This section is coming soon.",
+      "backToDashboard": "Orqaga to Boshqaruv paneli",
+      "sections": {
+        "courses": "My Sinf",
+        "assignments": "Assignments",
+        "students": "Talabalar",
+        "schedule": "Jadval",
+        "settings": "Settings"
+      }
+    },
+    "courses": {
+      "description": "Yangi sinflar admin narx belgilab nashr etgunga qadar qoralama holatda qoladi.",
+      "addClass": "Sinf qo'shish",
+      "tabs": {
+        "classes": "Sinflar",
+        "attendance": "Talaba davomati",
+        "schedule": "Jadval",
+        "substitute": "O'rniga o'tuvchi o'qituvchi"
+      },
+      "loading": "Yuklanmoqda sinfes…",
+      "empty": {
+        "title": "No sinfes yet",
+        "description": "Create your first sinf and add lessons with PDF materials or video links.",
+        "cta": "Add your first sinf"
+      },
+      "card": {
+        "sessionsInSixMonths": "{{count}} sessions in 6 months",
+        "sessionsNotSet": "Sessions in 6 months not set",
+        "studentCount_one": "{{count}} talaba",
+        "studentCount_other": "{{count}} talabas"
+      },
+      "attendanceTab": {
+        "intro": "Name each meeting and generate a QR; past meetings stay on this device. Full-page tool:",
+        "attendanceQrLink": "Davomat QR"
+      },
+      "scheduleTab": {
+        "intro": "Tahrirlash the planned sessions (title, date, time) for each sinf. This uses the same jadval section from the sinf setup form.",
+        "loading": "Yuklanmoqda jadvals…",
+        "emptyDescription": "Create a sinf first, then come back here to set up the per-session jadval.",
+        "sessionsSummary": "{{sessions}} sessions in 6 months",
+        "filledSuffix": " · {{filled}} filled",
+        "notSetYet": "Sessions in 6 months not set yet",
+        "editSchedule": "Tahrirlash jadval"
+      }
+    },
+    "students": {
+      "title": "Talabalar",
+      "subtitle": "Talabalar registered to your sinfes.",
+      "table": {
+        "name": "Talaba name",
+        "email": "Email",
+        "class": "Sinf",
+        "enrolledDate": "Enrolled date"
+      },
+      "empty": "No talabas registered yet."
+    },
+    "assignments": {
+      "title": "Topshiriqlar",
+      "subtitle": "Manage assignments and review talaba submissions.",
+      "tabs": {
+        "assignments": "My Assignments",
+        "submissions": "Pending Submissions"
+      },
+      "empty": {
+        "title": "No assignments yet",
+        "description": "Assignments will appear here once you create them for your sinfes."
+      },
+      "table": {
+        "title": "Title",
+        "class": "Sinf",
+        "dueDate": "Due Date",
+        "priority": "Priority",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "actions": {
+        "publish": "Publish",
+        "view": "View",
+        "review": "Review"
+      },
+      "submissions": {
+        "empty": {
+          "title": "No pending submissions",
+          "description": "All talaba submissions have been graded."
+        },
+        "table": {
+          "student": "Talaba",
+          "assignment": "Assignment",
+          "submitted": "Yuborishted"
+        }
+      },
+      "deleteDialog": {
+        "title": "O'chirish this assignment?",
+        "description": "This will permanently remove the assignment. Talabalar will no longer see it."
+      }
+    },
+    "attendanceQr": {
+      "title": "Davomat QR",
+      "description": "Select the sinf and the planned session from the jadval, then generate a QR. When you stop the session, that meeting is marked held for talaba enrollment. Use projector view for full screen. Talabalar sign in to check in."
+    },
+    "scheduleApprovals": {
+      "title": "Jadval tasdiqlari",
+      "subtitle": "Review jadvals proposed by an admin, then approve or request changes on each sinf.",
+      "loading": "Yuklanmoqda your sinfes…",
+      "empty": "No sinfes yet. Create a sinf first.",
+      "addClass": "Add sinf",
+      "pendingSectionTitle": "Needs your approval",
+      "createdDate": "Created {{date}}",
+      "allSectionTitle": "All your sinfes",
+      "openButton": "Open",
+      "status": {
+        "actionNeeded": "Action needed",
+        "approved": "Tasdiqlangan",
+        "rejected": "Rejected",
+        "draft": "Qoralama",
+        "published": "Nashr etilgan"
+      },
+      "statusDescriptions": {
+        "scheduleApproved": "Jadval approved — waiting for admin to publish",
+        "draft": "Qoralama — admin will propose a jadval",
+        "rejected": "Rejected — admin sent feedback",
+        "default": "Open the jadval step to view or approve when ready."
+      }
+    },
+    "status": {
+      "published": "Nashr etilgan",
+      "draft": "Qoralama",
+      "high": "HIGH",
+      "medium": "MEDIUM",
+      "low": "LOW"
+    },
+    "substitute": {
+      "status": {
+        "pendingSubstitute": "Waiting for substitute",
+        "pendingPrimary": "Waiting for your approval",
+        "pendingAdmin": "With admin for final approval",
+        "approved": "Tasdiqlangan",
+        "declinedBySubstitute": "Declined by substitute",
+        "rejectedByPrimary": "Rejected by primary instructor",
+        "rejectedByAdmin": "Rejected by admin"
+      },
+      "coverChip": {
+        "substituteCover": "Substitute cover",
+        "admin": "Cover · admin",
+        "instructor": "Cover · instructor",
+        "substitute": "Cover · substitute"
+      }
+    },
+    "substitutePanel": {
+      "empty": {
+        "title": "No substitute cover requests",
+        "description": "When you invite a substitute from a sinf page, requests appear here for you and the substitute to review."
+      },
+      "summary": {
+        "needsResponse": "{{count}} request needs your response.",
+        "needsResponse_other": "{{count}} requests need your response.",
+        "track": "Track substitute invitations and approval status for your sinfes."
+      },
+      "card": {
+        "courseLead": "Course lead:",
+        "substitute": "Substitute:"
+      },
+      "role": {
+        "youAreSubstitute": "You are the substitute",
+        "youInvited": "You invited",
+        "participant": "Participant"
+      },
+      "updated": "Updated {{datetime}}",
+      "actions": {
+        "review": "Review",
+        "viewDetails": "View details",
+        "openClass": "Open sinf"
+      }
+    },
+    "substituteSummary": {
+      "labels": {
+        "course": "Course",
+        "from": "From",
+        "session": "Session",
+        "date": "date"
+      },
+      "invitedSubstitute": "Invited substitute",
+      "theirNote": "Their note"
+    },
+    "substituteReview": {
+      "backToNotifications": "Orqaga to notifications",
+      "backButton": "Bildirishnomalar",
+      "title": "Cover request",
+      "subtitle": "Review details and respond when you are ready.",
+      "statusLabel": "Status",
+      "substituteDecideHint": "If you accept, the primary instructor will be asked to approve before admin finalizes.",
+      "acceptInvite": "Accept invite",
+      "declineInvite": "Decline invite",
+      "primaryDecideHint": "The substitute has accepted. Approve to send this cover request to admin for final approval.",
+      "approveCover": "Approve cover",
+      "reject": "Reject",
+      "noAccess": "This cover request is not linked to your instructor account, or you have already responded.",
+      "errors": {
+        "missingId": "Missing request id.",
+        "notFound": "This cover request could not be found on this device."
+      },
+      "toast": {
+        "acceptFailed": "Could not accept invite",
+        "accepted": "You accepted the cover invite",
+        "declined": "Invite declined",
+        "forwardedToAdmin": "Forwarded to admin for final approval",
+        "coverNotApproved": "Cover not approved",
+        "approveFailed": "Could not approve cover request"
+      },
+      "readonlyMessages": {
+        "waitingSubstitute": "Waiting for the substitute to accept or decline.",
+        "waitingPrimary": "Waiting for the primary instructor to approve.",
+        "nothingToConfirm": "There is nothing for you to confirm on this request right now."
+      }
+    },
+    "courseForm": {
+      "title": {
+        "edit": "Tahrirlash Sinf",
+        "new": "Add New Sinf"
+      },
+      "steps": {
+        "ariaLabel": "Sinf setup steps",
+        "details": "1 · Details",
+        "schedule": "2 · Jadval approval",
+        "lessons": "3 · Lessons"
+      },
+      "errors": {
+        "classNotFound": "Sinf not found.",
+        "uploadFailed": "Upload failed",
+        "titleRequired": "Sinf title is required.",
+        "categoryMissing": "Your teaching category is not set. Contact an administrator to assign it before creating a sinf.",
+        "datesBothOrNeither": "Enter both a sinf start date and a sinf end date, or leave both empty.",
+        "datesInvalid": "Sinf dates are invalid.",
+        "endBeforeStart": "Sinf end date must be on or after the start date.",
+        "lessonRequired": "Add at least one lesson with a title and PDF or video URL for this sinf.",
+        "saveFailed": "Failed to save. Please try again."
+      },
+      "toast": {
+        "invalidImageType": "Please choose an image file (JPEG, PNG, WebP, etc.).",
+        "imageTooLarge": "Image must be 8 MB or smaller.",
+        "thumbnailUploaded": "Thumbnail uploaded",
+        "thumbnailUploadFailed": "Thumbnail upload failed",
+        "pdfReadingTimeFailed": "Could not estimate reading time (link may be private or unsupported). Enter it manually (e.g. 5 min read)."
+      },
+      "dialog": {
+        "completeLesson": {
+          "title": "Complete the current lesson first",
+          "description": "Please add a title and video or PDF content before adding another lesson."
+        },
+        "removeLesson": {
+          "title": "Remove this lesson?",
+          "description": "This will remove the lesson from the sinf. You can add it again later."
+        }
+      },
+      "details": {
+        "replaceImage": "Replace image",
+        "addCoverImage": "Add cover image",
+        "instructorLabel": "Instructor",
+        "classNameLabel": "Sinf name *",
+        "classNamePlaceholder": "e.g. Introduction to Economics",
+        "categoryLabel": "Category *",
+        "categoryNotAssigned": "Not assigned",
+        "categoryHint": "Assigned by admin when your instructor account was created. Contact support if this looks wrong.",
+        "aboutLabel": "About this sinf (optional)",
+        "aboutPlaceholder": "What talabas will learn — a sentence or two is enough.",
+        "datesSectionTitle": "Sinf dates (optional)",
+        "datesSectionHint": "When this run starts and ends. Leave blank if not decided yet.",
+        "startLabel": "Sinf starts",
+        "endLabel": "Sinf ends",
+        "pricingTitle": "Pricing",
+        "pricingHint": "Set by an admin after you save this sinf and they publish it.",
+        "continueToSchedule": "Continue to jadval"
+      },
+      "schedule": {
+        "status": {
+          "awaitingApproval": "Awaiting your approval",
+          "approved": "Jadval approved",
+          "draft": "Qoralama"
+        },
+        "sessionLabel": "Session {{num}}",
+        "dateLabel": "Date",
+        "timeLabel": "Time",
+        "sectionTitle": "Jadval",
+        "newClassInfo": "After you create this sinf, an administrator will propose session dates and times for your review.",
+        "newClassNote": "Your new sinf is saved with a minimal placeholder jadval until admin proposes the real one.",
+        "rejectionNoteTitle": "Your note to admin",
+        "loading": "Yuklanmoqda jadval…",
+        "noProposal": "When an admin proposes a jadval for this sinf, session rows will appear here for your approval.",
+        "sessionsInSixMonths": "Sessions in 6 months",
+        "proposedBy": "Proposed by {{name}}. Talaba attendance expectations follow this plan once approved.",
+        "month1Heading": "Sessions in 1st month",
+        "month2Heading": "Sessions in 2nd month",
+        "month3Heading": "Sessions in 3rd month",
+        "perSessionDetails": "Per-session details",
+        "noSessionRows": "No session rows yet — waiting for admin.",
+        "saving": "Saving…",
+        "approveSchedule": "Approve jadval",
+        "requestChanges": "Request changes",
+        "approvedNote": "Jadval approved. The admin can now set pricing and publish the sinf.",
+        "continueToLessons": "Continue to lessons",
+        "rejectDialog": {
+          "title": "Request jadval changes",
+          "description": "Describe what should change (days, times, session count). Admin will revise and send a new proposal.",
+          "placeholder": "e.g. Wednesday evenings don't work — can we move to Thursday?",
+          "send": "Send to admin"
+        },
+        "toast": {
+          "approved": "Jadval approved",
+          "approveFailed": "Could not approve jadval",
+          "rejected": "Feedback sent to admin",
+          "rejectFailed": "Could not reject jadval"
+        }
+      },
+      "lessons": {
+        "title": "Lessons (PDF or video link)",
+        "addLesson": "Add lesson",
+        "minimize": "Minimize",
+        "expand": "Expand",
+        "lessonLabel": "Lesson {{n}}",
+        "removeLessonTitle": "Remove lesson",
+        "titleLabel": "Lesson title",
+        "titlePlaceholder": "e.g. Supply and Demand",
+        "contentTypeLabel": "Content type",
+        "contentType": {
+          "videoLink": "Video link",
+          "videoUpload": "Video upload",
+          "pdfLink": "PDF link",
+          "pdfUpload": "PDF upload"
+        },
+        "uploadedPrefix": "Uploaded:",
+        "urlPlaceholders": {
+          "video": "https://youtube.com/…",
+          "pdf": "https://… or Google Drive PDF link"
+        },
+        "preview": "Preview",
+        "pdfPreview": "PDF Preview",
+        "removeVideoTitle": "Remove video link",
+        "removePdfTitle": "Remove PDF link",
+        "videoPreviewTitle": "Video preview",
+        "pdfPreviewTitle": "PDF preview",
+        "durationLabel": "Duration (optional)",
+        "durationHint": {
+          "pdf": "Estimated reading time for the PDF.",
+          "video": "Length of the video."
+        },
+        "durationPlaceholders": {
+          "pdf": "e.g. 5 min read",
+          "video": "e.g. 12 min"
+        },
+        "getFromLink": "Get from link",
+        "estimate": "Estimate",
+        "editSchedule": "Tahrirlash jadval",
+        "saving": "Saving…",
+        "saveChanges": "Saqlash changes",
+        "createClass": "Create sinf",
+        "createDialog": {
+          "title": "Create this sinf?",
+          "description": "Your sinf is saved as a draft. An admin will set pricing and publish it after reviewing your jadval and lessons.",
+          "confirm": "Create sinf"
+        }
+      }
+    },
+    "quiz": {
+      "loading": "Yuklanmoqda quiz…",
+      "backToQuizzes": "Orqaga to sinf quizzes",
+      "title": {
+        "edit": "Tahrirlash quiz",
+        "create": "Create quiz"
+      },
+      "form": {
+        "questionImageAlt": "Question",
+        "changeImage": "Change",
+        "addImageAriaLabel": "Add image to the current question.",
+        "findAndInsertMedia": "Find and insert media",
+        "uploadFile": "Upload file",
+        "dragHere": "or drag here to upload",
+        "detailsTitle": "Test details",
+        "typeLabel": "Type",
+        "typePlaceholder": "Select type",
+        "typeHint": "Test for practice or Placement test for assessment.",
+        "classLabel": "Sinf",
+        "classPlaceholder": "Select sinf",
+        "noClass": "No sinf",
+        "classLockedHint": "Sinf is locked for this quiz.",
+        "classPickerHint": "Yuklanmoqda…",
+        "titleLabels": {
+          "placement": "Placement test title *",
+          "quiz": "Test title *"
+        },
+        "titlePlaceholder": "e.g. Economics Placement Test",
+        "release": {
+          "label": "Release date and time",
+          "date": "Date",
+          "time": "Time",
+          "selectDate": "Select date",
+          "selectTime": "Select time"
+        },
+        "releaseHint": "When this placement test becomes available to talabas.",
+        "questionsTitle": "Questions (multiple choice)",
+        "addQuestion": "Add question",
+        "questionActions": {
+          "expand": "Expand",
+          "minimize": "Minimize",
+          "remove": "Remove question"
+        },
+        "questionLabel": "Question {{n}}",
+        "pointsLabel": "{{n}} pts",
+        "questionTextLabel": "Question text *",
+        "questionTextPlaceholder": "e.g. What is the main focus of microeconomics?",
+        "questionImageLabel": "Image for this question",
+        "timeLimit": {
+          "label": "Time limit",
+          "choose": "Choose…",
+          "seconds": "{{sec}} s"
+        },
+        "options": {
+          "title": "Options (check the correct answer)",
+          "option": "Option {{letter}}"
+        },
+        "saveChanges": "Saqlash changes",
+        "createQuiz": "Create quiz"
+      },
+      "types": {
+        "quiz": "Test",
+        "placementTest": "Placement test"
+      },
+      "errors": {
+        "titleRequired": "Test title is required.",
+        "questionRequired": "Add at least one question.",
+        "questionIncomplete": "Each question needs text, at least two options, and one correct answer.",
+        "classRequired": "Please select a sinf for this quiz.",
+        "saveFailed": "Failed to save quiz.",
+        "loadFailed": "Could not load quiz."
+      },
+      "toast": {
+        "savedLocally": "Saqlashd on this device only",
+        "savedLocallyDescription": "Connect to the API to sync quizzes across devices."
+      },
+      "dialog": {
+        "removeQuestion": {
+          "title": "Remove this question?",
+          "description": "This question will be removed from the quiz."
+        }
+      }
+    },
+    "quizResults": {
+      "loading": "Yuklanmoqda quiz results...",
+      "backLink": "Orqaga to sinf quizzes",
+      "title": "quiz results — {{title}}",
+      "subtitle": "Talaba attempts and scores for this quiz.",
+      "localDataBadge": "(Showing local data)",
+      "exportButton": "Export to Excel",
+      "exportTitle": "Export to Excel spreadsheet",
+      "empty": "No attempts yet. Results appear here after talabas complete the quiz.",
+      "checkedInTitle": "When the talaba finished the quiz",
+      "errors": {
+        "notFound": "Test not found",
+        "loadFailed": "Failed to load quiz results",
+        "localStorage": "Could not read quiz results from local storage."
+      },
+      "table": {
+        "no": "No.",
+        "student": "Talaba",
+        "email": "Email",
+        "score": "Score",
+        "correct": "Correct",
+        "fillingDate": "Filling date"
+      }
+    },
+    "payroll": {
+      "title": "Ish haqi",
+      "subtitle": "Your sinfes and linked talaba payments. Yuborish monthly payroll when jadval months are complete.",
+      "tabs": {
+        "payroll": "Ish haqi",
+        "submissions": "My submissions"
+      },
+      "summary": {
+        "classes": "Your sinfes",
+        "paymentRows": "payment row(s)",
+        "classesCount": "sinf(es)",
+        "totalInView": "Total in view"
+      },
+      "searchPlaceholder": "Search sinf, talaba, invoice…",
+      "empty": {
+        "signIn": "Sign in with a profile that has instructor sinfes to see payroll.",
+        "loading": "Yuklanmoqda your sinfes…",
+        "noMatch": "No sinfes match your search.",
+        "noClasses": "No active sinfes yet. Create a sinf and wait for enrollment."
+      },
+      "table": {
+        "class": "Sinf",
+        "students": "Talabalar",
+        "invoices": "Invoices",
+        "totalTuition": "Total tuition",
+        "yourShare": "Your share",
+        "request": "Request",
+        "action": "Action"
+      },
+      "demo": {
+        "badge": "Demo",
+        "scheduleComplete": "3-month jadval complete — submit payroll per month."
+      },
+      "adminNotePrefix": "Admin: {{note}}",
+      "invoiceSummary": "{{paid}} paid · {{unpaid}} unpaid",
+      "sharePercent": "{{percent}}% of tuition",
+      "requestStatus": {
+        "pendingReview": "Pending review",
+        "approved": "Tasdiqlangan",
+        "declined": "Declined",
+        "ready": "Ready"
+      },
+      "actions": {
+        "viewPayout": "View payout",
+        "submitPayroll": "Yuborish payroll"
+      },
+      "expandAria": {
+        "hide": "Hide talaba payments",
+        "show": "Show talaba payments"
+      },
+      "enrolledSection": {
+        "title": "Enrolled talabas"
+      },
+      "enrolledTable": {
+        "student": "Talaba",
+        "amount": "Amount",
+        "status": "Status",
+        "due": "Due",
+        "paid": "Paid",
+        "loading": "Yuklanmoqda enrolled talabas…",
+        "empty": "No enrolled talabas for this sinf yet."
+      },
+      "status": {
+        "enrolled": "Enrolled"
+      },
+      "submissions": {
+        "title": "My submissions",
+        "subtitle": "Track your monthly submissions and admin review status.",
+        "viewNotifications": "View notifications",
+        "stats": {
+          "total": "Total submissions",
+          "pending": "Pending",
+          "search": "Search"
+        },
+        "searchPlaceholder": "Sinf, period, status…",
+        "empty": {
+          "none": "No payroll submissions yet.",
+          "noMatch": "No submissions match your search."
+        },
+        "table": {
+          "class": "Sinf",
+          "period": "Period",
+          "requested": "Requested",
+          "status": "Status",
+          "bankReceipt": "Bank receipt",
+          "submitted": "Yuborishted",
+          "adminNote": "Admin note"
+        },
+        "enrolledSubtitle": "{{count}} enrolled",
+        "viewReceipt": "View receipt",
+        "viewStatus": "View status"
+      },
+      "submissionStatus": {
+        "approved": "Tasdiqlangan",
+        "notApproved": "Not approved",
+        "pending": "Pending"
+      },
+      "time": {
+        "justNow": "Just now",
+        "minutesAgo": "{{count}} min ago",
+        "hoursAgo_one": "{{count}} hour ago",
+        "hoursAgo_other": "{{count}} hours ago",
+        "daysAgo_one": "{{count}} day ago",
+        "daysAgo_other": "{{count}} days ago"
+      },
+      "toast": {
+        "selectPeriod": "Select a jadval period",
+        "submitFailed": "Could not submit payroll request",
+        "submitted": "Ish haqi request sent"
+      }
+    },
+    "payrollPayout": {
+      "title": "Payout information",
+      "description": "Your submission details and any bank transfer receipt uploaded by admin.",
+      "fields": {
+        "yourSubmission": "Your submission",
+        "status": "Status",
+        "scheduleMonth": "Jadval month",
+        "requestedPayout": "Requested payout",
+        "payoutDetails": "Payout details",
+        "reviewed": "Reviewed",
+        "adminReference": "Admin reference",
+        "adminNote": "Admin note"
+      },
+      "noSubmission": "No payroll submission on file for this sinf yet.",
+      "sections": {
+        "payoutNotes": "Payout notes from admin",
+        "bankReceipt": "Bank transfer receipt (from admin)"
+      },
+      "wrongFileWarning": "Filename suggests this may not be a bank receipt PDF. Open to verify before relying on it.",
+      "receipt": {
+        "uploadedByAdmin": "Uploaded by EduHub admin",
+        "released": "Released",
+        "attached": "Attached",
+        "pdfTitle": "Bank transfer receipt PDF",
+        "imageAlt": "Bank transfer receipt from admin",
+        "downloadPdf": "Download PDF",
+        "openPdfTab": "Open PDF in new tab",
+        "openReceipt": "Open receipt",
+        "pendingApproved": "Tasdiqlangan — waiting for admin to attach the bank transfer receipt.",
+        "pendingNotYet": "Receipt not available yet. Admin uploads it after processing your payout."
+      }
+    },
+    "payrollSubmit": {
+      "title": "Yuborish payroll for approval",
+      "description": "Choose a completed jadval month and submit your requested payout to admin.",
+      "pricing": {
+        "title": "Sinf pricing",
+        "listedTuition": "Listed tuition (per talaba)",
+        "totalClassPrice": "Total sinf price",
+        "payrollSubmissions": "Ish haqi submissions",
+        "instructorShare": "Instructor share",
+        "platformShare": "Platform share"
+      },
+      "monthlyPayout": {
+        "count": "{{count}} jadval month(s)",
+        "label": "Instructor payout per jadval month"
+      },
+      "pricingHints": {
+        "noTuition": "Admin-listed tuition is not set for this sinf yet.",
+        "noStudents": "No enrolled talabas yet — payout preview uses listed tuition × 0."
+      },
+      "period": {
+        "label": "Jadval period",
+        "loading": "Yuklanmoqda sinf jadval…",
+        "placeholder": "Select jadval month"
+      },
+      "noApprovedMonths": "No approved jadval months ready for payroll yet.",
+      "payoutSection": {
+        "requested": "Requested payout for this month",
+        "previewOnly": "(preview only — confirm before submitting)",
+        "breakdown": "Breakdown"
+      },
+      "payoutDetails": {
+        "label": "Payout details (optional)",
+        "placeholder": "Bank account, payment method, or other details for admin"
+      },
+      "notes": {
+        "label": "Notes to admin (optional)",
+        "placeholder": "Any context admin should know when reviewing this submission"
+      },
+      "systemSummaryPrefix": "System summary:",
+      "submitToAdmin": "Yuborish to admin",
+      "toast": {
+        "scheduleNotReady": "Jadval not ready for payroll",
+        "scheduleNotReadyDescription": "Ish haqi is submitted per month from the sinf jadval admin created and you approved. Publish that jadval first.",
+        "selectMonth": "Select a jadval month",
+        "selectMonthDescription": "Choose a month where all sessions are finished.",
+        "alreadySubmitted": "Month already submitted",
+        "monthNotReady": "Month not ready for payroll",
+        "meetingsNotComplete": "Meetings not complete"
+      }
+    },
+    "resumeEdit": {
+      "backToClasses": "Orqaga to My Sinfes",
+      "backToResumes": "Orqaga to resumes",
+      "title": {
+        "new": "New sinf resume",
+        "edit": "Tahrirlash sinf resume"
+      },
+      "intro": "Recaps and reminders appear on the talaba sinf page under the Resume tab.",
+      "substituteBanner": {
+        "viewingAs": "You are tahrirlashing as substitute.",
+        "courseLead": "Course lead:",
+        "hint": "You can add or tahrirlash resumes for talabas while covering this sinf."
+      },
+      "primaryBanner": "You are the course lead. Substitute instructors with approved cover can also add resumes in demo mode.",
+      "thumbnail": {
+        "label": "Thumbnail image (optional)",
+        "previewAlt": "Resume thumbnail preview",
+        "hint": "Shows on the resume cards talabas see on their sinf page."
+      },
+      "sessionLabel": "Link to a jadvald session",
+      "sessionHints": {
+        "primary": "Optional — tie this recap to a specific session or leave as whole-sinf.",
+        "substituteLocked": "Session is set from your substitute cover invite.",
+        "noSessions": "No jadvald sessions yet — recap applies to the whole sinf.",
+        "wholeClass": "Whole sinf — general recap"
+      },
+      "session": {
+        "wholeClass": "Whole sinf — general recap",
+        "placeholder": "Whole sinf or one session…",
+        "loadingAssigned": "Yuklanmoqda assigned session…"
+      },
+      "bodyLabel": "Resume text",
+      "bodyPlaceholder": "Key points, homework, reminders for talabas…",
+      "actions": {
+        "delete": "O'chirish",
+        "saveForStudents": "Saqlash for talabas"
+      },
+      "deleteDialog": {
+        "title": "O'chirish this resume?",
+        "description": "Talabalar will no longer see this recap. This cannot be undone."
+      },
+      "errors": {
+        "missingClass": "Missing sinf.",
+        "noAccess": "You don't have access to tahrirlash resumes for this sinf.",
+        "classNotFound": "Sinf not found.",
+        "emptyBody": "Write something before saving."
+      },
+      "toast": {
+        "notFound": "Resume not found",
+        "saveFailed": "Could not save.",
+        "deleteFailed": "Could not o'chirish resume.",
+        "deleted": "Resume o'chirishd",
+        "created": "Resume created",
+        "createdDescription": "Talabalar can now read this recap on their sinf page.",
+        "updated": "Resume updated",
+        "updatedDescription": "Your changes are saved for talabas.",
+        "invalidImage": "Please pick an image file.",
+        "uploadFailed": "Could not upload image."
+      }
+    },
+    "roster": {
+      "backToMyClass": "Mening sinflarimga qaytish",
+      "awaitingAdminApproval": "Awaiting admin approval",
+      "awaitingAdminTitle": "An admin will set the price and publish this sinf.",
+      "actions": {
+        "unarchive": "Unarchive",
+        "archive": "Archive",
+        "deleteClass": "O'chirish sinf",
+        "editClassContent": "Tahrirlash sinf content"
+      },
+      "errors": {
+        "missingClass": "Missing sinf.",
+        "loading": "Yuklanmoqda sinf…",
+        "forbidden": "You don't have access to this sinf roster.",
+        "loadFailed": "Could not load this sinf. It may have been removed or you may need to sign in again.",
+        "notFound": "Sinf not found."
+      },
+      "thumbnailAlt": "{{title}} thumbnail",
+      "banners": {
+        "substitute": {
+          "viewingAs": "You are viewing as substitute.",
+          "courseLead": "Course lead (owns this sinf in the catalog):",
+          "description": "You can use sinf resumes and local attendance (QR and this browser's check-ins). The server enrollment list is only returned for the course lead today, so the Enrolled tab explains that limitation. Catalog tahrirlashs, deleting the sinf, and inviting another substitute stay with the course lead."
+        },
+        "primary": {
+          "title": "You are the course lead.",
+          "description": "Tasdiqlangan substitute {{email}} has demo access to this sinf page for resumes and local attendance. The server enrollment list stays course-lead only until the API supports substitutes."
+        }
+      },
+      "enrollmentHint": "Talabalar enrolled from the catalog appear below when the API returns roster data.",
+      "inviteSubstitute": "Invite Substitute",
+      "inviteSubstituteHint": "Covers a session when you're unavailable. Enter the Substitute's admin-registered lecturer email. Demo: in-app notifications only.",
+      "tabs": {
+        "enrolled": "Ro'yxatdan o'tganlar",
+        "schedule": "Jadval",
+        "resume": "Xulosa",
+        "quiz": "Test",
+        "attendance": "Davomat",
+        "grades": "Baholar"
+      },
+      "enrolled": {
+        "title": "Enrolled talabas",
+        "intro": "Everyone signed up for this sinf in the platform. Local-only sinfes won't show rows until the sinf exists on the server.",
+        "sessionsNote": "This sinf is set to {{count}} sessions in 6 months (from sinf settings); the table compares local check-ins to that target.",
+        "localOnly": "This sinf is stored only in your browser. Connect it to the API to load enrolled talabas here.",
+        "substituteNoRoster": "Enrollment list is not loaded for substitutes (API).",
+        "substituteNoRosterDescription": "The server only returns /courses/…/talabas for the catalog course lead. Your access here is from the approved substitute workflow (demo).",
+        "loading": "Yuklanmoqda talabas…",
+        "loadError": "Could not load enrollment list. Check permissions or try again later.",
+        "empty": "No talabas enrolled yet.",
+        "table": {
+          "name": "Name",
+          "email": "Email",
+          "sessionsTitle": "Check-ins recorded on this browser vs planned sinf meetings in six months (sinf settings).",
+          "sessionsInSixMonths": "Sessions in 6 months *"
+        },
+        "footnote": "* Sessions in 6 months is the planned total from sinf settings. The first number is how many distinct sessions this talaba checked into on this browser only."
+      },
+      "schedule": {
+        "yourCover": "Your cover on this sinf",
+        "classSchedule": "Sinf jadval",
+        "substituteIntro": "Only the session(s) you are covering appear here—not the course lead's full term calendar.",
+        "courseLead": "Course lead:",
+        "primaryIntro": "Session plan from the catalog and, when present, the latest admin proposal from the server.",
+        "scheduleApprovalsLink": "Jadval approvals",
+        "editClassScheduleLink": "Tahrirlash sinf → Jadval",
+        "feedbackTitle": "Jadval feedback on file",
+        "classWindowStart": "Sinf window start:",
+        "classWindowEnd": "End:",
+        "approveOrRequest": "Approve or request jadval changes",
+        "loadingProposal": "Yuklanmoqda latest admin jadval proposal…",
+        "substituteNoMatch": "We couldn't match an active substitute invite on this device to a jadval row.",
+        "substituteNoMatchHint": "Check that your sign-in email matches the invited substitute, or ask the course lead which session you cover.",
+        "wholeClassCover": "Whole-sinf substitute cover",
+        "wholeClassCoverDescription": "The course lead did not tie this cover to a single calendar row, so the full term jadval is not listed here.",
+        "sessionsCovering": "Session(s) you are covering:",
+        "table": {
+          "number": "#",
+          "session": "Session",
+          "yourCover": "Your cover",
+          "yourCoverTitle": "Your invited cover email and workflow status.",
+          "substituteInstructor": "Substitute instructor",
+          "substituteInstructorTitle": "Lecturer invited when the course lead cannot run this session (demo workflow).",
+          "date": "Date",
+          "time": "Time",
+          "yourEmailTitle": "Your work email on this cover",
+          "invitedEmailTitle": "Invited substitute work email"
+        },
+        "substituteHiddenNote": "Other sessions in this sinf are hidden on purpose. The course lead still sees the full jadval.",
+        "noSessions": "No session rows yet. When an admin proposes dates and times, they will show here.",
+        "adminProposal": "Admin proposal from {{name}}.",
+        "plannedSessions": "Planned sessions (six-month window):",
+        "substituteColumnNote": "The Substitute instructor column lists the work email from your invite when the course lead cannot run that session."
+      },
+      "scheduleStatus": {
+        "pendingApproval": "Jadval pending your approval",
+        "approved": "Jadval approved",
+        "draft": "Qoralama",
+        "published": "Nashr etilgan"
+      },
+      "sessionFallback": "Session {{n}}",
+      "substituteCoverTitle": "Substitute cover · {{title}}",
+      "resume": {
+        "title": "Sinf resumes",
+        "intro": "Each card is a recap talabas can read on their sinf page (Resume tab). Create or tahrirlash on a dedicated page.",
+        "newResume": "New resume",
+        "emptyTitle": "No resumes yet",
+        "emptyDescription": "Write your first recap so enrolled talabas can review it anytime.",
+        "createResume": "Create resume",
+        "wholeClassRecap": "Whole sinf recap",
+        "updated": "Updated",
+        "thumbnailAlt": "Resume thumbnail"
+      },
+      "quiz": {
+        "title": "Test & placement tests",
+        "intro": "Multiple-choice quizzes for this sinf appear below as cards. Use Create quiz to add one, then publish, tahrirlash, or open results from each card.",
+        "createQuiz": "Create quiz",
+        "substituteRestriction": "Test management is for the course lead.",
+        "substituteRestrictionDescription": "Creating and publishing quizzes for this sinf is done by the instructor who owns the catalog listing.",
+        "localOnly": "This sinf exists only in your browser. Connect it to the API to list server-backed quizzes for this course.",
+        "yourQuizzes": "Your quizzes",
+        "fetchNoteFallback": "Test list could not be loaded. Testzes you save on this device still appear below.",
+        "fetchNoteWithError": "Test list could not be loaded ({{error}}). Testzes you save on this device still appear below.",
+        "loadError": "Could not load quizzes for this sinf.",
+        "emptyTitle": "No quizzes for this sinf yet",
+        "emptyDescription": "Your real quizzes will replace the example cards below. Create a practice quiz or placement test to get started.",
+        "exampleLayout": "Example layout (not saved — disappears when you add a quiz)",
+        "example": "Example",
+        "placement": "Placement",
+        "quiz": "Test",
+        "questionCount_one": "{{count}} question",
+        "questionCount_other": "{{count}} questions",
+        "publish": "Publish",
+        "results": "Results",
+        "toast": {
+          "publishedLocally": "Nashr etilgan on this device",
+          "published": "Test published",
+          "publishFailed": "Could not publish quiz."
+        }
+      },
+      "attendance": {
+        "qrTitle": "Sinf meeting check-in (QR)",
+        "qrIntro": "Each QR opens the check-in link; talabas must use it signed in as a talaba. The roster table below only shows check-ins stored on this browser.",
+        "overviewTitle": "Talaba attendance overview",
+        "overviewIntro": "Use Jump by sinf jadval to pick the last planned session or a specific row from your jadval.",
+        "connectApi": "Connect this sinf to the API to align attendance tracking with enrolled talabas.",
+        "substituteOverview": "Davomat overview needs the server roster.",
+        "substituteOverviewDescription": "That roster is only returned for the course lead today, so this table cannot load while you are signed in as substitute.",
+        "loadingRoster": "Yuklanmoqda roster for attendance table…",
+        "loadStudentsError": "Could not load talabas for this overview.",
+        "noStudents": "No enrolled talabas yet — nothing to show in the attendance overview.",
+        "phoneScanNote": "Phone scan vs this screen:",
+        "phoneScanDescription": "talaba phone scans now sync through the EduHub attendance API.",
+        "confirmEmailNote": "Confirm the talaba account email matches the roster row, the meeting selected here matches the QR they scanned, and they are signed in as a talaba on the check-in page.",
+        "showingFor": "Showing attendance for:",
+        "presentForMeeting": "Present for this meeting:",
+        "selectMeetingHint": "Select a meeting with Jump by sinf jadval or in Sinf meeting check-in to load check-in data for the table below.",
+        "enrollmentNote": "Enrollment lists everyone who joined the sinf on the platform. Present and Checked in now use the EduHub attendance API for the selected QR meeting.",
+        "jumpBySchedule": "Jump by sinf jadval",
+        "chooseScheduleContext": "Choose jadval context",
+        "latestQr": "Latest QR session (newest)",
+        "lastScheduled": "Last date on sinf jadval",
+        "matchHint": "When a row matches the selected QR session, the Present and Checked in columns in this table use that meeting from the attendance API.",
+        "tableAria": "Talaba attendance for the selected check-in meeting",
+        "table": {
+          "student": "Talaba",
+          "email": "Email",
+          "present": "Present",
+          "checkedIn": "Checked in",
+          "instructorCheck": "Instructor Check"
+        },
+        "presentBadge": "Present",
+        "checkedInTitle": "Checked in",
+        "signInToCheck": "Sign in to save o'qituvchi check",
+        "toast": {
+          "noQrMeetings": "No QR meetings yet — generate check-in in Sinf meeting check-in above.",
+          "noSavedMeeting": "No saved meeting matches that jadval row yet. Generate a QR for that sinf day, or pick the meeting manually in Sinf meeting check-in."
+        }
+      },
+      "dialogs": {
+        "deleteClass": {
+          "title": "Are you sure you want to o'chirish this sinf?",
+          "description": "This will permanently remove this sinf and all its lessons. This action cannot be undone."
+        },
+        "deleteResume": {
+          "title": "O'chirish this resume?",
+          "description": "Talabalar will no longer see this recap on their sinf page. This cannot be undone."
+        }
+      },
+      "substituteDialog": {
+        "title": "Invite a substitute instructor",
+        "description": "Use the work email of a lecturer your admin created. They receive an in-app notification here; your admin is notified too (browser demo until the API exists).",
+        "emailLabel": "Substitute email",
+        "emailPlaceholder": "colleague@school.org",
+        "sessionLabel": "Jadvald session",
+        "sessionOptional": "Jadvald session (optional)",
+        "sessionPlaceholder": "Select session to cover",
+        "messageLabel": "Message (optional)",
+        "messagePlaceholder": "Brief note for the substitute…",
+        "sendInvite": "Send invite",
+        "toast": {
+          "needEmail": "Your account needs an email to send this invite.",
+          "enterEmail": "Enter the substitute lecturer's email.",
+          "ownEmail": "Use another instructor's email — not your own.",
+          "notRegistered": "That email is not on the admin lecturer list (demo).",
+          "notRegisteredDescription": "Ask your admin to register the lecturer (Add user role), then invite using that work email.",
+          "selectSession": "Select the jadvald session this substitute will cover.",
+          "success": "Substitute invite recorded",
+          "successDescription": "The substitute must accept, then you approve. Check instructor notifications (demo)."
+        }
+      },
+      "toast": {
+        "resumeDeleted": "Resume o'chirishd",
+        "resumeDeleteFailed": "Could not o'chirish resume."
+      }
+    },
+    "attendancePanel": {
+      "title": "Sinf meeting check-in",
+      "description": {
+        "fixed": "Generate a QR for this sinf. Talabalar scan to check in on their phones.",
+        "schedule": "Pick a planned session from the jadval, name the meeting, then generate a QR.",
+        "embedded": "Name each meeting and generate a QR; past meetings stay on this device.",
+        "default": "Select a sinf and meeting, then generate a QR code for talaba check-in."
+      },
+      "loading": "Yuklanmoqda sinfes…",
+      "noClasses": "No sinfes yet. Create a sinf first.",
+      "classLabel": "Sinf",
+      "classPlaceholder": "Select sinf",
+      "scheduleHint": {
+        "meetingsPerWeek": "{{count}} meetings per week on average (from jadval).",
+        "setSessions": "Set Sessions in 6 months on the sinf jadval to align meeting names with planned rows."
+      },
+      "meetingName": {
+        "label": "Name this sinf meeting",
+        "placeholder": "e.g. Week 3 — Supply & Demand",
+        "helper": "Shown on the projector and in the session log."
+      },
+      "generateQr": {
+        "new": "New QR for next meeting",
+        "this": "Generate QR for this meeting"
+      },
+      "projectorView": "Projector view",
+      "stopSession": "Stop session",
+      "modality": {
+        "online": "Online check-in — talabas scan from anywhere.",
+        "inPerson": "In-person check-in — show QR on the projector."
+      },
+      "sessionTimer": {
+        "label": "Sinf session time",
+        "max": "max {{duration}}",
+        "remaining": "{{time}} remaining",
+        "closesAt": "Check-in closes at {{time}}"
+      },
+      "qrHint": "Scan opens talaba check-in — they must be signed in as a talaba.",
+      "sessionEnded": {
+        "stopped": {
+          "title": "Session stopped",
+          "body": "Check-in is closed for this meeting."
+        },
+        "windowEnded": {
+          "title": "Check-in closed",
+          "body": "The check-in window for this session has ended."
+        },
+        "closed": {
+          "title": "Check-in window ended",
+          "body": "Start a new QR session for the next meeting."
+        }
+      },
+      "emptyQr": {
+        "tapGenerate": "Tap Generate below to create a QR for this meeting.",
+        "pickClass": "Pick a sinf and tap Generate to start check-in."
+      },
+      "sessionLog": {
+        "title": "Session log (this sinf)",
+        "description": "Past QR sessions for this sinf on this device."
+      },
+      "projector": {
+        "title": "Davomat QR — projector",
+        "scanHint": "Talabalar scan with their phone to check in",
+        "meetingLabel": "Meeting:",
+        "exitAria": "Exit projector view",
+        "ariaLabel": "Projector attendance QR"
+      },
+      "meetingFallback": "Meeting",
+      "toast": {
+        "generateFailed": "Could not generate attendance QR",
+        "stopFailed": "Could not stop attendance session"
+      }
+    },
+    "attendancePicker": {
+      "label": "Meeting (for the table below)",
+      "placeholders": {
+        "pickSession": "Pick a planned session…",
+        "chooseMeeting": "Choose a meeting",
+        "noMeetings": "No meetings generated yet"
+      },
+      "group": {
+        "plannedSessions": "Planned sessions (approved jadval)",
+        "savedCheckIns": "Saqlashd check-ins (this browser)"
+      },
+      "checkInSuffix": {
+        "count": " · {{count}} checked in (this browser)",
+        "none": " · no check-ins stored here yet"
+      },
+      "helper": {
+        "generateBelow": "Generate a meeting in Sinf meeting check-in above, then pick it here.",
+        "generateAbove": "Generate a meeting in Sinf meeting check-in above, then pick it here.",
+        "plannedRows": "Planned rows mirror your approved jadval; saved check-ins come from QR sessions on this browser."
+      },
+      "empty": {
+        "pickSession": "Pick a planned session or a saved check-in to load the attendance table.",
+        "generateMeeting": "Generate a meeting QR first, then select it here."
+      }
+    },
+    "attendanceLogs": {
+      "title": "Davomat QR session log",
+      "description": "Past check-in sessions for this sinf on this browser.",
+      "empty": "No attendance sessions logged yet.",
+      "table": {
+        "started": "Started",
+        "ended": "Ended",
+        "timeInClass": "Time in sinf",
+        "class": "Sinf",
+        "meeting": "Meeting",
+        "instructor": "Instructor",
+        "howEnded": "How it ended"
+      },
+      "inProgress": "In progress",
+      "endReason": {
+        "windowEnded": "2h 15m window ended",
+        "newQr": "New QR / next meeting",
+        "switchedClass": "Switched sinf",
+        "stoppedByInstructor": "Stopped by instructor"
+      }
+    },
+    "grades": {
+      "title": "Final scores",
+      "intro": "Total = average of attendance % and instructor score (0–100). Publish certificates when grades are final.",
+      "publishAll": "Publish all certificates",
+      "empty": {
+        "substitute": "Substitute instructors cannot tahrirlash grades on this demo page.",
+        "connectApi": "Connect this sinf to the API to load enrolled talabas for grading.",
+        "loading": "Yuklanmoqda talabas…",
+        "error": "Could not load talabas for grading.",
+        "noStudents": "No talabas enrolled yet."
+      },
+      "table": {
+        "student": "Talaba",
+        "sessions": "Sessions",
+        "attendance": "Attend. %",
+        "instructor": "Instructor",
+        "total": "Total",
+        "feedback": "Feedback",
+        "actions": "Actions",
+        "headerTitles": {
+          "sessions": "QR check-ins on this browser vs planned sessions",
+          "attendance": "Auto: sessions attended ÷ planned sessions in 6 months",
+          "instructor": "Your score 0–100",
+          "total": "Average of attendance % and instructor score"
+        }
+      },
+      "feedback": {
+        "sessions": "sess.",
+        "platformPending": "Platform pending",
+        "platformBonus": "+ platform",
+        "pending": "Pending",
+        "readReview": "Read review"
+      },
+      "scorePlaceholder": "0–100",
+      "actions": {
+        "save": "Saqlash",
+        "update": "Update",
+        "publish": "Publish",
+        "done": "Done"
+      },
+      "footnote": "Attend. % = sessions checked in on this browser ÷ planned sessions (sinf settings). Not synced across devices until an attendance API exists.",
+      "reviewDialog": {
+        "title": "Talaba review",
+        "description": "Ratings and comments submitted by the talaba.",
+        "instructorRating": "Instructor rating",
+        "platformRating": "Platform rating",
+        "noComment": "No comment.",
+        "submitted": "Yuborishted {{date}}"
+      },
+      "starsAriaLabel": "{{rating}} out of 5 stars",
+      "toast": {
+        "gradeSaved": "Grade saved",
+        "certificatePublished": "Certificate published",
+        "saveFailed": "Could not save grade",
+        "publishFailed": "Could not publish certificate",
+        "publishAllDone": "All certificates published"
+      }
+    }
+  }
+}

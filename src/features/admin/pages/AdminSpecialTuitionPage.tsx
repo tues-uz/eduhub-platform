@@ -7,6 +7,7 @@ import { eduhubCourses } from "@/api/eduhubClient";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import { useTranslation } from "react-i18next";
 import {
   deleteSpecialTuitionGrant,
   setSpecialTuitionGrantActive,
@@ -52,6 +53,7 @@ function formatGrantDate(iso: string): string {
 }
 
 export default function AdminSpecialTuitionPage() {
+  const { t } = useTranslation();
   const grants = useSpecialTuitionGrants();
   const [emailInput, setEmailInput] = useState("");
   const [courseScope, setCourseScope] = useState<string>("all");
@@ -79,7 +81,7 @@ export default function AdminSpecialTuitionPage() {
         courseTitle: courseId ? courseTitleById.get(courseId) : undefined,
         note: noteInput,
       });
-      toast.success("Special tuition grant saved", {
+      toast.success(t("admin.specialTuition.toast.saved"), {
         description: courseId
           ? `${emailInput.trim()} can enroll in this class for free.`
           : `${emailInput.trim()} can enroll in any class for free.`,
@@ -100,42 +102,42 @@ export default function AdminSpecialTuitionPage() {
           className="mb-6 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Special tuition grants"
-          description="Grant free enrollment to specific student emails—for example staff family or scholarship cases. Stored in this browser until a grants API exists."
+          title={t("adminNav.specialTuition")}
+          description={t("admin.specialTuition.description")}
         />
 
         <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-900">Add grant</h2>
+          <h2 className="text-sm font-semibold text-slate-900">{t("admin.specialTuition.addGrant")}</h2>
           <p className="mt-1 text-xs text-slate-500">
             The student must sign in with this email when applying. Tuition shows as free on their enrollment form.
           </p>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="grant-email">Student email</Label>
+              <Label htmlFor="grant-email">{t("admin.specialTuition.studentEmail")}</Label>
               <Input
                 id="grant-email"
                 type="email"
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="student@example.com"
+                placeholder={t("admin.specialTuition.emailPlaceholder")}
                 className="bg-white"
                 autoComplete="off"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="grant-class">Class scope</Label>
+              <Label htmlFor="grant-class">{t("admin.specialTuition.classScope")}</Label>
               <Select value={courseScope} onValueChange={setCourseScope} disabled={coursesLoading}>
                 <SelectTrigger id="grant-class" className="bg-white">
-                  <SelectValue placeholder="Choose class" />
+                  <SelectValue placeholder={t("admin.specialTuition.chooseClass")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All classes</SelectItem>
+                  <SelectItem value="all">{t("admin.shared.allClasses")}</SelectItem>
                   {courses.map((course) => (
                     <SelectItem key={course.id} value={course.id}>
                       {course.title}
@@ -146,12 +148,12 @@ export default function AdminSpecialTuitionPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="grant-note">Note (optional)</Label>
+              <Label htmlFor="grant-note">{t("admin.payments.markPaidDialog.noteOptional")}</Label>
               <Input
                 id="grant-note"
                 value={noteInput}
                 onChange={(e) => setNoteInput(e.target.value)}
-                placeholder="e.g. Rector family"
+                placeholder={t("admin.specialTuition.notePlaceholder")}
                 className="bg-white"
               />
             </div>
@@ -172,11 +174,11 @@ export default function AdminSpecialTuitionPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50">
-                <TableHead>Email</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Note</TableHead>
-                <TableHead>Active</TableHead>
-                <TableHead>Added</TableHead>
+                <TableHead>{t("admin.shared.email")}</TableHead>
+                <TableHead>{t("admin.shared.class")}</TableHead>
+                <TableHead>{t("admin.specialTuition.table.note")}</TableHead>
+                <TableHead>{t("admin.shared.active")}</TableHead>
+                <TableHead>{t("admin.specialTuition.table.added")}</TableHead>
                 <TableHead className="w-[80px]" />
               </TableRow>
             </TableHeader>
@@ -194,7 +196,7 @@ export default function AdminSpecialTuitionPage() {
                     <TableCell className="max-w-[220px] text-slate-800">
                       {grant.courseId
                         ? grant.courseTitle ?? courseTitleById.get(grant.courseId) ?? grant.courseId
-                        : "All classes"}
+                        : t("admin.shared.backToAllClasses")}
                     </TableCell>
                     <TableCell className="text-slate-600">{grant.note || "—"}</TableCell>
                     <TableCell>
@@ -202,7 +204,7 @@ export default function AdminSpecialTuitionPage() {
                         checked={grant.active}
                         onCheckedChange={(checked) => {
                           setSpecialTuitionGrantActive(grant.id, checked);
-                          toast.success(checked ? "Grant enabled" : "Grant paused");
+                          toast.success(checked ? t("admin.specialTuition.toast.enabled") : "Grant paused");
                         }}
                         aria-label={`Toggle grant for ${grant.email}`}
                       />
@@ -218,7 +220,7 @@ export default function AdminSpecialTuitionPage() {
                         className="h-8 w-8 text-slate-500 hover:text-red-600"
                         onClick={() => {
                           deleteSpecialTuitionGrant(grant.id);
-                          toast.success("Grant removed");
+                          toast.success(t("admin.specialTuition.toast.removed"));
                         }}
                         aria-label={`Remove grant for ${grant.email}`}
                       >

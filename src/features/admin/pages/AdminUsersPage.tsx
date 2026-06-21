@@ -6,6 +6,7 @@ import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -33,6 +34,7 @@ interface UserItem {
 }
 
 export default function AdminUsersPage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -54,7 +56,7 @@ export default function AdminUsersPage() {
         }));
         setUsers(mapped);
       } catch (err: any) {
-        toast({ title: "Error", description: err.message || "Failed to load users", variant: "destructive" });
+        toast({ title: t("admin.users.toast.loadFailedTitle"), description: err.message || t("admin.users.toast.loadFailed"), variant: "destructive" });
       } finally {
         setIsLoading(false);
       }
@@ -86,24 +88,24 @@ export default function AdminUsersPage() {
       <div className="container mx-auto px-6">
         <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
-        <AdminPageHeader title="Users" description="Cross-role user list." />
+        <AdminPageHeader title={t("adminNav.users")} description={t("admin.users.description")} />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search name, email, role…"
+            placeholder={t("admin.shared.searchNameEmailRole")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
           />
           <Select value={roleFilter} onValueChange={setRoleFilter}>
             <SelectTrigger className="w-full sm:w-[160px] bg-white">
-              <SelectValue placeholder="Role" />
+              <SelectValue placeholder={t("admin.shared.role")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All roles</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allRoles")}</SelectItem>
               {roleOptions.map((r) => (
                 <SelectItem key={r} value={r}>
                   {r}
@@ -113,12 +115,12 @@ export default function AdminUsersPage() {
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[160px] bg-white">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t("common.status")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allStatuses")}</SelectItem>
+              <SelectItem value="active">{t("admin.shared.active")}</SelectItem>
+              <SelectItem value="inactive">{t("admin.shared.inactive")}</SelectItem>
             </SelectContent>
           </Select>
           {hasActiveFilters ? (
@@ -142,10 +144,10 @@ export default function AdminUsersPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50">
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>{t("common.name")}</TableHead>
+                <TableHead>{t("admin.shared.email")}</TableHead>
+                <TableHead>{t("admin.shared.role")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -158,7 +160,7 @@ export default function AdminUsersPage() {
               ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center text-slate-500">
-                    No users match your search or filters.
+                    {t("admin.users.empty")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -173,7 +175,7 @@ export default function AdminUsersPage() {
                           Active
                         </Badge>
                       ) : (
-                        <Badge variant="secondary">Inactive</Badge>
+                        <Badge variant="secondary">{t("admin.shared.inactive")}</Badge>
                       )}
                     </TableCell>
                   </TableRow>

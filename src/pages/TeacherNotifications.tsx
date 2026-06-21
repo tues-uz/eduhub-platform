@@ -7,6 +7,7 @@ import { useAuthSession } from "@/features/auth/context";
 import { eduhubNotifications } from "@/api/eduhubClient";
 import type { NotificationResponse } from "@/api/eduhubTypes";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import { useTranslation } from "react-i18next";
 
 function formatRelativeTime(iso: string): string {
   const t = new Date(iso).getTime();
@@ -55,6 +56,7 @@ function ctaLabel(href: string): string {
 }
 
 export default function TeacherNotifications() {
+  const { t } = useTranslation();
   const { user } = useAuthSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -121,12 +123,10 @@ export default function TeacherNotifications() {
           <Link
             to="/dashboard/teacher"
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
-          >
-            Back to Teacher Dashboard
-          </Link>
+          >{t("teacherSettings.backToDashboard")}</Link>
 
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Notifications</h1>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">{t("common.notifications")}</h1>
             <p className="text-foreground/70 text-sm mt-1">
               Class schedule, publishing, and other updates.
             </p>
@@ -142,17 +142,14 @@ export default function TeacherNotifications() {
                   className="rounded-full"
                   onClick={() => markAllReadMutation.mutate()}
                   disabled={markAllReadMutation.isPending}
-                >
-                  Mark all as read
-                </Button>
+                >{t("teacher.notifications.markAllRead")}</Button>
               ) : null}
             </div>
           </div>
 
           {isLoading ? (
             <div className="flex items-center justify-center py-16 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading notifications…
-            </div>
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />{t("teacher.notifications.loading")}</div>
           ) : (
             <>
               <div className="space-y-3">
@@ -183,9 +180,7 @@ export default function TeacherNotifications() {
                               type="button"
                               className="text-xs font-medium text-blue-600 hover:underline shrink-0"
                               onClick={() => markReadMutation.mutate(notification.id)}
-                            >
-                              Mark read
-                            </button>
+                            >{t("teacher.notifications.markRead")}</button>
                           ) : null}
                         </div>
 
@@ -235,7 +230,7 @@ export default function TeacherNotifications() {
               {notifications.length === 0 && (
                 <div className="rounded-xl border border-gray-200/50 bg-white/50 py-16 text-center">
                   <Bell className="mx-auto mb-4 h-12 w-12 text-foreground/30" />
-                  <p className="font-medium text-foreground/70">No notifications yet.</p>
+                  <p className="font-medium text-foreground/70">{t("teacher.notifications.empty.title")}</p>
                   <p className="mt-1 text-sm text-foreground/50">
                     Schedule proposals, class publishing updates, and other notifications will appear here.
                   </p>

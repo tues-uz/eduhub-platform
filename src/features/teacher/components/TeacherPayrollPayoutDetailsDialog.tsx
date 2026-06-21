@@ -16,6 +16,7 @@ import {
 } from "@/features/admin/data/adminPayrollProofStore";
 import type { InstructorPayrollRequestRecord } from "@/features/teacher/data/instructorPayrollRequestStore";
 import { formatThousandsInText } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 function formatShortDate(iso?: string): string {
   if (!iso?.trim()) return "—";
@@ -56,6 +57,7 @@ export function TeacherPayrollPayoutDetailsDialog({
   submission,
   proof,
 }: TeacherPayrollPayoutDetailsDialogProps) {
+  const { t } = useTranslation();
   const canShowTransferFile = canInstructorViewTransferProof(submission, proof);
   const releasedTransfer = isReleasedInstructorTransferProof(proof);
   const maybeWrongFile =
@@ -67,7 +69,7 @@ export function TeacherPayrollPayoutDetailsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[min(90dvh,720px)] max-w-lg overflow-y-auto rounded-2xl sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Payout information</DialogTitle>
+          <DialogTitle>{t("teacher.payrollPayout.title")}</DialogTitle>
           <DialogDescription>
             {classSection} · {course}. Bank transfer details come from EduHub admin after your payroll request is
             approved — not student course certificates.

@@ -16,8 +16,10 @@ import { teacherCoursesStore } from "../data/teacherCoursesStore";
 import { eduhubCourses } from "@/api/eduhubClient";
 import type { TeacherCourse } from "../types";
 import { TeacherAttendanceSessionPanel } from "@/features/teacher/components/TeacherAttendanceSessionPanel";
+import { useTranslation } from "react-i18next";
 
 const TeacherCoursesPage = () => {
+  const { t } = useTranslation();
   const { user } = useAuthSession();
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,18 +82,14 @@ const TeacherCoursesPage = () => {
             to="/dashboard/teacher"
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Teacher Dashboard
-          </Link>
+            <ArrowLeft className="h-4 w-4" />{t("teacherSettings.backToDashboard")}</Link>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
               <h1
                 className="text-2xl font-bold text-foreground"
                 style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
-              >
-                My Class
-              </h1>
+              >{t("teacherNav.myClass")}</h1>
               <p className="text-foreground/60 text-sm mt-1">
                 New classes stay in draft until an admin sets a price and publishes them. Add lessons with PDF or video
                 content, then wait for approval.
@@ -99,9 +97,7 @@ const TeacherCoursesPage = () => {
             </div>
             <Button asChild className="rounded-full shrink-0" style={{ backgroundColor: "#1e40af" }}>
               <Link to="/dashboard/teacher/courses/new" className="inline-flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add class
-              </Link>
+                <Plus className="h-4 w-4" />{t("teacher.courses.addClass")}</Link>
             </Button>
           </div>
 
@@ -111,35 +107,29 @@ const TeacherCoursesPage = () => {
                 Classes
               </TabsTrigger>
               <TabsTrigger value="attendance" className="rounded-lg px-4 gap-2 data-[state=active]:shadow-sm">
-                <Users className="h-4 w-4 shrink-0 opacity-70" />
-                Student attendance
-              </TabsTrigger>
+                <Users className="h-4 w-4 shrink-0 opacity-70" />{t("teacher.courses.tabs.attendance")}</TabsTrigger>
               <TabsTrigger value="schedule" className="rounded-lg px-4 gap-2 data-[state=active]:shadow-sm">
-                <CalendarDays className="h-4 w-4 shrink-0 opacity-70" />
-                Schedule
-              </TabsTrigger>
+                <CalendarDays className="h-4 w-4 shrink-0 opacity-70" />{t("teacher.roster.tabs.schedule")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="courses" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
           {loading ? (
             <Card className="teacher-course-card border-dashed border-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                <p className="text-sm text-foreground/60">Loading classes…</p>
+                <p className="text-sm text-foreground/60">{t("teacher.courses.loading")}</p>
               </CardContent>
             </Card>
           ) : courses.length === 0 ? (
             <Card className="teacher-course-card border-dashed border-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                 <BookOpen className="h-14 w-14 text-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-1">No classes yet</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-1">{t("teacher.courses.empty.title")}</h3>
                 <p className="text-sm text-foreground/60 mb-6 max-w-sm">
                   Create your first class and add lessons with PDF materials or video links.
                 </p>
                 <Button asChild className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
                   <Link to="/dashboard/teacher/courses/new" className="inline-flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add your first class
-                  </Link>
+                    <Plus className="h-4 w-4" />{t("teacher.courses.empty.cta")}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -235,9 +225,7 @@ const TeacherCoursesPage = () => {
             <TabsContent value="attendance" className="mt-0 max-w-3xl focus-visible:outline-none focus-visible:ring-0">
               <p className="text-sm text-foreground/60 mb-4">
                 Name each meeting and generate a QR; past meetings stay on this device. Full-page tool:{" "}
-                <Link to="/dashboard/teacher/attendance" className="text-[#1e40af] font-medium underline">
-                  Attendance QR
-                </Link>
+                <Link to="/dashboard/teacher/attendance" className="text-[#1e40af] font-medium underline">{t("teacherNav.attendanceQr")}</Link>
                 .
               </p>
               <TeacherAttendanceSessionPanel embedded />
@@ -252,22 +240,20 @@ const TeacherCoursesPage = () => {
               {loading ? (
                 <Card className="border-dashed border-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                   <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                    <p className="text-sm text-foreground/60">Loading schedules…</p>
+                    <p className="text-sm text-foreground/60">{t("teacher.courses.scheduleTab.loading")}</p>
                   </CardContent>
                 </Card>
               ) : courses.length === 0 ? (
                 <Card className="border-dashed border-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                   <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                     <CalendarDays className="h-14 w-14 text-foreground/30 mb-4" />
-                    <h3 className="text-lg font-semibold text-foreground mb-1">No classes yet</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-1">{t("teacher.courses.empty.title")}</h3>
                     <p className="text-sm text-foreground/60 mb-6 max-w-sm">
                       Create a class first, then come back here to set up the per-session schedule.
                     </p>
                     <Button asChild className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
                       <Link to="/dashboard/teacher/courses/new" className="inline-flex items-center gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add your first class
-                      </Link>
+                        <Plus className="h-4 w-4" />{t("teacher.courses.empty.cta")}</Link>
                     </Button>
                   </CardContent>
                 </Card>
@@ -307,7 +293,7 @@ const TeacherCoursesPage = () => {
                               </CardDescription>
                             </div>
                             <Button asChild variant="outline" className="rounded-full shrink-0">
-                              <Link to={`/dashboard/teacher/courses/${course.id}/edit/schedule`}>Edit schedule</Link>
+                              <Link to={`/dashboard/teacher/courses/${course.id}/edit/schedule`}>{t("teacher.courses.scheduleTab.editSchedule")}</Link>
                             </Button>
                           </div>
                         </CardHeader>

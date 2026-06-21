@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LogOut, Menu, X, User, Bell, ChevronDown, ChevronLeft, ChevronRight } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
@@ -13,11 +14,7 @@ import { useAuthSession, clearSessionUser } from "@/features/auth/context";
 import { instructorProfileAvatarsStore } from "@/features/teacher/data/instructorProfileAvatarsStore";
 import { clearAuthTokens } from "@/api/eduhubClient";
 import { useLayoutContext } from "@/features/layout/context";
-import {
-  adminMenuItems,
-  studentMenuItems,
-  teacherMenuItems,
-} from "@/features/layout/navigation";
+import { useDashboardMenuItems } from "@/features/layout/useDashboardMenuItems";
 import { dashboardHomeByRole } from "@/app/routes";
 import { SIDEBAR_COLLAPSE_ENABLED } from "@/features/layout/hooks/useSidebarState";
 import { formatDisplayPersonName, profileInitials } from "@/lib/formatPersonName";
@@ -27,6 +24,7 @@ import {
 import { DashboardClassSearch } from "@/components/DashboardClassSearch";
 
 const DashboardSidebar = () => {
+  const { t } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user } = useAuthSession();
   const { isSidebarCollapsed: isCollapsed, toggleSidebar } = useLayoutContext();
@@ -35,13 +33,11 @@ const DashboardSidebar = () => {
   const userName = formatDisplayPersonName(user.name);
   const userEmail = user.email;
   const userRole = user.role;
+  const nestedMenuItems = useDashboardMenuItems(userRole);
   const sidebarAvatarUrl =
     user.avatarUrl?.trim() ||
     instructorProfileAvatarsStore.getByEmail(user.email) ||
     instructorProfileAvatarsStore.getByName(user.name);
-
-  const nestedMenuItems =
-    userRole === "teacher" ? teacherMenuItems : userRole === "admin" ? adminMenuItems : null;
 
   const dashboardHome = dashboardHomeByRole(userRole);
   const mobileNotificationsPath =
@@ -100,7 +96,7 @@ const DashboardSidebar = () => {
                 size="icon"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="rounded-full"
-                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-label={isMobileMenuOpen ? t("sidebar.closeMenu") : t("sidebar.openMenu")}
               >
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </Button>
@@ -126,7 +122,7 @@ const DashboardSidebar = () => {
                   className={`rounded-full ${isProfessionalRole ? "text-slate-300 hover:text-white hover:bg-slate-800" : ""}`}
                   asChild
                 >
-                  <Link to={mobileNotificationsPath} aria-label="Notifications">
+                  <Link to={mobileNotificationsPath} aria-label={t("sidebar.notifications")}>
                     <Bell className="h-5 w-5" />
                   </Link>
                 </Button>
@@ -216,8 +212,7 @@ const DashboardSidebar = () => {
           {/* Navigation Menu */}
           <nav className="flex-1 overflow-y-auto p-4">
             <div className="space-y-1">
-              {nestedMenuItems
-                ? nestedMenuItems.map((item) => {
+              {(nestedMenuItems ?? []).map((item) => {
                     const Icon = item.icon;
                     if ("path" in item) {
                       const active = isActive(item.path);
@@ -277,28 +272,6 @@ const DashboardSidebar = () => {
                         )}
                       </Collapsible>
                     );
-                  })
-                : studentMenuItems.map((item) => {
-                    const Icon = item.icon;
-                    const active = isActive(item.path);
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
-                          isCollapsed ? "justify-center" : ""
-                        } ${
-                          active
-                            ? `${activeBg} font-semibold`
-                            : `${inactiveText} ${inactiveHover}`
-                        }`}
-                        title={isCollapsed ? item.label : undefined}
-                      >
-                        <Icon className="h-5 w-5 flex-shrink-0" />
-                        {!isCollapsed && <span className="text-sm font-medium" style={{ fontSize: "14px" }}>{item.label}</span>}
-                      </Link>
-                    );
                   })}
             </div>
           </nav>
@@ -309,10 +282,10 @@ const DashboardSidebar = () => {
               variant="ghost"
               className={`w-full rounded-xl ${isCollapsed ? "justify-center" : "justify-start"} ${isProfessionalRole ? "text-slate-300" : "text-foreground/70"} ${logoutHover}`}
               onClick={handleLogout}
-              title={isCollapsed ? "Log Out" : undefined}
+              title={isCollapsed ? t("sidebar.logout") : undefined}
             >
               <LogOut className="h-5 w-5 flex-shrink-0" />
-              {!isCollapsed && <span className="text-sm ml-3 font-medium" style={{ fontSize: '14px' }}>Log Out</span>}
+              {!isCollapsed && <span className="text-sm ml-3 font-medium" style={{ fontSize: "14px" }}>{t("sidebar.logout")}</span>}
             </Button>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { mockAdminPlacementResults } from "@/features/admin/data/adminOperationa
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -24,6 +25,7 @@ import {
 } from "@/components/ui/table";
 
 export default function AdminPlacementTestsPage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [resultFilter, setResultFilter] = useState<string>("all");
   const [courseFilter, setCourseFilter] = useState<string>("all");
@@ -65,17 +67,17 @@ export default function AdminPlacementTestsPage() {
       <div className="container mx-auto px-6">
         <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Placement tests"
-          description="Monitor placement results and tie outcomes to enrollments and class placement."
+          title={t("adminNav.placementTests")}
+          description={t("admin.placementTests.description")}
         />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search student, class, lecturer, assessment…"
+            placeholder={t("admin.placementTests.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
@@ -85,9 +87,9 @@ export default function AdminPlacementTestsPage() {
               <SelectValue placeholder="Result" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All results</SelectItem>
-              <SelectItem value="passed">Passed</SelectItem>
-              <SelectItem value="failed">Below threshold</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allResults")}</SelectItem>
+              <SelectItem value="passed">{t("admin.placementTests.passed")}</SelectItem>
+              <SelectItem value="failed">{t("admin.placementTests.belowThreshold")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={courseFilter} onValueChange={setCourseFilter}>
@@ -95,7 +97,7 @@ export default function AdminPlacementTestsPage() {
               <SelectValue placeholder="Class" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All classes</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allClasses")}</SelectItem>
               {courseOptions.map((name) => (
                 <SelectItem key={name} value={name}>
                   {name}
@@ -108,7 +110,7 @@ export default function AdminPlacementTestsPage() {
               <SelectValue placeholder="Lecturer" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All lecturers</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allLecturers")}</SelectItem>
               {lecturerOptions.map((name) => (
                 <SelectItem key={name} value={name}>
                   {name}
@@ -138,13 +140,13 @@ export default function AdminPlacementTestsPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50">
-                <TableHead>Student</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Lecturer</TableHead>
-                <TableHead>Assessment</TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead>Result</TableHead>
-                <TableHead>Completed</TableHead>
+                <TableHead>{t("admin.shared.student")}</TableHead>
+                <TableHead>{t("admin.shared.class")}</TableHead>
+                <TableHead>{t("admin.shared.lecturer")}</TableHead>
+                <TableHead>{t("admin.placementTests.table.assessment")}</TableHead>
+                <TableHead>{t("admin.placementTests.table.score")}</TableHead>
+                <TableHead>{t("admin.placementTests.resultPlaceholder")}</TableHead>
+                <TableHead>{t("admin.shared.completed")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -164,9 +166,9 @@ export default function AdminPlacementTestsPage() {
                     <TableCell>{r.scorePercent}%</TableCell>
                     <TableCell>
                       {r.passed ? (
-                        <Badge className="bg-emerald-600">Passed</Badge>
+                        <Badge className="bg-emerald-600">{t("admin.placementTests.passed")}</Badge>
                       ) : (
-                        <Badge variant="secondary">Below threshold</Badge>
+                        <Badge variant="secondary">{t("admin.placementTests.belowThreshold")}</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-slate-600">{r.completedAt}</TableCell>

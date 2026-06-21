@@ -5,6 +5,7 @@ import { ArrowLeft } from "@/lib/icons";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { buildPayrollProofPagePath } from "@/features/admin/data/adminPayrollProofStore";
+import { useTranslation } from "react-i18next";
 import {
   instructorPayrollRequestStore,
   useInstructorPayrollRequests,
@@ -20,6 +21,7 @@ import {
 import { validateAdminActionCodeOrThrow } from "@/features/admin/adminStaffCode";
 
 export default function AdminInstructorPayrollRequestsPage() {
+  const { t } = useTranslation();
   const location = useLocation();
   const payrollRequests = useInstructorPayrollRequests();
   const pendingPayrollRequests = useMemo(
@@ -61,15 +63,15 @@ export default function AdminInstructorPayrollRequestsPage() {
         </Link>
 
         <AdminPageHeader
-          title="Instructor payroll requests"
-          description="Review figures instructors submitted from Payroll. Approve or reject, then record bank transfer proof so they are notified (demo: this browser)."
+          title={t("admin.instructorPayrollRequests.title")}
+          description={t("admin.instructorPayrollRequests.description")}
           actions={
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" asChild>
-                <Link to="/dashboard/admin/payroll/submissions">Payout proof log</Link>
+                <Link to="/dashboard/admin/payroll/submissions">{t("admin.instructorPayrollRequests.payoutProofLog")}</Link>
               </Button>
               <Button variant="outline" size="sm" asChild>
-                <Link to="/dashboard/admin/payments">Payments & reminders</Link>
+                <Link to="/dashboard/admin/payments">{t("admin.dashboard.quickActions.paymentsReminders")}</Link>
               </Button>
             </div>
           }
@@ -77,12 +79,12 @@ export default function AdminInstructorPayrollRequestsPage() {
 
         {pendingPayrollRequests.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-14 text-center">
-            <p className="text-sm font-medium text-slate-800">No pending requests</p>
+            <p className="text-sm font-medium text-slate-800">{t("admin.instructorPayrollRequests.emptyTitle")}</p>
             <p className="text-sm text-slate-600 mt-2 max-w-md mx-auto">
               When an instructor submits payroll for a class, it appears here for approval and transfer proof.
             </p>
             <Button asChild variant="secondary" className="mt-6">
-              <Link to="/dashboard/admin/payroll">Open payroll overview</Link>
+              <Link to="/dashboard/admin/payroll">{t("admin.instructorPayrollRequests.openPayrollOverview")}</Link>
             </Button>
           </div>
         ) : (
@@ -92,7 +94,7 @@ export default function AdminInstructorPayrollRequestsPage() {
               <p className="text-sm text-slate-600 font-normal">
                 <strong className="font-medium text-slate-800">1.</strong> Approve or reject (optional note on reject).{" "}
                 <strong className="font-medium text-slate-800">2.</strong> After you pay them, open{" "}
-                <span className="font-medium text-slate-800">Record transfer proof</span> (or use{" "}
+                <span className="font-medium text-slate-800">{t("admin.instructorPayrollRequests.recordTransferProof")}</span> (or use{" "}
                 <span className="font-medium text-slate-800">Upload payout proof</span> on a class card on Payroll overview).
                 Submitting proof sends an in-app notification to the instructor.
               </p>
@@ -128,7 +130,7 @@ export default function AdminInstructorPayrollRequestsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2 shrink-0">
                       <Button type="button" size="sm" variant="outline" asChild>
-                        <Link to={`/dashboard/admin/payroll/instructor-request/${r.id}`}>Open detail</Link>
+                        <Link to={`/dashboard/admin/payroll/instructor-request/${r.id}`}>{t("admin.shared.openDetails")}</Link>
                       </Button>
                       <Button
                         type="button"
@@ -138,8 +140,8 @@ export default function AdminInstructorPayrollRequestsPage() {
                           const code = requireAdminCode();
                           if (!code) return;
                           const ok = await instructorPayrollRequestStore.approve(r.id, code);
-                          if (ok) toast.success("Request approved", { description: r.instructorName });
-                          else toast.error("Could not approve", { description: "Request may have been removed." });
+                          if (ok) toast.success(t("admin.instructorPayrollRequests.toast.approved"), { description: r.instructorName });
+                          else toast.error(t("admin.installmentPayments.toast.approveFailed"), { description: "Request may have been removed." });
                         }}
                       >
                         Approve
@@ -154,13 +156,13 @@ export default function AdminInstructorPayrollRequestsPage() {
                           const note = rejectNotes[r.id]?.trim();
                           const ok = await instructorPayrollRequestStore.reject(r.id, code, note);
                           if (ok) {
-                            toast.message("Request rejected", { description: r.instructorName });
+                            toast.message(t("admin.instructorPayrollRequests.toast.rejected"), { description: r.instructorName });
                             setRejectNotes((prev) => {
                               const next = { ...prev };
                               delete next[r.id];
                               return next;
                             });
-                          } else toast.error("Could not reject");
+                          } else toast.error(t("admin.installmentPayments.toast.rejectFailed"));
                         }}
                       >
                         Reject
@@ -183,25 +185,25 @@ export default function AdminInstructorPayrollRequestsPage() {
                   <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     {r.periodLabel ? (
                       <div>
-                        <dt className="text-xs font-medium text-slate-500">Period</dt>
+                        <dt className="text-xs font-medium text-slate-500">{t("admin.shared.period")}</dt>
                         <dd className="text-slate-800">{r.periodLabel}</dd>
                       </div>
                     ) : null}
                     {r.sessionsTaught ? (
                       <div>
-                        <dt className="text-xs font-medium text-slate-500">Sessions taught</dt>
+                        <dt className="text-xs font-medium text-slate-500">{t("admin.instructorPayrollRequests.fields.sessionsTaught")}</dt>
                         <dd className="text-slate-800">{r.sessionsTaught}</dd>
                       </div>
                     ) : null}
                     {r.requestedPayout ? (
                       <div>
-                        <dt className="text-xs font-medium text-slate-500">Requested payout</dt>
+                        <dt className="text-xs font-medium text-slate-500">{t("admin.instructorPayrollRequests.fields.requestedPayout")}</dt>
                         <dd className="text-slate-800 tabular-nums">{formatThousandsInText(r.requestedPayout)}</dd>
                       </div>
                     ) : null}
                     {r.payoutDetails ? (
                       <div>
-                        <dt className="text-xs font-medium text-slate-500">Payout details</dt>
+                        <dt className="text-xs font-medium text-slate-500">{t("admin.instructorPayrollRequests.fields.payoutDetails")}</dt>
                         <dd className="text-slate-800">{r.payoutDetails}</dd>
                       </div>
                     ) : null}
@@ -225,7 +227,7 @@ export default function AdminInstructorPayrollRequestsPage() {
                           [r.id]: e.target.value,
                         }))
                       }
-                      placeholder="Reason or next steps…"
+                      placeholder={t("admin.instructorPayrollRequests.rejectNotePlaceholder")}
                       className="mt-1 bg-white min-h-[72px]"
                     />
                   </div>

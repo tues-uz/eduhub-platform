@@ -8,6 +8,7 @@ import { StudentStatusBadge } from "@/features/admin/components/AdminStatusBadge
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,6 +44,7 @@ interface StudentRow {
 }
 
 export default function AdminStudentsPage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -65,7 +67,7 @@ export default function AdminStudentsPage() {
         }));
         setStudents(mapped);
       } catch (err: any) {
-        toast.error(err.message || "Failed to load students");
+        toast.error(err.message || t("admin.students.toast.loadFailed"));
       } finally {
         setIsLoading(false);
       }
@@ -83,9 +85,9 @@ export default function AdminStudentsPage() {
             : s
         )
       );
-      toast.success(currentEnabled ? "Student deactivated" : "Student activated");
+      toast.success(currentEnabled ? t("admin.students.toast.deactivated") : "Student activated");
     } catch (err: any) {
-      toast.error(err.message || "Failed to update status");
+      toast.error(err.message || t("admin.students.toast.updateFailed"));
     }
   };
 
@@ -110,19 +112,19 @@ export default function AdminStudentsPage() {
       <div className="container mx-auto px-6">
         <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Students & registrations"
-          description="Directory and status of enrolled students."
+          title={t("adminNav.studentsRegistrations")}
+          description={t("admin.students.description")}
           actions={
             <>
               <Button
                 variant="outline"
                 size="sm"
                 disabled={selectedIds.length === 0}
-                onClick={() => toast.message("Reminder queued (demo)", { description: `${selectedIds.length} student(s)` })}
+                onClick={() => toast.message(t("admin.students.remindQueuedDemo"), { description: `${selectedIds.length} student(s)` })}
               >
                 <Mail className="h-4 w-4 mr-2" />
                 Remind selected
@@ -133,19 +135,19 @@ export default function AdminStudentsPage() {
 
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <Input
-            placeholder="Search name or email…"
+            placeholder={t("admin.shared.searchNameEmail")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
           />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[180px] bg-white">
-              <SelectValue placeholder="Student status" />
+              <SelectValue placeholder={t("admin.students.statusPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allStatuses")}</SelectItem>
+              <SelectItem value="active">{t("admin.shared.active")}</SelectItem>
+              <SelectItem value="inactive">{t("admin.shared.inactive")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -160,11 +162,11 @@ export default function AdminStudentsPage() {
                     onCheckedChange={(v) => toggleAll(!!v)}
                   />
                 </TableHead>
-                <TableHead>Student</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Classes</TableHead>
-                <TableHead>Registered</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("admin.shared.student")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead>{t("admin.students.table.classes")}</TableHead>
+                <TableHead>{t("admin.students.table.registered")}</TableHead>
+                <TableHead className="text-right">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -177,7 +179,7 @@ export default function AdminStudentsPage() {
               ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center text-slate-500">
-                    No students match your search or filters.
+                    {t("admin.students.empty")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -207,7 +209,7 @@ export default function AdminStudentsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link to={`/dashboard/admin/enrollments?student=${r.id}`}>View enrollments</Link>
+                            <Link to={`/dashboard/admin/enrollments?student=${r.id}`}>{t("admin.students.actions.viewEnrollments")}</Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleToggleStatus(r.id, r.enabled)}>
                             {r.enabled ? (

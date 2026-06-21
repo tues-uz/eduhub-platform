@@ -9,6 +9,7 @@ import { mockAdminClasses, type ClassStatus } from "@/features/admin/data/adminO
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -26,6 +27,7 @@ import {
 } from "@/components/ui/table";
 
 export default function AdminClassesPage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [courseFilter, setCourseFilter] = useState("all");
@@ -53,30 +55,30 @@ export default function AdminClassesPage() {
       <div className="container mx-auto px-6">
         <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Classes & rosters"
-          description="Assign students to classes, track session quota, and handle class switching from the student or enrollment record."
+          title={t("adminNav.classesRosters")}
+          description={t("admin.classesRosters.description")}
         />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search class, schedule…"
+            placeholder={t("admin.classesRosters.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
           />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[170px] bg-white">
-              <SelectValue placeholder="Class status" />
+              <SelectValue placeholder={t("admin.classesRosters.classStatusPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All class statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="waiting">Waiting</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allClassStatuses")}</SelectItem>
+              <SelectItem value="active">{t("admin.shared.active")}</SelectItem>
+              <SelectItem value="waiting">{t("admin.shared.waiting")}</SelectItem>
+              <SelectItem value="completed">{t("admin.shared.completed")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={courseFilter} onValueChange={setCourseFilter}>
@@ -84,7 +86,7 @@ export default function AdminClassesPage() {
               <SelectValue placeholder="Class" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All classes</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allClasses")}</SelectItem>
               {courseOptions.map((name) => (
                 <SelectItem key={name} value={name}>
                   {name}
@@ -113,20 +115,20 @@ export default function AdminClassesPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50">
-                <TableHead>Class</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Schedule</TableHead>
-                <TableHead>Capacity</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Session quota</TableHead>
-                <TableHead className="text-right">Roster</TableHead>
+                <TableHead>{t("admin.shared.class")}</TableHead>
+                <TableHead>{t("admin.shared.class")}</TableHead>
+                <TableHead>{t("admin.courses.detail.schedule")}</TableHead>
+                <TableHead>{t("admin.classesRosters.table.capacity")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead>{t("admin.classesRosters.table.sessionQuota")}</TableHead>
+                <TableHead className="text-right">{t("admin.classesRosters.table.roster")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center text-slate-500">
-                    No classes match your search or filters.
+                    {t("admin.classesRosters.empty")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -150,7 +152,7 @@ export default function AdminClassesPage() {
                       <Progress value={(c.sessionQuota.used / c.sessionQuota.total) * 100} className="h-1.5" />
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="outline" onClick={() => toast.message("Open roster (demo)", { description: c.name })}>
+                      <Button size="sm" variant="outline" onClick={() => toast.message(t("admin.classesRosters.openRosterDemo"), { description: c.name })}>
                         Open roster
                       </Button>
                     </TableCell>

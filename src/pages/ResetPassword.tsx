@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Lock, Eye, EyeOff, AlertCircle, CheckCircle2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { eduhubAuth } from "@/api/eduhubClient";
 import { appRoutes } from "@/app/routes";
 
 const ResetPassword = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const navigate = useNavigate();
@@ -27,17 +29,17 @@ const ResetPassword = () => {
     setError("");
 
     if (!token) {
-      setError("Invalid or missing reset link. Please request a new password reset email.");
+      setError(t("auth.resetPassword.missingToken"));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t("auth.resetPassword.passwordsMismatch"));
       return;
     }
 
     if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError(t("auth.resetPassword.passwordTooShort"));
       return;
     }
 
@@ -46,14 +48,12 @@ const ResetPassword = () => {
       await eduhubAuth.resetPassword(token, { newPassword });
       setIsSuccess(true);
       toast({
-        title: "Password reset",
-        description: "Your password has been updated. You can now sign in.",
+        title: t("auth.resetPassword.toastTitle"),
+        description: t("auth.resetPassword.toastDescription"),
       });
     } catch (err: unknown) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to reset password. The link may have expired — request a new one.",
+        err instanceof Error ? err.message : t("auth.resetPassword.resetFailed"),
       );
     } finally {
       setIsLoading(false);
@@ -65,16 +65,14 @@ const ResetPassword = () => {
       <div className="h-dvh bg-white flex items-center justify-center p-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         <div className="w-full max-w-md bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border-2 border-gray-200 p-8 text-center space-y-4">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
-          <h1 className="text-2xl font-bold text-foreground">Invalid Reset Link</h1>
-          <p className="text-foreground/70 text-sm">
-            This password reset link is missing or invalid. Please request a new one.
-          </p>
+          <h1 className="text-2xl font-bold text-foreground">{t("auth.resetPassword.invalidLinkTitle")}</h1>
+          <p className="text-foreground/70 text-sm">{t("auth.resetPassword.invalidLinkDesc")}</p>
           <Button
             className="w-full h-12 rounded-full text-white font-semibold"
             style={{ backgroundColor: "#3954d0" }}
             asChild
           >
-            <Link to={appRoutes.forgotPassword}>Request New Link</Link>
+            <Link to={appRoutes.forgotPassword}>{t("auth.resetPassword.requestNewLink")}</Link>
           </Button>
         </div>
       </div>
@@ -91,10 +89,8 @@ const ResetPassword = () => {
                 <div className="text-center space-y-6">
                   <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
                   <div>
-                    <h1 className="text-2xl font-bold text-foreground mb-2">Password Updated</h1>
-                    <p className="text-foreground/70 text-sm">
-                      Your password has been reset successfully. You can now sign in with your new password.
-                    </p>
+                    <h1 className="text-2xl font-bold text-foreground mb-2">{t("auth.resetPassword.successTitle")}</h1>
+                    <p className="text-foreground/70 text-sm">{t("auth.resetPassword.successDesc")}</p>
                   </div>
                   <Button
                     type="button"
@@ -102,7 +98,7 @@ const ResetPassword = () => {
                     style={{ backgroundColor: "#3954d0" }}
                     onClick={() => navigate(appRoutes.signIn)}
                   >
-                    Go to Sign In
+                    {t("auth.resetPassword.goToSignIn")}
                   </Button>
                 </div>
               ) : (
@@ -111,8 +107,8 @@ const ResetPassword = () => {
                     <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                       <Lock className="w-8 h-8 text-blue-600" />
                     </div>
-                    <h1 className="text-3xl font-bold text-foreground mb-2">Reset Password</h1>
-                    <p className="text-foreground/70 text-sm">Choose a new password for your account.</p>
+                    <h1 className="text-3xl font-bold text-foreground mb-2">{t("auth.resetPassword.title")}</h1>
+                    <p className="text-foreground/70 text-sm">{t("auth.resetPassword.subtitle")}</p>
                   </div>
 
                   {error && (
@@ -125,14 +121,14 @@ const ResetPassword = () => {
                   <form onSubmit={handleSubmit} className="space-y-5">
                     <div className="space-y-2">
                       <Label htmlFor="newPassword" className="text-sm font-medium text-foreground">
-                        New Password
+                        {t("auth.resetPassword.newPassword")}
                       </Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
                         <Input
                           id="newPassword"
                           type={showPassword ? "text" : "password"}
-                          placeholder="Enter new password"
+                          placeholder={t("auth.resetPassword.newPasswordPlaceholder")}
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
                           autoComplete="new-password"
@@ -151,14 +147,14 @@ const ResetPassword = () => {
 
                     <div className="space-y-2">
                       <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
-                        Confirm New Password
+                        {t("auth.resetPassword.confirmPassword")}
                       </Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
                         <Input
                           id="confirmPassword"
                           type={showConfirmPassword ? "text" : "password"}
-                          placeholder="Confirm new password"
+                          placeholder={t("auth.resetPassword.confirmPasswordPlaceholder")}
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           autoComplete="new-password"
@@ -181,7 +177,7 @@ const ResetPassword = () => {
                       className="w-full h-12 rounded-full text-white font-semibold text-base transition-all duration-300 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ backgroundColor: "#3954d0" }}
                     >
-                      {isLoading ? "Updating..." : "Reset Password"}
+                      {isLoading ? t("auth.resetPassword.submitting") : t("auth.resetPassword.submit")}
                     </Button>
 
                     <div className="text-center text-sm">
@@ -189,7 +185,7 @@ const ResetPassword = () => {
                         to={appRoutes.forgotPassword}
                         className="text-primary hover:text-primary/80 font-medium transition-colors"
                       >
-                        Request a new reset link
+                        {t("auth.resetPassword.requestAnotherLink")}
                       </Link>
                     </div>
                   </form>

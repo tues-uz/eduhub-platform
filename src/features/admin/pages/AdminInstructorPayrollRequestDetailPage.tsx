@@ -8,6 +8,7 @@ import { usePayrollRequestSchedule } from "@/features/admin/hooks/usePayrollRequ
 import { buildPayrollProofPagePath } from "@/features/admin/data/adminPayrollProofStore";
 import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
 import { ClassSchedulePreviewPanel } from "@/features/courses/ClassSchedulePreviewPanel";
+import { useTranslation } from "react-i18next";
 import {
   formatClassDateLabel,
   formatSessionTimeLabel,
@@ -48,15 +49,16 @@ import { cn, formatThousandsInText } from "@/lib/utils";
 
 function StatusLine({ status }: { status: "pending" | "approved" | "rejected" }) {
   if (status === "approved") {
-    return <span className="text-sm font-medium text-emerald-700">Approved</span>;
+    return <span className="text-sm font-medium text-emerald-700">{t("admin.shared.approved")}</span>;
   }
   if (status === "rejected") {
-    return <span className="text-sm font-medium text-red-700">Not approved</span>;
+    return <span className="text-sm font-medium text-red-700">{t("admin.shared.notApproved")}</span>;
   }
-  return <span className="text-sm font-medium text-amber-800">Awaiting your decision</span>;
+  return <span className="text-sm font-medium text-amber-800">{t("admin.instructorPayrollRequestDetail.status.awaitingDecision")}</span>;
 }
 
 export default function AdminInstructorPayrollRequestDetailPage() {
+  const { t } = useTranslation();
   const { requestId } = useParams<{ requestId: string }>();
   const payments = useAdminPayments();
   const payrollRequests = useInstructorPayrollRequests();
@@ -129,7 +131,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
         <div className="container mx-auto px-6 max-w-3xl py-8">
           <p className="text-sm text-slate-600">Missing submission id.</p>
           <Button asChild variant="outline" className="mt-4">
-            <Link to="/dashboard/admin/payroll?tab=requests">Back to payroll</Link>
+            <Link to="/dashboard/admin/payroll?tab=requests">{t("admin.shared.backToPayroll")}</Link>
           </Button>
         </div>
       </AdminLayout>
@@ -140,7 +142,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
     return (
       <AdminLayout>
         <div className="container mx-auto px-6 max-w-3xl py-8">
-          <p className="text-sm text-slate-600">Loading payroll submission…</p>
+          <p className="text-sm text-slate-600">{t("admin.shared.loadingPayrollSubmission")}</p>
         </div>
       </AdminLayout>
     );
@@ -151,9 +153,9 @@ export default function AdminInstructorPayrollRequestDetailPage() {
       <AdminLayout>
         <div className="container mx-auto px-6 max-w-3xl py-8">
           <p className="text-sm font-medium text-slate-900">Submission not found</p>
-          <p className="text-sm text-slate-600 mt-1">It may have been removed or the link is invalid.</p>
+          <p className="text-sm text-slate-600 mt-1">{t("admin.enrollmentApplications.detail.notFound.description")}</p>
           <Button asChild variant="outline" className="mt-6">
-            <Link to="/dashboard/admin/payroll?tab=requests">Back to payroll</Link>
+            <Link to="/dashboard/admin/payroll?tab=requests">{t("admin.shared.backToPayroll")}</Link>
           </Button>
         </div>
       </AdminLayout>
@@ -175,7 +177,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
           </Link>
           {record.status === "pending" ? (
             <Button variant="outline" size="sm" asChild>
-              <Link to="/dashboard/admin/payroll?tab=requests">All requests</Link>
+              <Link to="/dashboard/admin/payroll?tab=requests">{t("admin.shared.allRequests")}</Link>
             </Button>
           ) : null}
         </div>
@@ -184,12 +186,12 @@ export default function AdminInstructorPayrollRequestDetailPage() {
         <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 p-6 shadow-sm mb-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Class</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{t("admin.shared.class")}</p>
               <h1 className="text-xl font-semibold text-slate-900 tracking-tight mt-0.5">{record.classSection}</h1>
               <p className="text-sm text-slate-600 mt-1">{record.course}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Status</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{t("common.status")}</p>
               <div className="mt-0.5">
                 <StatusLine status={record.status} />
               </div>
@@ -198,7 +200,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
           <Separator className="my-5 bg-slate-200/80" />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center sm:text-left">
             <div>
-              <p className="text-xs font-medium text-slate-500">Instructor</p>
+              <p className="text-xs font-medium text-slate-500">{t("admin.shared.instructor")}</p>
               <p className="text-sm font-medium text-slate-900 mt-1">{record.instructorName}</p>
               {record.instructorEmailNorm ? (
                 <p className="text-xs text-slate-500 truncate mt-0.5" title={record.instructorEmailNorm}>
@@ -207,11 +209,11 @@ export default function AdminInstructorPayrollRequestDetailPage() {
               ) : null}
             </div>
             <div>
-              <p className="text-xs font-medium text-slate-500">Request amount</p>
+              <p className="text-xs font-medium text-slate-500">{t("admin.instructorPayrollRequestDetail.requestAmount")}</p>
               <p className="text-xl font-semibold tabular-nums text-slate-900 mt-1">{requestedDisplay}</p>
             </div>
             <div>
-              <p className="text-xs font-medium text-slate-500">Submitted</p>
+              <p className="text-xs font-medium text-slate-500">{t("admin.shared.submitted")}</p>
               <p className="text-sm text-slate-800 mt-1 tabular-nums">
                 {new Date(record.submittedAt).toLocaleString(undefined, {
                   dateStyle: "medium",
@@ -228,7 +230,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
         {/* Class schedule — payroll eligibility is all sessions finished in the request month */}
         <Card className="rounded-xl border-slate-200 shadow-sm overflow-hidden mb-6">
           <CardHeader className="border-b border-slate-100 bg-slate-50/60 pb-4">
-            <CardTitle className="text-lg">Class schedule</CardTitle>
+            <CardTitle className="text-lg">{t("admin.instructorPayrollRequestDetail.schedule.title")}</CardTitle>
             <CardDescription>
               Admin-proposed schedule, approved by the instructor. Payroll for{" "}
               {record.periodLabel ? (
@@ -289,7 +291,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
                         ? "All sessions in this month are finished — eligible for payroll for this period."
                         : payrollSchedule.monthCompletion.totalInPeriod > 0
                           ? "Payroll should be processed after the remaining sessions in this month are finished."
-                          : "Confirm the period label matches a month that has scheduled sessions."}
+                          : t("admin.instructorPayrollRequestDetail.schedule.confirmPeriod")}
                     </p>
                   </div>
                 ) : null}
@@ -367,26 +369,26 @@ export default function AdminInstructorPayrollRequestDetailPage() {
               <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                 {record.sessionsTaught ? (
                   <div>
-                    <dt className="text-xs font-medium text-slate-500">Sessions taught</dt>
+                    <dt className="text-xs font-medium text-slate-500">{t("admin.instructorPayrollRequests.fields.sessionsTaught")}</dt>
                     <dd className="mt-0.5 text-slate-900">{record.sessionsTaught}</dd>
                   </div>
                 ) : null}
                 {record.payoutDetails ? (
                   <div className="sm:col-span-2">
-                    <dt className="text-xs font-medium text-slate-500">Payout details</dt>
+                    <dt className="text-xs font-medium text-slate-500">{t("admin.instructorPayrollRequests.fields.payoutDetails")}</dt>
                     <dd className="mt-0.5 text-slate-800">{formatThousandsInText(record.payoutDetails)}</dd>
                   </div>
                 ) : null}
               </dl>
               {record.instructorNotes ? (
                 <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-3">
-                  <p className="text-xs font-medium text-slate-500">Instructor notes</p>
+                  <p className="text-xs font-medium text-slate-500">{t("admin.instructorPayrollRequestDetail.submission.instructorNotes")}</p>
                   <p className="text-sm text-slate-800 mt-1 whitespace-pre-wrap">{record.instructorNotes}</p>
                 </div>
               ) : null}
               {record.status === "rejected" && record.adminNote ? (
                 <div className="rounded-lg border border-red-200/80 bg-red-50/60 p-3">
-                  <p className="text-xs font-medium text-red-900">Note sent to instructor</p>
+                  <p className="text-xs font-medium text-red-900">{t("admin.instructorPayrollRequestDetail.submission.noteToInstructor")}</p>
                   <p className="text-sm text-red-950 mt-1 whitespace-pre-wrap">{record.adminNote}</p>
                 </div>
               ) : null}
@@ -430,7 +432,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
         {/* Proof — admin completes this before final decision */}
         <Card className="rounded-xl border-slate-200 shadow-sm overflow-hidden mb-6">
           <CardHeader className="border-b border-slate-100 bg-slate-50/60 pb-4">
-            <CardTitle className="text-lg">Transfer proof</CardTitle>
+            <CardTitle className="text-lg">{t("admin.payments.proofDialog.title")}</CardTitle>
             <CardDescription>
               Upload the bank receipt and submit here. When you&apos;re done, scroll down to approve or decline the
               payroll request (pending requests only).
@@ -462,7 +464,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
         {record.status === "pending" ? (
           <Card className="rounded-xl border-slate-200 shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Approve or decline</CardTitle>
+              <CardTitle className="text-lg">{t("admin.instructorPayrollRequestDetail.decision.title")}</CardTitle>
               <CardDescription>
                 After transfer proof is on file (recommended), confirm whether you accept this instructor&apos;s payroll
                 figures. Decline opens a confirmation step so you don&apos;t mis-click.{" "}
@@ -494,7 +496,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
         <AlertDialog open={approveOpen} onOpenChange={setApproveOpen}>
           <AlertDialogContent className="sm:max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle>Approve this payroll request?</AlertDialogTitle>
+              <AlertDialogTitle>{t("admin.instructorPayrollRequestDetail.approveDialog.title")}</AlertDialogTitle>
               <AlertDialogDescription>
                 Confirm you accept {record.instructorName}&apos;s figures for {record.classSection}. The instructor
                 will be notified in Teacher → Notifications.
@@ -508,7 +510,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
               />
             </div>
             <AlertDialogFooter className="gap-2 sm:gap-0">
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
               <Button
                 type="button"
                 className="bg-emerald-600 hover:bg-emerald-700"
@@ -524,7 +526,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
                   if (ok) {
                     toast.success("Approved", { description: `${record.instructorName} was notified.` });
                     setApproveOpen(false);
-                  } else toast.error("Could not approve");
+                  } else toast.error(t("admin.installmentPayments.toast.approveFailed"));
                 }}
               >
                 Approve request
@@ -542,7 +544,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
         >
           <AlertDialogContent className="sm:max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle>Decline this payroll request?</AlertDialogTitle>
+              <AlertDialogTitle>{t("admin.instructorPayrollRequestDetail.declineDialog.title")}</AlertDialogTitle>
               <AlertDialogDescription>
                 The instructor will see this in their notifications. You can leave a short explanation (recommended).
               </AlertDialogDescription>
@@ -554,18 +556,18 @@ export default function AdminInstructorPayrollRequestDetailPage() {
                 onChange={setAdminActionCode}
               />
               <div className="space-y-2">
-                <Label htmlFor="reject-dialog-note">Note to instructor</Label>
+                <Label htmlFor="reject-dialog-note">{t("admin.instructorPayrollRequestDetail.declineDialog.noteLabel")}</Label>
                 <Textarea
                   id="reject-dialog-note"
                   value={rejectDialogNote}
                   onChange={(e) => setRejectDialogNote(e.target.value)}
-                  placeholder="Reason they should fix or resubmit…"
+                  placeholder={t("admin.instructorPayrollRequestDetail.declineDialog.notePlaceholder")}
                   className="min-h-[100px]"
                 />
               </div>
             </div>
             <AlertDialogFooter className="gap-2 sm:gap-0">
-              <AlertDialogCancel onClick={() => setRejectDialogNote("")}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel onClick={() => setRejectDialogNote("")}>{t("common.cancel")}</AlertDialogCancel>
               <Button
                 type="button"
                 variant="destructive"
@@ -579,10 +581,10 @@ export default function AdminInstructorPayrollRequestDetailPage() {
                   }
                   const ok = await instructorPayrollRequestStore.reject(record.id, code, rejectDialogNote.trim());
                   if (ok) {
-                    toast.message("Request declined", { description: record.instructorName });
+                    toast.message(t("admin.instructorPayrollRequestDetail.toast.declined"), { description: record.instructorName });
                     setRejectDialogNote("");
                     setRejectOpen(false);
-                  } else toast.error("Could not decline");
+                  } else toast.error(t("admin.instructorPayrollRequestDetail.toast.declineFailed"));
                 }}
               >
                 Decline request

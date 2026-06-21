@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Users,
   BookOpen,
@@ -36,6 +37,7 @@ import { useLayoutContext } from "@/features/layout/context";
 import { useAdminOverviewQuery } from "@/features/admin/hooks/useAdminQueries";
 
 const AdminDashboard = () => {
+  const { t } = useTranslation();
   const { user } = useAuthSession();
   const { isSidebarCollapsed } = useLayoutContext();
   const { data, isPending, isError, error } = useAdminOverviewQuery();
@@ -82,12 +84,12 @@ const AdminDashboard = () => {
                   {userName}
                 </h1>
                 <p className="text-slate-600 text-sm font-medium">
-                  Admin Dashboard
+                  {t("admin.dashboard.subtitle")}
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 <span className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md uppercase tracking-wide">
-                  Admin
+                  {t("admin.shared.roleBadge")}
                 </span>
               </div>
             </div>
@@ -121,33 +123,33 @@ const AdminDashboard = () => {
           </div>
 
           <div className="space-y-6">
-            {/* Recent Users Table */}
+            {/* {t("admin.dashboard.recentUsers.title")} Table */}
             <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
               <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-slate-900">
-                  Recent Users
+                  {t("admin.dashboard.recentUsers.title")}
                 </h2>
                 <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white h-8" asChild>
                   <Link to="/dashboard/admin/add-user-role" className="inline-flex items-center">
                     <UserPlus className="h-4 w-4 mr-2" />
-                    Add User
+                    {t("admin.dashboard.recentUsers.addUser")}
                   </Link>
                 </Button>
               </div>
               {recentUsers.length > 0 ? (
                 <div className="px-6 pb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center border-b border-slate-200">
                   <Input
-                    placeholder="Search name, email, role…"
+                    placeholder={t("admin.shared.searchNameEmailRole")}
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
                     className="max-w-md bg-white"
                   />
                   <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
                     <SelectTrigger className="w-full sm:w-[160px] bg-white">
-                      <SelectValue placeholder="Role" />
+                      <SelectValue placeholder={t("admin.shared.role")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All roles</SelectItem>
+                      <SelectItem value="all">{t("admin.shared.allRoles")}</SelectItem>
                       {recentUserRoleOptions.map((r) => (
                         <SelectItem key={r} value={r}>
                           {r}
@@ -157,12 +159,12 @@ const AdminDashboard = () => {
                   </Select>
                   <Select value={userStatusFilter} onValueChange={setUserStatusFilter}>
                     <SelectTrigger className="w-full sm:w-[160px] bg-white">
-                      <SelectValue placeholder="Status" />
+                      <SelectValue placeholder={t("common.status")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="all">{t("admin.shared.allStatuses")}</SelectItem>
+                      <SelectItem value="active">{t("admin.shared.active")}</SelectItem>
+                      <SelectItem value="inactive">{t("admin.shared.inactive")}</SelectItem>
                     </SelectContent>
                   </Select>
                   {recentUsersHasFilters ? (
@@ -177,7 +179,7 @@ const AdminDashboard = () => {
                         setUserStatusFilter("all");
                       }}
                     >
-                      Clear filters
+                      {t("admin.shared.clearFilters")}
                     </Button>
                   ) : null}
                 </div>
@@ -186,32 +188,32 @@ const AdminDashboard = () => {
                 <table className="w-full">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Role</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">{t("common.name")}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">{t("admin.shared.email")}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">{t("admin.shared.role")}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">{t("common.status")}</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">{t("common.actions")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {isError ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-12 text-center text-xs text-red-600">
-                          {error instanceof Error ? error.message : "Could not load users."}
+                          {error instanceof Error ? error.message : t("admin.dashboard.recentUsers.loadError")}
                         </td>
                       </tr>
                     ) : isPending ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-12 text-center text-xs text-slate-500">
-                          Loading users…
+                          {t("admin.shared.loadingUsers")}
                         </td>
                       </tr>
                     ) : filteredRecentUsers.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-12 text-center text-xs text-slate-500">
                           {recentUsers.length === 0
-                            ? "No users yet."
-                            : "No users match your search or filters."}
+                            ? t("admin.dashboard.recentUsers.empty.none")
+                            : t("admin.users.empty")}
                         </td>
                       </tr>
                     ) : (
@@ -237,9 +239,9 @@ const AdminDashboard = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>View</DropdownMenuItem>
-                              <DropdownMenuItem>Edit</DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600">Deactivate</DropdownMenuItem>
+                              <DropdownMenuItem>{t("common.view")}</DropdownMenuItem>
+                              <DropdownMenuItem>{t("common.edit")}</DropdownMenuItem>
+                              <DropdownMenuItem className="text-red-600">{t("admin.shared.deactivate")}</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>
@@ -251,11 +253,11 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* System Activity */}
+            {/* {t("admin.dashboard.systemActivity.title")} */}
             <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
               <div className="px-6 py-4 border-b border-slate-200">
                 <h2 className="text-lg font-semibold text-slate-900">
-                  System Activity
+                  {t("admin.dashboard.systemActivity.title")}
                 </h2>
               </div>
               <div className="divide-y divide-slate-200">
@@ -274,61 +276,61 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Quick Actions and Admin Access */}
+            {/* {t("admin.dashboard.quickActions.title")} and {t("admin.dashboard.adminAccess.title")} */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
                 <div className="px-5 py-4 border-b border-slate-200">
                   <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
-                    Quick Actions
+                    {t("admin.dashboard.quickActions.title")}
                   </h2>
                 </div>
                 <div className="p-4 space-y-2">
                   <Link to="/dashboard/admin/students">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
                       <GraduationCap className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">Students & registrations</span>
+                      <span className="text-sm font-medium">{t("adminNav.studentsRegistrations")}</span>
                     </Button>
                   </Link>
                   <Link to="/dashboard/admin/enrollments">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
                       <ClipboardList className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">Enrollments & waitlist</span>
+                      <span className="text-sm font-medium">{t("adminNav.enrollmentsWaitlist")}</span>
                     </Button>
                   </Link>
                   <Link to="/dashboard/admin/payments">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
                       <Receipt className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">Payments & reminders</span>
+                      <span className="text-sm font-medium">{t("adminNav.paymentsReminders")}</span>
                     </Button>
                   </Link>
                   <Link to="/dashboard/admin/courses">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
                       <BookOpen className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">All classes</span>
+                      <span className="text-sm font-medium">{t("admin.shared.allClasses")}</span>
                     </Button>
                   </Link>
                   <Link to="/dashboard/admin/calendar">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
                       <Calendar className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">Calendar</span>
+                      <span className="text-sm font-medium">{t("adminNav.calendar")}</span>
                     </Button>
                   </Link>
                   <Link to="/dashboard/admin/users">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
                       <Users className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">Users</span>
+                      <span className="text-sm font-medium">{t("adminNav.users")}</span>
                     </Button>
                   </Link>
                   <Link to="/dashboard/admin/reports">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
                       <BarChart3 className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">Reports</span>
+                      <span className="text-sm font-medium">{t("adminNav.reports")}</span>
                     </Button>
                   </Link>
                   <Link to="/dashboard/admin/settings">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
                       <Settings className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">Settings</span>
+                      <span className="text-sm font-medium">{t("adminNav.settings")}</span>
                     </Button>
                   </Link>
                 </div>
@@ -339,13 +341,13 @@ const AdminDashboard = () => {
                     <Shield className="h-5 w-5" />
                   </div>
                   <h2 className="text-base font-semibold">
-                    Admin Access
+                    {t("admin.dashboard.adminAccess.title")}
                   </h2>
                 </div>
                 <p className="text-sm text-slate-300 mb-4">
-                  You have full access to users, classes, and platform configuration.
+                  {t("admin.dashboard.adminAccess.description")}
                 </p>
-                <p className="text-xs text-slate-400">Logged in as {userName}</p>
+                <p className="text-xs text-slate-400">{t("admin.shared.loggedInAs", { name: userName })}</p>
               </div>
             </div>
           </div>

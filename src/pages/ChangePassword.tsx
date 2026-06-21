@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Lock, Eye, EyeOff, AlertCircle } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { resolveAvatarFromAuthResponse, setSessionUser, useAuthSession } from "@
 import { resolveInstructorCategory } from "@/features/teacher/resolveInstructorCategory";
 
 const ChangePassword = () => {
+  const { t } = useTranslation();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -27,17 +29,17 @@ const ChangePassword = () => {
     setError("");
 
     if (newPassword !== confirmPassword) {
-      setError("New passwords do not match");
+      setError(t("auth.changePassword.passwordsMismatch"));
       return;
     }
 
     if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError(t("auth.changePassword.passwordTooShort"));
       return;
     }
 
     if (currentPassword === newPassword) {
-      setError("New password must be different from current password");
+      setError(t("auth.changePassword.sameAsCurrent"));
       return;
     }
 
@@ -47,7 +49,7 @@ const ChangePassword = () => {
         currentPassword,
         newPassword,
       });
-      
+
       if (res.mustChangePassword === false) {
         setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);
         const role = res.user.role === "LECTURER" ? "teacher" : res.user.role === "ADMIN" ? "admin" : "student";
@@ -65,14 +67,17 @@ const ChangePassword = () => {
           category,
         });
         refreshUser();
-        toast({ title: "Password changed", description: "Your password has been updated successfully." });
+        toast({
+          title: t("auth.changePassword.toastTitle"),
+          description: t("auth.changePassword.toastDescription"),
+        });
         const redirect = role === "admin" ? "/dashboard/admin" : role === "teacher" ? "/dashboard/teacher" : "/dashboard";
         navigate(redirect);
       } else {
-        setError("Password change is still required. Please choose a different password.");
+        setError(t("auth.changePassword.stillRequired"));
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to change password. Please check your current password.");
+      setError(err instanceof Error ? err.message : t("auth.changePassword.changeFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -87,11 +92,9 @@ const ChangePassword = () => {
               <Lock className="w-8 h-8 text-orange-600" />
             </div>
             <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
-              Change Password
+              {t("auth.changePassword.title")}
             </h1>
-            <p className="text-foreground/70 text-sm mt-2">
-              You must change your password before continuing
-            </p>
+            <p className="text-foreground/70 text-sm mt-2">{t("auth.changePassword.subtitle")}</p>
           </div>
 
           {error && (
@@ -104,14 +107,14 @@ const ChangePassword = () => {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="currentPassword" className="text-sm font-medium text-foreground">
-                Current Password
+                {t("auth.changePassword.currentPassword")}
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
                 <Input
                   id="currentPassword"
                   type={showCurrentPassword ? "text" : "password"}
-                  placeholder="Enter current password"
+                  placeholder={t("auth.changePassword.currentPasswordPlaceholder")}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   autoComplete="current-password"
@@ -130,14 +133,14 @@ const ChangePassword = () => {
 
             <div className="space-y-2">
               <Label htmlFor="newPassword" className="text-sm font-medium text-foreground">
-                New Password
+                {t("auth.changePassword.newPassword")}
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
                 <Input
                   id="newPassword"
                   type={showNewPassword ? "text" : "password"}
-                  placeholder="Enter new password"
+                  placeholder={t("auth.changePassword.newPasswordPlaceholder")}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   autoComplete="new-password"
@@ -156,14 +159,14 @@ const ChangePassword = () => {
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
-                Confirm New Password
+                {t("auth.changePassword.confirmPassword")}
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm new password"
+                  placeholder={t("auth.changePassword.confirmPasswordPlaceholder")}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   autoComplete="new-password"
@@ -184,9 +187,9 @@ const ChangePassword = () => {
               type="submit"
               disabled={isLoading}
               className="w-full h-12 rounded-full text-white font-semibold text-base transition-all duration-300 hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#1e40af' }}
+              style={{ backgroundColor: "#1e40af" }}
             >
-              {isLoading ? "Changing Password..." : "Change Password"}
+              {isLoading ? t("auth.changePassword.submitting") : t("auth.changePassword.submit")}
             </Button>
           </form>
         </div>

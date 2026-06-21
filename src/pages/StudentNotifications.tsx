@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Bell, ChevronDown, Clock, Loader2, Search } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
@@ -28,24 +29,25 @@ import {
 type CategoryFilter = "all" | StudentNotificationCategory;
 type ReadFilter = "all" | "unread" | "read";
 
-const CATEGORY_FILTER_OPTIONS: { value: CategoryFilter; label: string }[] = [
-  { value: "all", label: "All types" },
-  { value: "enrollment", label: "Enrollment" },
-  { value: "class", label: "Class" },
-  { value: "payment", label: "Payment" },
-  { value: "certificate", label: "Certificate" },
-  { value: "schedule", label: "Schedule" },
-  { value: "attendance", label: "Attendance" },
-  { value: "other", label: "Other" },
+const CATEGORY_FILTER_OPTIONS: { value: CategoryFilter; labelKey: string }[] = [
+  { value: "all", labelKey: "notificationsPage.filterAllTypes" },
+  { value: "enrollment", labelKey: "notificationsPage.filterEnrollment" },
+  { value: "class", labelKey: "notificationsPage.filterClass" },
+  { value: "payment", labelKey: "notificationsPage.filterPayment" },
+  { value: "certificate", labelKey: "notificationsPage.filterCertificate" },
+  { value: "schedule", labelKey: "notificationsPage.filterSchedule" },
+  { value: "attendance", labelKey: "notificationsPage.filterAttendance" },
+  { value: "other", labelKey: "notificationsPage.filterOther" },
 ];
 
-const READ_FILTER_OPTIONS: { value: ReadFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "unread", label: "Unread" },
-  { value: "read", label: "Read" },
+const READ_FILTER_OPTIONS: { value: ReadFilter; labelKey: string }[] = [
+  { value: "all", labelKey: "common.all" },
+  { value: "unread", labelKey: "notificationsPage.filterUnread" },
+  { value: "read", labelKey: "notificationsPage.filterRead" },
 ];
 
 const StudentNotifications = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
@@ -56,9 +58,9 @@ const StudentNotifications = () => {
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
   const categoryFilterLabel =
-    CATEGORY_FILTER_OPTIONS.find((option) => option.value === categoryFilter)?.label ?? "All types";
+    t(CATEGORY_FILTER_OPTIONS.find((option) => option.value === categoryFilter)?.labelKey ?? "notificationsPage.filterAllTypes");
   const readFilterLabel =
-    READ_FILTER_OPTIONS.find((option) => option.value === readFilter)?.label ?? "All";
+    t(READ_FILTER_OPTIONS.find((option) => option.value === readFilter)?.labelKey ?? "common.all");
 
   const hasActiveFilters =
     search.trim().length > 0 || categoryFilter !== "all" || readFilter !== "all";
@@ -102,10 +104,10 @@ const StudentNotifications = () => {
       style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
       <div className="mb-8">
-        <p className="text-foreground/70 text-sm">Your recent activity and updates.</p>
+        <p className="text-foreground/70 text-sm">{t("notificationsPage.subtitle")}</p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <span className="rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
-            {unreadCount} unread
+            {t("notificationsPage.unread", { count: unreadCount })}
           </span>
           {unreadCount > 0 ? (
             <Button
@@ -116,7 +118,7 @@ const StudentNotifications = () => {
               onClick={() => markAllReadMutation.mutate()}
               disabled={markAllReadMutation.isPending}
             >
-              Mark all as read
+              {t("notificationsPage.markAllRead")}
             </Button>
           ) : null}
         </div>
@@ -133,7 +135,7 @@ const StudentNotifications = () => {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search notifications…"
+              placeholder={t("notificationsPage.searchPlaceholder")}
               className="h-10 rounded-xl border-gray-200 pl-10"
             />
           </div>
@@ -159,7 +161,7 @@ const StudentNotifications = () => {
                     )}
                     onClick={() => setCategoryFilter(option.value)}
                   >
-                    {option.label}
+                    {t(option.labelKey)}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -185,7 +187,7 @@ const StudentNotifications = () => {
                     )}
                     onClick={() => setReadFilter(option.value)}
                   >
-                    {option.label}
+                    {t(option.labelKey)}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -196,13 +198,13 @@ const StudentNotifications = () => {
 
       {!isLoading && notifications.length > 0 ? (
         <p className="mb-4 text-sm text-foreground/60">
-          {filteredNotifications.length} notification{filteredNotifications.length === 1 ? "" : "s"}
+          {t("notificationsPage.count", { count: filteredNotifications.length })}
         </p>
       ) : null}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-16 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading notifications…
+          <Loader2 className="h-6 w-6 animate-spin mr-2" /> {t("notificationsPage.loading")}
         </div>
       ) : (
         <>
@@ -259,13 +261,13 @@ const StudentNotifications = () => {
               <Bell className="mx-auto mb-4 h-12 w-12 text-foreground/30" />
               <p className="font-medium text-foreground/70">
                 {notifications.length === 0
-                  ? "No notifications yet."
-                  : "No notifications match your filters."}
+                  ? t("notificationsPage.emptyTitle")
+                  : t("notificationsPage.noMatchTitle")}
               </p>
               <p className="mt-1 text-sm text-foreground/50">
                 {notifications.length === 0
-                  ? "Enrollment decisions and other updates will appear here."
-                  : "Try adjusting your search or filter settings."}
+                  ? t("notificationsPage.emptyHint")
+                  : t("notificationsPage.noMatchHint")}
               </p>
               {notifications.length > 0 && hasActiveFilters ? (
                 <Button
@@ -275,7 +277,7 @@ const StudentNotifications = () => {
                   className="mt-4 rounded-full"
                   onClick={clearFilters}
                 >
-                  Clear filters
+                  {t("notificationsPage.clearFilters")}
                 </Button>
               ) : null}
             </div>

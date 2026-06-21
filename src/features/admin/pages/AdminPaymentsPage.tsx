@@ -10,6 +10,7 @@ import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock
 import { adminPaymentsStore, useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useTranslation } from "react-i18next";
 import {
   Table,
   TableBody,
@@ -42,6 +43,7 @@ function formatMoney(amount: number, currency: string) {
 }
 
 export default function AdminPaymentsPage() {
+  const { t } = useTranslation();
   const payments = useAdminPayments();
   const installmentPayments = useEnrollmentInstallmentPayments();
   const pendingInstallments = installmentPayments.filter((p) => p.status === "PENDING").length;
@@ -117,18 +119,18 @@ export default function AdminPaymentsPage() {
       <div className="container mx-auto px-6">
         <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Payments & reminders"
-          description="Mark as paid, validate transfer proof, filter overdue, and send reminders. Authoritative status lives on the API."
+          title={t("adminNav.paymentsReminders")}
+          description={t("admin.payments.description")}
           actions={
             <Button
               variant="outline"
               size="sm"
               disabled={selectedIds.length === 0}
-              onClick={() => toast.message("Payment reminders sent (demo)", { description: `${selectedIds.length} row(s)` })}
+              onClick={() => toast.message(t("admin.payments.remindersSentDemo"), { description: `${selectedIds.length} row(s)` })}
             >
               Remind selected
             </Button>
@@ -149,20 +151,20 @@ export default function AdminPaymentsPage() {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search student, class, lecturer, invoice…"
+            placeholder={t("admin.payments.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
           />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[160px] bg-white">
-              <SelectValue placeholder="Payment status" />
+              <SelectValue placeholder={t("admin.payments.paymentStatusPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="overdue">Overdue</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allStatuses")}</SelectItem>
+              <SelectItem value="pending">{t("admin.shared.pending")}</SelectItem>
+              <SelectItem value="paid">{t("admin.shared.paid")}</SelectItem>
+              <SelectItem value="overdue">{t("admin.shared.overdue")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={lecturerFilter} onValueChange={setLecturerFilter}>
@@ -170,7 +172,7 @@ export default function AdminPaymentsPage() {
               <SelectValue placeholder="Lecturer" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All lecturers</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allLecturers")}</SelectItem>
               {lecturerOptions.map((name) => (
                 <SelectItem key={name} value={name}>
                   {name}
@@ -222,13 +224,13 @@ export default function AdminPaymentsPage() {
                     }}
                   />
                 </TableHead>
-                <TableHead>Student</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Course</TableHead>
-                <TableHead>Lecturer</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("admin.shared.student")}</TableHead>
+                <TableHead>{t("admin.shared.class")}</TableHead>
+                <TableHead>{t("admin.shared.course")}</TableHead>
+                <TableHead>{t("admin.shared.lecturer")}</TableHead>
+                <TableHead>{t("admin.shared.amount")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead className="text-right">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -285,7 +287,7 @@ export default function AdminPaymentsPage() {
         >
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Mark as paid</DialogTitle>
+              <DialogTitle>{t("admin.payments.markPaidDialog.title")}</DialogTitle>
               <DialogDescription>
                 Only do this after you verify the payment (e.g. bank transfer received).
               </DialogDescription>
@@ -327,16 +329,16 @@ export default function AdminPaymentsPage() {
                       onValueChange={(v) => setMarkPaidDraft((p) => ({ ...p, method: v === "unknown" ? "" : v }))}
                     >
                       <SelectTrigger id="mark-paid-method" className="mt-1 bg-white">
-                        <SelectValue placeholder="Select method" />
+                        <SelectValue placeholder={t("admin.payments.markPaidDialog.selectMethod")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="unknown">Select…</SelectItem>
-                        <SelectItem value="Bank transfer">Bank transfer</SelectItem>
-                        <SelectItem value="Cash">Cash</SelectItem>
-                        <SelectItem value="Card">Card</SelectItem>
-                        <SelectItem value="Payme">Payme</SelectItem>
-                        <SelectItem value="Click">Click</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="unknown">{t("admin.payments.markPaidDialog.selectEllipsis")}</SelectItem>
+                        <SelectItem value="Bank transfer">{t("admin.payments.markPaidDialog.methods.bankTransfer")}</SelectItem>
+                        <SelectItem value="Cash">{t("admin.payments.markPaidDialog.methods.cash")}</SelectItem>
+                        <SelectItem value="Card">{t("admin.payments.markPaidDialog.methods.card")}</SelectItem>
+                        <SelectItem value="Payme">{t("admin.payments.markPaidDialog.methods.payme")}</SelectItem>
+                        <SelectItem value="Click">{t("admin.payments.markPaidDialog.methods.click")}</SelectItem>
+                        <SelectItem value="Other">{t("admin.payments.markPaidDialog.methods.other")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -349,7 +351,7 @@ export default function AdminPaymentsPage() {
                       id="mark-paid-ref"
                       value={markPaidDraft.reference}
                       onChange={(e) => setMarkPaidDraft((p) => ({ ...p, reference: e.target.value }))}
-                      placeholder="e.g. bank txn id / receipt number"
+                      placeholder={t("admin.payments.markPaidDialog.referencePlaceholder")}
                       className="mt-1 bg-white"
                     />
                   </div>
@@ -362,7 +364,7 @@ export default function AdminPaymentsPage() {
                       id="mark-paid-note"
                       value={markPaidDraft.note}
                       onChange={(e) => setMarkPaidDraft((p) => ({ ...p, note: e.target.value }))}
-                      placeholder="Internal admin note…"
+                      placeholder={t("admin.payments.markPaidDialog.notePlaceholder")}
                       className="mt-1 bg-white min-h-[80px]"
                     />
                   </div>
@@ -392,7 +394,7 @@ export default function AdminPaymentsPage() {
                     paymentMethod: markPaidDraft.method.trim(),
                     reference: markPaidDraft.reference.trim(),
                   });
-                  toast.success("Marked paid (demo)", { description: markPaidPayment.studentName });
+                  toast.success(t("admin.payments.markPaidDialog.markedPaidDemo"), { description: markPaidPayment.studentName });
                   setMarkPaidPaymentId(null);
                 }}
               >
@@ -410,7 +412,7 @@ export default function AdminPaymentsPage() {
         >
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Payment details</DialogTitle>
+              <DialogTitle>{t("admin.payments.detailsDialog.title")}</DialogTitle>
               {detailsPayment ? (
                 <DialogDescription>
                   {detailsPayment.reference} · {detailsPayment.studentName}
@@ -421,62 +423,62 @@ export default function AdminPaymentsPage() {
               <div className="space-y-3 text-sm">
                 <div className="grid grid-cols-1 gap-2 rounded-md border border-slate-200 bg-slate-50 p-3">
                   <div className="flex justify-between gap-4">
-                    <span className="text-slate-500">Student</span>
+                    <span className="text-slate-500">{t("admin.shared.student")}</span>
                     <span className="font-medium text-slate-900 text-right">{detailsPayment.studentName}</span>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <span className="text-slate-500">Email</span>
+                    <span className="text-slate-500">{t("admin.shared.email")}</span>
                     <span className="text-slate-800 text-right break-all">{detailsPayment.studentEmail}</span>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <span className="text-slate-500">Class</span>
+                    <span className="text-slate-500">{t("admin.shared.class")}</span>
                     <span className="text-slate-800 text-right">{detailsPayment.className}</span>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <span className="text-slate-500">Course</span>
+                    <span className="text-slate-500">{t("admin.shared.course")}</span>
                     <span className="text-slate-800 text-right">{detailsPayment.course}</span>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <span className="text-slate-500">Lecturer</span>
+                    <span className="text-slate-500">{t("admin.shared.lecturer")}</span>
                     <span className="text-slate-800 text-right">{detailsPayment.lecturerName}</span>
                   </div>
                 </div>
                 <Separator />
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Amount</span>
+                    <span className="text-slate-500">{t("admin.shared.amount")}</span>
                     <span className="font-semibold tabular-nums text-slate-900">
                       {formatMoney(detailsPayment.amount, detailsPayment.currency)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Due date</span>
+                    <span className="text-slate-500">{t("admin.payments.detailsDialog.dueDate")}</span>
                     <span className="text-slate-800">{detailsPayment.dueDate}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Status</span>
+                    <span className="text-slate-500">{t("common.status")}</span>
                     <PaymentStatusBadge status={detailsPayment.status} />
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Reference</span>
+                    <span className="text-slate-500">{t("admin.transactions.table.reference")}</span>
                     <span className="font-mono text-xs text-slate-800">{detailsPayment.reference}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Method</span>
+                    <span className="text-slate-500">{t("admin.transactions.table.method")}</span>
                     <span className="text-slate-800">{detailsPayment.paymentMethod}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Created</span>
+                    <span className="text-slate-500">{t("admin.payments.detailsDialog.created")}</span>
                     <span className="text-slate-800">{detailsPayment.createdAt}</span>
                   </div>
                   {detailsPayment.paidAt ? (
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Paid at</span>
+                      <span className="text-slate-500">{t("admin.payments.detailsDialog.paidAt")}</span>
                       <span className="text-slate-800">{detailsPayment.paidAt}</span>
                     </div>
                   ) : null}
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Proof uploaded</span>
+                    <span className="text-slate-500">{t("admin.payments.detailsDialog.proofUploaded")}</span>
                     <span className="text-slate-800">{detailsPayment.proofSubmitted ? "Yes" : "No"}</span>
                   </div>
                 </div>
@@ -511,7 +513,7 @@ export default function AdminPaymentsPage() {
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Transfer proof</DialogTitle>
+              <DialogTitle>{t("admin.payments.proofDialog.title")}</DialogTitle>
               {proofPayment ? (
                 <DialogDescription>
                   {proofPayment.studentName} · {proofPayment.reference}
@@ -531,7 +533,7 @@ export default function AdminPaymentsPage() {
               <Button
                 onClick={() => {
                   setProofPaymentId(null);
-                  toast.success("Proof approved (demo)");
+                  toast.success(t("admin.payments.proofDialog.approvedDemo"));
                 }}
               >
                 Approve proof

@@ -1,0 +1,1280 @@
+{
+  "admin": {
+    "shared": {
+      "backToDashboard": "返回控制台",
+      "backToPayments": "返回付款",
+      "backToPayroll": "返回工资",
+      "backToPayrollOverview": "返回工资概览",
+      "backToEnrollmentApplications": "返回入学申请",
+      "backToAllClasses": "所有班级",
+      "backToClassOverview": "班级概览",
+      "backToInstructorRequests": "讲师请求",
+      "backToNotifications": "返回通知",
+      "clearFilters": "清除筛选",
+      "clear": "清除",
+      "roleBadge": "管理员",
+      "allRoles": "所有角色",
+      "allStatuses": "所有状态",
+      "allCategories": "所有类别",
+      "allClasses": "所有班级",
+      "allLecturers": "所有讲师",
+      "allTypes": "所有类型",
+      "allMethods": "所有方式",
+      "allPayments": "所有付款",
+      "allEnrollments": "所有注册",
+      "allClassStatuses": "所有班级状态",
+      "allRiskLevels": "所有风险等级",
+      "allResults": "所有结果",
+      "allEligibility": "所有资格",
+      "anyCourseLoad": "任意课程负载",
+      "active": "活跃",
+      "inactive": "未活跃",
+      "pending": "待处理",
+      "paid": "已付",
+      "overdue": "逾期",
+      "approved": "已批准",
+      "rejected": "已拒绝",
+      "notApproved": "未批准",
+      "awaitingReview": "待审核",
+      "pendingReview": "待审核",
+      "yes": "是",
+      "no": "否",
+      "done": "完成",
+      "missing": "缺失",
+      "demo": "演示",
+      "loadingUsers": "Loading users…",
+      "loading": "加载中…",
+      "loadingApplications": "Loading applications...",
+      "loadingClass": "Loading class…",
+      "loadingClasses": "Loading classes…",
+      "loadingApplication": "Loading application...",
+      "loadingNotifications": "Loading notifications…",
+      "loadingPayrollSubmission": "Loading payroll submission…",
+      "loadingClassSchedule": "Loading class schedule…",
+      "loadingListedPrice": "Loading listed class price…",
+      "retrying": "Retrying…",
+      "tryAgain": "Try again",
+      "submitting": "提交中…",
+      "publishing": "发布中…",
+      "saving": "保存中…",
+      "creating": "创建中...",
+      "approving": "批准中…",
+      "rejecting": "拒绝中…",
+      "copied": "已复制",
+      "copy": "复制",
+      "email": "邮箱",
+      "phone": "Phone",
+      "role": "角色",
+      "category": "Category",
+      "class": "班级",
+      "course": "课程",
+      "lecturer": "讲师",
+      "instructor": "讲师",
+      "student": "学生",
+      "amount": "金额",
+      "date": "日期",
+      "time": "Time",
+      "title": "标题",
+      "reference": "Reference",
+      "method": "Method",
+      "period": "Period",
+      "submitted": "Submitted",
+      "updated": "Updated",
+      "recorded": "Recorded",
+      "due": "Due",
+      "notes": "备注",
+      "summary": "Summary",
+      "details": "详情",
+      "viewDetails": "View details",
+      "openDetails": "Open detail",
+      "review": "审核",
+      "approve": "批准",
+      "reject": "拒绝",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "returnToList": "Return to list",
+      "backToList": "Back to list",
+      "noRowsMatch": "No rows match your search or filters.",
+      "loggedInAs": "Logged in as {{name}}",
+      "waiting": "等待中",
+      "completed": "已完成",
+      "trial": "试用",
+      "allRequests": "All requests",
+      "allSubstituteRequests": "All substitute requests",
+      "view": "查看",
+      "edit": "编辑",
+      "searchNameEmailRole": "Search name, email, role…",
+      "searchNameEmail": "Search name or email…",
+      "searchStudentClass": "Search student, class…",
+      "searchStudentClassLecturer": "Search student, class, lecturer…",
+      "enterAdminCode": "请输入管理员代码",
+      "unknownError": "未知错误",
+      "couldNotLoadUsers": "Could not load users.",
+      "noUsersYet": "No users yet.",
+      "noUsersMatch": "No users match your search or filters."
+    },
+    "dashboard": {
+      "subtitle": "管理员控制台",
+      "stats": {
+        "totalUsers": "Total Users",
+        "students": "Students",
+        "classes": "Classes"
+      },
+      "recentUsers": {
+        "title": "Recent Users",
+        "addUser": "Add User",
+        "searchPlaceholder": "Search name, email, role…",
+        "rolePlaceholder": "角色",
+        "statusPlaceholder": "状态",
+        "table": {
+          "name": "姓名",
+          "email": "邮箱",
+          "role": "角色",
+          "status": "状态",
+          "actions": "操作"
+        },
+        "empty": {
+          "none": "No users yet.",
+          "noMatch": "No users match your search or filters."
+        },
+        "loadError": "Could not load users.",
+        "actions": {
+          "view": "查看",
+          "edit": "编辑",
+          "deactivate": "Deactivate"
+        }
+      },
+      "systemActivity": {
+        "title": "System Activity"
+      },
+      "quickActions": {
+        "title": "Quick Actions",
+        "studentsRegistrations": "学生与注册",
+        "enrollmentsWaitlist": "注册与候补",
+        "paymentsReminders": "付款与提醒",
+        "allClasses": "所有班级",
+        "calendar": "日历",
+        "users": "用户",
+        "reports": "报告",
+        "settings": "设置"
+      },
+      "adminAccess": {
+        "title": "Admin Access",
+        "description": "You have full access to users, classes, and platform configuration."
+      }
+    },
+    "students": {
+      "description": "Directory and status of enrolled students.",
+      "remindSelected": "Remind selected",
+      "remindQueuedDemo": "Reminder queued (demo)",
+      "remindQueuedDescription": "{{count}} student(s)",
+      "searchPlaceholder": "Search name or email…",
+      "statusPlaceholder": "Student status",
+      "table": {
+        "student": "学生",
+        "status": "状态",
+        "classes": "Classes",
+        "registered": "Registered"
+      },
+      "actions": {
+        "viewEnrollments": "View enrollments"
+      },
+      "empty": "No students match your search or filters.",
+      "toast": {
+        "loadFailed": "Failed to load students",
+        "deactivated": "Student deactivated",
+        "activated": "Student activated",
+        "updateFailed": "Failed to update status"
+      }
+    },
+    "teachers": {
+      "description": "Lecturer accounts and class load.",
+      "searchPlaceholder": "Search name, email, classes, students…",
+      "classLoadPlaceholder": "Class load",
+      "withAssignedClasses": "With assigned classes",
+      "noClasses": "No classes (0)",
+      "table": {
+        "name": "姓名",
+        "email": "邮箱",
+        "classes": "Classes",
+        "totalStudents": "Total students",
+        "status": "状态",
+        "actions": "操作"
+      },
+      "viewProfile": "View profile",
+      "profileDialog": {
+        "title": "Teacher profile",
+        "description": "Lecturer account · {{email}}",
+        "assignedCourses": "Assigned courses",
+        "totalStudents": "Total students",
+        "classesTaught": "Classes taught",
+        "noClassesAssigned": "No classes assigned.",
+        "enrolledCapacity": "Enrolled / capacity",
+        "viewDetails": "View details"
+      },
+      "toast": {
+        "loadFailed": "Failed to load teachers"
+      }
+    },
+    "staff": {
+      "description": "Non-teaching staff accounts (demo data).",
+      "searchPlaceholder": "Search name, email, role…",
+      "empty": "No staff match your search or filters."
+    },
+    "users": {
+      "description": "Cross-role user list.",
+      "empty": "No users match your search or filters.",
+      "toast": {
+        "loadFailedTitle": "错误",
+        "loadFailed": "Failed to load users"
+      }
+    },
+    "addUserRole": {
+      "description": "Create a new staff account. A secure temporary password will be shown once after creation and the user must change it on first sign-in.",
+      "form": {
+        "fullName": "Full Name",
+        "fullNamePlaceholder": "Enter full name",
+        "email": "邮箱",
+        "emailPlaceholder": "user@school.com",
+        "phoneNumber": "Phone Number",
+        "phonePlaceholder": "+6281234567890",
+        "role": "角色",
+        "selectRole": "Select role",
+        "category": "Category",
+        "selectCategory": "Select category",
+        "adminCode": "Admin code",
+        "adminCodePlaceholder": "例如 AF01",
+        "adminCodeHint": "Short ID used on approve/reject actions so you can tell which admin handled a request.",
+        "createUser": "Create User"
+      },
+      "roles": {
+        "teacher": "Teacher",
+        "adminFinance": "Admin Finance",
+        "adminContent": "Admin Content",
+        "adminSupport": "Admin Support",
+        "adminAnalytic": "Admin Analytic"
+      },
+      "tempPasswordDialog": {
+        "title": "Temporary password created",
+        "description": "Share this password securely with {{email}}. It will not be shown again.",
+        "instruction": "The user must enter this as their current password on first sign-in.",
+        "ariaLabel": "Temporary password",
+        "storedSecurely": "I have stored it securely",
+        "leaveWarning": "Store the temporary password before leaving this screen."
+      },
+      "toast": {
+        "fillAllFields": "Please fill in all fields",
+        "selectCategory": "Please select a teacher category",
+        "invalidAdminCode": "Enter an admin code (2–16 letters or numbers, e.g. AF01)",
+        "accountCreated": "{{role}} account created successfully",
+        "createFailed": "Failed to create user",
+        "passwordCopied": "Temporary password copied",
+        "copyFailed": "Could not copy password. Select and copy it manually."
+      }
+    },
+    "settings": {
+      "description": "Platform toggles (demo). Persist via admin settings API later.",
+      "emailAdminsOnRegistration": "Email admins on new registration",
+      "emailAdminsHint": "Sends to operations inbox.",
+      "blockLmsWhenOverdue": "Block LMS access when payment overdue",
+      "blockLmsHint": "Enforced server-side; this mirrors policy.",
+      "saveChanges": "Save changes",
+      "savedDemo": "Settings saved (demo)"
+    },
+    "notifications": {
+      "description": "Admin activity alerts and updates.",
+      "unread": "{{count}} unread",
+      "markAllRead": "Mark all read",
+      "searchPlaceholder": "Search notifications…",
+      "filterPlaceholder": "Filter",
+      "filterStudents": "Students",
+      "filterTeachers": "教师",
+      "ariaUnread": "Unread",
+      "markRead": "Mark read",
+      "empty": {
+        "none": "No notifications yet.",
+        "noMatch": "No notifications match your search."
+      },
+      "categories": {
+        "student": "学生",
+        "teacher": "Teacher",
+        "system": "System"
+      },
+      "relativeTime": {
+        "justNow": "Just now",
+        "minutesAgo": "{{count}} min ago",
+        "hoursAgo_one": "{{count}} hour ago",
+        "hoursAgo_other": "{{count}} hours ago",
+        "daysAgo_one": "{{count}} day ago",
+        "daysAgo_other": "{{count}} days ago"
+      }
+    },
+    "courses": {
+      "list": {
+        "description": "Quick list by title, lecturer, category, and status. Open a class for pricing, schedule workflow, and review.",
+        "searchPlaceholder": "Search title, category, lecturer…",
+        "statusDraft": "Draft (pending review)",
+        "statusPublished": "已发布",
+        "statusRejected": "已拒绝",
+        "statusArchived": "已归档",
+        "categoryPlaceholder": "Category",
+        "table": {
+          "title": "标题",
+          "lecturer": "讲师",
+          "status": "状态",
+          "actions": "操作",
+          "category": "Category"
+        },
+        "details": "详情",
+        "detailsTitle": "View class details",
+        "emptyNone": "No classes returned.",
+        "emptyNoMatch": "No classes match your search or filters.",
+        "loadError": {
+          "default": "Could not load classes.",
+          "network": "Could not reach the API. In Brave (or strict blockers), try Shields down for this site, or confirm you are logged in here (tokens are per-browser).",
+          "accessDeniedSuffix": " Sign out and sign in again if your session was refreshed in another tab."
+        }
+      },
+      "detail": {
+        "subtitle": "Catalog, schedule workflow, and review tools.",
+        "invalidId": "Invalid class id.",
+        "backToAllClasses": "← Back to all classes",
+        "loadError": "Could not load this class.",
+        "schedule": "Schedule",
+        "reviewPricing": "Review & pricing",
+        "catalogPricing": "Catalog & pricing",
+        "overview": "Overview",
+        "pricing": "Pricing",
+        "scheduleCard": "Schedule",
+        "description": "描述",
+        "fields": {
+          "category": "Category",
+          "lecturer": "讲师",
+          "status": "状态",
+          "submitted": "Submitted (draft created)",
+          "enrollments": "Enrollments",
+          "catalogPrice": "Catalog price",
+          "referralCode": "Referral code",
+          "discount": "Discount",
+          "discountedPrice": "Discounted price",
+          "totalSessions": "Total sessions (6 mo.)",
+          "classStart": "Class start",
+          "classEnd": "Class end"
+        },
+        "scheduleBadges": {
+          "instructorApproved": "Instructor approved",
+          "awaitingInstructor": "Awaiting instructor",
+          "changesRequested": "Changes requested",
+          "noApprovalRecorded": "No schedule approval step recorded (this browser)."
+        }
+      },
+      "schedule": {
+        "description": "Add one or more schedule months, set how many sessions fall in each, add optional date/time per row, then send the combined plan to the instructor.",
+        "courseStatus": "Course status:",
+        "waitingInstructor": "— Waiting for instructor approval",
+        "scheduleApprovedReady": "— Schedule approved, ready to publish",
+        "instructorNote": "Instructor note: {{note}}",
+        "instructorAvatarAlt": "讲师",
+        "classLabel": "班级",
+        "classStart": "Class start",
+        "classEnd": "Class end",
+        "datesHint": "From session dates below, or the class start/end saved on the course when no session dates are set.",
+        "removeMonth": "Remove month",
+        "perSessionDetails": "Per-session details",
+        "optional": "(optional)",
+        "perSessionHint": "Title, date, and time for each session in this month (optional).",
+        "session": "Session {{num}}",
+        "sessionTitlePlaceholder": "Session {{num}} title",
+        "addScheduleMonth": "Add schedule month",
+        "sendToInstructor": "Send to instructor",
+        "resendToInstructor": "Re-send to instructor",
+        "monthHeading": "Sessions in {{ordinal}} month",
+        "sessionDefaultTitle": "Session {{num}}",
+        "toast": {
+          "minOneSession": "Add at least one session across the schedule months.",
+          "sent": "Schedule sent to instructor for approval",
+          "sendFailed": "Could not send"
+        },
+        "loadError": "Could not load class."
+      }
+    },
+    "classesRosters": {
+      "description": "Assign students to classes, track session quota, and handle class switching from the student or enrollment record.",
+      "searchPlaceholder": "Search class, schedule…",
+      "classStatusPlaceholder": "Class status",
+      "table": {
+        "class": "班级",
+        "schedule": "Schedule",
+        "capacity": "Capacity",
+        "status": "状态",
+        "sessionQuota": "Session quota",
+        "roster": "Roster",
+        "sessions": "{{used}}/{{total}} sessions"
+      },
+      "openRoster": "Open roster",
+      "openRosterDemo": "Open roster (demo)",
+      "empty": "No classes match your search or filters."
+    },
+    "enrollments": {
+      "description": "Class enrollment, roster assignment, and waitlist promotion. Server validates capacity and payment rules.",
+      "promoteSelected": "Promote selected from waitlist",
+      "promotionSentDemo": "Promotion request sent (demo)",
+      "searchPlaceholder": "Search student, class…",
+      "paymentPlaceholder": "Payment",
+      "enrollmentPlaceholder": "Enrollment",
+      "enrolled": "Enrolled",
+      "table": {
+        "student": "学生",
+        "class": "班级",
+        "waitlistNumber": "Waitlist #",
+        "enrollment": "Enrollment",
+        "payment": "Payment",
+        "classStatus": "Class status"
+      },
+      "empty": "No enrollments match your search or filters."
+    },
+    "enrollmentApplications": {
+      "list": {
+        "description": "Review student requests (full or down payment, schedule-based tuition). Approve to enroll or reject with feedback.",
+        "pendingBanner_one": "{{count}} enrollment pending review",
+        "pendingBanner_other": "{{count}} enrollments pending review",
+        "noPending": "No pending enrollments.",
+        "followUpBanner_one": "{{count}} approved enrollment with follow-up tuition to review",
+        "followUpBanner_other": "{{count}} approved enrollments with follow-up tuition to review",
+        "table": {
+          "submitted": "Submitted",
+          "class": "班级",
+          "student": "学生",
+          "tuition": "Tuition",
+          "status": "状态",
+          "actions": "操作"
+        },
+        "badgeReviewFollowUp": "Review follow-up",
+        "badgeFollowUpPayment": "Follow-up payment",
+        "reviewPayment": "Review payment",
+        "empty": "No applications yet. Students submit from Available Classes → Request enrollment.",
+        "loadFailed": "Failed to load applications"
+      },
+      "detail": {
+        "eyebrow": "Enrollment application",
+        "title": "Review submission",
+        "description": "Verify contact details, full or down payment (schedule-based tuition), and open proof / ID before approving or rejecting.",
+        "submittedAt": "Submitted {{date}}",
+        "sections": {
+          "class": "班级",
+          "student": "学生",
+          "contact": "Contact",
+          "officialDocuments": "Official documents",
+          "invoice": "Invoice: {{number}}",
+          "receipt": "Receipt: {{number}}",
+          "method": "Method: {{method}}",
+          "payment": "Payment",
+          "paymentMethod": "Payment method",
+          "monthsPaidAtEnrollment": "Months paid at enrollment",
+          "monthsPaid": "Months paid",
+          "amountOnTransfer": "Amount on transfer",
+          "furtherInstalments": "Further instalments",
+          "instalmentPolicy": "{{count}} payments (school policy)",
+          "schedule": "Schedule",
+          "paymentProof": "Payment proof",
+          "idDocument": "ID document",
+          "adminNote": "Admin note"
+        },
+        "openProof": "Open proof in new tab",
+        "openId": "Open ID in new tab",
+        "noUploadRequired": "{{method}} — no transfer proof or ID upload required.",
+        "listedPrice": "Listed class price:",
+        "proratedTuition": "Student tuition (prorated):",
+        "expectedForPlan": "Expected for this plan:",
+        "amountMismatch": "Transfer amount does not match expected tuition for this plan — check the payment proof.",
+        "amountMatches": "Transfer amount matches expected tuition.",
+        "priceUnavailable": "Listed class price not available for this course. Summary:",
+        "reviewed": "Reviewed {{date}}{{by}}",
+        "reviewedBy": " by {{name}}",
+        "approveEnrollment": "Approve enrollment",
+        "rejectDialog": {
+          "title": "Reject application",
+          "noteLabel": "Note to student (optional)",
+          "notePlaceholder": "e.g. Amount mismatch, illegible screenshot",
+          "rejectApplication": "Reject application"
+        },
+        "notFound": {
+          "title": "Application not found",
+          "description": "It may have been removed or the link is invalid.",
+          "missing": "Missing application."
+        },
+        "toast": {
+          "loadFailed": "Failed to load application",
+          "approvedTitle": "已批准",
+          "approvedDescription": "Student enrolled. Invoice and receipt are available in their Payment history.",
+          "approveFailed": "Could not approve application",
+          "rejectedTitle": "Application rejected",
+          "rejectedDescription": "The student can submit again if needed.",
+          "rejectFailed": "Could not reject application"
+        }
+      }
+    },
+    "payments": {
+      "description": "Mark as paid, validate transfer proof, filter overdue, and send reminders. Authoritative status lives on the API.",
+      "remindSelected": "Remind selected",
+      "remindersSentDemo": "Payment reminders sent (demo)",
+      "installmentBanner": "Enrolled students paying tuition month-by-month submit follow-up transfers for review.",
+      "scheduleMonthPayments": "按月付款",
+      "scheduleMonthPending": "Schedule month payments ({{count}} pending)",
+      "searchPlaceholder": "Search student, class, lecturer, invoice…",
+      "paymentStatusPlaceholder": "Payment status",
+      "lecturerPlaceholder": "讲师",
+      "table": {
+        "student": "学生",
+        "class": "班级",
+        "course": "课程",
+        "lecturer": "讲师",
+        "amount": "金额",
+        "status": "状态",
+        "actions": "操作"
+      },
+      "viewDetails": "View details",
+      "markPaid": "Mark paid",
+      "markPaidDialog": {
+        "title": "Mark as paid",
+        "description": "Only do this after you verify the payment (e.g. bank transfer received).",
+        "paidDate": "Paid date",
+        "paymentMethod": "Payment method",
+        "selectMethod": "Select method",
+        "selectEllipsis": "Select…",
+        "methods": {
+          "bankTransfer": "Bank transfer",
+          "cash": "Cash",
+          "card": "Card",
+          "payme": "Payme",
+          "click": "Click",
+          "other": "Other"
+        },
+        "reference": "Reference",
+        "referencePlaceholder": "e.g. bank txn id / receipt number",
+        "noteOptional": "Note (optional)",
+        "notePlaceholder": "Internal admin note…",
+        "confirmPaid": "Confirm paid",
+        "markedPaidDemo": "Marked paid (demo)"
+      },
+      "detailsDialog": {
+        "title": "Payment details",
+        "dueDate": "Due date",
+        "created": "Created",
+        "paidAt": "Paid at",
+        "proofUploaded": "Proof uploaded",
+        "proofYes": "是",
+        "proofNo": "否",
+        "openProof": "Open proof"
+      },
+      "proofDialog": {
+        "title": "Transfer proof",
+        "description": "Preview uploaded receipt or PDF from storage. Approve to mark payment as validated and update student access.",
+        "demoNoFile": "Demo: no file attached in mock data",
+        "approveProof": "Approve proof",
+        "approvedDemo": "Proof approved (demo)"
+      },
+      "empty": "No payments match your search or filters."
+    },
+    "installmentPayments": {
+      "description": "Follow-up tuition from enrolled students. Approve to unlock QR attendance for that month.",
+      "filters": {
+        "awaitingReview": "待审核",
+        "approved": "已批准",
+        "rejected": "已拒绝",
+        "all": "All"
+      },
+      "scheduleMonth": "Schedule month",
+      "submitted": "Submitted {{date}}",
+      "viewProof": "View proof",
+      "enrollment": "Enrollment",
+      "proof": "Proof",
+      "allPayments": "所有付款",
+      "filteredPayments": "{{filter}} payments",
+      "adminCodeHint": "Enter your code once, then approve or reject each payment below.",
+      "empty": {
+        "noneTitle": "No follow-up payments yet",
+        "noneDescription": "When students pay a remaining schedule month, their transfer appears here for review.",
+        "noInView": "No payments in this view."
+      },
+      "rejectDialog": {
+        "title": "Reject payment",
+        "notePlaceholder": "Note for your records (optional) — e.g. amount mismatch, unclear screenshot",
+        "rejectPayment": "Reject payment"
+      },
+      "toast": {
+        "approvedTitle": "Payment approved",
+        "approvedDescription": "{{month}} unlocked for QR attendance.",
+        "approveFailed": "Could not approve",
+        "rejectedTitle": "Payment rejected",
+        "rejectedDescription": "The student can submit again with corrected proof.",
+        "rejectFailed": "Could not reject"
+      }
+    },
+    "promos": {
+      "description": "Create carousel banners for student pages. Stored in this browser until a promos API exists.",
+      "resetSamples": "Reset samples",
+      "addPromo": "Add promo",
+      "table": {
+        "title": "标题",
+        "placement": "Placement",
+        "order": "Order",
+        "status": "状态",
+        "actions": "操作"
+      },
+      "live": "上线",
+      "hidden": "隐藏",
+      "empty": "No promos yet. Add one to show a carousel on My Class.",
+      "hint": "Students see active promos in a carousel at the top of My Class. Use sort order to control slide sequence. Optional start/end dates hide promos outside the window.",
+      "dialog": {
+        "editTitle": "Edit promotion",
+        "newTitle": "New promotion",
+        "titleLabel": "标题",
+        "titlePlaceholder": "Summer enrollment is open",
+        "messageLabel": "Message",
+        "messagePlaceholder": "Short promo copy shown on the banner",
+        "buttonLabel": "Button label",
+        "buttonLink": "Button link",
+        "buttonLinkPlaceholder": "/eduhub or https://...",
+        "imageUrl": "Image URL (optional)",
+        "imagePlaceholder": "https://...",
+        "accentColor": "Accent color",
+        "showOn": "Show on",
+        "sortOrder": "Sort order",
+        "startsOptional": "Starts (optional)",
+        "endsOptional": "Ends (optional)",
+        "liveForStudents": "Live for students",
+        "liveHint": "Hidden promos stay saved but do not appear in the carousel.",
+        "publishPromo": "Publish promo",
+        "saveChanges": "Save changes"
+      },
+      "accentPresets": {
+        "eduhubBlue": "EduHub blue",
+        "teal": "Teal",
+        "amber": "Amber",
+        "violet": "Violet",
+        "slate": "Slate"
+      },
+      "placements": {
+        "myClass": "My Class",
+        "dashboard": "控制台",
+        "allStudentPages": "All student pages"
+      },
+      "defaultCta": "Learn more",
+      "toast": {
+        "titleRequired": "Title is required",
+        "updated": "Promotion updated",
+        "published": "Promotion published",
+        "hidden": "Promotion hidden from students",
+        "live": "Promotion is live",
+        "deleted": "Promotion deleted"
+      }
+    },
+    "referralCodes": {
+      "description": "Set referral codes and discount percentages per class. Students enter the code at enrollment to receive the listed discount off catalog tuition.",
+      "searchPlaceholder": "Search class, code, lecturer…",
+      "table": {
+        "class": "班级",
+        "status": "状态",
+        "catalogPrice": "Catalog price",
+        "referralCode": "Referral code",
+        "discount": "Discount",
+        "actions": "操作"
+      },
+      "setPricing": "Set pricing",
+      "empty": "No classes match your search.",
+      "editDialog": {
+        "title": "Edit referral code",
+        "catalogSuffix": " · Catalog {{price}}",
+        "referralCode": "Referral code",
+        "referralPlaceholder": "e.g. SPRING2026",
+        "discountPercent": "Discount (%)",
+        "discountHint": "Percent off catalog price when the code matches (0–100).",
+        "withCode": "With code:",
+        "discountSuffix": " (−{{percent}}%)"
+      },
+      "toast": {
+        "saved": "Referral code saved",
+        "savedDescription": "{{title}} updated.",
+        "saveFailed": "Could not save referral code",
+        "pricingRequired": "Set catalog pricing on the class before adding referral codes.",
+        "discountRange": "Discount must be between 0 and 100%."
+      }
+    },
+    "specialTuition": {
+      "description": "Grant free enrollment to specific student emails—for example staff family or scholarship cases. Stored in this browser until a grants API exists.",
+      "addGrant": "Add grant",
+      "addGrantHint": "The student must sign in with this email when applying. Tuition shows as free on their enrollment form.",
+      "studentEmail": "Student email",
+      "emailPlaceholder": "student@example.com",
+      "classScope": "Class scope",
+      "chooseClass": "Choose class",
+      "allClassesScope": "所有班级",
+      "noteOptional": "Note (optional)",
+      "notePlaceholder": "e.g. Rector family",
+      "saveGrant": "Save grant",
+      "table": {
+        "email": "邮箱",
+        "class": "班级",
+        "note": "Note",
+        "active": "活跃",
+        "added": "Added"
+      },
+      "toggleGrantAria": "Toggle grant for {{email}}",
+      "removeGrantAria": "Remove grant for {{email}}",
+      "empty": "No grants yet. Add a student email above.",
+      "toast": {
+        "saved": "Special tuition grant saved",
+        "savedClass": "{{email}} can enroll in this class for free.",
+        "savedAll": "{{email}} can enroll in any class for free.",
+        "saveFailed": "Could not save grant.",
+        "enabled": "Grant enabled",
+        "paused": "Grant paused",
+        "removed": "Grant removed"
+      }
+    },
+    "payroll": {
+      "description": "Review instructor payroll submissions, then record bank transfer proof. Student tuition is available separately for reference when checking figures.",
+      "paymentsLink": "付款与提醒",
+      "tabs": {
+        "instructorRequests": "讲师请求",
+        "studentTuition": "Student tuition",
+        "payoutProof": "Payout proof"
+      },
+      "howItWorks": {
+        "title": "How payroll works",
+        "step1": "Open a submission and verify class figures against the schedule month.",
+        "step2": "Approve or reject the instructor's requested payout.",
+        "step3": "After you pay them, record transfer proof on the detail page or Payout proof tab."
+      },
+      "stats": {
+        "pendingReview": "待审核",
+        "approved": "已批准",
+        "allSubmissions": "All submissions"
+      },
+      "pendingBanner": "{{count}} submission(s) waiting for your decision. Filter by Pending review or open any row to review.",
+      "requests": {
+        "searchPlaceholder": "Search instructor, class, period, amount…",
+        "table": {
+          "submitted": "Submitted",
+          "instructor": "讲师",
+          "class": "班级",
+          "scheduleMonth": "Schedule month",
+          "requested": "Requested",
+          "status": "状态",
+          "action": "Action"
+        },
+        "review": "审核",
+        "emptyNone": "No instructor payroll submissions yet. They appear when a teacher submits from their Payroll page.",
+        "emptyNoMatch": "No rows match your search or status filter."
+      },
+      "tuition": {
+        "description": "Student tuition rows for reference when validating instructor payroll. Use Payments & reminders to chase unpaid invoices.",
+        "searchPlaceholder": "Search student, class, lecturer, invoice…",
+        "totalsTitle": "Totals in current view",
+        "totalsHint": "Collected counts paid tuition; outstanding is pending and overdue rows that match your filters.",
+        "collected": "Collected",
+        "outstanding": "Outstanding",
+        "paidRows": "{{count}} paid row(s)",
+        "unpaidRows": "{{count}} unpaid row(s)",
+        "noPaymentsInView": "No payments in this view.",
+        "summary": "{{count}} payment row(s) total · {{sections}} class section(s) with activity",
+        "table": {
+          "student": "学生",
+          "class": "班级",
+          "course": "课程",
+          "lecturer": "讲师",
+          "amount": "金额",
+          "status": "状态",
+          "due": "Due",
+          "paid": "已付"
+        }
+      },
+      "proof": {
+        "description": "Log of bank transfer proof recorded after you pay an instructor. Instructors are notified when proof is saved. Approve the payroll request first on the Instructor requests tab.",
+        "searchPlaceholder": "Search class, course, instructor, email…",
+        "table": {
+          "submitted": "Submitted",
+          "class": "班级",
+          "course": "课程",
+          "instructor": "讲师",
+          "email": "邮箱",
+          "summary": "Summary",
+          "notes": "备注"
+        },
+        "emptyNone": "No payout proof recorded yet. After approving a request and paying the instructor, record proof from the submission detail page.",
+        "emptyNoMatch": "No rows match your search."
+      }
+    },
+    "payrollSubmissions": {
+      "description": "History of when an admin submitted bank transfer proof for a class (local browser storage until an API replaces it). Instructor figure approvals are on Instructor payroll requests.",
+      "instructorRequests": "讲师请求",
+      "payrollOverview": "Payroll overview",
+      "searchPlaceholder": "Search class, course, instructor, email…",
+      "emptyNone": "No submissions yet. Submit payout proof from a class card on Payroll.",
+      "emptyNoMatch": "No rows match your search."
+    },
+    "payrollProof": {
+      "title": "Instructor payout proof",
+      "descriptionMissingParams": "Open this page from Payroll — pick a class card and use \"Upload proof\".",
+      "description": "Attach bank transfer confirmation. Submit records the payout, logs it for admins, and notifies the instructor when their email is on file.",
+      "goToPayroll": "Go to payroll",
+      "fields": {
+        "class": "班级",
+        "course": "课程",
+        "instructor": "讲师",
+        "email": "邮箱"
+      },
+      "noEmailWarning": "No lecturer email on this link — add lecturer email to payment rows so the instructor gets an in-app notification.",
+      "paymentSummaryLabel": "Payment summary for notification:"
+    },
+    "instructorPayrollRequests": {
+      "description": "Review figures instructors submitted from Payroll. Approve or reject, then record bank transfer proof so they are notified (demo: this browser).",
+      "payoutProofLog": "Payout proof log",
+      "emptyTitle": "No pending requests",
+      "emptyDescription": "When an instructor submits payroll for a class, it appears here for approval and transfer proof.",
+      "openPayrollOverview": "Open payroll overview",
+      "pendingTitle": "Pending ({{count}})",
+      "pendingInstructions": "1. Approve or reject (optional note on reject). 2. After you pay them, open Record transfer proof (or use Upload payout proof on a class card on Payroll overview). Submitting proof sends an in-app notification to the instructor.",
+      "openDetail": "Open detail",
+      "recordTransferProof": "Record transfer proof",
+      "fields": {
+        "period": "Period",
+        "sessionsTaught": "Sessions taught",
+        "requestedPayout": "Requested payout",
+        "payoutDetails": "Payout details",
+        "instructorNotes": "Instructor notes:"
+      },
+      "rejectNoteLabel": "Optional note to instructor (shown on reject)",
+      "rejectNotePlaceholder": "Reason or next steps…",
+      "toast": {
+        "approved": "Request approved",
+        "approveFailed": "Could not approve",
+        "approveFailedDescription": "Request may have been removed.",
+        "rejected": "Request rejected",
+        "rejectFailed": "Could not reject"
+      }
+    },
+    "instructorPayrollRequestDetail": {
+      "allRequests": "All requests",
+      "classLabel": "班级",
+      "statusLabel": "状态",
+      "instructor": "讲师",
+      "requestAmount": "Request amount",
+      "submitted": "Submitted",
+      "periodPrefix": "Period: {{label}}",
+      "status": {
+        "approved": "已批准",
+        "notApproved": "未批准",
+        "awaitingDecision": "Awaiting your decision"
+      },
+      "schedule": {
+        "title": "Class schedule",
+        "description": "Admin-proposed schedule, approved by the instructor. Payroll for {{period}} is eligible only when every session in that calendar month is marked finished (attendance held).",
+        "requestedPeriod": "the requested period",
+        "loading": "Loading class schedule…",
+        "noMatch": "Could not match this class to a course schedule. Check that the class section and course title align with an admin course or teacher course in the demo.",
+        "demoSchedule": "Showing the demo schedule for this class so you can verify sessions before approving payroll. When the API returns live course data, this panel updates automatically.",
+        "sessionsFinished": "{{finished}}/{{total}} sessions finished",
+        "noSessionsInMonth": "no sessions in this month",
+        "eligible": "All sessions in this month are finished — eligible for payroll for this period.",
+        "notEligible": "Payroll should be processed after the remaining sessions in this month are finished.",
+        "confirmPeriod": "Confirm the period label matches a month that has scheduled sessions.",
+        "sessionsInPeriod": "Sessions in {{period}}",
+        "meeting": "Meeting {{num}}",
+        "dateTba": "Date TBA"
+      },
+      "submission": {
+        "show": "Show full submission from instructor",
+        "hide": "Hide full submission from instructor",
+        "sessionsTaught": "Sessions taught",
+        "payoutDetails": "Payout details",
+        "instructorNotes": "Instructor notes",
+        "noteToInstructor": "Note sent to instructor"
+      },
+      "approvedBanner": "Figures are approved by {{code}} ({{date}}). Use the transfer proof section below to attach or update the bank receipt — that notifies the instructor in this demo.",
+      "rejectedBanner": "This request was declined ({{date}}) · {{code}}. You can still use the proof section below if you need a receipt on file.",
+      "pendingBanner": "Suggested order: attach and submit bank transfer proof in the section below first, then scroll down to approve or decline the instructor's figures.",
+      "transferProof": {
+        "title": "Transfer proof",
+        "description": "Upload the bank receipt and submit here. When you're done, scroll down to approve or decline the payroll request (pending requests only).",
+        "tuitionSnapshot": "Tuition snapshot (for their notification):",
+        "openDedicatedPage": "Open the same proof tools on a dedicated page"
+      },
+      "decision": {
+        "title": "Approve or decline",
+        "description": "After transfer proof is on file (recommended), confirm whether you accept this instructor's payroll figures. Decline opens a confirmation step so you don't mis-click. Approve or decline sends an in-app notification to the instructor (Teacher → Notifications): Payroll request approved or Payroll request not approved, with your note when you decline. Demo uses this browser only; skipped if there is no instructor email and no name on the submission.",
+        "approveRequest": "Approve this request",
+        "declineNotify": "Decline and notify instructor…"
+      },
+      "approveDialog": {
+        "title": "Approve this payroll request?",
+        "description": "Confirm you accept {{name}}'s figures for {{classSection}}. The instructor will be notified in Teacher → Notifications.",
+        "approveRequest": "Approve request"
+      },
+      "declineDialog": {
+        "title": "Decline this payroll request?",
+        "description": "The instructor will see this in their notifications. You can leave a short explanation (recommended).",
+        "noteLabel": "Note to instructor",
+        "notePlaceholder": "Reason they should fix or resubmit…",
+        "declineRequest": "Decline request"
+      },
+      "noTuitionRows": "No tuition rows for this class in the current payment list.",
+      "toast": {
+        "approved": "已批准",
+        "approvedDescription": "{{name}} was notified.",
+        "approveFailed": "Could not approve",
+        "declined": "Request declined",
+        "declineFailed": "Could not decline"
+      }
+    },
+    "transactions": {
+      "description": "Recorded movements (demo). Pair with Payments for reconciliation when the ledger API is live.",
+      "searchPlaceholder": "Search reference, student, amount, method…",
+      "typePlaceholder": "Type",
+      "methodPlaceholder": "Method",
+      "table": {
+        "reference": "Reference",
+        "student": "学生",
+        "type": "Type",
+        "amount": "金额",
+        "method": "Method",
+        "recorded": "Recorded"
+      },
+      "empty": "No transactions match your search or filters."
+    },
+    "attendance": {
+      "description": "Monitor partial attendance and completion. Use filters for at-risk learners once the API exposes thresholds.",
+      "searchPlaceholder": "Search student, class, lecturer…",
+      "riskPlaceholder": "Risk",
+      "atRiskOnly": "At risk only",
+      "onTrackOnly": "On track only",
+      "table": {
+        "student": "学生",
+        "class": "班级",
+        "lecturer": "讲师",
+        "attendance": "Attendance",
+        "progress": "Progress",
+        "risk": "Risk",
+        "details": "详情"
+      },
+      "atRisk": "有风险",
+      "onTrack": "正常",
+      "viewDetails": "View details",
+      "detailDialog": {
+        "title": "Attendance details",
+        "sessions": "Sessions",
+        "sessionsAttended": "{{present}} / {{total}} attended",
+        "overall": "Overall",
+        "classProgress": "Class progress",
+        "lastActivity": "Last recorded activity",
+        "recentSessions": "Recent sessions",
+        "session": "Session",
+        "status": "状态"
+      },
+      "sessionStatus": {
+        "present": "出席",
+        "late": "迟到",
+        "excused": "请假",
+        "absent": "缺席"
+      }
+    },
+    "placementTests": {
+      "description": "Monitor placement results and tie outcomes to enrollments and class placement.",
+      "searchPlaceholder": "Search student, class, lecturer, assessment…",
+      "resultPlaceholder": "Result",
+      "passed": "通过",
+      "belowThreshold": "低于阈值",
+      "table": {
+        "student": "学生",
+        "class": "班级",
+        "lecturer": "讲师",
+        "assessment": "Assessment",
+        "score": "Score",
+        "result": "Result",
+        "completed": "已完成"
+      }
+    },
+    "certifications": {
+      "description": "Eligibility requires survey completion and class completion. Issue actions call the API when available.",
+      "searchPlaceholder": "Search student, class…",
+      "eligibilityPlaceholder": "Eligibility",
+      "eligible": "符合资格",
+      "notEligible": "不符合资格",
+      "table": {
+        "student": "学生",
+        "class": "班级",
+        "survey": "Survey",
+        "classComplete": "Class complete",
+        "eligible": "符合资格",
+        "issue": "Issue"
+      },
+      "surveyDone": "完成",
+      "surveyMissing": "缺失",
+      "classCompleteYes": "是",
+      "classCompleteNo": "否",
+      "issueCertificate": "Issue certificate",
+      "issueDisabledTitle": "Complete survey and class first",
+      "toast": {
+        "issuedDemo": "Certificate issued (demo)"
+      }
+    },
+    "calendar": {
+      "description": "Class schedules, placement or mock tests, and review sessions. Drill through to the class or student when wired to routes.",
+      "searchPlaceholder": "Search title, type, time…",
+      "eventTypePlaceholder": "Event type",
+      "types": {
+        "class": "班级",
+        "test": "Test",
+        "review": "审核"
+      },
+      "empty": "No events match your search or filters."
+    },
+    "supportSessions": {
+      "description": "Additional classes or support blocks requested by students. Approve and schedule when integrations are ready.",
+      "searchPlaceholder": "Search student, class, topic…",
+      "requested": "Requested",
+      "scheduled": "Scheduled",
+      "table": {
+        "student": "学生",
+        "class": "班级",
+        "topic": "Topic",
+        "requested": "Requested",
+        "status": "状态",
+        "actions": "操作"
+      },
+      "approveSchedule": "Approve & schedule",
+      "viewSlot": "View slot",
+      "toast": {
+        "approvedDemo": "Session approved (demo)",
+        "viewSlotDemo": "Open calendar slot (demo)"
+      },
+      "empty": "No sessions match your search or filters."
+    },
+    "substituteCover": {
+      "list": {
+        "description": "Open a request to see full details. When both instructors agree, you can give final approval on the request page.",
+        "empty": "No substitute cover requests yet. They appear here when an instructor sends a substitute invite (demo data in this browser).",
+        "reviewApprove": "Review & approve",
+        "viewDetails": "View details"
+      },
+      "detail": {
+        "title": "Substitute cover request",
+        "descriptionPendingFinal": "Both instructors have agreed. Use the buttons below to give final sign-off.",
+        "descriptionCanDecide": "The invite is still with instructors. You can still approve or reject this substitute cover below (demo: admin may decide at any time before it is finalized).",
+        "descriptionClosed": "This request is no longer open for admin approval.",
+        "status": "状态",
+        "adminDecision": "Admin decision",
+        "adminDecisionFinal": "Approve to record this cover in the system after both instructors agreed, or reject to stop it.",
+        "adminDecisionEarly": "Approve to confirm this substitute arrangement now, or reject to cancel it. In a full rollout you might wait for instructor replies first.",
+        "finalApprove": "Final approve",
+        "approveCover": "Approve substitute cover",
+        "reject": "拒绝",
+        "viewInTeachers": "View in Teachers",
+        "readonlyNotes": {
+          "finalized": "This substitute cover has been finalized.",
+          "rejectedAdmin": "This request was rejected at the final admin step.",
+          "declinedSubstitute": "The substitute declined; no admin approval is needed.",
+          "rejectedPrimary": "The primary instructor did not approve this cover.",
+          "nothingToConfirm": "There is nothing for you to confirm at this step."
+        },
+        "missingId": "Missing request id.",
+        "notFound": "This cover request was not found. It may have been removed."
+      },
+      "status": {
+        "waitingSubstitute": "Waiting for substitute",
+        "waitingPrimary": "Waiting for primary",
+        "waitingPrimaryInstructor": "Waiting for primary instructor",
+        "needsAdminApproval": "Needs admin approval",
+        "readyForFinalApproval": "Ready for your final approval",
+        "approved": "已批准",
+        "declinedSubstitute": "Declined (substitute)",
+        "declinedBySubstitute": "Declined by substitute",
+        "rejectedPrimary": "Rejected (primary)",
+        "rejectedByPrimary": "Rejected by primary instructor",
+        "rejectedAdmin": "Rejected (admin)",
+        "rejectedByAdmin": "Rejected by admin"
+      },
+      "toast": {
+        "finalized": "Substitute cover finalized",
+        "approved": "Substitute cover approved",
+        "approveFailed": "Could not approve substitute cover",
+        "rejected": "Substitute arrangement rejected",
+        "rejectFailed": "Could not reject substitute cover"
+      }
+    },
+    "integrations": {
+      "description": "External LMS links and trial policy. Values are typically loaded from environment or admin settings API.",
+      "lmsBaseUrl": "LMS base URL",
+      "lmsHint": "Students open this from their dashboard; admins use it for support.",
+      "freeTrialPolicy": "Free trial policy",
+      "freeTrialDescription": "One trial per account. The student profile shows whether the trial has been consumed; blocking a second trial is enforced server-side."
+    },
+    "reports": {
+      "description": "High-level KPIs and exports will connect to reporting APIs. Below is a placeholder layout.",
+      "kpis": {
+        "activeEnrollments": "Active enrollments",
+        "overduePayments": "Overdue payments",
+        "certificates30d": "Certificates (30d)"
+      }
+    },
+    "components": {
+      "statusBadges": {
+        "course": {
+          "published": "已发布",
+          "draft": "草稿",
+          "schedulePending": "日程待定",
+          "scheduleApproved": "日程已批准",
+          "rejected": "已拒绝",
+          "archived": "已归档"
+        },
+        "payment": {
+          "paid": "已付",
+          "pending": "待处理",
+          "overdue": "逾期"
+        },
+        "class": {
+          "active": "活跃",
+          "waiting": "等待中",
+          "completed": "已完成"
+        },
+        "student": {
+          "active": "活跃",
+          "trial": "试用",
+          "inactive": "未活跃"
+        }
+      },
+      "actionCode": {
+        "label": "您的管理员代码",
+        "placeholder": "例如 AF01",
+        "hint": "Short ID for audit trail — records who approved or rejected this action when several admins share the account.",
+        "validationError": "Enter your admin code (2–16 letters or numbers, e.g. AF01)."
+      },
+      "courseReviewDialog": {
+        "titleReviewPublish": "Review & publish class",
+        "titleSchedulePending": "Schedule pending",
+        "titleReview": "Review class",
+        "descReviewableIntro": "The instructor has approved the schedule. Set the catalog price and publish.",
+        "steps": {
+          "setCatalogPrice": "Set catalog price (required for publishing).",
+          "addReferralDiscount": "Optionally add a referral code and discount %.",
+          "clickPublish": "Click Publish class to make it visible in the catalog."
+        },
+        "descSchedulePending": "The schedule has been sent to the instructor and is awaiting their approval. You can publish once they approve.",
+        "descDraft": "This class is in draft. Propose a class schedule first, then get instructor approval before publishing.",
+        "descDefault": "Review the class details below. You can reject with feedback or set pricing to publish.",
+        "fields": {
+          "title": "标题",
+          "lecturer": "讲师",
+          "status": "状态",
+          "lastRejection": "Last rejection",
+          "scheduleRejection": "Schedule rejection",
+          "category": "Category",
+          "description": "描述",
+          "catalogPrice": "Catalog price ({{currency}}) — admin only",
+          "catalogPricePlaceholder": "e.g. 1200000",
+          "catalogPriceHint": "Teachers do not set this. Persisted in-browser until the billing API stores class fees.",
+          "referralCode": "Referral code (optional)",
+          "referralPlaceholder": "e.g. SPRING2026 or PARTNER-ALI",
+          "referralHint": "Students enter this at enrollment or checkout. Pair with a discount below so the code has a clear benefit.",
+          "discountPercent": "Referral discount (%)",
+          "discountPlaceholder": "0",
+          "discountHint": "Percent off the catalog price when the referral code is applied (0–100).",
+          "rejectionReason": "Rejection reason",
+          "rejectionPlaceholder": "Explain what the lecturer needs to fix before approval.",
+          "rejectionHint": "Required only when rejecting the class."
+        },
+        "pricePreview": {
+          "title": "Price with referral",
+          "discountedPrice": "Discounted price",
+          "catalog": "Catalog:",
+          "studentSaves": "Student saves {{amount}} vs catalog",
+          "noDiscount": "Discounted price:",
+          "fullCatalog": "(no discount — full catalog price)"
+        },
+        "rejectClass": "Reject class",
+        "approvePublish": "Approve & publish",
+        "saveCatalog": "Save catalog",
+        "publishBlockedPending": "Publishing is blocked until the instructor approves the proposed schedule.",
+        "publishBlockedDraft": "Propose a class schedule first.",
+        "toast": {
+          "rejectedTitle": "Class rejected",
+          "rejectedDescription": "{{title}} was sent back to the lecturer.",
+          "rejectedDescriptionGeneric": "The lecturer can revise and resubmit.",
+          "approvedTitle": "Class approved and published",
+          "approvedDescription": "{{title}} is live for students.",
+          "approvedDescriptionGeneric": "The class is now published.",
+          "catalogSaved": "Catalog saved",
+          "reviewFailed": "Class review failed",
+          "reviewFailedDescription": "Try again or check API permissions.",
+          "invalidClass": "Invalid class",
+          "rejectionRequired": "Enter a reason before rejecting this class.",
+          "waitSchedulePending": "Wait for the instructor to approve the class schedule before publishing.",
+          "proposeScheduleFirst": "Propose a class schedule and get instructor approval before publishing.",
+          "invalidPrice": "Enter a valid catalog price (0 or greater).",
+          "discountRange": "Discount must be between 0 and 100%."
+        },
+        "loadError": "Could not load class details."
+      },
+      "enrollmentPaidMonths": {
+        "title": "按月付款",
+        "description": "Students can scan attendance QR only for schedule months marked paid. When they submit a follow-up payment in the app, approve it under Schedule month payments — or toggle months manually here after verifying a transfer.",
+        "scheduleMonthPaymentsLink": "按月付款",
+        "loadingSchedule": "Loading class schedule…",
+        "noScheduleMonths": "No schedule months on file. Paid months follow the enrollment plan until a schedule is published.",
+        "sessions_one": "{{count}} session",
+        "sessions_other": "{{count}} sessions",
+        "qrAllowed": " · QR check-in allowed",
+        "paymentAwaitingReview": " · payment submitted — awaiting review",
+        "qrBlocked": " · QR check-in blocked",
+        "summaryAllPaid": "All schedule months paid",
+        "summaryPaid": "Paid: {{labels}}",
+        "summaryNonePaid": "No months marked paid",
+        "partialPlanWarning": "Unpaid months are blocked from attendance QR until you mark them paid here.",
+        "fullAccess": "All schedule months are paid — full attendance access.",
+        "toast": {
+          "minOneMonth": "At least one schedule month must stay paid.",
+          "markedPaid": "Schedule month marked paid",
+          "markedUnpaid": "Schedule month marked unpaid",
+          "attendanceUpdate": "Attendance QR access updates for this student immediately."
+        }
+      },
+      "payrollProofPanel": {
+        "informationTitle": "Information & recommendations",
+        "informationHint": "Optional. Bank reference, period, rate notes, etc. When you submit payout proof, this text can be included in the instructor's in-app notification.",
+        "informationPlaceholder": "e.g. Transfer ref ABC-2026-0312 · Period: March 1–15 · 60% contract rate · …",
+        "saveInformation": "Save information",
+        "bankReceiptTitle": "Bank transfer receipt",
+        "bankReceiptHint": "Upload the bank transfer confirmation for the instructor payout (screenshot or PDF). Not student course certificates — instructors only see this after you submit payout proof below.",
+        "dropOrBrowse": "Drop a file here or browse",
+        "browse": "browse",
+        "fileHint": "Bank receipt only (PNG, JPG, WebP, or PDF · max {{maxMb}} MB). Do not upload course certificates.",
+        "uploadedAttached": "Uploaded {{date}} · attached",
+        "replace": "Replace",
+        "approved": "Approved {{date}}",
+        "approvePayoutRecord": "Approve payout record",
+        "submitHint": "Use Submit payout proof below to save notes and approve this record.",
+        "removeFile": "Remove file",
+        "submitDescription": "Submit saves your information, checks that a transfer file is attached, then marks this payout as approved for your local records (replace with server workflow when API is ready).",
+        "saveChanges": "Save changes",
+        "submitPayoutProof": "Submit payout proof",
+        "attachToEnable": "Attach a transfer proof file to enable submit.",
+        "toast": {
+          "informationSaved": "Information saved",
+          "proofSaved": "Proof saved",
+          "uploadFailed": "Could not upload",
+          "tryAgain": "Please try again.",
+          "payoutApproved": "Payout record approved",
+          "uploadFirst": "Upload proof first",
+          "uploadBeforeSubmit": "Upload transfer proof before submitting.",
+          "changesSaved": "Changes saved.",
+          "approveFailed": "Could not approve payout proof.",
+          "submittedApproved": "Payout proof submitted and approved.",
+          "notifyInstructor": "Instructor notified in-app (demo: same browser storage).",
+          "notifySkipped": "No instructor email or name on this page — notification skipped. Open proof from a class card or payroll request so instructor context is set.",
+          "fileRemoved": "Proof file removed"
+        }
+      }
+    }
+  }
+}

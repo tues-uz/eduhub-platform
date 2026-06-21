@@ -1,0 +1,3970 @@
+[
+  {
+    "path": "shared.backToDashboard",
+    "value": "Back to dashboard"
+  },
+  {
+    "path": "shared.backToPayments",
+    "value": "Back to payments"
+  },
+  {
+    "path": "shared.backToPayroll",
+    "value": "Back to payroll"
+  },
+  {
+    "path": "shared.backToPayrollOverview",
+    "value": "Back to payroll overview"
+  },
+  {
+    "path": "shared.backToEnrollmentApplications",
+    "value": "Back to enrollment applications"
+  },
+  {
+    "path": "shared.backToAllClasses",
+    "value": "All classes"
+  },
+  {
+    "path": "shared.backToClassOverview",
+    "value": "Class overview"
+  },
+  {
+    "path": "shared.backToInstructorRequests",
+    "value": "Instructor requests"
+  },
+  {
+    "path": "shared.backToNotifications",
+    "value": "Back to notifications"
+  },
+  {
+    "path": "shared.clearFilters",
+    "value": "Clear filters"
+  },
+  {
+    "path": "shared.clear",
+    "value": "Clear"
+  },
+  {
+    "path": "shared.roleBadge",
+    "value": "Admin"
+  },
+  {
+    "path": "shared.allRoles",
+    "value": "All roles"
+  },
+  {
+    "path": "shared.allStatuses",
+    "value": "All statuses"
+  },
+  {
+    "path": "shared.allCategories",
+    "value": "All categories"
+  },
+  {
+    "path": "shared.allClasses",
+    "value": "All classes"
+  },
+  {
+    "path": "shared.allLecturers",
+    "value": "All lecturers"
+  },
+  {
+    "path": "shared.allTypes",
+    "value": "All types"
+  },
+  {
+    "path": "shared.allMethods",
+    "value": "All methods"
+  },
+  {
+    "path": "shared.allPayments",
+    "value": "All payments"
+  },
+  {
+    "path": "shared.allEnrollments",
+    "value": "All enrollments"
+  },
+  {
+    "path": "shared.allClassStatuses",
+    "value": "All class statuses"
+  },
+  {
+    "path": "shared.allRiskLevels",
+    "value": "All risk levels"
+  },
+  {
+    "path": "shared.allResults",
+    "value": "All results"
+  },
+  {
+    "path": "shared.allEligibility",
+    "value": "All eligibility"
+  },
+  {
+    "path": "shared.anyCourseLoad",
+    "value": "Any course load"
+  },
+  {
+    "path": "shared.active",
+    "value": "Active"
+  },
+  {
+    "path": "shared.inactive",
+    "value": "Inactive"
+  },
+  {
+    "path": "shared.pending",
+    "value": "Pending"
+  },
+  {
+    "path": "shared.paid",
+    "value": "Paid"
+  },
+  {
+    "path": "shared.overdue",
+    "value": "Overdue"
+  },
+  {
+    "path": "shared.approved",
+    "value": "Approved"
+  },
+  {
+    "path": "shared.rejected",
+    "value": "Rejected"
+  },
+  {
+    "path": "shared.notApproved",
+    "value": "Not approved"
+  },
+  {
+    "path": "shared.awaitingReview",
+    "value": "Awaiting review"
+  },
+  {
+    "path": "shared.pendingReview",
+    "value": "Pending review"
+  },
+  {
+    "path": "shared.yes",
+    "value": "Yes"
+  },
+  {
+    "path": "shared.no",
+    "value": "No"
+  },
+  {
+    "path": "shared.done",
+    "value": "Done"
+  },
+  {
+    "path": "shared.missing",
+    "value": "Missing"
+  },
+  {
+    "path": "shared.demo",
+    "value": "demo"
+  },
+  {
+    "path": "shared.loadingUsers",
+    "value": "Loading users…"
+  },
+  {
+    "path": "shared.loading",
+    "value": "Loading…"
+  },
+  {
+    "path": "shared.loadingApplications",
+    "value": "Loading applications..."
+  },
+  {
+    "path": "shared.loadingClass",
+    "value": "Loading class…"
+  },
+  {
+    "path": "shared.loadingClasses",
+    "value": "Loading classes…"
+  },
+  {
+    "path": "shared.loadingApplication",
+    "value": "Loading application..."
+  },
+  {
+    "path": "shared.loadingNotifications",
+    "value": "Loading notifications…"
+  },
+  {
+    "path": "shared.loadingPayrollSubmission",
+    "value": "Loading payroll submission…"
+  },
+  {
+    "path": "shared.loadingClassSchedule",
+    "value": "Loading class schedule…"
+  },
+  {
+    "path": "shared.loadingListedPrice",
+    "value": "Loading listed class price…"
+  },
+  {
+    "path": "shared.retrying",
+    "value": "Retrying…"
+  },
+  {
+    "path": "shared.tryAgain",
+    "value": "Try again"
+  },
+  {
+    "path": "shared.submitting",
+    "value": "Submitting…"
+  },
+  {
+    "path": "shared.publishing",
+    "value": "Publishing…"
+  },
+  {
+    "path": "shared.saving",
+    "value": "Saving…"
+  },
+  {
+    "path": "shared.creating",
+    "value": "Creating..."
+  },
+  {
+    "path": "shared.approving",
+    "value": "Approving…"
+  },
+  {
+    "path": "shared.rejecting",
+    "value": "Rejecting…"
+  },
+  {
+    "path": "shared.copied",
+    "value": "Copied"
+  },
+  {
+    "path": "shared.copy",
+    "value": "Copy"
+  },
+  {
+    "path": "shared.email",
+    "value": "Email"
+  },
+  {
+    "path": "shared.phone",
+    "value": "Phone"
+  },
+  {
+    "path": "shared.role",
+    "value": "Role"
+  },
+  {
+    "path": "shared.category",
+    "value": "Category"
+  },
+  {
+    "path": "shared.class",
+    "value": "Class"
+  },
+  {
+    "path": "shared.course",
+    "value": "Course"
+  },
+  {
+    "path": "shared.lecturer",
+    "value": "Lecturer"
+  },
+  {
+    "path": "shared.instructor",
+    "value": "Instructor"
+  },
+  {
+    "path": "shared.student",
+    "value": "Student"
+  },
+  {
+    "path": "shared.amount",
+    "value": "Amount"
+  },
+  {
+    "path": "shared.date",
+    "value": "Date"
+  },
+  {
+    "path": "shared.time",
+    "value": "Time"
+  },
+  {
+    "path": "shared.title",
+    "value": "Title"
+  },
+  {
+    "path": "shared.reference",
+    "value": "Reference"
+  },
+  {
+    "path": "shared.method",
+    "value": "Method"
+  },
+  {
+    "path": "shared.period",
+    "value": "Period"
+  },
+  {
+    "path": "shared.submitted",
+    "value": "Submitted"
+  },
+  {
+    "path": "shared.updated",
+    "value": "Updated"
+  },
+  {
+    "path": "shared.recorded",
+    "value": "Recorded"
+  },
+  {
+    "path": "shared.due",
+    "value": "Due"
+  },
+  {
+    "path": "shared.notes",
+    "value": "Notes"
+  },
+  {
+    "path": "shared.summary",
+    "value": "Summary"
+  },
+  {
+    "path": "shared.details",
+    "value": "Details"
+  },
+  {
+    "path": "shared.viewDetails",
+    "value": "View details"
+  },
+  {
+    "path": "shared.openDetails",
+    "value": "Open detail"
+  },
+  {
+    "path": "shared.review",
+    "value": "Review"
+  },
+  {
+    "path": "shared.approve",
+    "value": "Approve"
+  },
+  {
+    "path": "shared.reject",
+    "value": "Reject"
+  },
+  {
+    "path": "shared.deactivate",
+    "value": "Deactivate"
+  },
+  {
+    "path": "shared.activate",
+    "value": "Activate"
+  },
+  {
+    "path": "shared.returnToList",
+    "value": "Return to list"
+  },
+  {
+    "path": "shared.backToList",
+    "value": "Back to list"
+  },
+  {
+    "path": "shared.noRowsMatch",
+    "value": "No rows match your search or filters."
+  },
+  {
+    "path": "shared.loggedInAs",
+    "value": "Logged in as {{name}}"
+  },
+  {
+    "path": "shared.waiting",
+    "value": "Waiting"
+  },
+  {
+    "path": "shared.completed",
+    "value": "Completed"
+  },
+  {
+    "path": "shared.trial",
+    "value": "Trial"
+  },
+  {
+    "path": "shared.allRequests",
+    "value": "All requests"
+  },
+  {
+    "path": "shared.allSubstituteRequests",
+    "value": "All substitute requests"
+  },
+  {
+    "path": "shared.view",
+    "value": "View"
+  },
+  {
+    "path": "shared.edit",
+    "value": "Edit"
+  },
+  {
+    "path": "shared.searchNameEmailRole",
+    "value": "Search name, email, role…"
+  },
+  {
+    "path": "shared.searchNameEmail",
+    "value": "Search name or email…"
+  },
+  {
+    "path": "shared.searchStudentClass",
+    "value": "Search student, class…"
+  },
+  {
+    "path": "shared.searchStudentClassLecturer",
+    "value": "Search student, class, lecturer…"
+  },
+  {
+    "path": "shared.enterAdminCode",
+    "value": "Enter your admin code"
+  },
+  {
+    "path": "shared.unknownError",
+    "value": "Unknown error"
+  },
+  {
+    "path": "shared.couldNotLoadUsers",
+    "value": "Could not load users."
+  },
+  {
+    "path": "shared.noUsersYet",
+    "value": "No users yet."
+  },
+  {
+    "path": "shared.noUsersMatch",
+    "value": "No users match your search or filters."
+  },
+  {
+    "path": "dashboard.subtitle",
+    "value": "Admin Dashboard"
+  },
+  {
+    "path": "dashboard.stats.totalUsers",
+    "value": "Total Users"
+  },
+  {
+    "path": "dashboard.stats.students",
+    "value": "Students"
+  },
+  {
+    "path": "dashboard.stats.classes",
+    "value": "Classes"
+  },
+  {
+    "path": "dashboard.recentUsers.title",
+    "value": "Recent Users"
+  },
+  {
+    "path": "dashboard.recentUsers.addUser",
+    "value": "Add User"
+  },
+  {
+    "path": "dashboard.recentUsers.searchPlaceholder",
+    "value": "Search name, email, role…"
+  },
+  {
+    "path": "dashboard.recentUsers.rolePlaceholder",
+    "value": "Role"
+  },
+  {
+    "path": "dashboard.recentUsers.statusPlaceholder",
+    "value": "Status"
+  },
+  {
+    "path": "dashboard.recentUsers.table.name",
+    "value": "Name"
+  },
+  {
+    "path": "dashboard.recentUsers.table.email",
+    "value": "Email"
+  },
+  {
+    "path": "dashboard.recentUsers.table.role",
+    "value": "Role"
+  },
+  {
+    "path": "dashboard.recentUsers.table.status",
+    "value": "Status"
+  },
+  {
+    "path": "dashboard.recentUsers.table.actions",
+    "value": "Actions"
+  },
+  {
+    "path": "dashboard.recentUsers.empty.none",
+    "value": "No users yet."
+  },
+  {
+    "path": "dashboard.recentUsers.empty.noMatch",
+    "value": "No users match your search or filters."
+  },
+  {
+    "path": "dashboard.recentUsers.loadError",
+    "value": "Could not load users."
+  },
+  {
+    "path": "dashboard.recentUsers.actions.view",
+    "value": "View"
+  },
+  {
+    "path": "dashboard.recentUsers.actions.edit",
+    "value": "Edit"
+  },
+  {
+    "path": "dashboard.recentUsers.actions.deactivate",
+    "value": "Deactivate"
+  },
+  {
+    "path": "dashboard.systemActivity.title",
+    "value": "System Activity"
+  },
+  {
+    "path": "dashboard.quickActions.title",
+    "value": "Quick Actions"
+  },
+  {
+    "path": "dashboard.quickActions.studentsRegistrations",
+    "value": "Students & registrations"
+  },
+  {
+    "path": "dashboard.quickActions.enrollmentsWaitlist",
+    "value": "Enrollments & waitlist"
+  },
+  {
+    "path": "dashboard.quickActions.paymentsReminders",
+    "value": "Payments & reminders"
+  },
+  {
+    "path": "dashboard.quickActions.allClasses",
+    "value": "All classes"
+  },
+  {
+    "path": "dashboard.quickActions.calendar",
+    "value": "Calendar"
+  },
+  {
+    "path": "dashboard.quickActions.users",
+    "value": "Users"
+  },
+  {
+    "path": "dashboard.quickActions.reports",
+    "value": "Reports"
+  },
+  {
+    "path": "dashboard.quickActions.settings",
+    "value": "Settings"
+  },
+  {
+    "path": "dashboard.adminAccess.title",
+    "value": "Admin Access"
+  },
+  {
+    "path": "dashboard.adminAccess.description",
+    "value": "You have full access to users, classes, and platform configuration."
+  },
+  {
+    "path": "students.description",
+    "value": "Directory and status of enrolled students."
+  },
+  {
+    "path": "students.remindSelected",
+    "value": "Remind selected"
+  },
+  {
+    "path": "students.remindQueuedDemo",
+    "value": "Reminder queued (demo)"
+  },
+  {
+    "path": "students.remindQueuedDescription",
+    "value": "{{count}} student(s)"
+  },
+  {
+    "path": "students.searchPlaceholder",
+    "value": "Search name or email…"
+  },
+  {
+    "path": "students.statusPlaceholder",
+    "value": "Student status"
+  },
+  {
+    "path": "students.table.student",
+    "value": "Student"
+  },
+  {
+    "path": "students.table.status",
+    "value": "Status"
+  },
+  {
+    "path": "students.table.classes",
+    "value": "Classes"
+  },
+  {
+    "path": "students.table.registered",
+    "value": "Registered"
+  },
+  {
+    "path": "students.actions.viewEnrollments",
+    "value": "View enrollments"
+  },
+  {
+    "path": "students.empty",
+    "value": "No students match your search or filters."
+  },
+  {
+    "path": "students.toast.loadFailed",
+    "value": "Failed to load students"
+  },
+  {
+    "path": "students.toast.deactivated",
+    "value": "Student deactivated"
+  },
+  {
+    "path": "students.toast.activated",
+    "value": "Student activated"
+  },
+  {
+    "path": "students.toast.updateFailed",
+    "value": "Failed to update status"
+  },
+  {
+    "path": "teachers.description",
+    "value": "Lecturer accounts and class load."
+  },
+  {
+    "path": "teachers.searchPlaceholder",
+    "value": "Search name, email, classes, students…"
+  },
+  {
+    "path": "teachers.classLoadPlaceholder",
+    "value": "Class load"
+  },
+  {
+    "path": "teachers.withAssignedClasses",
+    "value": "With assigned classes"
+  },
+  {
+    "path": "teachers.noClasses",
+    "value": "No classes (0)"
+  },
+  {
+    "path": "teachers.table.name",
+    "value": "Name"
+  },
+  {
+    "path": "teachers.table.email",
+    "value": "Email"
+  },
+  {
+    "path": "teachers.table.classes",
+    "value": "Classes"
+  },
+  {
+    "path": "teachers.table.totalStudents",
+    "value": "Total students"
+  },
+  {
+    "path": "teachers.table.status",
+    "value": "Status"
+  },
+  {
+    "path": "teachers.table.actions",
+    "value": "Actions"
+  },
+  {
+    "path": "teachers.viewProfile",
+    "value": "View profile"
+  },
+  {
+    "path": "teachers.profileDialog.title",
+    "value": "Teacher profile"
+  },
+  {
+    "path": "teachers.profileDialog.description",
+    "value": "Lecturer account · {{email}}"
+  },
+  {
+    "path": "teachers.profileDialog.assignedCourses",
+    "value": "Assigned courses"
+  },
+  {
+    "path": "teachers.profileDialog.totalStudents",
+    "value": "Total students"
+  },
+  {
+    "path": "teachers.profileDialog.classesTaught",
+    "value": "Classes taught"
+  },
+  {
+    "path": "teachers.profileDialog.noClassesAssigned",
+    "value": "No classes assigned."
+  },
+  {
+    "path": "teachers.profileDialog.enrolledCapacity",
+    "value": "Enrolled / capacity"
+  },
+  {
+    "path": "teachers.profileDialog.viewDetails",
+    "value": "View details"
+  },
+  {
+    "path": "teachers.toast.loadFailed",
+    "value": "Failed to load teachers"
+  },
+  {
+    "path": "staff.description",
+    "value": "Non-teaching staff accounts (demo data)."
+  },
+  {
+    "path": "staff.searchPlaceholder",
+    "value": "Search name, email, role…"
+  },
+  {
+    "path": "staff.empty",
+    "value": "No staff match your search or filters."
+  },
+  {
+    "path": "users.description",
+    "value": "Cross-role user list."
+  },
+  {
+    "path": "users.empty",
+    "value": "No users match your search or filters."
+  },
+  {
+    "path": "users.toast.loadFailedTitle",
+    "value": "Error"
+  },
+  {
+    "path": "users.toast.loadFailed",
+    "value": "Failed to load users"
+  },
+  {
+    "path": "addUserRole.description",
+    "value": "Create a new staff account. A secure temporary password will be shown once after creation and the user must change it on first sign-in."
+  },
+  {
+    "path": "addUserRole.form.fullName",
+    "value": "Full Name"
+  },
+  {
+    "path": "addUserRole.form.fullNamePlaceholder",
+    "value": "Enter full name"
+  },
+  {
+    "path": "addUserRole.form.email",
+    "value": "Email"
+  },
+  {
+    "path": "addUserRole.form.emailPlaceholder",
+    "value": "user@school.com"
+  },
+  {
+    "path": "addUserRole.form.phoneNumber",
+    "value": "Phone Number"
+  },
+  {
+    "path": "addUserRole.form.phonePlaceholder",
+    "value": "+6281234567890"
+  },
+  {
+    "path": "addUserRole.form.role",
+    "value": "Role"
+  },
+  {
+    "path": "addUserRole.form.selectRole",
+    "value": "Select role"
+  },
+  {
+    "path": "addUserRole.form.category",
+    "value": "Category"
+  },
+  {
+    "path": "addUserRole.form.selectCategory",
+    "value": "Select category"
+  },
+  {
+    "path": "addUserRole.form.adminCode",
+    "value": "Admin code"
+  },
+  {
+    "path": "addUserRole.form.adminCodePlaceholder",
+    "value": "e.g. AF01"
+  },
+  {
+    "path": "addUserRole.form.adminCodeHint",
+    "value": "Short ID used on approve/reject actions so you can tell which admin handled a request."
+  },
+  {
+    "path": "addUserRole.form.createUser",
+    "value": "Create User"
+  },
+  {
+    "path": "addUserRole.roles.teacher",
+    "value": "Teacher"
+  },
+  {
+    "path": "addUserRole.roles.adminFinance",
+    "value": "Admin Finance"
+  },
+  {
+    "path": "addUserRole.roles.adminContent",
+    "value": "Admin Content"
+  },
+  {
+    "path": "addUserRole.roles.adminSupport",
+    "value": "Admin Support"
+  },
+  {
+    "path": "addUserRole.roles.adminAnalytic",
+    "value": "Admin Analytic"
+  },
+  {
+    "path": "addUserRole.tempPasswordDialog.title",
+    "value": "Temporary password created"
+  },
+  {
+    "path": "addUserRole.tempPasswordDialog.description",
+    "value": "Share this password securely with {{email}}. It will not be shown again."
+  },
+  {
+    "path": "addUserRole.tempPasswordDialog.instruction",
+    "value": "The user must enter this as their current password on first sign-in."
+  },
+  {
+    "path": "addUserRole.tempPasswordDialog.ariaLabel",
+    "value": "Temporary password"
+  },
+  {
+    "path": "addUserRole.tempPasswordDialog.storedSecurely",
+    "value": "I have stored it securely"
+  },
+  {
+    "path": "addUserRole.tempPasswordDialog.leaveWarning",
+    "value": "Store the temporary password before leaving this screen."
+  },
+  {
+    "path": "addUserRole.toast.fillAllFields",
+    "value": "Please fill in all fields"
+  },
+  {
+    "path": "addUserRole.toast.selectCategory",
+    "value": "Please select a teacher category"
+  },
+  {
+    "path": "addUserRole.toast.invalidAdminCode",
+    "value": "Enter an admin code (2–16 letters or numbers, e.g. AF01)"
+  },
+  {
+    "path": "addUserRole.toast.accountCreated",
+    "value": "{{role}} account created successfully"
+  },
+  {
+    "path": "addUserRole.toast.createFailed",
+    "value": "Failed to create user"
+  },
+  {
+    "path": "addUserRole.toast.passwordCopied",
+    "value": "Temporary password copied"
+  },
+  {
+    "path": "addUserRole.toast.copyFailed",
+    "value": "Could not copy password. Select and copy it manually."
+  },
+  {
+    "path": "settings.description",
+    "value": "Platform toggles (demo). Persist via admin settings API later."
+  },
+  {
+    "path": "settings.emailAdminsOnRegistration",
+    "value": "Email admins on new registration"
+  },
+  {
+    "path": "settings.emailAdminsHint",
+    "value": "Sends to operations inbox."
+  },
+  {
+    "path": "settings.blockLmsWhenOverdue",
+    "value": "Block LMS access when payment overdue"
+  },
+  {
+    "path": "settings.blockLmsHint",
+    "value": "Enforced server-side; this mirrors policy."
+  },
+  {
+    "path": "settings.saveChanges",
+    "value": "Save changes"
+  },
+  {
+    "path": "settings.savedDemo",
+    "value": "Settings saved (demo)"
+  },
+  {
+    "path": "notifications.description",
+    "value": "Admin activity alerts and updates."
+  },
+  {
+    "path": "notifications.unread",
+    "value": "{{count}} unread"
+  },
+  {
+    "path": "notifications.markAllRead",
+    "value": "Mark all read"
+  },
+  {
+    "path": "notifications.searchPlaceholder",
+    "value": "Search notifications…"
+  },
+  {
+    "path": "notifications.filterPlaceholder",
+    "value": "Filter"
+  },
+  {
+    "path": "notifications.filterStudents",
+    "value": "Students"
+  },
+  {
+    "path": "notifications.filterTeachers",
+    "value": "Teachers"
+  },
+  {
+    "path": "notifications.ariaUnread",
+    "value": "Unread"
+  },
+  {
+    "path": "notifications.markRead",
+    "value": "Mark read"
+  },
+  {
+    "path": "notifications.empty.none",
+    "value": "No notifications yet."
+  },
+  {
+    "path": "notifications.empty.noMatch",
+    "value": "No notifications match your search."
+  },
+  {
+    "path": "notifications.categories.student",
+    "value": "Student"
+  },
+  {
+    "path": "notifications.categories.teacher",
+    "value": "Teacher"
+  },
+  {
+    "path": "notifications.categories.system",
+    "value": "System"
+  },
+  {
+    "path": "notifications.relativeTime.justNow",
+    "value": "Just now"
+  },
+  {
+    "path": "notifications.relativeTime.minutesAgo",
+    "value": "{{count}} min ago"
+  },
+  {
+    "path": "notifications.relativeTime.hoursAgo_one",
+    "value": "{{count}} hour ago"
+  },
+  {
+    "path": "notifications.relativeTime.hoursAgo_other",
+    "value": "{{count}} hours ago"
+  },
+  {
+    "path": "notifications.relativeTime.daysAgo_one",
+    "value": "{{count}} day ago"
+  },
+  {
+    "path": "notifications.relativeTime.daysAgo_other",
+    "value": "{{count}} days ago"
+  },
+  {
+    "path": "courses.list.description",
+    "value": "Quick list by title, lecturer, category, and status. Open a class for pricing, schedule workflow, and review."
+  },
+  {
+    "path": "courses.list.searchPlaceholder",
+    "value": "Search title, category, lecturer…"
+  },
+  {
+    "path": "courses.list.statusDraft",
+    "value": "Draft (pending review)"
+  },
+  {
+    "path": "courses.list.statusPublished",
+    "value": "Published"
+  },
+  {
+    "path": "courses.list.statusRejected",
+    "value": "Rejected"
+  },
+  {
+    "path": "courses.list.statusArchived",
+    "value": "Archived"
+  },
+  {
+    "path": "courses.list.categoryPlaceholder",
+    "value": "Category"
+  },
+  {
+    "path": "courses.list.table.title",
+    "value": "Title"
+  },
+  {
+    "path": "courses.list.table.lecturer",
+    "value": "Lecturer"
+  },
+  {
+    "path": "courses.list.table.status",
+    "value": "Status"
+  },
+  {
+    "path": "courses.list.table.actions",
+    "value": "Actions"
+  },
+  {
+    "path": "courses.list.table.category",
+    "value": "Category"
+  },
+  {
+    "path": "courses.list.details",
+    "value": "Details"
+  },
+  {
+    "path": "courses.list.detailsTitle",
+    "value": "View class details"
+  },
+  {
+    "path": "courses.list.emptyNone",
+    "value": "No classes returned."
+  },
+  {
+    "path": "courses.list.emptyNoMatch",
+    "value": "No classes match your search or filters."
+  },
+  {
+    "path": "courses.list.loadError.default",
+    "value": "Could not load classes."
+  },
+  {
+    "path": "courses.list.loadError.network",
+    "value": "Could not reach the API. In Brave (or strict blockers), try Shields down for this site, or confirm you are logged in here (tokens are per-browser)."
+  },
+  {
+    "path": "courses.list.loadError.accessDeniedSuffix",
+    "value": " Sign out and sign in again if your session was refreshed in another tab."
+  },
+  {
+    "path": "courses.detail.subtitle",
+    "value": "Catalog, schedule workflow, and review tools."
+  },
+  {
+    "path": "courses.detail.invalidId",
+    "value": "Invalid class id."
+  },
+  {
+    "path": "courses.detail.backToAllClasses",
+    "value": "← Back to all classes"
+  },
+  {
+    "path": "courses.detail.loadError",
+    "value": "Could not load this class."
+  },
+  {
+    "path": "courses.detail.schedule",
+    "value": "Schedule"
+  },
+  {
+    "path": "courses.detail.reviewPricing",
+    "value": "Review & pricing"
+  },
+  {
+    "path": "courses.detail.catalogPricing",
+    "value": "Catalog & pricing"
+  },
+  {
+    "path": "courses.detail.overview",
+    "value": "Overview"
+  },
+  {
+    "path": "courses.detail.pricing",
+    "value": "Pricing"
+  },
+  {
+    "path": "courses.detail.scheduleCard",
+    "value": "Schedule"
+  },
+  {
+    "path": "courses.detail.description",
+    "value": "Description"
+  },
+  {
+    "path": "courses.detail.fields.category",
+    "value": "Category"
+  },
+  {
+    "path": "courses.detail.fields.lecturer",
+    "value": "Lecturer"
+  },
+  {
+    "path": "courses.detail.fields.status",
+    "value": "Status"
+  },
+  {
+    "path": "courses.detail.fields.submitted",
+    "value": "Submitted (draft created)"
+  },
+  {
+    "path": "courses.detail.fields.enrollments",
+    "value": "Enrollments"
+  },
+  {
+    "path": "courses.detail.fields.catalogPrice",
+    "value": "Catalog price"
+  },
+  {
+    "path": "courses.detail.fields.referralCode",
+    "value": "Referral code"
+  },
+  {
+    "path": "courses.detail.fields.discount",
+    "value": "Discount"
+  },
+  {
+    "path": "courses.detail.fields.discountedPrice",
+    "value": "Discounted price"
+  },
+  {
+    "path": "courses.detail.fields.totalSessions",
+    "value": "Total sessions (6 mo.)"
+  },
+  {
+    "path": "courses.detail.fields.classStart",
+    "value": "Class start"
+  },
+  {
+    "path": "courses.detail.fields.classEnd",
+    "value": "Class end"
+  },
+  {
+    "path": "courses.detail.scheduleBadges.instructorApproved",
+    "value": "Instructor approved"
+  },
+  {
+    "path": "courses.detail.scheduleBadges.awaitingInstructor",
+    "value": "Awaiting instructor"
+  },
+  {
+    "path": "courses.detail.scheduleBadges.changesRequested",
+    "value": "Changes requested"
+  },
+  {
+    "path": "courses.detail.scheduleBadges.noApprovalRecorded",
+    "value": "No schedule approval step recorded (this browser)."
+  },
+  {
+    "path": "courses.schedule.description",
+    "value": "Add one or more schedule months, set how many sessions fall in each, add optional date/time per row, then send the combined plan to the instructor."
+  },
+  {
+    "path": "courses.schedule.courseStatus",
+    "value": "Course status:"
+  },
+  {
+    "path": "courses.schedule.waitingInstructor",
+    "value": "— Waiting for instructor approval"
+  },
+  {
+    "path": "courses.schedule.scheduleApprovedReady",
+    "value": "— Schedule approved, ready to publish"
+  },
+  {
+    "path": "courses.schedule.instructorNote",
+    "value": "Instructor note: {{note}}"
+  },
+  {
+    "path": "courses.schedule.instructorAvatarAlt",
+    "value": "Instructor"
+  },
+  {
+    "path": "courses.schedule.classLabel",
+    "value": "Class"
+  },
+  {
+    "path": "courses.schedule.classStart",
+    "value": "Class start"
+  },
+  {
+    "path": "courses.schedule.classEnd",
+    "value": "Class end"
+  },
+  {
+    "path": "courses.schedule.datesHint",
+    "value": "From session dates below, or the class start/end saved on the course when no session dates are set."
+  },
+  {
+    "path": "courses.schedule.removeMonth",
+    "value": "Remove month"
+  },
+  {
+    "path": "courses.schedule.perSessionDetails",
+    "value": "Per-session details"
+  },
+  {
+    "path": "courses.schedule.optional",
+    "value": "(optional)"
+  },
+  {
+    "path": "courses.schedule.perSessionHint",
+    "value": "Title, date, and time for each session in this month (optional)."
+  },
+  {
+    "path": "courses.schedule.session",
+    "value": "Session {{num}}"
+  },
+  {
+    "path": "courses.schedule.sessionTitlePlaceholder",
+    "value": "Session {{num}} title"
+  },
+  {
+    "path": "courses.schedule.addScheduleMonth",
+    "value": "Add schedule month"
+  },
+  {
+    "path": "courses.schedule.sendToInstructor",
+    "value": "Send to instructor"
+  },
+  {
+    "path": "courses.schedule.resendToInstructor",
+    "value": "Re-send to instructor"
+  },
+  {
+    "path": "courses.schedule.monthHeading",
+    "value": "Sessions in {{ordinal}} month"
+  },
+  {
+    "path": "courses.schedule.sessionDefaultTitle",
+    "value": "Session {{num}}"
+  },
+  {
+    "path": "courses.schedule.toast.minOneSession",
+    "value": "Add at least one session across the schedule months."
+  },
+  {
+    "path": "courses.schedule.toast.sent",
+    "value": "Schedule sent to instructor for approval"
+  },
+  {
+    "path": "courses.schedule.toast.sendFailed",
+    "value": "Could not send"
+  },
+  {
+    "path": "courses.schedule.loadError",
+    "value": "Could not load class."
+  },
+  {
+    "path": "classesRosters.description",
+    "value": "Assign students to classes, track session quota, and handle class switching from the student or enrollment record."
+  },
+  {
+    "path": "classesRosters.searchPlaceholder",
+    "value": "Search class, schedule…"
+  },
+  {
+    "path": "classesRosters.classStatusPlaceholder",
+    "value": "Class status"
+  },
+  {
+    "path": "classesRosters.table.class",
+    "value": "Class"
+  },
+  {
+    "path": "classesRosters.table.schedule",
+    "value": "Schedule"
+  },
+  {
+    "path": "classesRosters.table.capacity",
+    "value": "Capacity"
+  },
+  {
+    "path": "classesRosters.table.status",
+    "value": "Status"
+  },
+  {
+    "path": "classesRosters.table.sessionQuota",
+    "value": "Session quota"
+  },
+  {
+    "path": "classesRosters.table.roster",
+    "value": "Roster"
+  },
+  {
+    "path": "classesRosters.table.sessions",
+    "value": "{{used}}/{{total}} sessions"
+  },
+  {
+    "path": "classesRosters.openRoster",
+    "value": "Open roster"
+  },
+  {
+    "path": "classesRosters.openRosterDemo",
+    "value": "Open roster (demo)"
+  },
+  {
+    "path": "classesRosters.empty",
+    "value": "No classes match your search or filters."
+  },
+  {
+    "path": "enrollments.description",
+    "value": "Class enrollment, roster assignment, and waitlist promotion. Server validates capacity and payment rules."
+  },
+  {
+    "path": "enrollments.promoteSelected",
+    "value": "Promote selected from waitlist"
+  },
+  {
+    "path": "enrollments.promotionSentDemo",
+    "value": "Promotion request sent (demo)"
+  },
+  {
+    "path": "enrollments.searchPlaceholder",
+    "value": "Search student, class…"
+  },
+  {
+    "path": "enrollments.paymentPlaceholder",
+    "value": "Payment"
+  },
+  {
+    "path": "enrollments.enrollmentPlaceholder",
+    "value": "Enrollment"
+  },
+  {
+    "path": "enrollments.enrolled",
+    "value": "Enrolled"
+  },
+  {
+    "path": "enrollments.table.student",
+    "value": "Student"
+  },
+  {
+    "path": "enrollments.table.class",
+    "value": "Class"
+  },
+  {
+    "path": "enrollments.table.waitlistNumber",
+    "value": "Waitlist #"
+  },
+  {
+    "path": "enrollments.table.enrollment",
+    "value": "Enrollment"
+  },
+  {
+    "path": "enrollments.table.payment",
+    "value": "Payment"
+  },
+  {
+    "path": "enrollments.table.classStatus",
+    "value": "Class status"
+  },
+  {
+    "path": "enrollments.empty",
+    "value": "No enrollments match your search or filters."
+  },
+  {
+    "path": "enrollmentApplications.list.description",
+    "value": "Review student requests (full or down payment, schedule-based tuition). Approve to enroll or reject with feedback."
+  },
+  {
+    "path": "enrollmentApplications.list.pendingBanner_one",
+    "value": "{{count}} enrollment pending review"
+  },
+  {
+    "path": "enrollmentApplications.list.pendingBanner_other",
+    "value": "{{count}} enrollments pending review"
+  },
+  {
+    "path": "enrollmentApplications.list.noPending",
+    "value": "No pending enrollments."
+  },
+  {
+    "path": "enrollmentApplications.list.followUpBanner_one",
+    "value": "{{count}} approved enrollment with follow-up tuition to review"
+  },
+  {
+    "path": "enrollmentApplications.list.followUpBanner_other",
+    "value": "{{count}} approved enrollments with follow-up tuition to review"
+  },
+  {
+    "path": "enrollmentApplications.list.table.submitted",
+    "value": "Submitted"
+  },
+  {
+    "path": "enrollmentApplications.list.table.class",
+    "value": "Class"
+  },
+  {
+    "path": "enrollmentApplications.list.table.student",
+    "value": "Student"
+  },
+  {
+    "path": "enrollmentApplications.list.table.tuition",
+    "value": "Tuition"
+  },
+  {
+    "path": "enrollmentApplications.list.table.status",
+    "value": "Status"
+  },
+  {
+    "path": "enrollmentApplications.list.table.actions",
+    "value": "Actions"
+  },
+  {
+    "path": "enrollmentApplications.list.badgeReviewFollowUp",
+    "value": "Review follow-up"
+  },
+  {
+    "path": "enrollmentApplications.list.badgeFollowUpPayment",
+    "value": "Follow-up payment"
+  },
+  {
+    "path": "enrollmentApplications.list.reviewPayment",
+    "value": "Review payment"
+  },
+  {
+    "path": "enrollmentApplications.list.empty",
+    "value": "No applications yet. Students submit from Available Classes → Request enrollment."
+  },
+  {
+    "path": "enrollmentApplications.list.loadFailed",
+    "value": "Failed to load applications"
+  },
+  {
+    "path": "enrollmentApplications.detail.eyebrow",
+    "value": "Enrollment application"
+  },
+  {
+    "path": "enrollmentApplications.detail.title",
+    "value": "Review submission"
+  },
+  {
+    "path": "enrollmentApplications.detail.description",
+    "value": "Verify contact details, full or down payment (schedule-based tuition), and open proof / ID before approving or rejecting."
+  },
+  {
+    "path": "enrollmentApplications.detail.submittedAt",
+    "value": "Submitted {{date}}"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.class",
+    "value": "Class"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.student",
+    "value": "Student"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.contact",
+    "value": "Contact"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.officialDocuments",
+    "value": "Official documents"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.invoice",
+    "value": "Invoice: {{number}}"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.receipt",
+    "value": "Receipt: {{number}}"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.method",
+    "value": "Method: {{method}}"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.payment",
+    "value": "Payment"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.paymentMethod",
+    "value": "Payment method"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.monthsPaidAtEnrollment",
+    "value": "Months paid at enrollment"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.monthsPaid",
+    "value": "Months paid"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.amountOnTransfer",
+    "value": "Amount on transfer"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.furtherInstalments",
+    "value": "Further instalments"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.instalmentPolicy",
+    "value": "{{count}} payments (school policy)"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.schedule",
+    "value": "Schedule"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.paymentProof",
+    "value": "Payment proof"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.idDocument",
+    "value": "ID document"
+  },
+  {
+    "path": "enrollmentApplications.detail.sections.adminNote",
+    "value": "Admin note"
+  },
+  {
+    "path": "enrollmentApplications.detail.openProof",
+    "value": "Open proof in new tab"
+  },
+  {
+    "path": "enrollmentApplications.detail.openId",
+    "value": "Open ID in new tab"
+  },
+  {
+    "path": "enrollmentApplications.detail.noUploadRequired",
+    "value": "{{method}} — no transfer proof or ID upload required."
+  },
+  {
+    "path": "enrollmentApplications.detail.listedPrice",
+    "value": "Listed class price:"
+  },
+  {
+    "path": "enrollmentApplications.detail.proratedTuition",
+    "value": "Student tuition (prorated):"
+  },
+  {
+    "path": "enrollmentApplications.detail.expectedForPlan",
+    "value": "Expected for this plan:"
+  },
+  {
+    "path": "enrollmentApplications.detail.amountMismatch",
+    "value": "Transfer amount does not match expected tuition for this plan — check the payment proof."
+  },
+  {
+    "path": "enrollmentApplications.detail.amountMatches",
+    "value": "Transfer amount matches expected tuition."
+  },
+  {
+    "path": "enrollmentApplications.detail.priceUnavailable",
+    "value": "Listed class price not available for this course. Summary:"
+  },
+  {
+    "path": "enrollmentApplications.detail.reviewed",
+    "value": "Reviewed {{date}}{{by}}"
+  },
+  {
+    "path": "enrollmentApplications.detail.reviewedBy",
+    "value": " by {{name}}"
+  },
+  {
+    "path": "enrollmentApplications.detail.approveEnrollment",
+    "value": "Approve enrollment"
+  },
+  {
+    "path": "enrollmentApplications.detail.rejectDialog.title",
+    "value": "Reject application"
+  },
+  {
+    "path": "enrollmentApplications.detail.rejectDialog.noteLabel",
+    "value": "Note to student (optional)"
+  },
+  {
+    "path": "enrollmentApplications.detail.rejectDialog.notePlaceholder",
+    "value": "e.g. Amount mismatch, illegible screenshot"
+  },
+  {
+    "path": "enrollmentApplications.detail.rejectDialog.rejectApplication",
+    "value": "Reject application"
+  },
+  {
+    "path": "enrollmentApplications.detail.notFound.title",
+    "value": "Application not found"
+  },
+  {
+    "path": "enrollmentApplications.detail.notFound.description",
+    "value": "It may have been removed or the link is invalid."
+  },
+  {
+    "path": "enrollmentApplications.detail.notFound.missing",
+    "value": "Missing application."
+  },
+  {
+    "path": "enrollmentApplications.detail.toast.loadFailed",
+    "value": "Failed to load application"
+  },
+  {
+    "path": "enrollmentApplications.detail.toast.approvedTitle",
+    "value": "Approved"
+  },
+  {
+    "path": "enrollmentApplications.detail.toast.approvedDescription",
+    "value": "Student enrolled. Invoice and receipt are available in their Payment history."
+  },
+  {
+    "path": "enrollmentApplications.detail.toast.approveFailed",
+    "value": "Could not approve application"
+  },
+  {
+    "path": "enrollmentApplications.detail.toast.rejectedTitle",
+    "value": "Application rejected"
+  },
+  {
+    "path": "enrollmentApplications.detail.toast.rejectedDescription",
+    "value": "The student can submit again if needed."
+  },
+  {
+    "path": "enrollmentApplications.detail.toast.rejectFailed",
+    "value": "Could not reject application"
+  },
+  {
+    "path": "payments.description",
+    "value": "Mark as paid, validate transfer proof, filter overdue, and send reminders. Authoritative status lives on the API."
+  },
+  {
+    "path": "payments.remindSelected",
+    "value": "Remind selected"
+  },
+  {
+    "path": "payments.remindersSentDemo",
+    "value": "Payment reminders sent (demo)"
+  },
+  {
+    "path": "payments.installmentBanner",
+    "value": "Enrolled students paying tuition month-by-month submit follow-up transfers for review."
+  },
+  {
+    "path": "payments.scheduleMonthPayments",
+    "value": "Schedule month payments"
+  },
+  {
+    "path": "payments.scheduleMonthPending",
+    "value": "Schedule month payments ({{count}} pending)"
+  },
+  {
+    "path": "payments.searchPlaceholder",
+    "value": "Search student, class, lecturer, invoice…"
+  },
+  {
+    "path": "payments.paymentStatusPlaceholder",
+    "value": "Payment status"
+  },
+  {
+    "path": "payments.lecturerPlaceholder",
+    "value": "Lecturer"
+  },
+  {
+    "path": "payments.table.student",
+    "value": "Student"
+  },
+  {
+    "path": "payments.table.class",
+    "value": "Class"
+  },
+  {
+    "path": "payments.table.course",
+    "value": "Course"
+  },
+  {
+    "path": "payments.table.lecturer",
+    "value": "Lecturer"
+  },
+  {
+    "path": "payments.table.amount",
+    "value": "Amount"
+  },
+  {
+    "path": "payments.table.status",
+    "value": "Status"
+  },
+  {
+    "path": "payments.table.actions",
+    "value": "Actions"
+  },
+  {
+    "path": "payments.viewDetails",
+    "value": "View details"
+  },
+  {
+    "path": "payments.markPaid",
+    "value": "Mark paid"
+  },
+  {
+    "path": "payments.markPaidDialog.title",
+    "value": "Mark as paid"
+  },
+  {
+    "path": "payments.markPaidDialog.description",
+    "value": "Only do this after you verify the payment (e.g. bank transfer received)."
+  },
+  {
+    "path": "payments.markPaidDialog.paidDate",
+    "value": "Paid date"
+  },
+  {
+    "path": "payments.markPaidDialog.paymentMethod",
+    "value": "Payment method"
+  },
+  {
+    "path": "payments.markPaidDialog.selectMethod",
+    "value": "Select method"
+  },
+  {
+    "path": "payments.markPaidDialog.selectEllipsis",
+    "value": "Select…"
+  },
+  {
+    "path": "payments.markPaidDialog.methods.bankTransfer",
+    "value": "Bank transfer"
+  },
+  {
+    "path": "payments.markPaidDialog.methods.cash",
+    "value": "Cash"
+  },
+  {
+    "path": "payments.markPaidDialog.methods.card",
+    "value": "Card"
+  },
+  {
+    "path": "payments.markPaidDialog.methods.payme",
+    "value": "Payme"
+  },
+  {
+    "path": "payments.markPaidDialog.methods.click",
+    "value": "Click"
+  },
+  {
+    "path": "payments.markPaidDialog.methods.other",
+    "value": "Other"
+  },
+  {
+    "path": "payments.markPaidDialog.reference",
+    "value": "Reference"
+  },
+  {
+    "path": "payments.markPaidDialog.referencePlaceholder",
+    "value": "e.g. bank txn id / receipt number"
+  },
+  {
+    "path": "payments.markPaidDialog.noteOptional",
+    "value": "Note (optional)"
+  },
+  {
+    "path": "payments.markPaidDialog.notePlaceholder",
+    "value": "Internal admin note…"
+  },
+  {
+    "path": "payments.markPaidDialog.confirmPaid",
+    "value": "Confirm paid"
+  },
+  {
+    "path": "payments.markPaidDialog.markedPaidDemo",
+    "value": "Marked paid (demo)"
+  },
+  {
+    "path": "payments.detailsDialog.title",
+    "value": "Payment details"
+  },
+  {
+    "path": "payments.detailsDialog.dueDate",
+    "value": "Due date"
+  },
+  {
+    "path": "payments.detailsDialog.created",
+    "value": "Created"
+  },
+  {
+    "path": "payments.detailsDialog.paidAt",
+    "value": "Paid at"
+  },
+  {
+    "path": "payments.detailsDialog.proofUploaded",
+    "value": "Proof uploaded"
+  },
+  {
+    "path": "payments.detailsDialog.proofYes",
+    "value": "Yes"
+  },
+  {
+    "path": "payments.detailsDialog.proofNo",
+    "value": "No"
+  },
+  {
+    "path": "payments.detailsDialog.openProof",
+    "value": "Open proof"
+  },
+  {
+    "path": "payments.proofDialog.title",
+    "value": "Transfer proof"
+  },
+  {
+    "path": "payments.proofDialog.description",
+    "value": "Preview uploaded receipt or PDF from storage. Approve to mark payment as validated and update student access."
+  },
+  {
+    "path": "payments.proofDialog.demoNoFile",
+    "value": "Demo: no file attached in mock data"
+  },
+  {
+    "path": "payments.proofDialog.approveProof",
+    "value": "Approve proof"
+  },
+  {
+    "path": "payments.proofDialog.approvedDemo",
+    "value": "Proof approved (demo)"
+  },
+  {
+    "path": "payments.empty",
+    "value": "No payments match your search or filters."
+  },
+  {
+    "path": "installmentPayments.description",
+    "value": "Follow-up tuition from enrolled students. Approve to unlock QR attendance for that month."
+  },
+  {
+    "path": "installmentPayments.filters.awaitingReview",
+    "value": "Awaiting review"
+  },
+  {
+    "path": "installmentPayments.filters.approved",
+    "value": "Approved"
+  },
+  {
+    "path": "installmentPayments.filters.rejected",
+    "value": "Rejected"
+  },
+  {
+    "path": "installmentPayments.filters.all",
+    "value": "All"
+  },
+  {
+    "path": "installmentPayments.scheduleMonth",
+    "value": "Schedule month"
+  },
+  {
+    "path": "installmentPayments.submitted",
+    "value": "Submitted {{date}}"
+  },
+  {
+    "path": "installmentPayments.viewProof",
+    "value": "View proof"
+  },
+  {
+    "path": "installmentPayments.enrollment",
+    "value": "Enrollment"
+  },
+  {
+    "path": "installmentPayments.proof",
+    "value": "Proof"
+  },
+  {
+    "path": "installmentPayments.allPayments",
+    "value": "All payments"
+  },
+  {
+    "path": "installmentPayments.filteredPayments",
+    "value": "{{filter}} payments"
+  },
+  {
+    "path": "installmentPayments.adminCodeHint",
+    "value": "Enter your code once, then approve or reject each payment below."
+  },
+  {
+    "path": "installmentPayments.empty.noneTitle",
+    "value": "No follow-up payments yet"
+  },
+  {
+    "path": "installmentPayments.empty.noneDescription",
+    "value": "When students pay a remaining schedule month, their transfer appears here for review."
+  },
+  {
+    "path": "installmentPayments.empty.noInView",
+    "value": "No payments in this view."
+  },
+  {
+    "path": "installmentPayments.rejectDialog.title",
+    "value": "Reject payment"
+  },
+  {
+    "path": "installmentPayments.rejectDialog.notePlaceholder",
+    "value": "Note for your records (optional) — e.g. amount mismatch, unclear screenshot"
+  },
+  {
+    "path": "installmentPayments.rejectDialog.rejectPayment",
+    "value": "Reject payment"
+  },
+  {
+    "path": "installmentPayments.toast.approvedTitle",
+    "value": "Payment approved"
+  },
+  {
+    "path": "installmentPayments.toast.approvedDescription",
+    "value": "{{month}} unlocked for QR attendance."
+  },
+  {
+    "path": "installmentPayments.toast.approveFailed",
+    "value": "Could not approve"
+  },
+  {
+    "path": "installmentPayments.toast.rejectedTitle",
+    "value": "Payment rejected"
+  },
+  {
+    "path": "installmentPayments.toast.rejectedDescription",
+    "value": "The student can submit again with corrected proof."
+  },
+  {
+    "path": "installmentPayments.toast.rejectFailed",
+    "value": "Could not reject"
+  },
+  {
+    "path": "promos.description",
+    "value": "Create carousel banners for student pages. Stored in this browser until a promos API exists."
+  },
+  {
+    "path": "promos.resetSamples",
+    "value": "Reset samples"
+  },
+  {
+    "path": "promos.addPromo",
+    "value": "Add promo"
+  },
+  {
+    "path": "promos.table.title",
+    "value": "Title"
+  },
+  {
+    "path": "promos.table.placement",
+    "value": "Placement"
+  },
+  {
+    "path": "promos.table.order",
+    "value": "Order"
+  },
+  {
+    "path": "promos.table.status",
+    "value": "Status"
+  },
+  {
+    "path": "promos.table.actions",
+    "value": "Actions"
+  },
+  {
+    "path": "promos.live",
+    "value": "Live"
+  },
+  {
+    "path": "promos.hidden",
+    "value": "Hidden"
+  },
+  {
+    "path": "promos.empty",
+    "value": "No promos yet. Add one to show a carousel on My Class."
+  },
+  {
+    "path": "promos.hint",
+    "value": "Students see active promos in a carousel at the top of My Class. Use sort order to control slide sequence. Optional start/end dates hide promos outside the window."
+  },
+  {
+    "path": "promos.dialog.editTitle",
+    "value": "Edit promotion"
+  },
+  {
+    "path": "promos.dialog.newTitle",
+    "value": "New promotion"
+  },
+  {
+    "path": "promos.dialog.titleLabel",
+    "value": "Title"
+  },
+  {
+    "path": "promos.dialog.titlePlaceholder",
+    "value": "Summer enrollment is open"
+  },
+  {
+    "path": "promos.dialog.messageLabel",
+    "value": "Message"
+  },
+  {
+    "path": "promos.dialog.messagePlaceholder",
+    "value": "Short promo copy shown on the banner"
+  },
+  {
+    "path": "promos.dialog.buttonLabel",
+    "value": "Button label"
+  },
+  {
+    "path": "promos.dialog.buttonLink",
+    "value": "Button link"
+  },
+  {
+    "path": "promos.dialog.buttonLinkPlaceholder",
+    "value": "/eduhub or https://..."
+  },
+  {
+    "path": "promos.dialog.imageUrl",
+    "value": "Image URL (optional)"
+  },
+  {
+    "path": "promos.dialog.imagePlaceholder",
+    "value": "https://..."
+  },
+  {
+    "path": "promos.dialog.accentColor",
+    "value": "Accent color"
+  },
+  {
+    "path": "promos.dialog.showOn",
+    "value": "Show on"
+  },
+  {
+    "path": "promos.dialog.sortOrder",
+    "value": "Sort order"
+  },
+  {
+    "path": "promos.dialog.startsOptional",
+    "value": "Starts (optional)"
+  },
+  {
+    "path": "promos.dialog.endsOptional",
+    "value": "Ends (optional)"
+  },
+  {
+    "path": "promos.dialog.liveForStudents",
+    "value": "Live for students"
+  },
+  {
+    "path": "promos.dialog.liveHint",
+    "value": "Hidden promos stay saved but do not appear in the carousel."
+  },
+  {
+    "path": "promos.dialog.publishPromo",
+    "value": "Publish promo"
+  },
+  {
+    "path": "promos.dialog.saveChanges",
+    "value": "Save changes"
+  },
+  {
+    "path": "promos.accentPresets.eduhubBlue",
+    "value": "EduHub blue"
+  },
+  {
+    "path": "promos.accentPresets.teal",
+    "value": "Teal"
+  },
+  {
+    "path": "promos.accentPresets.amber",
+    "value": "Amber"
+  },
+  {
+    "path": "promos.accentPresets.violet",
+    "value": "Violet"
+  },
+  {
+    "path": "promos.accentPresets.slate",
+    "value": "Slate"
+  },
+  {
+    "path": "promos.placements.myClass",
+    "value": "My Class"
+  },
+  {
+    "path": "promos.placements.dashboard",
+    "value": "Dashboard"
+  },
+  {
+    "path": "promos.placements.allStudentPages",
+    "value": "All student pages"
+  },
+  {
+    "path": "promos.defaultCta",
+    "value": "Learn more"
+  },
+  {
+    "path": "promos.toast.titleRequired",
+    "value": "Title is required"
+  },
+  {
+    "path": "promos.toast.updated",
+    "value": "Promotion updated"
+  },
+  {
+    "path": "promos.toast.published",
+    "value": "Promotion published"
+  },
+  {
+    "path": "promos.toast.hidden",
+    "value": "Promotion hidden from students"
+  },
+  {
+    "path": "promos.toast.live",
+    "value": "Promotion is live"
+  },
+  {
+    "path": "promos.toast.deleted",
+    "value": "Promotion deleted"
+  },
+  {
+    "path": "referralCodes.description",
+    "value": "Set referral codes and discount percentages per class. Students enter the code at enrollment to receive the listed discount off catalog tuition."
+  },
+  {
+    "path": "referralCodes.searchPlaceholder",
+    "value": "Search class, code, lecturer…"
+  },
+  {
+    "path": "referralCodes.table.class",
+    "value": "Class"
+  },
+  {
+    "path": "referralCodes.table.status",
+    "value": "Status"
+  },
+  {
+    "path": "referralCodes.table.catalogPrice",
+    "value": "Catalog price"
+  },
+  {
+    "path": "referralCodes.table.referralCode",
+    "value": "Referral code"
+  },
+  {
+    "path": "referralCodes.table.discount",
+    "value": "Discount"
+  },
+  {
+    "path": "referralCodes.table.actions",
+    "value": "Actions"
+  },
+  {
+    "path": "referralCodes.setPricing",
+    "value": "Set pricing"
+  },
+  {
+    "path": "referralCodes.empty",
+    "value": "No classes match your search."
+  },
+  {
+    "path": "referralCodes.editDialog.title",
+    "value": "Edit referral code"
+  },
+  {
+    "path": "referralCodes.editDialog.catalogSuffix",
+    "value": " · Catalog {{price}}"
+  },
+  {
+    "path": "referralCodes.editDialog.referralCode",
+    "value": "Referral code"
+  },
+  {
+    "path": "referralCodes.editDialog.referralPlaceholder",
+    "value": "e.g. SPRING2026"
+  },
+  {
+    "path": "referralCodes.editDialog.discountPercent",
+    "value": "Discount (%)"
+  },
+  {
+    "path": "referralCodes.editDialog.discountHint",
+    "value": "Percent off catalog price when the code matches (0–100)."
+  },
+  {
+    "path": "referralCodes.editDialog.withCode",
+    "value": "With code:"
+  },
+  {
+    "path": "referralCodes.editDialog.discountSuffix",
+    "value": " (−{{percent}}%)"
+  },
+  {
+    "path": "referralCodes.toast.saved",
+    "value": "Referral code saved"
+  },
+  {
+    "path": "referralCodes.toast.savedDescription",
+    "value": "{{title}} updated."
+  },
+  {
+    "path": "referralCodes.toast.saveFailed",
+    "value": "Could not save referral code"
+  },
+  {
+    "path": "referralCodes.toast.pricingRequired",
+    "value": "Set catalog pricing on the class before adding referral codes."
+  },
+  {
+    "path": "referralCodes.toast.discountRange",
+    "value": "Discount must be between 0 and 100%."
+  },
+  {
+    "path": "specialTuition.description",
+    "value": "Grant free enrollment to specific student emails—for example staff family or scholarship cases. Stored in this browser until a grants API exists."
+  },
+  {
+    "path": "specialTuition.addGrant",
+    "value": "Add grant"
+  },
+  {
+    "path": "specialTuition.addGrantHint",
+    "value": "The student must sign in with this email when applying. Tuition shows as free on their enrollment form."
+  },
+  {
+    "path": "specialTuition.studentEmail",
+    "value": "Student email"
+  },
+  {
+    "path": "specialTuition.emailPlaceholder",
+    "value": "student@example.com"
+  },
+  {
+    "path": "specialTuition.classScope",
+    "value": "Class scope"
+  },
+  {
+    "path": "specialTuition.chooseClass",
+    "value": "Choose class"
+  },
+  {
+    "path": "specialTuition.allClassesScope",
+    "value": "All classes"
+  },
+  {
+    "path": "specialTuition.noteOptional",
+    "value": "Note (optional)"
+  },
+  {
+    "path": "specialTuition.notePlaceholder",
+    "value": "e.g. Rector family"
+  },
+  {
+    "path": "specialTuition.saveGrant",
+    "value": "Save grant"
+  },
+  {
+    "path": "specialTuition.table.email",
+    "value": "Email"
+  },
+  {
+    "path": "specialTuition.table.class",
+    "value": "Class"
+  },
+  {
+    "path": "specialTuition.table.note",
+    "value": "Note"
+  },
+  {
+    "path": "specialTuition.table.active",
+    "value": "Active"
+  },
+  {
+    "path": "specialTuition.table.added",
+    "value": "Added"
+  },
+  {
+    "path": "specialTuition.toggleGrantAria",
+    "value": "Toggle grant for {{email}}"
+  },
+  {
+    "path": "specialTuition.removeGrantAria",
+    "value": "Remove grant for {{email}}"
+  },
+  {
+    "path": "specialTuition.empty",
+    "value": "No grants yet. Add a student email above."
+  },
+  {
+    "path": "specialTuition.toast.saved",
+    "value": "Special tuition grant saved"
+  },
+  {
+    "path": "specialTuition.toast.savedClass",
+    "value": "{{email}} can enroll in this class for free."
+  },
+  {
+    "path": "specialTuition.toast.savedAll",
+    "value": "{{email}} can enroll in any class for free."
+  },
+  {
+    "path": "specialTuition.toast.saveFailed",
+    "value": "Could not save grant."
+  },
+  {
+    "path": "specialTuition.toast.enabled",
+    "value": "Grant enabled"
+  },
+  {
+    "path": "specialTuition.toast.paused",
+    "value": "Grant paused"
+  },
+  {
+    "path": "specialTuition.toast.removed",
+    "value": "Grant removed"
+  },
+  {
+    "path": "payroll.description",
+    "value": "Review instructor payroll submissions, then record bank transfer proof. Student tuition is available separately for reference when checking figures."
+  },
+  {
+    "path": "payroll.paymentsLink",
+    "value": "Payments & reminders"
+  },
+  {
+    "path": "payroll.tabs.instructorRequests",
+    "value": "Instructor requests"
+  },
+  {
+    "path": "payroll.tabs.studentTuition",
+    "value": "Student tuition"
+  },
+  {
+    "path": "payroll.tabs.payoutProof",
+    "value": "Payout proof"
+  },
+  {
+    "path": "payroll.howItWorks.title",
+    "value": "How payroll works"
+  },
+  {
+    "path": "payroll.howItWorks.step1",
+    "value": "Open a submission and verify class figures against the schedule month."
+  },
+  {
+    "path": "payroll.howItWorks.step2",
+    "value": "Approve or reject the instructor's requested payout."
+  },
+  {
+    "path": "payroll.howItWorks.step3",
+    "value": "After you pay them, record transfer proof on the detail page or Payout proof tab."
+  },
+  {
+    "path": "payroll.stats.pendingReview",
+    "value": "Pending review"
+  },
+  {
+    "path": "payroll.stats.approved",
+    "value": "Approved"
+  },
+  {
+    "path": "payroll.stats.allSubmissions",
+    "value": "All submissions"
+  },
+  {
+    "path": "payroll.pendingBanner",
+    "value": "{{count}} submission(s) waiting for your decision. Filter by Pending review or open any row to review."
+  },
+  {
+    "path": "payroll.requests.searchPlaceholder",
+    "value": "Search instructor, class, period, amount…"
+  },
+  {
+    "path": "payroll.requests.table.submitted",
+    "value": "Submitted"
+  },
+  {
+    "path": "payroll.requests.table.instructor",
+    "value": "Instructor"
+  },
+  {
+    "path": "payroll.requests.table.class",
+    "value": "Class"
+  },
+  {
+    "path": "payroll.requests.table.scheduleMonth",
+    "value": "Schedule month"
+  },
+  {
+    "path": "payroll.requests.table.requested",
+    "value": "Requested"
+  },
+  {
+    "path": "payroll.requests.table.status",
+    "value": "Status"
+  },
+  {
+    "path": "payroll.requests.table.action",
+    "value": "Action"
+  },
+  {
+    "path": "payroll.requests.review",
+    "value": "Review"
+  },
+  {
+    "path": "payroll.requests.emptyNone",
+    "value": "No instructor payroll submissions yet. They appear when a teacher submits from their Payroll page."
+  },
+  {
+    "path": "payroll.requests.emptyNoMatch",
+    "value": "No rows match your search or status filter."
+  },
+  {
+    "path": "payroll.tuition.description",
+    "value": "Student tuition rows for reference when validating instructor payroll. Use Payments & reminders to chase unpaid invoices."
+  },
+  {
+    "path": "payroll.tuition.searchPlaceholder",
+    "value": "Search student, class, lecturer, invoice…"
+  },
+  {
+    "path": "payroll.tuition.totalsTitle",
+    "value": "Totals in current view"
+  },
+  {
+    "path": "payroll.tuition.totalsHint",
+    "value": "Collected counts paid tuition; outstanding is pending and overdue rows that match your filters."
+  },
+  {
+    "path": "payroll.tuition.collected",
+    "value": "Collected"
+  },
+  {
+    "path": "payroll.tuition.outstanding",
+    "value": "Outstanding"
+  },
+  {
+    "path": "payroll.tuition.paidRows",
+    "value": "{{count}} paid row(s)"
+  },
+  {
+    "path": "payroll.tuition.unpaidRows",
+    "value": "{{count}} unpaid row(s)"
+  },
+  {
+    "path": "payroll.tuition.noPaymentsInView",
+    "value": "No payments in this view."
+  },
+  {
+    "path": "payroll.tuition.summary",
+    "value": "{{count}} payment row(s) total · {{sections}} class section(s) with activity"
+  },
+  {
+    "path": "payroll.tuition.table.student",
+    "value": "Student"
+  },
+  {
+    "path": "payroll.tuition.table.class",
+    "value": "Class"
+  },
+  {
+    "path": "payroll.tuition.table.course",
+    "value": "Course"
+  },
+  {
+    "path": "payroll.tuition.table.lecturer",
+    "value": "Lecturer"
+  },
+  {
+    "path": "payroll.tuition.table.amount",
+    "value": "Amount"
+  },
+  {
+    "path": "payroll.tuition.table.status",
+    "value": "Status"
+  },
+  {
+    "path": "payroll.tuition.table.due",
+    "value": "Due"
+  },
+  {
+    "path": "payroll.tuition.table.paid",
+    "value": "Paid"
+  },
+  {
+    "path": "payroll.proof.description",
+    "value": "Log of bank transfer proof recorded after you pay an instructor. Instructors are notified when proof is saved. Approve the payroll request first on the Instructor requests tab."
+  },
+  {
+    "path": "payroll.proof.searchPlaceholder",
+    "value": "Search class, course, instructor, email…"
+  },
+  {
+    "path": "payroll.proof.table.submitted",
+    "value": "Submitted"
+  },
+  {
+    "path": "payroll.proof.table.class",
+    "value": "Class"
+  },
+  {
+    "path": "payroll.proof.table.course",
+    "value": "Course"
+  },
+  {
+    "path": "payroll.proof.table.instructor",
+    "value": "Instructor"
+  },
+  {
+    "path": "payroll.proof.table.email",
+    "value": "Email"
+  },
+  {
+    "path": "payroll.proof.table.summary",
+    "value": "Summary"
+  },
+  {
+    "path": "payroll.proof.table.notes",
+    "value": "Notes"
+  },
+  {
+    "path": "payroll.proof.emptyNone",
+    "value": "No payout proof recorded yet. After approving a request and paying the instructor, record proof from the submission detail page."
+  },
+  {
+    "path": "payroll.proof.emptyNoMatch",
+    "value": "No rows match your search."
+  },
+  {
+    "path": "payrollSubmissions.description",
+    "value": "History of when an admin submitted bank transfer proof for a class (local browser storage until an API replaces it). Instructor figure approvals are on Instructor payroll requests."
+  },
+  {
+    "path": "payrollSubmissions.instructorRequests",
+    "value": "Instructor requests"
+  },
+  {
+    "path": "payrollSubmissions.payrollOverview",
+    "value": "Payroll overview"
+  },
+  {
+    "path": "payrollSubmissions.searchPlaceholder",
+    "value": "Search class, course, instructor, email…"
+  },
+  {
+    "path": "payrollSubmissions.emptyNone",
+    "value": "No submissions yet. Submit payout proof from a class card on Payroll."
+  },
+  {
+    "path": "payrollSubmissions.emptyNoMatch",
+    "value": "No rows match your search."
+  },
+  {
+    "path": "payrollProof.title",
+    "value": "Instructor payout proof"
+  },
+  {
+    "path": "payrollProof.descriptionMissingParams",
+    "value": "Open this page from Payroll — pick a class card and use \"Upload proof\"."
+  },
+  {
+    "path": "payrollProof.description",
+    "value": "Attach bank transfer confirmation. Submit records the payout, logs it for admins, and notifies the instructor when their email is on file."
+  },
+  {
+    "path": "payrollProof.goToPayroll",
+    "value": "Go to payroll"
+  },
+  {
+    "path": "payrollProof.fields.class",
+    "value": "Class"
+  },
+  {
+    "path": "payrollProof.fields.course",
+    "value": "Course"
+  },
+  {
+    "path": "payrollProof.fields.instructor",
+    "value": "Instructor"
+  },
+  {
+    "path": "payrollProof.fields.email",
+    "value": "Email"
+  },
+  {
+    "path": "payrollProof.noEmailWarning",
+    "value": "No lecturer email on this link — add lecturer email to payment rows so the instructor gets an in-app notification."
+  },
+  {
+    "path": "payrollProof.paymentSummaryLabel",
+    "value": "Payment summary for notification:"
+  },
+  {
+    "path": "instructorPayrollRequests.description",
+    "value": "Review figures instructors submitted from Payroll. Approve or reject, then record bank transfer proof so they are notified (demo: this browser)."
+  },
+  {
+    "path": "instructorPayrollRequests.payoutProofLog",
+    "value": "Payout proof log"
+  },
+  {
+    "path": "instructorPayrollRequests.emptyTitle",
+    "value": "No pending requests"
+  },
+  {
+    "path": "instructorPayrollRequests.emptyDescription",
+    "value": "When an instructor submits payroll for a class, it appears here for approval and transfer proof."
+  },
+  {
+    "path": "instructorPayrollRequests.openPayrollOverview",
+    "value": "Open payroll overview"
+  },
+  {
+    "path": "instructorPayrollRequests.pendingTitle",
+    "value": "Pending ({{count}})"
+  },
+  {
+    "path": "instructorPayrollRequests.pendingInstructions",
+    "value": "1. Approve or reject (optional note on reject). 2. After you pay them, open Record transfer proof (or use Upload payout proof on a class card on Payroll overview). Submitting proof sends an in-app notification to the instructor."
+  },
+  {
+    "path": "instructorPayrollRequests.openDetail",
+    "value": "Open detail"
+  },
+  {
+    "path": "instructorPayrollRequests.recordTransferProof",
+    "value": "Record transfer proof"
+  },
+  {
+    "path": "instructorPayrollRequests.fields.period",
+    "value": "Period"
+  },
+  {
+    "path": "instructorPayrollRequests.fields.sessionsTaught",
+    "value": "Sessions taught"
+  },
+  {
+    "path": "instructorPayrollRequests.fields.requestedPayout",
+    "value": "Requested payout"
+  },
+  {
+    "path": "instructorPayrollRequests.fields.payoutDetails",
+    "value": "Payout details"
+  },
+  {
+    "path": "instructorPayrollRequests.fields.instructorNotes",
+    "value": "Instructor notes:"
+  },
+  {
+    "path": "instructorPayrollRequests.rejectNoteLabel",
+    "value": "Optional note to instructor (shown on reject)"
+  },
+  {
+    "path": "instructorPayrollRequests.rejectNotePlaceholder",
+    "value": "Reason or next steps…"
+  },
+  {
+    "path": "instructorPayrollRequests.toast.approved",
+    "value": "Request approved"
+  },
+  {
+    "path": "instructorPayrollRequests.toast.approveFailed",
+    "value": "Could not approve"
+  },
+  {
+    "path": "instructorPayrollRequests.toast.approveFailedDescription",
+    "value": "Request may have been removed."
+  },
+  {
+    "path": "instructorPayrollRequests.toast.rejected",
+    "value": "Request rejected"
+  },
+  {
+    "path": "instructorPayrollRequests.toast.rejectFailed",
+    "value": "Could not reject"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.allRequests",
+    "value": "All requests"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.classLabel",
+    "value": "Class"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.statusLabel",
+    "value": "Status"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.instructor",
+    "value": "Instructor"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.requestAmount",
+    "value": "Request amount"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.submitted",
+    "value": "Submitted"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.periodPrefix",
+    "value": "Period: {{label}}"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.status.approved",
+    "value": "Approved"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.status.notApproved",
+    "value": "Not approved"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.status.awaitingDecision",
+    "value": "Awaiting your decision"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.title",
+    "value": "Class schedule"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.description",
+    "value": "Admin-proposed schedule, approved by the instructor. Payroll for {{period}} is eligible only when every session in that calendar month is marked finished (attendance held)."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.requestedPeriod",
+    "value": "the requested period"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.loading",
+    "value": "Loading class schedule…"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.noMatch",
+    "value": "Could not match this class to a course schedule. Check that the class section and course title align with an admin course or teacher course in the demo."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.demoSchedule",
+    "value": "Showing the demo schedule for this class so you can verify sessions before approving payroll. When the API returns live course data, this panel updates automatically."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.sessionsFinished",
+    "value": "{{finished}}/{{total}} sessions finished"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.noSessionsInMonth",
+    "value": "no sessions in this month"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.eligible",
+    "value": "All sessions in this month are finished — eligible for payroll for this period."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.notEligible",
+    "value": "Payroll should be processed after the remaining sessions in this month are finished."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.confirmPeriod",
+    "value": "Confirm the period label matches a month that has scheduled sessions."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.sessionsInPeriod",
+    "value": "Sessions in {{period}}"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.meeting",
+    "value": "Meeting {{num}}"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.schedule.dateTba",
+    "value": "Date TBA"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.submission.show",
+    "value": "Show full submission from instructor"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.submission.hide",
+    "value": "Hide full submission from instructor"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.submission.sessionsTaught",
+    "value": "Sessions taught"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.submission.payoutDetails",
+    "value": "Payout details"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.submission.instructorNotes",
+    "value": "Instructor notes"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.submission.noteToInstructor",
+    "value": "Note sent to instructor"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.approvedBanner",
+    "value": "Figures are approved by {{code}} ({{date}}). Use the transfer proof section below to attach or update the bank receipt — that notifies the instructor in this demo."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.rejectedBanner",
+    "value": "This request was declined ({{date}}) · {{code}}. You can still use the proof section below if you need a receipt on file."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.pendingBanner",
+    "value": "Suggested order: attach and submit bank transfer proof in the section below first, then scroll down to approve or decline the instructor's figures."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.transferProof.title",
+    "value": "Transfer proof"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.transferProof.description",
+    "value": "Upload the bank receipt and submit here. When you're done, scroll down to approve or decline the payroll request (pending requests only)."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.transferProof.tuitionSnapshot",
+    "value": "Tuition snapshot (for their notification):"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.transferProof.openDedicatedPage",
+    "value": "Open the same proof tools on a dedicated page"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.decision.title",
+    "value": "Approve or decline"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.decision.description",
+    "value": "After transfer proof is on file (recommended), confirm whether you accept this instructor's payroll figures. Decline opens a confirmation step so you don't mis-click. Approve or decline sends an in-app notification to the instructor (Teacher → Notifications): Payroll request approved or Payroll request not approved, with your note when you decline. Demo uses this browser only; skipped if there is no instructor email and no name on the submission."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.decision.approveRequest",
+    "value": "Approve this request"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.decision.declineNotify",
+    "value": "Decline and notify instructor…"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.approveDialog.title",
+    "value": "Approve this payroll request?"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.approveDialog.description",
+    "value": "Confirm you accept {{name}}'s figures for {{classSection}}. The instructor will be notified in Teacher → Notifications."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.approveDialog.approveRequest",
+    "value": "Approve request"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.declineDialog.title",
+    "value": "Decline this payroll request?"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.declineDialog.description",
+    "value": "The instructor will see this in their notifications. You can leave a short explanation (recommended)."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.declineDialog.noteLabel",
+    "value": "Note to instructor"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.declineDialog.notePlaceholder",
+    "value": "Reason they should fix or resubmit…"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.declineDialog.declineRequest",
+    "value": "Decline request"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.noTuitionRows",
+    "value": "No tuition rows for this class in the current payment list."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.toast.approved",
+    "value": "Approved"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.toast.approvedDescription",
+    "value": "{{name}} was notified."
+  },
+  {
+    "path": "instructorPayrollRequestDetail.toast.approveFailed",
+    "value": "Could not approve"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.toast.declined",
+    "value": "Request declined"
+  },
+  {
+    "path": "instructorPayrollRequestDetail.toast.declineFailed",
+    "value": "Could not decline"
+  },
+  {
+    "path": "transactions.description",
+    "value": "Recorded movements (demo). Pair with Payments for reconciliation when the ledger API is live."
+  },
+  {
+    "path": "transactions.searchPlaceholder",
+    "value": "Search reference, student, amount, method…"
+  },
+  {
+    "path": "transactions.typePlaceholder",
+    "value": "Type"
+  },
+  {
+    "path": "transactions.methodPlaceholder",
+    "value": "Method"
+  },
+  {
+    "path": "transactions.table.reference",
+    "value": "Reference"
+  },
+  {
+    "path": "transactions.table.student",
+    "value": "Student"
+  },
+  {
+    "path": "transactions.table.type",
+    "value": "Type"
+  },
+  {
+    "path": "transactions.table.amount",
+    "value": "Amount"
+  },
+  {
+    "path": "transactions.table.method",
+    "value": "Method"
+  },
+  {
+    "path": "transactions.table.recorded",
+    "value": "Recorded"
+  },
+  {
+    "path": "transactions.empty",
+    "value": "No transactions match your search or filters."
+  },
+  {
+    "path": "attendance.description",
+    "value": "Monitor partial attendance and completion. Use filters for at-risk learners once the API exposes thresholds."
+  },
+  {
+    "path": "attendance.searchPlaceholder",
+    "value": "Search student, class, lecturer…"
+  },
+  {
+    "path": "attendance.riskPlaceholder",
+    "value": "Risk"
+  },
+  {
+    "path": "attendance.atRiskOnly",
+    "value": "At risk only"
+  },
+  {
+    "path": "attendance.onTrackOnly",
+    "value": "On track only"
+  },
+  {
+    "path": "attendance.table.student",
+    "value": "Student"
+  },
+  {
+    "path": "attendance.table.class",
+    "value": "Class"
+  },
+  {
+    "path": "attendance.table.lecturer",
+    "value": "Lecturer"
+  },
+  {
+    "path": "attendance.table.attendance",
+    "value": "Attendance"
+  },
+  {
+    "path": "attendance.table.progress",
+    "value": "Progress"
+  },
+  {
+    "path": "attendance.table.risk",
+    "value": "Risk"
+  },
+  {
+    "path": "attendance.table.details",
+    "value": "Details"
+  },
+  {
+    "path": "attendance.atRisk",
+    "value": "At risk"
+  },
+  {
+    "path": "attendance.onTrack",
+    "value": "On track"
+  },
+  {
+    "path": "attendance.viewDetails",
+    "value": "View details"
+  },
+  {
+    "path": "attendance.detailDialog.title",
+    "value": "Attendance details"
+  },
+  {
+    "path": "attendance.detailDialog.sessions",
+    "value": "Sessions"
+  },
+  {
+    "path": "attendance.detailDialog.sessionsAttended",
+    "value": "{{present}} / {{total}} attended"
+  },
+  {
+    "path": "attendance.detailDialog.overall",
+    "value": "Overall"
+  },
+  {
+    "path": "attendance.detailDialog.classProgress",
+    "value": "Class progress"
+  },
+  {
+    "path": "attendance.detailDialog.lastActivity",
+    "value": "Last recorded activity"
+  },
+  {
+    "path": "attendance.detailDialog.recentSessions",
+    "value": "Recent sessions"
+  },
+  {
+    "path": "attendance.detailDialog.session",
+    "value": "Session"
+  },
+  {
+    "path": "attendance.detailDialog.status",
+    "value": "Status"
+  },
+  {
+    "path": "attendance.sessionStatus.present",
+    "value": "Present"
+  },
+  {
+    "path": "attendance.sessionStatus.late",
+    "value": "Late"
+  },
+  {
+    "path": "attendance.sessionStatus.excused",
+    "value": "Excused"
+  },
+  {
+    "path": "attendance.sessionStatus.absent",
+    "value": "Absent"
+  },
+  {
+    "path": "placementTests.description",
+    "value": "Monitor placement results and tie outcomes to enrollments and class placement."
+  },
+  {
+    "path": "placementTests.searchPlaceholder",
+    "value": "Search student, class, lecturer, assessment…"
+  },
+  {
+    "path": "placementTests.resultPlaceholder",
+    "value": "Result"
+  },
+  {
+    "path": "placementTests.passed",
+    "value": "Passed"
+  },
+  {
+    "path": "placementTests.belowThreshold",
+    "value": "Below threshold"
+  },
+  {
+    "path": "placementTests.table.student",
+    "value": "Student"
+  },
+  {
+    "path": "placementTests.table.class",
+    "value": "Class"
+  },
+  {
+    "path": "placementTests.table.lecturer",
+    "value": "Lecturer"
+  },
+  {
+    "path": "placementTests.table.assessment",
+    "value": "Assessment"
+  },
+  {
+    "path": "placementTests.table.score",
+    "value": "Score"
+  },
+  {
+    "path": "placementTests.table.result",
+    "value": "Result"
+  },
+  {
+    "path": "placementTests.table.completed",
+    "value": "Completed"
+  },
+  {
+    "path": "certifications.description",
+    "value": "Eligibility requires survey completion and class completion. Issue actions call the API when available."
+  },
+  {
+    "path": "certifications.searchPlaceholder",
+    "value": "Search student, class…"
+  },
+  {
+    "path": "certifications.eligibilityPlaceholder",
+    "value": "Eligibility"
+  },
+  {
+    "path": "certifications.eligible",
+    "value": "Eligible"
+  },
+  {
+    "path": "certifications.notEligible",
+    "value": "Not eligible"
+  },
+  {
+    "path": "certifications.table.student",
+    "value": "Student"
+  },
+  {
+    "path": "certifications.table.class",
+    "value": "Class"
+  },
+  {
+    "path": "certifications.table.survey",
+    "value": "Survey"
+  },
+  {
+    "path": "certifications.table.classComplete",
+    "value": "Class complete"
+  },
+  {
+    "path": "certifications.table.eligible",
+    "value": "Eligible"
+  },
+  {
+    "path": "certifications.table.issue",
+    "value": "Issue"
+  },
+  {
+    "path": "certifications.surveyDone",
+    "value": "Done"
+  },
+  {
+    "path": "certifications.surveyMissing",
+    "value": "Missing"
+  },
+  {
+    "path": "certifications.classCompleteYes",
+    "value": "Yes"
+  },
+  {
+    "path": "certifications.classCompleteNo",
+    "value": "No"
+  },
+  {
+    "path": "certifications.issueCertificate",
+    "value": "Issue certificate"
+  },
+  {
+    "path": "certifications.issueDisabledTitle",
+    "value": "Complete survey and class first"
+  },
+  {
+    "path": "certifications.toast.issuedDemo",
+    "value": "Certificate issued (demo)"
+  },
+  {
+    "path": "calendar.description",
+    "value": "Class schedules, placement or mock tests, and review sessions. Drill through to the class or student when wired to routes."
+  },
+  {
+    "path": "calendar.searchPlaceholder",
+    "value": "Search title, type, time…"
+  },
+  {
+    "path": "calendar.eventTypePlaceholder",
+    "value": "Event type"
+  },
+  {
+    "path": "calendar.types.class",
+    "value": "Class"
+  },
+  {
+    "path": "calendar.types.test",
+    "value": "Test"
+  },
+  {
+    "path": "calendar.types.review",
+    "value": "Review"
+  },
+  {
+    "path": "calendar.empty",
+    "value": "No events match your search or filters."
+  },
+  {
+    "path": "supportSessions.description",
+    "value": "Additional classes or support blocks requested by students. Approve and schedule when integrations are ready."
+  },
+  {
+    "path": "supportSessions.searchPlaceholder",
+    "value": "Search student, class, topic…"
+  },
+  {
+    "path": "supportSessions.requested",
+    "value": "Requested"
+  },
+  {
+    "path": "supportSessions.scheduled",
+    "value": "Scheduled"
+  },
+  {
+    "path": "supportSessions.table.student",
+    "value": "Student"
+  },
+  {
+    "path": "supportSessions.table.class",
+    "value": "Class"
+  },
+  {
+    "path": "supportSessions.table.topic",
+    "value": "Topic"
+  },
+  {
+    "path": "supportSessions.table.requested",
+    "value": "Requested"
+  },
+  {
+    "path": "supportSessions.table.status",
+    "value": "Status"
+  },
+  {
+    "path": "supportSessions.table.actions",
+    "value": "Actions"
+  },
+  {
+    "path": "supportSessions.approveSchedule",
+    "value": "Approve & schedule"
+  },
+  {
+    "path": "supportSessions.viewSlot",
+    "value": "View slot"
+  },
+  {
+    "path": "supportSessions.toast.approvedDemo",
+    "value": "Session approved (demo)"
+  },
+  {
+    "path": "supportSessions.toast.viewSlotDemo",
+    "value": "Open calendar slot (demo)"
+  },
+  {
+    "path": "supportSessions.empty",
+    "value": "No sessions match your search or filters."
+  },
+  {
+    "path": "substituteCover.list.description",
+    "value": "Open a request to see full details. When both instructors agree, you can give final approval on the request page."
+  },
+  {
+    "path": "substituteCover.list.empty",
+    "value": "No substitute cover requests yet. They appear here when an instructor sends a substitute invite (demo data in this browser)."
+  },
+  {
+    "path": "substituteCover.list.reviewApprove",
+    "value": "Review & approve"
+  },
+  {
+    "path": "substituteCover.list.viewDetails",
+    "value": "View details"
+  },
+  {
+    "path": "substituteCover.detail.title",
+    "value": "Substitute cover request"
+  },
+  {
+    "path": "substituteCover.detail.descriptionPendingFinal",
+    "value": "Both instructors have agreed. Use the buttons below to give final sign-off."
+  },
+  {
+    "path": "substituteCover.detail.descriptionCanDecide",
+    "value": "The invite is still with instructors. You can still approve or reject this substitute cover below (demo: admin may decide at any time before it is finalized)."
+  },
+  {
+    "path": "substituteCover.detail.descriptionClosed",
+    "value": "This request is no longer open for admin approval."
+  },
+  {
+    "path": "substituteCover.detail.status",
+    "value": "Status"
+  },
+  {
+    "path": "substituteCover.detail.adminDecision",
+    "value": "Admin decision"
+  },
+  {
+    "path": "substituteCover.detail.adminDecisionFinal",
+    "value": "Approve to record this cover in the system after both instructors agreed, or reject to stop it."
+  },
+  {
+    "path": "substituteCover.detail.adminDecisionEarly",
+    "value": "Approve to confirm this substitute arrangement now, or reject to cancel it. In a full rollout you might wait for instructor replies first."
+  },
+  {
+    "path": "substituteCover.detail.finalApprove",
+    "value": "Final approve"
+  },
+  {
+    "path": "substituteCover.detail.approveCover",
+    "value": "Approve substitute cover"
+  },
+  {
+    "path": "substituteCover.detail.reject",
+    "value": "Reject"
+  },
+  {
+    "path": "substituteCover.detail.viewInTeachers",
+    "value": "View in Teachers"
+  },
+  {
+    "path": "substituteCover.detail.readonlyNotes.finalized",
+    "value": "This substitute cover has been finalized."
+  },
+  {
+    "path": "substituteCover.detail.readonlyNotes.rejectedAdmin",
+    "value": "This request was rejected at the final admin step."
+  },
+  {
+    "path": "substituteCover.detail.readonlyNotes.declinedSubstitute",
+    "value": "The substitute declined; no admin approval is needed."
+  },
+  {
+    "path": "substituteCover.detail.readonlyNotes.rejectedPrimary",
+    "value": "The primary instructor did not approve this cover."
+  },
+  {
+    "path": "substituteCover.detail.readonlyNotes.nothingToConfirm",
+    "value": "There is nothing for you to confirm at this step."
+  },
+  {
+    "path": "substituteCover.detail.missingId",
+    "value": "Missing request id."
+  },
+  {
+    "path": "substituteCover.detail.notFound",
+    "value": "This cover request was not found. It may have been removed."
+  },
+  {
+    "path": "substituteCover.status.waitingSubstitute",
+    "value": "Waiting for substitute"
+  },
+  {
+    "path": "substituteCover.status.waitingPrimary",
+    "value": "Waiting for primary"
+  },
+  {
+    "path": "substituteCover.status.waitingPrimaryInstructor",
+    "value": "Waiting for primary instructor"
+  },
+  {
+    "path": "substituteCover.status.needsAdminApproval",
+    "value": "Needs admin approval"
+  },
+  {
+    "path": "substituteCover.status.readyForFinalApproval",
+    "value": "Ready for your final approval"
+  },
+  {
+    "path": "substituteCover.status.approved",
+    "value": "Approved"
+  },
+  {
+    "path": "substituteCover.status.declinedSubstitute",
+    "value": "Declined (substitute)"
+  },
+  {
+    "path": "substituteCover.status.declinedBySubstitute",
+    "value": "Declined by substitute"
+  },
+  {
+    "path": "substituteCover.status.rejectedPrimary",
+    "value": "Rejected (primary)"
+  },
+  {
+    "path": "substituteCover.status.rejectedByPrimary",
+    "value": "Rejected by primary instructor"
+  },
+  {
+    "path": "substituteCover.status.rejectedAdmin",
+    "value": "Rejected (admin)"
+  },
+  {
+    "path": "substituteCover.status.rejectedByAdmin",
+    "value": "Rejected by admin"
+  },
+  {
+    "path": "substituteCover.toast.finalized",
+    "value": "Substitute cover finalized"
+  },
+  {
+    "path": "substituteCover.toast.approved",
+    "value": "Substitute cover approved"
+  },
+  {
+    "path": "substituteCover.toast.approveFailed",
+    "value": "Could not approve substitute cover"
+  },
+  {
+    "path": "substituteCover.toast.rejected",
+    "value": "Substitute arrangement rejected"
+  },
+  {
+    "path": "substituteCover.toast.rejectFailed",
+    "value": "Could not reject substitute cover"
+  },
+  {
+    "path": "integrations.description",
+    "value": "External LMS links and trial policy. Values are typically loaded from environment or admin settings API."
+  },
+  {
+    "path": "integrations.lmsBaseUrl",
+    "value": "LMS base URL"
+  },
+  {
+    "path": "integrations.lmsHint",
+    "value": "Students open this from their dashboard; admins use it for support."
+  },
+  {
+    "path": "integrations.freeTrialPolicy",
+    "value": "Free trial policy"
+  },
+  {
+    "path": "integrations.freeTrialDescription",
+    "value": "One trial per account. The student profile shows whether the trial has been consumed; blocking a second trial is enforced server-side."
+  },
+  {
+    "path": "reports.description",
+    "value": "High-level KPIs and exports will connect to reporting APIs. Below is a placeholder layout."
+  },
+  {
+    "path": "reports.kpis.activeEnrollments",
+    "value": "Active enrollments"
+  },
+  {
+    "path": "reports.kpis.overduePayments",
+    "value": "Overdue payments"
+  },
+  {
+    "path": "reports.kpis.certificates30d",
+    "value": "Certificates (30d)"
+  },
+  {
+    "path": "components.statusBadges.course.published",
+    "value": "Published"
+  },
+  {
+    "path": "components.statusBadges.course.draft",
+    "value": "Draft"
+  },
+  {
+    "path": "components.statusBadges.course.schedulePending",
+    "value": "Schedule Pending"
+  },
+  {
+    "path": "components.statusBadges.course.scheduleApproved",
+    "value": "Schedule Approved"
+  },
+  {
+    "path": "components.statusBadges.course.rejected",
+    "value": "Rejected"
+  },
+  {
+    "path": "components.statusBadges.course.archived",
+    "value": "Archived"
+  },
+  {
+    "path": "components.statusBadges.payment.paid",
+    "value": "Paid"
+  },
+  {
+    "path": "components.statusBadges.payment.pending",
+    "value": "Pending"
+  },
+  {
+    "path": "components.statusBadges.payment.overdue",
+    "value": "Overdue"
+  },
+  {
+    "path": "components.statusBadges.class.active",
+    "value": "Active"
+  },
+  {
+    "path": "components.statusBadges.class.waiting",
+    "value": "Waiting"
+  },
+  {
+    "path": "components.statusBadges.class.completed",
+    "value": "Completed"
+  },
+  {
+    "path": "components.statusBadges.student.active",
+    "value": "Active"
+  },
+  {
+    "path": "components.statusBadges.student.trial",
+    "value": "Trial"
+  },
+  {
+    "path": "components.statusBadges.student.inactive",
+    "value": "Inactive"
+  },
+  {
+    "path": "components.actionCode.label",
+    "value": "Your admin code"
+  },
+  {
+    "path": "components.actionCode.placeholder",
+    "value": "e.g. AF01"
+  },
+  {
+    "path": "components.actionCode.hint",
+    "value": "Short ID for audit trail — records who approved or rejected this action when several admins share the account."
+  },
+  {
+    "path": "components.actionCode.validationError",
+    "value": "Enter your admin code (2–16 letters or numbers, e.g. AF01)."
+  },
+  {
+    "path": "components.courseReviewDialog.titleReviewPublish",
+    "value": "Review & publish class"
+  },
+  {
+    "path": "components.courseReviewDialog.titleSchedulePending",
+    "value": "Schedule pending"
+  },
+  {
+    "path": "components.courseReviewDialog.titleReview",
+    "value": "Review class"
+  },
+  {
+    "path": "components.courseReviewDialog.descReviewableIntro",
+    "value": "The instructor has approved the schedule. Set the catalog price and publish."
+  },
+  {
+    "path": "components.courseReviewDialog.steps.setCatalogPrice",
+    "value": "Set catalog price (required for publishing)."
+  },
+  {
+    "path": "components.courseReviewDialog.steps.addReferralDiscount",
+    "value": "Optionally add a referral code and discount %."
+  },
+  {
+    "path": "components.courseReviewDialog.steps.clickPublish",
+    "value": "Click Publish class to make it visible in the catalog."
+  },
+  {
+    "path": "components.courseReviewDialog.descSchedulePending",
+    "value": "The schedule has been sent to the instructor and is awaiting their approval. You can publish once they approve."
+  },
+  {
+    "path": "components.courseReviewDialog.descDraft",
+    "value": "This class is in draft. Propose a class schedule first, then get instructor approval before publishing."
+  },
+  {
+    "path": "components.courseReviewDialog.descDefault",
+    "value": "Review the class details below. You can reject with feedback or set pricing to publish."
+  },
+  {
+    "path": "components.courseReviewDialog.fields.title",
+    "value": "Title"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.lecturer",
+    "value": "Lecturer"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.status",
+    "value": "Status"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.lastRejection",
+    "value": "Last rejection"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.scheduleRejection",
+    "value": "Schedule rejection"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.category",
+    "value": "Category"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.description",
+    "value": "Description"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.catalogPrice",
+    "value": "Catalog price ({{currency}}) — admin only"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.catalogPricePlaceholder",
+    "value": "e.g. 1200000"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.catalogPriceHint",
+    "value": "Teachers do not set this. Persisted in-browser until the billing API stores class fees."
+  },
+  {
+    "path": "components.courseReviewDialog.fields.referralCode",
+    "value": "Referral code (optional)"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.referralPlaceholder",
+    "value": "e.g. SPRING2026 or PARTNER-ALI"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.referralHint",
+    "value": "Students enter this at enrollment or checkout. Pair with a discount below so the code has a clear benefit."
+  },
+  {
+    "path": "components.courseReviewDialog.fields.discountPercent",
+    "value": "Referral discount (%)"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.discountPlaceholder",
+    "value": "0"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.discountHint",
+    "value": "Percent off the catalog price when the referral code is applied (0–100)."
+  },
+  {
+    "path": "components.courseReviewDialog.fields.rejectionReason",
+    "value": "Rejection reason"
+  },
+  {
+    "path": "components.courseReviewDialog.fields.rejectionPlaceholder",
+    "value": "Explain what the lecturer needs to fix before approval."
+  },
+  {
+    "path": "components.courseReviewDialog.fields.rejectionHint",
+    "value": "Required only when rejecting the class."
+  },
+  {
+    "path": "components.courseReviewDialog.pricePreview.title",
+    "value": "Price with referral"
+  },
+  {
+    "path": "components.courseReviewDialog.pricePreview.discountedPrice",
+    "value": "Discounted price"
+  },
+  {
+    "path": "components.courseReviewDialog.pricePreview.catalog",
+    "value": "Catalog:"
+  },
+  {
+    "path": "components.courseReviewDialog.pricePreview.studentSaves",
+    "value": "Student saves {{amount}} vs catalog"
+  },
+  {
+    "path": "components.courseReviewDialog.pricePreview.noDiscount",
+    "value": "Discounted price:"
+  },
+  {
+    "path": "components.courseReviewDialog.pricePreview.fullCatalog",
+    "value": "(no discount — full catalog price)"
+  },
+  {
+    "path": "components.courseReviewDialog.rejectClass",
+    "value": "Reject class"
+  },
+  {
+    "path": "components.courseReviewDialog.approvePublish",
+    "value": "Approve & publish"
+  },
+  {
+    "path": "components.courseReviewDialog.saveCatalog",
+    "value": "Save catalog"
+  },
+  {
+    "path": "components.courseReviewDialog.publishBlockedPending",
+    "value": "Publishing is blocked until the instructor approves the proposed schedule."
+  },
+  {
+    "path": "components.courseReviewDialog.publishBlockedDraft",
+    "value": "Propose a class schedule first."
+  },
+  {
+    "path": "components.courseReviewDialog.toast.rejectedTitle",
+    "value": "Class rejected"
+  },
+  {
+    "path": "components.courseReviewDialog.toast.rejectedDescription",
+    "value": "{{title}} was sent back to the lecturer."
+  },
+  {
+    "path": "components.courseReviewDialog.toast.rejectedDescriptionGeneric",
+    "value": "The lecturer can revise and resubmit."
+  },
+  {
+    "path": "components.courseReviewDialog.toast.approvedTitle",
+    "value": "Class approved and published"
+  },
+  {
+    "path": "components.courseReviewDialog.toast.approvedDescription",
+    "value": "{{title}} is live for students."
+  },
+  {
+    "path": "components.courseReviewDialog.toast.approvedDescriptionGeneric",
+    "value": "The class is now published."
+  },
+  {
+    "path": "components.courseReviewDialog.toast.catalogSaved",
+    "value": "Catalog saved"
+  },
+  {
+    "path": "components.courseReviewDialog.toast.reviewFailed",
+    "value": "Class review failed"
+  },
+  {
+    "path": "components.courseReviewDialog.toast.reviewFailedDescription",
+    "value": "Try again or check API permissions."
+  },
+  {
+    "path": "components.courseReviewDialog.toast.invalidClass",
+    "value": "Invalid class"
+  },
+  {
+    "path": "components.courseReviewDialog.toast.rejectionRequired",
+    "value": "Enter a reason before rejecting this class."
+  },
+  {
+    "path": "components.courseReviewDialog.toast.waitSchedulePending",
+    "value": "Wait for the instructor to approve the class schedule before publishing."
+  },
+  {
+    "path": "components.courseReviewDialog.toast.proposeScheduleFirst",
+    "value": "Propose a class schedule and get instructor approval before publishing."
+  },
+  {
+    "path": "components.courseReviewDialog.toast.invalidPrice",
+    "value": "Enter a valid catalog price (0 or greater)."
+  },
+  {
+    "path": "components.courseReviewDialog.toast.discountRange",
+    "value": "Discount must be between 0 and 100%."
+  },
+  {
+    "path": "components.courseReviewDialog.loadError",
+    "value": "Could not load class details."
+  },
+  {
+    "path": "components.enrollmentPaidMonths.title",
+    "value": "Schedule month payments"
+  },
+  {
+    "path": "components.enrollmentPaidMonths.description",
+    "value": "Students can scan attendance QR only for schedule months marked paid. When they submit a follow-up payment in the app, approve it under Schedule month payments — or toggle months manually here after verifying a transfer."
+  },
+  {
+    "path": "components.enrollmentPaidMonths.scheduleMonthPaymentsLink",
+    "value": "Schedule month payments"
+  },
+  {
+    "path": "components.enrollmentPaidMonths.loadingSchedule",
+    "value": "Loading class schedule…"
+  },
+  {
+    "path": "components.enrollmentPaidMonths.noScheduleMonths",
+    "value": "No schedule months on file. Paid months follow the enrollment plan until a schedule is published."
+  },
+  {
+    "path": "components.enrollmentPaidMonths.sessions_one",
+    "value": "{{count}} session"
+  },
+  {
+    "path": "components.enrollmentPaidMonths.sessions_other",
+    "value": "{{count}} sessions"
+  },
+  {
+    "path": "components.enrollmentPaidMonths.qrAllowed",
+    "value": " · QR check-in allowed"
+  },
+  {
+    "path": "components.enrollmentPaidMonths.paymentAwaitingReview",
+    "value": " · payment submitted — awaiting review"
+  },
+  {
+    "path": "components.enrollmentPaidMonths.qrBlocked",
+    "value": " · QR check-in blocked"
+  },
+  {
+    "path": "components.enrollmentPaidMonths.summaryAllPaid",
+    "value": "All schedule months paid"
+  },
+  {
+    "path": "components.enrollmentPaidMonths.summaryPaid",
+    "value": "Paid: {{labels}}"
+  },
+  {
+    "path": "components.enrollmentPaidMonths.summaryNonePaid",
+    "value": "No months marked paid"
+  },
+  {
+    "path": "components.enrollmentPaidMonths.partialPlanWarning",
+    "value": "Unpaid months are blocked from attendance QR until you mark them paid here."
+  },
+  {
+    "path": "components.enrollmentPaidMonths.fullAccess",
+    "value": "All schedule months are paid — full attendance access."
+  },
+  {
+    "path": "components.enrollmentPaidMonths.toast.minOneMonth",
+    "value": "At least one schedule month must stay paid."
+  },
+  {
+    "path": "components.enrollmentPaidMonths.toast.markedPaid",
+    "value": "Schedule month marked paid"
+  },
+  {
+    "path": "components.enrollmentPaidMonths.toast.markedUnpaid",
+    "value": "Schedule month marked unpaid"
+  },
+  {
+    "path": "components.enrollmentPaidMonths.toast.attendanceUpdate",
+    "value": "Attendance QR access updates for this student immediately."
+  },
+  {
+    "path": "components.payrollProofPanel.informationTitle",
+    "value": "Information & recommendations"
+  },
+  {
+    "path": "components.payrollProofPanel.informationHint",
+    "value": "Optional. Bank reference, period, rate notes, etc. When you submit payout proof, this text can be included in the instructor's in-app notification."
+  },
+  {
+    "path": "components.payrollProofPanel.informationPlaceholder",
+    "value": "e.g. Transfer ref ABC-2026-0312 · Period: March 1–15 · 60% contract rate · …"
+  },
+  {
+    "path": "components.payrollProofPanel.saveInformation",
+    "value": "Save information"
+  },
+  {
+    "path": "components.payrollProofPanel.bankReceiptTitle",
+    "value": "Bank transfer receipt"
+  },
+  {
+    "path": "components.payrollProofPanel.bankReceiptHint",
+    "value": "Upload the bank transfer confirmation for the instructor payout (screenshot or PDF). Not student course certificates — instructors only see this after you submit payout proof below."
+  },
+  {
+    "path": "components.payrollProofPanel.dropOrBrowse",
+    "value": "Drop a file here or browse"
+  },
+  {
+    "path": "components.payrollProofPanel.browse",
+    "value": "browse"
+  },
+  {
+    "path": "components.payrollProofPanel.fileHint",
+    "value": "Bank receipt only (PNG, JPG, WebP, or PDF · max {{maxMb}} MB). Do not upload course certificates."
+  },
+  {
+    "path": "components.payrollProofPanel.uploadedAttached",
+    "value": "Uploaded {{date}} · attached"
+  },
+  {
+    "path": "components.payrollProofPanel.replace",
+    "value": "Replace"
+  },
+  {
+    "path": "components.payrollProofPanel.approved",
+    "value": "Approved {{date}}"
+  },
+  {
+    "path": "components.payrollProofPanel.approvePayoutRecord",
+    "value": "Approve payout record"
+  },
+  {
+    "path": "components.payrollProofPanel.submitHint",
+    "value": "Use Submit payout proof below to save notes and approve this record."
+  },
+  {
+    "path": "components.payrollProofPanel.removeFile",
+    "value": "Remove file"
+  },
+  {
+    "path": "components.payrollProofPanel.submitDescription",
+    "value": "Submit saves your information, checks that a transfer file is attached, then marks this payout as approved for your local records (replace with server workflow when API is ready)."
+  },
+  {
+    "path": "components.payrollProofPanel.saveChanges",
+    "value": "Save changes"
+  },
+  {
+    "path": "components.payrollProofPanel.submitPayoutProof",
+    "value": "Submit payout proof"
+  },
+  {
+    "path": "components.payrollProofPanel.attachToEnable",
+    "value": "Attach a transfer proof file to enable submit."
+  },
+  {
+    "path": "components.payrollProofPanel.toast.informationSaved",
+    "value": "Information saved"
+  },
+  {
+    "path": "components.payrollProofPanel.toast.proofSaved",
+    "value": "Proof saved"
+  },
+  {
+    "path": "components.payrollProofPanel.toast.uploadFailed",
+    "value": "Could not upload"
+  },
+  {
+    "path": "components.payrollProofPanel.toast.tryAgain",
+    "value": "Please try again."
+  },
+  {
+    "path": "components.payrollProofPanel.toast.payoutApproved",
+    "value": "Payout record approved"
+  },
+  {
+    "path": "components.payrollProofPanel.toast.uploadFirst",
+    "value": "Upload proof first"
+  },
+  {
+    "path": "components.payrollProofPanel.toast.uploadBeforeSubmit",
+    "value": "Upload transfer proof before submitting."
+  },
+  {
+    "path": "components.payrollProofPanel.toast.changesSaved",
+    "value": "Changes saved."
+  },
+  {
+    "path": "components.payrollProofPanel.toast.approveFailed",
+    "value": "Could not approve payout proof."
+  },
+  {
+    "path": "components.payrollProofPanel.toast.submittedApproved",
+    "value": "Payout proof submitted and approved."
+  },
+  {
+    "path": "components.payrollProofPanel.toast.notifyInstructor",
+    "value": "Instructor notified in-app (demo: same browser storage)."
+  },
+  {
+    "path": "components.payrollProofPanel.toast.notifySkipped",
+    "value": "No instructor email or name on this page — notification skipped. Open proof from a class card or payroll request so instructor context is set."
+  },
+  {
+    "path": "components.payrollProofPanel.toast.fileRemoved",
+    "value": "Proof file removed"
+  }
+]

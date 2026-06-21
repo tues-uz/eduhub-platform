@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "@/lib/icons";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { eduhubLecturer } from "@/api/eduhubClient";
@@ -22,6 +23,7 @@ type StudentRow = {
 };
 
 const TeacherStudentsPage = () => {
+  const { t } = useTranslation();
   const { user } = useAuthSession();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() =>
     localStorage.getItem("sidebarCollapsed") === "true"
@@ -71,7 +73,7 @@ const TeacherStudentsPage = () => {
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Teacher Dashboard
+            {t("teacherSettings.backToDashboard")}
           </Link>
 
           <div className="mb-8">
@@ -79,31 +81,31 @@ const TeacherStudentsPage = () => {
               className="text-2xl font-bold text-foreground"
               style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
             >
-              Students
+              {t("teacher.students.title")}
             </h1>
             <p className="text-foreground/60 text-sm mt-1">
-              Students registered to your classes.
+              {t("teacher.students.subtitle")}
             </p>
           </div>
 
           {loading ? (
-            <p className="text-sm text-foreground/60">Loading…</p>
+            <p className="text-sm text-foreground/60">{t("common.loading")}</p>
           ) : (
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Student name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Class</TableHead>
-                    <TableHead>Enrolled date</TableHead>
+                    <TableHead>{t("teacher.students.table.name")}</TableHead>
+                    <TableHead>{t("teacherSettings.email")}</TableHead>
+                    <TableHead>{t("teacher.students.table.class")}</TableHead>
+                    <TableHead>{t("teacher.students.table.enrolledDate")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {students.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                        No students registered yet.
+                        {t("teacher.students.empty")}
                       </TableCell>
                     </TableRow>
                   ) : (

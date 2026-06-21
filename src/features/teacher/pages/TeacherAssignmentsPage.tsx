@@ -26,8 +26,10 @@ import DashboardSidebar from "@/components/DashboardSidebar";
 import { eduhubAssignments, type AssignmentResponse, type SubmissionResponse } from "@/api/eduhubClient";
 import { eduhubCourses } from "@/api/eduhubClient";
 import { useAuthSession } from "@/features/auth/context";
+import { useTranslation } from "react-i18next";
 
 const TeacherAssignmentsPage = () => {
+  const { t } = useTranslation();
   const { user } = useAuthSession();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() =>
     localStorage.getItem("sidebarCollapsed") === "true"
@@ -150,17 +152,13 @@ const TeacherAssignmentsPage = () => {
             to="/dashboard/teacher"
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Teacher Dashboard
-          </Link>
+            <ArrowLeft className="h-4 w-4" />{t("teacherSettings.backToDashboard")}</Link>
 
           <div className="mb-8">
             <h1
               className="text-2xl font-bold text-foreground"
               style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
-            >
-              Assignments
-            </h1>
+            >{t("teacher.assignments.title")}</h1>
             <p className="text-foreground/60 text-sm mt-1">
               Manage assignments and review student submissions.
             </p>
@@ -168,17 +166,17 @@ const TeacherAssignmentsPage = () => {
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6">
-              <TabsTrigger value="assignments">My Assignments</TabsTrigger>
-              <TabsTrigger value="submissions">Pending Submissions</TabsTrigger>
+              <TabsTrigger value="assignments">{t("teacher.assignments.tabs.assignments")}</TabsTrigger>
+              <TabsTrigger value="submissions">{t("teacher.assignments.tabs.submissions")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="assignments">
               {loading ? (
-                <p className="text-sm text-foreground/60">Loading…</p>
+                <p className="text-sm text-foreground/60">{t("common.loading")}</p>
               ) : assignments.length === 0 ? (
                 <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-12 text-center">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-1">No assignments yet</h3>
+                  <h3 className="text-lg font-semibold mb-1">{t("teacher.assignments.empty.title")}</h3>
                   <p className="text-sm text-muted-foreground">
                     Assignments will appear here once you create them for your classes.
                   </p>
@@ -188,12 +186,12 @@ const TeacherAssignmentsPage = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Class</TableHead>
-                        <TableHead>Due Date</TableHead>
-                        <TableHead>Priority</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>{t("teacher.assignments.table.title")}</TableHead>
+                        <TableHead>{t("teacher.dashboard.classesTable.header.class")}</TableHead>
+                        <TableHead>{t("teacher.assignments.table.dueDate")}</TableHead>
+                        <TableHead>{t("teacher.assignments.table.priority")}</TableHead>
+                        <TableHead>{t("common.status")}</TableHead>
+                        <TableHead className="text-right">{t("common.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -243,16 +241,12 @@ const TeacherAssignmentsPage = () => {
                                     <Loader2 className="h-3 w-3 animate-spin" />
                                   ) : (
                                     <>
-                                      <Rocket className="h-3 w-3 mr-1" />
-                                      Publish
-                                    </>
+                                      <Rocket className="h-3 w-3 mr-1" />{t("teacher.roster.quiz.publish")}</>
                                   )}
                                 </Button>
                               )}
                               <Button variant="outline" size="sm" className="h-8 rounded-lg">
-                                <Eye className="h-3 w-3 mr-1" />
-                                View
-                              </Button>
+                                <Eye className="h-3 w-3 mr-1" />{t("teacher.assignments.actions.view")}</Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -273,11 +267,11 @@ const TeacherAssignmentsPage = () => {
 
             <TabsContent value="submissions">
               {loading ? (
-                <p className="text-sm text-foreground/60">Loading…</p>
+                <p className="text-sm text-foreground/60">{t("common.loading")}</p>
               ) : pendingSubmissions.length === 0 ? (
                 <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-12 text-center">
                   <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-1">No pending submissions</h3>
+                  <h3 className="text-lg font-semibold mb-1">{t("teacher.assignments.submissions.empty.title")}</h3>
                   <p className="text-sm text-muted-foreground">
                     All student submissions have been graded.
                   </p>
@@ -287,12 +281,12 @@ const TeacherAssignmentsPage = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Student</TableHead>
-                        <TableHead>Assignment</TableHead>
-                        <TableHead>Class</TableHead>
-                        <TableHead>Submitted</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>{t("teacher.assignments.submissions.table.student")}</TableHead>
+                        <TableHead>{t("teacher.assignments.submissions.table.assignment")}</TableHead>
+                        <TableHead>{t("teacher.dashboard.classesTable.header.class")}</TableHead>
+                        <TableHead>{t("teacher.assignments.submissions.table.submitted")}</TableHead>
+                        <TableHead>{t("common.status")}</TableHead>
+                        <TableHead className="text-right">{t("common.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -319,9 +313,7 @@ const TeacherAssignmentsPage = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             <Button variant="outline" size="sm" className="h-8 rounded-lg">
-                              <Eye className="h-3 w-3 mr-1" />
-                              Review
-                            </Button>
+                              <Eye className="h-3 w-3 mr-1" />{t("teacher.assignments.actions.review")}</Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -337,19 +329,17 @@ const TeacherAssignmentsPage = () => {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this assignment?</AlertDialogTitle>
+            <AlertDialogTitle>{t("teacher.assignments.deleteDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently remove the assignment. Students will no longer see it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={() => deleteId && handleDelete(deleteId)}
-            >
-              Delete
-            </AlertDialogAction>
+            >{t("common.delete")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

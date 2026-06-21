@@ -8,6 +8,7 @@ import { mockAdminCertifications } from "@/features/admin/data/adminOperationalM
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/table";
 
 export default function AdminCertificationsPage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [eligibleFilter, setEligibleFilter] = useState("all");
   const [courseFilter, setCourseFilter] = useState("all");
@@ -53,29 +55,29 @@ export default function AdminCertificationsPage() {
       <div className="container mx-auto px-6">
         <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Certifications"
-          description="Eligibility requires survey completion and class completion. Issue actions call the API when available."
+          title={t("adminNav.certifications")}
+          description={t("admin.certifications.description")}
         />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search student, class…"
+            placeholder={t("admin.shared.searchStudentClass")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
           />
           <Select value={eligibleFilter} onValueChange={setEligibleFilter}>
             <SelectTrigger className="w-full sm:w-[180px] bg-white">
-              <SelectValue placeholder="Eligibility" />
+              <SelectValue placeholder={t("admin.certifications.eligibilityPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All eligibility</SelectItem>
-              <SelectItem value="yes">Eligible</SelectItem>
-              <SelectItem value="no">Not eligible</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allEligibility")}</SelectItem>
+              <SelectItem value="yes">{t("admin.certifications.eligible")}</SelectItem>
+              <SelectItem value="no">{t("admin.certifications.notEligible")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={courseFilter} onValueChange={setCourseFilter}>
@@ -83,7 +85,7 @@ export default function AdminCertificationsPage() {
               <SelectValue placeholder="Class" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All classes</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allClasses")}</SelectItem>
               {courseOptions.map((name) => (
                 <SelectItem key={name} value={name}>
                   {name}
@@ -112,12 +114,12 @@ export default function AdminCertificationsPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50">
-                <TableHead>Student</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Survey</TableHead>
-                <TableHead>Class complete</TableHead>
-                <TableHead>Eligible</TableHead>
-                <TableHead className="text-right">Issue</TableHead>
+                <TableHead>{t("admin.shared.student")}</TableHead>
+                <TableHead>{t("admin.shared.class")}</TableHead>
+                <TableHead>{t("admin.certifications.table.survey")}</TableHead>
+                <TableHead>{t("admin.certifications.table.classComplete")}</TableHead>
+                <TableHead>{t("admin.certifications.eligible")}</TableHead>
+                <TableHead className="text-right">{t("admin.certifications.table.issue")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -132,21 +134,21 @@ export default function AdminCertificationsPage() {
                   <TableRow key={c.id}>
                     <TableCell className="font-medium text-slate-900">{c.studentName}</TableCell>
                     <TableCell>{c.course}</TableCell>
-                    <TableCell>{c.surveyComplete ? "Done" : "Missing"}</TableCell>
+                    <TableCell>{c.surveyComplete ? t("admin.shared.done") : t("admin.shared.missing")}</TableCell>
                     <TableCell>{c.courseComplete ? "Yes" : "No"}</TableCell>
                     <TableCell>
                       {c.eligible ? (
-                        <Badge className="bg-emerald-600">Eligible</Badge>
+                        <Badge className="bg-emerald-600">{t("admin.certifications.eligible")}</Badge>
                       ) : (
-                        <Badge variant="secondary">Not eligible</Badge>
+                        <Badge variant="secondary">{t("admin.certifications.notEligible")}</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
                         size="sm"
                         disabled={!c.eligible}
-                        title={!c.eligible ? "Complete survey and class first" : undefined}
-                        onClick={() => toast.success("Certificate issued (demo)", { description: `${c.studentName} — ${c.course}` })}
+                        title={!c.eligible ? t("admin.certifications.issueDisabledTitle") : undefined}
+                        onClick={() => toast.success(t("admin.certifications.toast.issuedDemo"), { description: `${c.studentName} — ${c.course}` })}
                       >
                         Issue certificate
                       </Button>
