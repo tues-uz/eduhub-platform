@@ -31,13 +31,10 @@ import {
   registerAdminStaffCode,
 } from "@/features/admin/adminStaffCode";
 
-/** Values are sent to `POST /admin/users`. Align with your API’s role enum (e.g. Spring `Role` names). */
+/** Values are sent to `POST /admin/users`. Only roles the staging API accepts are listed. */
 const ADD_USER_ROLE_OPTIONS: { value: string; label: string }[] = [
   { value: "LECTURER", label: "Teacher" },
-  { value: "ADMIN_FINANCE", label: "Admin Finance" },
-  { value: "ADMIN_CONTENT", label: "Admin Content" },
-  { value: "ADMIN_SUPPORT", label: "Admin Support" },
-  { value: "ADMIN_ANALYTIC", label: "Admin Analytic" },
+  { value: "ADMIN", label: "Super Admin" },
 ];
 
 export default function AdminAddUserRolePage() {

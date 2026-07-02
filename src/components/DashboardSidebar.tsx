@@ -39,7 +39,7 @@ const DashboardSidebar = () => {
     instructorProfileAvatarsStore.getByEmail(user.email) ||
     instructorProfileAvatarsStore.getByName(user.name);
 
-  const dashboardHome = dashboardHomeByRole(userRole);
+  const dashboardHome = dashboardHomeByRole(userRole, user.staffRole);
   const mobileNotificationsPath =
     userRole === "admin"
       ? "/dashboard/admin/notifications"

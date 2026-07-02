@@ -6,17 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { eduhubAuth, setAuthTokens, ApiError } from "@/api/eduhubClient";
+import { eduhubAuth, setAuthTokens } from "@/api/eduhubClient";
 import { appRoutes } from "@/app/routes";
 import { resolveAvatarFromAuthResponse, setSessionUser, useAuthSession } from "@/features/auth/context";
-import type { UserRole } from "@/features/auth/types";
 import { resolveInstructorCategory } from "@/features/teacher/resolveInstructorCategory";
-
-function mapApiRoleToApp(apiRole: string): UserRole {
-  if (apiRole === "LECTURER") return "teacher";
-  if (apiRole === "ADMIN") return "admin";
-  return "student";
-}
+import { mapApiRoleToSession } from "@/features/admin/adminStaffRoles";
+import { dummyStaffUsersStore } from "@/features/admin/data/dummyStaffUsersStore";
+import { dashboardHomeByRole } from "@/app/routes";
 
 function safeInternalPath(p: string | null): string | null {
   if (!p || !p.startsWith("/") || p.startsWith("//")) return null;
@@ -29,6 +25,68 @@ const DUMMY_ACCOUNTS = [
   { email: "admin@eduhub.com", password: "admin123", name: "Admin Account", role: "admin" as const },
   { email: "teacher@eduhub.com", password: "teacher123", name: "Teacher Account", role: "teacher" as const },
 ];
+
+function signInWithDummyStaff(email: string, password: string, nextPath: string | null, navigate: ReturnType<typeof useNavigate>, refreshUser: () => void, toast: ReturnType<typeof useToast>["toast"], t: ReturnType<typeof useTranslation>["t"]) {
+  const dummyStaff = dummyStaffUsersStore.authenticate(email, password);
+  if (!dummyStaff) return false;
+
+  const { appRole: role, staffRole } = mapApiRoleToSession(dummyStaff.apiRole);
+  setSessionUser({
+    id: dummyStaff.id,
+    name: dummyStaff.fullName,
+    email: dummyStaff.email,
+    role,
+    staffRole,
+    phoneNumber: dummyStaff.phoneNumber,
+    adminCode: dummyStaff.adminCode,
+  });
+  refreshUser();
+  toast({
+    title: t("auth.signIn.welcome"),
+    description: t("auth.signIn.signedInAsDemo", { name: dummyStaff.fullName }),
+  });
+  const fallback = dashboardHomeByRole(role, staffRole);
+  navigate(role === "student" && nextPath ? nextPath : fallback);
+  return true;
+}
+
+function signInWithHardcodedDummy(
+  email: string,
+  password: string,
+  nextPath: string | null,
+  navigate: ReturnType<typeof useNavigate>,
+  refreshUser: () => void,
+  toast: ReturnType<typeof useToast>["toast"],
+  t: ReturnType<typeof useTranslation>["t"],
+) {
+  const account = DUMMY_ACCOUNTS.find(
+    (acc) => acc.email.toLowerCase().trim() === email.toLowerCase().trim() && acc.password === password,
+  );
+  if (!account) return false;
+
+  const regPhone = localStorage.getItem(`eduhub_registration_phone_${account.email.toLowerCase()}`);
+  const category = account.role === "teacher" ? resolveInstructorCategory(account.email) : undefined;
+  setSessionUser({
+    name: account.name,
+    email: account.email,
+    role: account.role,
+    phoneNumber: regPhone ?? undefined,
+    category,
+  });
+  refreshUser();
+  toast({
+    title: t("auth.signIn.welcome"),
+    description: t("auth.signIn.signedInAsDemo", { name: account.name }),
+  });
+  const fallback =
+    account.role === "admin"
+      ? "/dashboard/admin"
+      : account.role === "teacher"
+        ? "/dashboard/teacher"
+        : "/dashboard";
+  navigate(account.role === "student" && nextPath ? nextPath : fallback);
+  return true;
+}
 
 const SignIn = () => {
   const { t } = useTranslation();
@@ -54,7 +112,7 @@ const SignIn = () => {
     try {
       const res = await eduhubAuth.login({ identifier: email.trim(), password });
       setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);
-      const role = mapApiRoleToApp(res.user.role);
+      const { appRole: role, staffRole } = mapApiRoleToSession(res.user.role);
       const emailLower = res.user.email.trim().toLowerCase();
       const fromRegistration = localStorage.getItem(`eduhub_registration_phone_${emailLower}`);
       const category =
@@ -64,9 +122,11 @@ const SignIn = () => {
         name: res.user.fullName,
         email: res.user.email,
         role,
+        staffRole,
         avatarUrl: resolveAvatarFromAuthResponse(res.user.avatarUrl, res.user.email),
         phoneNumber: res.user.phoneNumber ?? fromRegistration ?? localStorage.getItem("userPhone") ?? undefined,
         category,
+        adminCode: res.user.adminCode,
       });
       refreshUser();
 
@@ -83,58 +143,24 @@ const SignIn = () => {
         title: t("auth.signIn.welcome"),
         description: t("auth.signIn.signedInAs", { name: res.user.fullName }),
       });
-      const fallback =
-        role === "admin" ? "/dashboard/admin" : role === "teacher" ? "/dashboard/teacher" : "/dashboard";
+      const fallback = dashboardHomeByRole(role, staffRole);
       navigate(role === "student" && nextPath ? nextPath : fallback);
     } catch (err: unknown) {
-      const isApiError = err instanceof ApiError || (err && typeof (err as ApiError).status === "number");
-      if (isApiError) {
-        const message =
-          err instanceof Error ? err.message : t("auth.signIn.invalidCredentials");
-        setError(message || t("auth.signIn.invalidCredentials"));
-        toast({
-          title: t("auth.signIn.failed"),
-          description: message || t("auth.signIn.invalidCredentialsShort"),
-          variant: "destructive",
-        });
-        setIsLoading(false);
+      if (
+        signInWithDummyStaff(email, password, nextPath, navigate, refreshUser, toast, t) ||
+        signInWithHardcodedDummy(email, password, nextPath, navigate, refreshUser, toast, t)
+      ) {
         return;
       }
 
-      const account = DUMMY_ACCOUNTS.find(
-        (acc) => acc.email.toLowerCase().trim() === email.toLowerCase().trim() && acc.password === password,
-      );
-      if (account) {
-        const regPhone = localStorage.getItem(`eduhub_registration_phone_${account.email.toLowerCase()}`);
-        const category =
-          account.role === "teacher" ? resolveInstructorCategory(account.email) : undefined;
-        setSessionUser({
-          name: account.name,
-          email: account.email,
-          role: account.role,
-          phoneNumber: regPhone ?? undefined,
-          category,
-        });
-        refreshUser();
-        toast({
-          title: t("auth.signIn.welcome"),
-          description: t("auth.signIn.signedInAsDemo", { name: account.name }),
-        });
-        const fallback =
-          account.role === "admin"
-            ? "/dashboard/admin"
-            : account.role === "teacher"
-              ? "/dashboard/teacher"
-              : "/dashboard";
-        navigate(account.role === "student" && nextPath ? nextPath : fallback);
-      } else {
-        setError(t("auth.signIn.invalidCredentials"));
-        toast({
-          title: t("auth.signIn.failed"),
-          description: t("auth.signIn.invalidCredentialsShort"),
-          variant: "destructive",
-        });
-      }
+      const message =
+        err instanceof Error ? err.message : t("auth.signIn.invalidCredentials");
+      setError(message || t("auth.signIn.invalidCredentials"));
+      toast({
+        title: t("auth.signIn.failed"),
+        description: message || t("auth.signIn.invalidCredentialsShort"),
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

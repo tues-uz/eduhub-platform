@@ -7,6 +7,7 @@ import { BookOpen, Users, Award, GraduationCap, Lightbulb, Target, Zap, Heart, C
 import { cn } from "@/lib/utils";
 import EduHubHeader from "@/components/EduHubHeader";
 import Footer from "@/components/Footer";
+import { useLandingPageContent } from "@/features/landing/useLandingPageContent";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -123,7 +124,10 @@ function ReviewStars({
 
 const EduHub = () => {
   const { t } = useTranslation();
-  const words = t("public.hero.words", { returnObjects: true }) as string[];
+  const landingContent = useLandingPageContent();
+  const words =
+    landingContent?.hero.words ??
+    (t("public.hero.words", { returnObjects: true }) as string[]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [visionTab, setVisionTab] = useState<"mission" | "vision" | "values">("mission");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -142,13 +146,43 @@ const EduHub = () => {
 
   const stats = useMemo(
     () => [
-      { icon: GraduationCap, value: "50,000+", label: t("public.stats.students"), color: "text-blue-500", bento: "wide" as const },
-      { icon: BookOpen, value: "500+", label: t("public.stats.classes"), color: "text-purple-500", bento: "normal" as const },
-      { icon: Users, value: "200+", label: t("public.stats.teachers"), color: "text-green-500", bento: "normal" as const },
-      { icon: Award, value: "95%", label: t("public.stats.completionRate"), color: "text-orange-500", bento: "accent" as const },
-      { icon: Target, value: "10+", label: t("public.stats.yearsExcellence"), color: "text-amber-600", bento: "normal" as const },
+      {
+        icon: GraduationCap,
+        value: landingContent?.stats.students ?? "50,000+",
+        label: t("public.stats.students"),
+        color: "text-blue-500",
+        bento: "wide" as const,
+      },
+      {
+        icon: BookOpen,
+        value: landingContent?.stats.classes ?? "500+",
+        label: t("public.stats.classes"),
+        color: "text-purple-500",
+        bento: "normal" as const,
+      },
+      {
+        icon: Users,
+        value: landingContent?.stats.teachers ?? "200+",
+        label: t("public.stats.teachers"),
+        color: "text-green-500",
+        bento: "normal" as const,
+      },
+      {
+        icon: Award,
+        value: landingContent?.stats.completionRate ?? "95%",
+        label: t("public.stats.completionRate"),
+        color: "text-orange-500",
+        bento: "accent" as const,
+      },
+      {
+        icon: Target,
+        value: landingContent?.stats.yearsExcellence ?? "10+",
+        label: t("public.stats.yearsExcellence"),
+        color: "text-amber-600",
+        bento: "normal" as const,
+      },
     ],
-    [t],
+    [t, landingContent],
   );
 
   const statTags = useMemo(
@@ -391,12 +425,12 @@ const EduHub = () => {
                   <span className="absolute inline-flex h-full w-full rounded-full opacity-90" style={{ backgroundColor: 'rgb(94, 107, 100)', transform: 'scale(1.9)' }} />
                   <span className="relative inline-flex h-2 w-2 rounded-full" style={{ backgroundColor: 'rgb(19, 38, 27)' }} />
                 </span>
-                <span className="text-sm font-medium" style={{ color: 'rgb(19, 38, 27)' }}>{t("public.hero.badge")}</span>
+                <span className="text-sm font-medium" style={{ color: 'rgb(19, 38, 27)' }}>{landingContent?.hero.badge ?? t("public.hero.badge")}</span>
               </div>
               {/* Heading */}
               <div className="mb-4">
                 <h1 className="font-extrabold text-foreground tracking-tight" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '80px', lineHeight: '80%' }}>
-                  {t("public.hero.titleLine1")}
+                  {landingContent?.hero.titleLine1 ?? t("public.hero.titleLine1")}
                   <br />
                   <span className="block relative overflow-hidden" style={{ height: '1.2em', minWidth: '300px', display: 'inline-block' }}>
                     <span 
@@ -418,9 +452,9 @@ const EduHub = () => {
               </div>
               {/* Description */}
               <p className="max-w-4xl mx-auto mb-8 leading-relaxed" style={{ color: 'rgb(82, 94, 88)', fontSize: '16px' }}>
-                {t("public.hero.descriptionLine1")}
+                {landingContent?.hero.descriptionLine1 ?? t("public.hero.descriptionLine1")}
                 <br />
-                {t("public.hero.descriptionLine2")}
+                {landingContent?.hero.descriptionLine2 ?? t("public.hero.descriptionLine2")}
               </p>
               {/* CTA - dark green, arrow */}
               <div className="flex flex-wrap justify-center">
@@ -428,7 +462,7 @@ const EduHub = () => {
                   className="inline-flex items-center gap-2 px-6 py-4 text-white rounded-[37px] font-semibold transition-all duration-300 hover:opacity-95 shadow-lg"
                   style={{ backgroundColor: '#3954d0' }}
                 >
-                  <span>{t("public.hero.learnMore")}</span>
+                  <span>{landingContent?.hero.learnMore ?? t("public.hero.learnMore")}</span>
                   <ArrowRight className="h-5 w-5 flex-shrink-0" />
                 </button>
               </div>
@@ -1253,21 +1287,21 @@ const EduHub = () => {
                   className="inline-flex items-center rounded-[10px] px-3 py-1.5 text-sm font-medium text-white"
                   style={{ backgroundColor: "rgba(255, 255, 255, 0.08)" }}
                 >
-                  {t("public.cta.qualityEducation")}
+                  {landingContent?.cta.qualityEducation ?? t("public.cta.qualityEducation")}
                 </div>
               </div>
               <h3
                 className="text-2xl lg:text-4xl font-bold mb-8 text-white max-w-2xl"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
-                {t("public.cta.title")}
+                {landingContent?.cta.title ?? t("public.cta.title")}
               </h3>
               <Link
                 to="/register"
                 className="inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-base font-medium transition-opacity hover:opacity-90"
                 style={{ backgroundColor: "rgb(215, 245, 188)", color: "rgb(3, 31, 42)" }}
               >
-                {t("public.cta.button")}
+                {landingContent?.cta.button ?? t("public.cta.button")}
                 <span className="ml-1">→</span>
               </Link>
             </div>

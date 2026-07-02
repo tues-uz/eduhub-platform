@@ -5,17 +5,13 @@ import { eduhubAuth } from "@/api/eduhubClient";
 import { resolveInstructorCategory } from "@/features/teacher/resolveInstructorCategory";
 import { instructorProfileAvatarsStore } from "@/features/teacher/data/instructorProfileAvatarsStore";
 import { syncInstructorProfileAvatar } from "@/features/teacher/syncInstructorProfileAvatar";
+import { mapApiRoleToSession } from "@/features/admin/adminStaffRoles";
 
 const USER_ID_KEY = "userId";
 const USER_AVATAR_URL_KEY = "userAvatarUrl";
 const USER_PHONE_KEY = "userPhone";
 const USER_CATEGORY_KEY = "userCategory";
-
-function mapApiRoleToApp(apiRole: string): UserRole {
-  if (apiRole === "LECTURER") return "teacher";
-  if (apiRole === "ADMIN") return "admin";
-  return "student";
-}
+const USER_STAFF_ROLE_KEY = "userStaffRole";
 
 function coalesceAvatarUrl(...candidates: (string | null | undefined)[]): string | undefined {
   for (const candidate of candidates) {
@@ -50,7 +46,18 @@ function readSessionUser(): SessionUser {
   const phoneNumber = localStorage.getItem(USER_PHONE_KEY) || undefined;
   const category = localStorage.getItem(USER_CATEGORY_KEY) || undefined;
   const adminCode = localStorage.getItem("userAdminCode") || undefined;
-  return { id, name, email, role, avatarUrl, phoneNumber, category, adminCode };
+  const staffRoleRaw = localStorage.getItem(USER_STAFF_ROLE_KEY);
+  const staffRole =
+    staffRoleRaw === "ADMIN" ||
+    staffRoleRaw === "ADMIN_FINANCE" ||
+    staffRoleRaw === "ADMIN_CONTENT" ||
+    staffRoleRaw === "ADMIN_SUPPORT" ||
+    staffRoleRaw === "ADMIN_ANALYTIC"
+      ? staffRoleRaw
+      : role === "admin"
+        ? "ADMIN"
+        : undefined;
+  return { id, name, email, role, avatarUrl, phoneNumber, category, adminCode, staffRole };
 }
 
 export function setSessionUser(user: SessionUser): void {
@@ -69,6 +76,8 @@ export function setSessionUser(user: SessionUser): void {
   }
   if (user.adminCode) localStorage.setItem("userAdminCode", user.adminCode);
   else localStorage.removeItem("userAdminCode");
+  if (user.staffRole) localStorage.setItem(USER_STAFF_ROLE_KEY, user.staffRole);
+  else localStorage.removeItem(USER_STAFF_ROLE_KEY);
 }
 
 export function clearSessionUser(): void {
@@ -80,6 +89,7 @@ export function clearSessionUser(): void {
   localStorage.removeItem(USER_PHONE_KEY);
   localStorage.removeItem(USER_CATEGORY_KEY);
   localStorage.removeItem("userAdminCode");
+  localStorage.removeItem(USER_STAFF_ROLE_KEY);
 }
 
 type AuthSessionValue = {
@@ -110,7 +120,7 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
     eduhubAuth
       .me()
       .then((me) => {
-        const role = mapApiRoleToApp(me.role);
+        const { appRole: role, staffRole } = mapApiRoleToSession(me.role);
         const prev = readSessionUser();
         const category =
           role === "teacher" ? resolveInstructorCategory(me.email, me.category ?? prev.category) : undefined;
@@ -120,6 +130,7 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
           name: me.fullName,
           email: me.email,
           role,
+          staffRole,
           avatarUrl,
           phoneNumber: me.phoneNumber ?? prev.phoneNumber,
           category,

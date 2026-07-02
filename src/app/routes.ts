@@ -1,4 +1,6 @@
 import type { UserRole } from "@/features/auth/types";
+import type { AdminStaffRole } from "@/features/admin/adminStaffRoles";
+import { dashboardHomeByStaffRole } from "@/features/admin/adminStaffRoles";
 
 export const appRoutes = {
   home: "/",
@@ -12,11 +14,14 @@ export const appRoutes = {
   verifyEmail: "/verify-email",
   dashboard: "/dashboard",
   dashboardAdmin: "/dashboard/admin",
+  dashboardAdminFinance: "/dashboard/admin/finance",
+  dashboardAdminContent: "/dashboard/admin/content",
+  dashboardAdminAnalytic: "/dashboard/admin/analytic",
   dashboardTeacher: "/dashboard/teacher",
 } as const;
 
-export function dashboardHomeByRole(role: UserRole) {
-  if (role === "admin") return appRoutes.dashboardAdmin;
+export function dashboardHomeByRole(role: UserRole, staffRole?: AdminStaffRole) {
+  if (role === "admin") return dashboardHomeByStaffRole(staffRole);
   if (role === "teacher") return appRoutes.dashboardTeacher;
   return appRoutes.dashboard;
 }

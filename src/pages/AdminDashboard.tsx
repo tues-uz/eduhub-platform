@@ -130,7 +130,7 @@ const AdminDashboard = () => {
                   {t("admin.dashboard.recentUsers.title")}
                 </h2>
                 <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white h-8" asChild>
-                  <Link to="/dashboard/admin/add-user-role" className="inline-flex items-center">
+                  <Link to="/dashboard/admin/add-user" className="inline-flex items-center">
                     <UserPlus className="h-4 w-4 mr-2" />
                     {t("admin.dashboard.recentUsers.addUser")}
                   </Link>

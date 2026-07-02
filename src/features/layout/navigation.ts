@@ -50,7 +50,6 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
       { labelKey: "adminNav.teachers", path: "/dashboard/admin/teachers" },
       { labelKey: "adminNav.staff", path: "/dashboard/admin/staff" },
       { labelKey: "adminNav.users", path: "/dashboard/admin/users" },
-      { labelKey: "adminNav.addUserRole", path: "/dashboard/admin/add-user-role" },
     ],
   },
   {
@@ -64,6 +63,7 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
       { labelKey: "adminNav.studentPromos", path: "/dashboard/admin/promos" },
       { labelKey: "adminNav.referralCodes", path: "/dashboard/admin/referral-codes" },
       { labelKey: "adminNav.specialTuition", path: "/dashboard/admin/special-tuition" },
+      { labelKey: "adminNav.websiteContent", path: "/dashboard/admin/content" },
     ],
   },
   {
@@ -83,6 +83,7 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
     ],
   },
   { icon: Link2, labelKey: "adminNav.integrations", path: "/dashboard/admin/integrations" },
+  { icon: BarChart3, labelKey: "adminNav.analytics", path: "/dashboard/admin/analytic" },
   { icon: BarChart3, labelKey: "adminNav.reports", path: "/dashboard/admin/reports" },
   { icon: Settings, labelKey: "adminNav.settings", path: "/dashboard/admin/settings" },
 ];

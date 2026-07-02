@@ -370,7 +370,7 @@ export default function StudentInstallmentPaymentPage() {
         </h1>
         <p className="mt-2 text-sm text-zinc-600">
           {application.courseTitle ?? application.courseId} ·{" "}
-          {scheduleMonthProgressLabel(payableMonths, scheduleTabs)}
+          {scheduleMonthProgressLabel(payableMonths, scheduleTabs, t)}
         </p>
       </div>
 
@@ -490,7 +490,7 @@ export default function StudentInstallmentPaymentPage() {
                 >
                   <RadioGroupItem id={`pay-method-${method}`} value={method} />
                   <span className="text-sm font-medium text-zinc-900">
-                    {formatPaymentMethodLabel(method)}
+                    {paymentMethodLabel(method, t)}
                   </span>
                 </label>
               ))}

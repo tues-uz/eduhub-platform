@@ -50,6 +50,7 @@
     "staff": "Staff",
     "users": "Users",
     "addUserRole": "Add user role",
+    "addStaff": "Add staff",
     "classes": "Classes",
     "allClassesSchedules": "All classes & schedules",
     "enrollmentsWaitlist": "Enrollments & waitlist",
@@ -58,6 +59,7 @@
     "studentPromos": "Student promos",
     "referralCodes": "Referral & discount codes",
     "specialTuition": "Special tuition grants",
+    "websiteContent": "Website content",
     "operations": "Operations",
     "paymentsReminders": "Payments & reminders",
     "scheduleMonthPayments": "Schedule month payments",
@@ -70,6 +72,7 @@
     "supportSessions": "Support sessions",
     "substituteRequests": "Substitute cover requests",
     "integrations": "Integrations",
+    "analytics": "Analytics",
     "reports": "Reports",
     "settings": "Settings"
   },

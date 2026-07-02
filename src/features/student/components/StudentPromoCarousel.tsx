@@ -63,6 +63,7 @@ function PromoSlide({ promo }: { promo: StudentPromo }) {
 }
 
 export function StudentPromoCarousel({ placement, className, fullWidth = false }: StudentPromoCarouselProps) {
+  const { t } = useTranslation();
   const promos = useActiveStudentPromos(placement);
   const [api, setApi] = useState<CarouselApi>();
   const [selectedIndex, setSelectedIndex] = useState(0);

@@ -27,6 +27,7 @@ export function AttendanceSessionLogsSection({
   description = "Each QR generation starts a session; duration is recorded when the session ends (new QR, 2h 15m cap, or switching class). Stored in this browser.",
   showInstructorColumn = false,
 }: Props) {
+  const { t } = useTranslation();
   const sorted = useMemo(
     () => [...entries].sort((a, b) => b.startedAt.localeCompare(a.startedAt)),
     [entries],

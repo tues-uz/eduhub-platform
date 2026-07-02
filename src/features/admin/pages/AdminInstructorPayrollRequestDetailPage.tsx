@@ -48,6 +48,7 @@ import { validateAdminActionCodeOrThrow } from "@/features/admin/adminStaffCode"
 import { cn, formatThousandsInText } from "@/lib/utils";
 
 function StatusLine({ status }: { status: "pending" | "approved" | "rejected" }) {
+  const { t } = useTranslation();
   if (status === "approved") {
     return <span className="text-sm font-medium text-emerald-700">{t("admin.shared.approved")}</span>;
   }

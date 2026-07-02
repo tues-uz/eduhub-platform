@@ -83,6 +83,7 @@ function PendingPaymentCard({
   onApprove: () => void;
   onReject: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 px-4 py-3.5 sm:px-5">

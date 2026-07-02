@@ -231,6 +231,18 @@
     },
     "addUserRole": {
       "description": "Create a new staff account. A secure temporary password will be shown once after creation and the user must change it on first sign-in.",
+      "hub": {
+        "description": "Choose the staff role you want to create. Each role has its own form and permissions.",
+        "backToHub": "Back to add staff",
+        "demoBadge": "Demo (local)"
+      },
+      "descriptions": {
+        "teacher": "Create a lecturer account with a teaching category. They can manage classes after sign-in.",
+        "adminFinance": "Create a finance admin who approves enrollments, payments, installments, and instructor payroll.",
+        "adminContent": "Create a content admin who publishes classes, promos, manages the course catalog, and edits the public landing page.",
+        "adminSupport": "Create a support admin who handles student support sessions and substitute requests.",
+        "adminAnalytic": "Create an analytics admin with read-only access to reports and platform metrics."
+      },
       "form": {
         "fullName": "Full Name",
         "fullNamePlaceholder": "Enter full name",
@@ -245,6 +257,7 @@
         "adminCode": "Admin code",
         "adminCodePlaceholder": "e.g. AF01",
         "adminCodeHint": "Short ID used on approve/reject actions so you can tell which admin handled a request.",
+        "demoModeHint": "Demo mode: this account is saved in your browser only until the API supports this role. Share the temporary password so the user can sign in.",
         "createUser": "Create User"
       },
       "roles": {
@@ -267,9 +280,176 @@
         "selectCategory": "Please select a teacher category",
         "invalidAdminCode": "Enter an admin code (2–16 letters or numbers, e.g. AF01)",
         "accountCreated": "{{role}} account created successfully",
+        "demoAccountCreated": "{{role}} demo account created (browser only until API supports this role)",
         "createFailed": "Failed to create user",
         "passwordCopied": "Temporary password copied",
         "copyFailed": "Could not copy password. Select and copy it manually."
+      }
+    },
+    "contentHub": {
+      "description": "Manage public-facing website content. Changes are saved locally until a CMS API is available.",
+      "subtitle": "Publish classes, promos, and edit the public landing page",
+      "quickActions": "Quick actions",
+      "allTools": "All content tools",
+      "preview": {
+        "title": "This role includes a landing page editor",
+        "description": "Creating the account is step one. Preview the content workspace below, including the public homepage editor.",
+        "openHub": "Open content workspace"
+      },
+      "featured": {
+        "landingPage": {
+          "title": "Public landing page",
+          "description": "Edit the homepage hero, stats, and call-to-action. Changes apply to the live site after saving.",
+          "cta": "Edit landing page"
+        }
+      },
+      "tools": {
+        "landingPage": {
+          "title": "Landing page",
+          "description": "Edit the public homepage hero, stats, and call-to-action sections."
+        },
+        "courses": {
+          "description": "Manage the course catalog, schedules, and published classes."
+        },
+        "referralCodes": {
+          "description": "Create and manage referral codes for student promotions."
+        }
+      }
+    },
+    "landingPage": {
+      "title": "Landing page editor",
+      "description": "Update the public EduHub homepage. Preview changes on the live site after saving.",
+      "backToContentHub": "Back to website content",
+      "preview": "Preview site",
+      "resetDefaults": "Reset to defaults",
+      "save": "Save changes",
+      "sections": {
+        "hero": "Hero section",
+        "stats": "Stats",
+        "cta": "Call to action"
+      },
+      "fields": {
+        "badge": "Badge label",
+        "titleLine1": "Headline (first line)",
+        "rotatingWords": "Rotating words",
+        "rotatingWordsPlaceholder": "Excellence, Success, Innovation",
+        "rotatingWordsHint": "Comma-separated words shown in the animated headline.",
+        "descriptionLine1": "Description (line 1)",
+        "descriptionLine2": "Description (line 2)",
+        "heroButton": "Hero button label",
+        "ctaBadge": "CTA badge",
+        "ctaTitle": "CTA headline",
+        "ctaButton": "CTA button label"
+      },
+      "toast": {
+        "requiredFields": "Badge, headline, and at least one rotating word are required.",
+        "saved": "Landing page saved",
+        "reset": "Landing page reset to defaults"
+      }
+    },
+    "financeDashboard": {
+      "subtitle": "Enrollment, payments, and instructor payroll",
+      "quickActions": "Quick actions",
+      "stats": {
+        "pendingApplications": "Pending applications",
+        "pendingInstallments": "Pending month payments",
+        "payrollQueue": "Payroll queue"
+      },
+      "workQueue": {
+        "applications": "Enrollment applications",
+        "installments": "Schedule month payments",
+        "emptyApplications": "No pending enrollment applications.",
+        "emptyInstallments": "No pending schedule month payments.",
+        "pending": "Pending"
+      }
+    },
+    "analyticDashboard": {
+      "subtitle": "Track money flow, student totals, teachers, class load, tuition, and payroll.",
+      "exportButton": "Export to Excel",
+      "exportTitle": "Download analytics report as .xlsx",
+      "quickActions": "Quick actions",
+      "overview": {
+        "title": "At a glance",
+        "people": "People",
+        "finance": "Finance",
+        "attention": "Needs attention"
+      },
+      "tabs": {
+        "overview": "Overview",
+        "students": "Students",
+        "teachers": "Teachers",
+        "finance": "Finance",
+        "payroll": "Payroll"
+      },
+      "stats": {
+        "totalStudents": "Total students",
+        "totalTeachers": "Total teachers",
+        "totalClassesTaught": "Classes taught",
+        "activeEnrollments": "Active enrollments",
+        "moneyIn": "Money in (30d)",
+        "moneyOut": "Money out (30d)",
+        "netFlow": "Net flow (30d)",
+        "tuitionCollected": "Tuition collected",
+        "tuitionOutstanding": "Tuition outstanding",
+        "estInstructorPayroll": "Est. instructor payroll",
+        "payrollPending": "Payroll pending review",
+        "overduePayments": "Overdue payments",
+        "atRiskAttendance": "At-risk attendance"
+      },
+      "moneyFlow": {
+        "title": "Money flow",
+        "inflow": "Inflow",
+        "outflow": "Outflow",
+        "net": "Net",
+        "byType": "By transaction type"
+      },
+      "students": {
+        "title": "Student totals",
+        "active": "Active",
+        "trial": "Trial",
+        "inactive": "Inactive"
+      },
+      "teachers": {
+        "title": "Teacher totals",
+        "active": "Active teachers",
+        "inactive": "Inactive teachers",
+        "classesTaught": "Classes assigned",
+        "studentsTaught": "Students across classes",
+        "overviewTable": {
+          "title": "Teachers & class load",
+          "empty": "No teachers on record."
+        },
+        "moneyTable": {
+          "title": "Teacher tuition & payroll",
+          "classes": "Classes",
+          "students": "Students",
+          "tuitionCollected": "Tuition collected",
+          "tuitionOutstanding": "Outstanding",
+          "estPayout": "Est. payout (60%)",
+          "payrollPending": "Payroll pending",
+          "payrollApproved": "Payroll approved"
+        }
+      },
+      "payroll": {
+        "title": "Instructor payroll requests",
+        "empty": "No payroll requests submitted yet.",
+        "fields": {
+          "instructor": "Instructor",
+          "class": "Class",
+          "course": "Course",
+          "requested": "Requested payout",
+          "status": "Status",
+          "submitted": "Submitted"
+        }
+      },
+      "recentTransactions": {
+        "title": "Recent transactions",
+        "empty": "No transactions recorded."
+      },
+      "workQueue": {
+        "reports": "Platform KPIs",
+        "atRiskAttendance": "At-risk attendance",
+        "emptyAtRisk": "No students flagged for attendance risk."
       }
     },
     "settings": {

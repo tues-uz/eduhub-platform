@@ -264,7 +264,7 @@ export default function AdminAttendancePage() {
                             <TableRow key={`${detailRow.id}-${s.date}-${i}`}>
                               <TableCell className="text-slate-600 whitespace-nowrap">{s.date}</TableCell>
                               <TableCell>{s.label}</TableCell>
-                              <TableCell className="text-right">{sessionStatusBadge(s.status)}</TableCell>
+                              <TableCell className="text-right">{sessionStatusBadge(s.status, t)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>

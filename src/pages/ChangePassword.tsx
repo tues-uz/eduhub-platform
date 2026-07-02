@@ -9,6 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { eduhubAuth, setAuthTokens } from "@/api/eduhubClient";
 import { resolveAvatarFromAuthResponse, setSessionUser, useAuthSession } from "@/features/auth/context";
 import { resolveInstructorCategory } from "@/features/teacher/resolveInstructorCategory";
+import { mapApiRoleToSession } from "@/features/admin/adminStaffRoles";
+import { dummyStaffUsersStore } from "@/features/admin/data/dummyStaffUsersStore";
+import { dashboardHomeByRole } from "@/app/routes";
 
 const ChangePassword = () => {
   const { t } = useTranslation();
@@ -45,6 +48,32 @@ const ChangePassword = () => {
 
     setIsLoading(true);
     try {
+      const dummyStaff = dummyStaffUsersStore.findByEmail(sessionUser.email);
+      if (dummyStaff) {
+        const ok = dummyStaffUsersStore.updatePassword(sessionUser.email, currentPassword, newPassword);
+        if (!ok) {
+          setError(t("auth.changePassword.changeFailed"));
+          return;
+        }
+        const { appRole: role, staffRole } = mapApiRoleToSession(dummyStaff.apiRole);
+        setSessionUser({
+          id: dummyStaff.id,
+          name: dummyStaff.fullName,
+          email: dummyStaff.email,
+          role,
+          staffRole,
+          phoneNumber: dummyStaff.phoneNumber,
+          adminCode: dummyStaff.adminCode,
+        });
+        refreshUser();
+        toast({
+          title: t("auth.changePassword.toastTitle"),
+          description: t("auth.changePassword.toastDescription"),
+        });
+        navigate(dashboardHomeByRole(role, staffRole));
+        return;
+      }
+
       const res = await eduhubAuth.changePassword({
         currentPassword,
         newPassword,
@@ -52,7 +81,7 @@ const ChangePassword = () => {
 
       if (res.mustChangePassword === false) {
         setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);
-        const role = res.user.role === "LECTURER" ? "teacher" : res.user.role === "ADMIN" ? "admin" : "student";
+        const { appRole: role, staffRole } = mapApiRoleToSession(res.user.role);
         const category =
           role === "teacher"
             ? resolveInstructorCategory(res.user.email, res.user.category ?? sessionUser.category)
@@ -62,17 +91,18 @@ const ChangePassword = () => {
           name: res.user.fullName,
           email: res.user.email,
           role,
+          staffRole,
           avatarUrl: resolveAvatarFromAuthResponse(res.user.avatarUrl, res.user.email),
           phoneNumber: res.user.phoneNumber,
           category,
+          adminCode: res.user.adminCode,
         });
         refreshUser();
         toast({
           title: t("auth.changePassword.toastTitle"),
           description: t("auth.changePassword.toastDescription"),
         });
-        const redirect = role === "admin" ? "/dashboard/admin" : role === "teacher" ? "/dashboard/teacher" : "/dashboard";
-        navigate(redirect);
+        navigate(dashboardHomeByRole(role, staffRole));
       } else {
         setError(t("auth.changePassword.stillRequired"));
       }

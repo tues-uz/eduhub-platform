@@ -157,6 +157,7 @@ function StudentReviewDialog({
   studentEmail: string;
   reviews: StudentCourseReviewSummary;
 }) {
+  const { t } = useTranslation();
   const instructorDate = formatReviewDate(reviews.instructorSubmittedAt);
   const platformDate = formatReviewDate(reviews.platformSubmittedAt);
 
