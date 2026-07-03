@@ -1,0 +1,291 @@
+{
+  "public": {
+    "hero": {
+      "badge": "Quality language education",
+      "titleLine1": "Your Gateway to",
+      "words": ["Excellence", "Success", "Innovation", "Growth", "Knowledge"],
+      "descriptionLine1": "EDUHUB is an educational center working under TISU, a leading private university in Uzbekistan.",
+      "descriptionLine2": "It offers modern, high-quality language education using international standards.",
+      "learnMore": "Learn More"
+    },
+    "partners": {
+      "title": "Our Valuable Partners",
+      "partner": "Partner {{number}}"
+    },
+    "stats": {
+      "whyChooseUs": "Why Choose Us",
+      "heading": "Why you should<br />join with us?",
+      "students": "Students",
+      "classes": "Classes",
+      "classesHeading": "500+ Classes",
+      "wideVariety": "Wide variety",
+      "teachers": "Teachers",
+      "completionRate": "Completion Rate",
+      "yearsExcellence": "Years of Excellence",
+      "tags": {
+        "language": "Language",
+        "business": "Business",
+        "tech": "Tech",
+        "arts": "Arts",
+        "science": "Science",
+        "math": "Math"
+      }
+    },
+    "team": {
+      "titleLine1": "Meet the Team",
+      "titleLine2": "Behind Your Learning",
+      "subtitleLine1": "Professional & experienced teachers & staffs",
+      "subtitleLine2": "with master's degree & international certificates",
+      "linkedin": "LinkedIn",
+      "roles": {
+        "director": "EDUHUB Director",
+        "directorLine1": "EDUHUB",
+        "directorLine2": "Director",
+        "coExecutiveDirector": "Co-Executive Director",
+        "coExecutiveLine1": "Co-Executive",
+        "coExecutiveLine2": "Director",
+        "orgExcellenceManager": "Organizational Excellence Manager",
+        "orgExcellenceLine1": "Organizational Excellence",
+        "orgExcellenceLine2": "Manager",
+        "learningExperienceManager": "Learning Experience Manager",
+        "learningExperienceLine1": "Learning Experience",
+        "learningExperienceLine2": "Manager",
+        "callOperator": "Call Operator",
+        "callOperatorLine1": "Call",
+        "callOperatorLine2": "Operator",
+        "adminNavigator": "Administrative Navigator",
+        "adminNavigatorLine1": "Administrative",
+        "adminNavigatorLine2": "Navigator"
+      }
+    },
+    "features": {
+      "title": "Why Choose EduHub?",
+      "descriptionLine1": "EDUHUB is an educational center working under TISU, a leading private university in Uzbekistan. It offers modern, high-quality language education using international standards.",
+      "descriptionLine2": "Our programs combine structured curricula with practical, real-world use so you can progress quickly and use the language confidently in work and study. Whether you are preparing for exams, career advancement, or academic exchange, EDUHUB supports your goals with experienced instructors and a learning environment designed for your success.",
+      "descriptionLine3": "Join a community of learners and professionals who choose EDUHUB for its commitment to quality, flexibility, and measurable results. From small-group classes to tailored one-on-one sessions, we adapt to your schedule and level so you can learn at your own pace while staying on track toward your language goals.",
+      "learnMore": "Learn More",
+      "items": {
+        "onlineClasses": {
+          "title": "Online Classes",
+          "description": "Access comprehensive classes from anywhere, anytime",
+          "imageAlt": "Online learning"
+        },
+        "expertInstructors": {
+          "title": "Expert Instructors",
+          "description": "Learn from industry professionals and academic experts",
+          "imageAlt": "Expert instructor"
+        },
+        "certifications": {
+          "title": "Certifications",
+          "description": "Earn recognized certificates upon class completion",
+          "imageAlt": "Certificate"
+        },
+        "careerGrowth": {
+          "title": "Career Growth",
+          "description": "Advance your career with in-demand skills",
+          "imageAlt": "Career growth"
+        },
+        "globalAccess": {
+          "title": "Global Access",
+          "description": "Connect with learners from around the world",
+          "imageAlt": "Global learning"
+        },
+        "analyticsDashboard": {
+          "title": "Analytics Dashboard",
+          "description": "Track your progress and performance metrics",
+          "imageAlt": "Analytics dashboard"
+        }
+      }
+    },
+    "vision": {
+      "badge": "Vision & Mission",
+      "title": "Where our vision and promises<br />come to life",
+      "imageAlt": "EduHub vision",
+      "tabs": {
+        "mission": "Our Mission",
+        "vision": "Our Vision",
+        "values": "Our Values"
+      },
+      "mission": {
+        "intro": "EduHub is built around a clear direction and a set of fun, learner‑centered commitments that guide every class, activity, and experiment.",
+        "items": [
+          "To provide accessible, high‑quality training programs that address academic, professional, and personal development needs.",
+          "To serve as a collaborative platform connecting students, educators, professionals, and communities for lifelong learning.",
+          "To design and deliver innovative training models that meet national and international standards.",
+          "To build partnerships with institutions and industries to enhance training relevance and global competitiveness.",
+          "To foster inclusivity, creativity, and adaptability in preparing participants for future challenges."
+        ]
+      },
+      "visionContent": {
+        "intro": "To become a central hub of excellence for diverse training programs that empower students, local communities, and global learners with relevant skills and knowledge of national and international quality.",
+        "inspireTitle": "Inspire",
+        "inspireText": "Make economics and business feel exciting, visual, and story‑driven.",
+        "connectTitle": "Connect",
+        "connectText": "Bridge classrooms, workplaces, and communities in one playful space.",
+        "elevateTitle": "Elevate",
+        "elevateText": "Help every learner grow from curious beginner to confident practitioner."
+      },
+      "values": {
+        "intro": "These commitments guide how we design every EduHub module, activity, and learner journey.",
+        "items": [
+          "Relevant skills and knowledge of national and international quality.",
+          "Learner‑centered commitments in every class and activity.",
+          "Inclusivity, creativity, and adaptability for future challenges."
+        ]
+      }
+    },
+    "reviews": {
+      "titleLine1": "Voices from",
+      "titleLine2": "the classroom",
+      "subtitle": "Learners across business, language, and skills programs — in their own words, after finishing a class at EduHub.",
+      "studentLabel": "EduHub student",
+      "starsAria": "{{rating}} out of 5 stars",
+      "items": {
+        "aziza": {
+          "course": "Business English",
+          "quote": "Every class felt practical, not textbook-heavy. My speaking confidence improved within the first month."
+        },
+        "jasur": {
+          "course": "Introduction to Economics",
+          "quote": "Clear explanations and real examples. Instructors actually answer questions — economics finally clicked for me."
+        },
+        "madina": {
+          "course": "Digital Marketing Essentials",
+          "quote": "The projects were hands-on and relevant. I used what I learned in class the same week for a freelance client pitch."
+        },
+        "bobur": {
+          "course": "Financial Accounting",
+          "quote": "Structured lessons and helpful feedback. The online format was smooth — I never felt lost between sessions."
+        },
+        "nilufar": {
+          "course": "English for Business",
+          "quote": "Small-group discussions and patient teachers. I can write reports and join meetings in English comfortably now."
+        },
+        "sardor": {
+          "course": "Data Analysis with Excel",
+          "quote": "From basics to dashboards, step by step. I finished with skills I could show on my CV right away."
+        }
+      }
+    },
+    "video": {
+      "titleLine1": "Discover Our",
+      "titleLine2": "Learning Platform",
+      "description": "Experience our innovative online learning platform through this comprehensive video tour. See how we make education accessible, engaging, and effective for students worldwide.",
+      "interactiveTitle": "Interactive Learning",
+      "interactiveDesc": "Engage with multimedia content and interactive exercises",
+      "expertTitle": "Expert Instructors",
+      "expertDesc": "Learn from industry professionals and academic experts",
+      "flexibleTitle": "Flexible Schedule",
+      "flexibleDesc": "Study at your own pace, anytime and anywhere",
+      "unsupported": "Your browser does not support the video tag."
+    },
+    "blog": {
+      "badge": "Blog",
+      "title": "Insights & Updates",
+      "readMore": "Read More",
+      "posts": {
+        "languagePrograms": {
+          "title": "New Language Programs Launch This Semester",
+          "description": "Discover our expanded offerings in business English, academic writing, and conversation practice—designed for busy professionals and students.",
+          "imageAlt": "Green Fern"
+        },
+        "successStories": {
+          "title": "EduHub Student Success Stories: From Classroom to Career",
+          "description": "Read how our graduates are using their language skills and certifications to advance in international roles and higher education.",
+          "imageAlt": "Yellow Flower"
+        },
+        "workshops": {
+          "title": "Upcoming Workshops and Cultural Exchange Events",
+          "description": "Join speaking clubs, exam prep sessions, and partner events with TISU—stay updated on dates and how to register.",
+          "imageAlt": "Orange Flower"
+        }
+      }
+    },
+    "highlights": {
+      "title": "Learning Highlights",
+      "subtitle": "Everything you need for a successful learning journey",
+      "items": {
+        "interactive": {
+          "title": "Interactive Learning",
+          "description": "Engage with multimedia content, quizzes, and hands-on projects"
+        },
+        "goalOriented": {
+          "title": "Goal-Oriented",
+          "description": "Set and achieve your learning objectives with personalized paths"
+        },
+        "fastTrack": {
+          "title": "Fast Track",
+          "description": "Accelerate your learning with intensive programs"
+        },
+        "community": {
+          "title": "Community Support",
+          "description": "Join a vibrant community of learners and mentors"
+        }
+      }
+    },
+    "cta": {
+      "qualityEducation": "Quality education",
+      "title": "Ready to start learning?",
+      "button": "Get started — it's free"
+    },
+    "scrollToTop": "Scroll to top",
+    "footer": {
+      "subscribe": "Subscribe",
+      "emailPlaceholder": "Enter your email",
+      "subscribeButton": "Subscribe",
+      "subscribeConsent": "By subscribing you agree to our",
+      "privacyPolicy": "Privacy Policy",
+      "subscribeConsentSuffix": "and consent to receive updates from EduHub.",
+      "contact": "Contact",
+      "menuLinks": "Menu Links",
+      "copyright": "© 2026 EduHub. All rights reserved.",
+      "termsOfUse": "Terms of Use",
+      "accessibility": "Accessibility",
+      "sections": {
+        "other": "Other",
+        "information": "Information",
+        "connect": "Connect"
+      },
+      "links": {
+        "about": "About",
+        "contact": "Contact",
+        "faq": "FAQ",
+        "termsConditions": "Terms & Conditions",
+        "privacyPolicy": "Privacy Policy",
+        "paymentMethod": "Payment Method",
+        "eduhubTeam": "EduHub Team",
+        "internationalStudents": "International Students",
+        "openDays": "Open Days",
+        "contactUs": "Contact Us",
+        "alumni": "Alumni",
+        "giving": "Giving",
+        "jobs": "Jobs",
+        "pressOffice": "Press Office",
+        "conferenceEvents": "Conference & Events"
+      },
+      "social": {
+        "facebook": "Facebook",
+        "twitter": "Twitter",
+        "instagram": "Instagram",
+        "linkedin": "LinkedIn",
+        "youtube": "YouTube"
+      },
+      "journal": {
+        "brand": "TUES Journal",
+        "tagline": "Research, commentary, and analysis from economists, scholars, and policy thinkers.",
+        "quickLinks": "Quick Links",
+        "home": "Home",
+        "articles": "Articles",
+        "authors": "Authors",
+        "topics": "Topics",
+        "about": "About",
+        "aboutUs": "About Us",
+        "editorialTeam": "Editorial Team",
+        "submissionGuidelines": "Submission Guidelines",
+        "contact": "Contact",
+        "copyright": "© 2026 TUES Economics Journal. All rights reserved.",
+        "termsOfUse": "Terms of Use"
+      }
+    }
+  }
+}

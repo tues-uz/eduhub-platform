@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, Navigate, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -93,6 +94,8 @@ function SquareRatingStars({
   onChange: (n: number) => void;
   label: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div role="group" aria-label={label} className="flex flex-wrap justify-center gap-2">
       {[1, 2, 3, 4, 5].map((n) => {
@@ -106,7 +109,7 @@ function SquareRatingStars({
               "completion-star-tile",
               active && "completion-star-tile--active",
             )}
-            aria-label={`${n} out of 5`}
+            aria-label={t("completion.ratingOutOf", { count: n })}
             aria-pressed={active}
           >
             <Star
@@ -132,6 +135,8 @@ function SavedReviewSummary({
   subtitle: string;
   saved: CourseReviewRecord;
 }) {
+  const { t } = useTranslation();
+
   return (
     <article className="completion-review-card overflow-hidden">
       <div className="completion-review-card__header flex items-start gap-3 px-5 py-4 sm:px-6 sm:py-5">
@@ -144,7 +149,7 @@ function SavedReviewSummary({
       </div>
       <div className="space-y-4 px-5 py-5 sm:px-6 sm:py-6">
         <div>
-          <p className="text-sm font-medium text-zinc-800">Your rating</p>
+          <p className="text-sm font-medium text-zinc-800">{t("completion.yourRating")}</p>
           <div className="mt-2 flex justify-center gap-2" aria-hidden>
             {[1, 2, 3, 4, 5].map((n) => (
               <div
@@ -168,13 +173,13 @@ function SavedReviewSummary({
         </div>
         {saved.comment ? (
           <div>
-            <p className="text-sm font-medium text-zinc-800">Your review</p>
+            <p className="text-sm font-medium text-zinc-800">{t("completion.yourReview")}</p>
             <p className="mt-2 rounded-xl border border-zinc-100 bg-zinc-50/80 px-3.5 py-3 text-sm leading-relaxed text-zinc-600">
               {saved.comment}
             </p>
           </div>
         ) : null}
-        <p className="text-xs text-zinc-400">Submitted — thank you</p>
+        <p className="text-xs text-zinc-400">{t("completion.submittedThanks")}</p>
       </div>
     </article>
   );
@@ -205,6 +210,7 @@ function ReviewFormCard({
   onApiSubmit?: (review: CourseReviewRecord) => void;
   isSubmitting?: boolean;
 }) {
+  const { t } = useTranslation();
   const existing = useMemo(
     () => apiReview ?? getCourseReview(courseId, emailNorm, target),
     [apiReview, courseId, emailNorm, target],
@@ -228,7 +234,7 @@ function ReviewFormCard({
 
   const handleSubmit = () => {
     if (rating < 1) {
-      toast.error("Choose a rating from 1 to 5.");
+      toast.error(t("completion.toastChooseRating"));
       return;
     }
     const record = {
@@ -244,7 +250,7 @@ function ReviewFormCard({
     saveCourseReview(courseId, emailNorm, record);
     setSaved(record);
     onReviewSaved?.();
-    toast.success("Feedback saved.");
+    toast.success(t("completion.toastSaved"));
   };
 
   if (saved) {
@@ -264,7 +270,7 @@ function ReviewFormCard({
         <Link
           to="/dashboard/courses"
           className="-mr-1 rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
-          aria-label="Back to my classes"
+          aria-label={t("completion.backToMyClasses")}
         >
           <X className="h-5 w-5" aria-hidden />
         </Link>
@@ -272,17 +278,17 @@ function ReviewFormCard({
 
       <div className="space-y-5 px-5 py-5 sm:space-y-6 sm:px-6 sm:py-6">
         <div>
-          <FieldLabel hint={ratingHint}>Your rating</FieldLabel>
+          <FieldLabel hint={ratingHint}>{t("completion.yourRating")}</FieldLabel>
           <SquareRatingStars
             value={rating}
             onChange={setRating}
-            label={`Rate ${title}`}
+            label={t("completion.rateTitle", { title })}
           />
         </div>
 
         <div>
-          <FieldLabel hint="Shown on your feedback record for this class.">
-            Class name
+          <FieldLabel hint={t("completion.classNameHint")}>
+            {t("completion.className")}
           </FieldLabel>
           <input
             type="text"
@@ -295,14 +301,14 @@ function ReviewFormCard({
         </div>
 
         <div>
-          <FieldLabel>Your review (optional)</FieldLabel>
+          <FieldLabel>{t("completion.reviewOptional")}</FieldLabel>
           <div className="relative">
             <textarea
               value={comment}
               onChange={(e) =>
                 setComment(e.target.value.slice(0, COMMENT_MAX))
               }
-              placeholder="Provide a detailed review…"
+              placeholder={t("completion.reviewPlaceholder")}
               rows={4}
               maxLength={COMMENT_MAX}
               className="completion-field-textarea pr-16"
@@ -318,7 +324,7 @@ function ReviewFormCard({
 
         <div className="flex gap-3 pt-1">
           <button type="button" className="completion-btn-cancel" onClick={handleCancel}>
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -326,7 +332,7 @@ function ReviewFormCard({
             onClick={handleSubmit}
             disabled={rating < 1 || isSubmitting}
           >
-            {isSubmitting ? "Submitting…" : "Submit"}
+            {isSubmitting ? t("completion.submitting") : t("common.submit")}
           </button>
         </div>
       </div>
@@ -335,6 +341,7 @@ function ReviewFormCard({
 }
 
 const StudentCourseCompletionPage = () => {
+  const { t } = useTranslation();
   const { courseId: rawCourseId } = useParams<{ courseId: string }>();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -379,9 +386,10 @@ const StudentCourseCompletionPage = () => {
       void queryClient.invalidateQueries({ queryKey: ["student", "course-review-summary", courseId] });
       void queryClient.invalidateQueries({ queryKey: ["student", "certificates"] });
       setCompletionTick((t) => t + 1);
-      toast.success("Feedback saved.");
+      toast.success(t("completion.toastSaved"));
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save feedback."),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : t("completion.toastSaveFailed")),
   });
 
   useEffect(() => {
@@ -522,21 +530,21 @@ const StudentCourseCompletionPage = () => {
   if (!meta) {
     return (
       <div className="course-completion-page flex min-h-dvh items-center justify-center">
-        <p className="text-sm text-zinc-500">Loading…</p>
+        <p className="text-sm text-zinc-500">{t("common.loading")}</p>
       </div>
     );
   }
 
   const instructorSubtitle =
     meta.instructor !== "—"
-      ? `Share feedback on ${meta.instructor}'s teaching for this class.`
-      : "Share feedback on instruction for this class.";
+      ? t("completion.instructorSubtitle", { instructor: meta.instructor })
+      : t("completion.instructorSubtitleGeneric");
 
   return (
     <div className="course-completion-page min-h-dvh">
       {isPreview ? (
         <p className="pointer-events-none fixed right-3 top-3 z-50 text-[10px] text-zinc-400">
-          Preview
+          {t("completion.preview")}
         </p>
       ) : null}
 
@@ -546,25 +554,22 @@ const StudentCourseCompletionPage = () => {
           className="inline-flex items-center gap-2 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden />
-          My classes
+          {t("completion.myClasses")}
         </Link>
 
         <header className="mt-6 text-center sm:mt-8">
           <p className="text-xs font-semibold uppercase tracking-wider text-[#3954d0]">
-            Schedule complete
+            {t("completion.scheduleComplete")}
           </p>
           <h1 className="mt-2 text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
             {meta.title}
           </h1>
           <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-zinc-500">
-            You finished all sessions
-            {meta.instructor !== "—" ? (
-              <>
-                {" "}
-                with <span className="font-medium text-zinc-700">{meta.instructor}</span>
-              </>
-            ) : null}
-            . Submit both reviews below to unlock your certificate download.
+            {t("completion.finishedSessions")}
+            {meta.instructor !== "—"
+              ? t("completion.withInstructor", { instructor: meta.instructor })
+              : null}
+            {t("completion.submitReviewsHint")}
           </p>
         </header>
 
@@ -572,12 +577,12 @@ const StudentCourseCompletionPage = () => {
           <p className="mx-auto mt-4 flex max-w-md items-center justify-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-center text-sm text-emerald-800">
             <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
             <span>
-              Feedback complete —{" "}
+              {t("completion.feedbackComplete")}{" "}
               <Link
                 to="/dashboard/certificates"
                 className="font-semibold underline underline-offset-2"
               >
-                download your certificate
+                {t("completion.downloadCertificate")}
               </Link>
             </span>
           </p>
@@ -586,9 +591,9 @@ const StudentCourseCompletionPage = () => {
         <div className="mt-8 space-y-5 sm:mt-10">
           <ReviewFormCard
             target="INSTRUCTOR"
-            title="Rate your instructor"
+            title={t("completion.rateInstructor")}
             subtitle={instructorSubtitle}
-            ratingHint="1 is poor, 5 is excellent."
+            ratingHint={t("completion.ratingHintInstructor")}
             courseLabel={meta.title}
             courseId={courseId}
             emailNorm={emailNorm}
@@ -600,9 +605,9 @@ const StudentCourseCompletionPage = () => {
 
           <ReviewFormCard
             target="PLATFORM"
-            title="Rate Edu Hub"
-            subtitle="Tell us how the platform worked for this class."
-            ratingHint="Helps us improve scheduling, materials, and support."
+            title={t("completion.ratePlatform")}
+            subtitle={t("completion.platformSubtitle")}
+            ratingHint={t("completion.ratingHintPlatform")}
             courseLabel={meta.title}
             courseId={courseId}
             emailNorm={emailNorm}

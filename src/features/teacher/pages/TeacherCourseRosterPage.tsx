@@ -107,6 +107,7 @@ import {
 } from "@/features/attendance/attendanceRollStorage";
 import type { ClassResumeResponse } from "@/api/eduhubTypes";
 import { useTeacherClassChecklist } from "@/features/teacher/hooks/useTeacherClassChecklist";
+import { useTranslation } from "react-i18next";
 
 function formatClassMeetingSlotLabel(slot: ClassMeetingSlot, index: number): string {
   const title = slot.title?.trim() || `Session ${index + 1}`;
@@ -250,6 +251,7 @@ function isCourseQuizListPermissionError(message: string): boolean {
 }
 
 export default function TeacherCourseRosterPage() {
+  const { t } = useTranslation();
   const { courseId = "" } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -852,18 +854,14 @@ export default function TeacherCourseRosterPage() {
               to="/dashboard/teacher/courses"
               className="inline-flex shrink-0 items-center gap-2 text-sm font-medium text-foreground/75 hover:text-foreground"
             >
-              <ArrowLeft className="h-4 w-4 shrink-0" />
-              Back to My Class
-            </Link>
+              <ArrowLeft className="h-4 w-4 shrink-0" />{t("teacher.roster.backToMyClass")}</Link>
             {courseMeta ? (
               <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
                 {isUuid(courseId) && courseMeta.status === "DRAFT" ? (
                   <span
                     className="max-w-[140px] shrink-0 rounded-md border border-amber-200/90 bg-amber-50 px-2.5 py-1 text-center text-xs font-medium leading-tight text-amber-900"
                     title="An admin will set the price and publish this class."
-                  >
-                    Awaiting admin approval
-                  </span>
+                  >{t("teacher.roster.awaitingAdminApproval")}</span>
                 ) : null}
                 {!isSubstituteViewer && isUuid(courseId) && courseMeta.status !== "DRAFT" ? (
                   <Button
@@ -903,11 +901,9 @@ export default function TeacherCourseRosterPage() {
                     <Link
                       to={`/dashboard/teacher/courses/${courseMeta.id}/edit`}
                       className="inline-flex items-center justify-center gap-1.5"
-                      title="Edit class content"
+                      title={t("teacher.roster.actions.editClassContent")}
                     >
-                      <Pencil className="h-3.5 w-3.5 shrink-0" />
-                      Edit class content
-                    </Link>
+                      <Pencil className="h-3.5 w-3.5 shrink-0" />{t("teacher.roster.actions.editClassContent")}</Link>
                   </Button>
                 ) : null}
               </div>
@@ -918,11 +914,11 @@ export default function TeacherCourseRosterPage() {
         <div className="pt-[4.5625rem]">
           {!courseId ? (
             <div className="container mx-auto px-6">
-              <p className="text-sm text-red-600">Missing class.</p>
+              <p className="text-sm text-red-600">{t("teacher.roster.errors.missingClass")}</p>
             </div>
           ) : loadingCourse ? (
             <div className="container mx-auto px-6">
-              <p className="text-sm text-foreground/60">Loading class…</p>
+              <p className="text-sm text-foreground/60">{t("teacher.roster.errors.loading")}</p>
             </div>
           ) : forbidden ? (
             <div className="container mx-auto px-6">
@@ -938,9 +934,7 @@ export default function TeacherCourseRosterPage() {
             </div>
           ) : !courseMeta ? (
             <div className="container mx-auto px-6">
-              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-700">
-                Class not found.
-              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-700">{t("teacher.courseForm.errors.classNotFound")}</div>
             </div>
           ) : (
             <>
@@ -1023,9 +1017,7 @@ export default function TeacherCourseRosterPage() {
                           className="w-full shrink-0 gap-2 rounded-full border-amber-200/90 bg-amber-50/60 text-amber-950 hover:bg-amber-50 sm:w-auto sm:self-start"
                           onClick={() => setSubstituteOpen(true)}
                         >
-                          <UserPlus className="h-4 w-4 shrink-0" />
-                          Invite Substitute
-                        </Button>
+                          <UserPlus className="h-4 w-4 shrink-0" />{t("teacher.roster.inviteSubstitute")}</Button>
                       ) : null}
                     </div>
 
@@ -1057,51 +1049,37 @@ export default function TeacherCourseRosterPage() {
                     value="roster"
                     className="rounded-lg px-4 gap-2 data-[state=active]:shadow-sm"
                   >
-                    <Users className="h-4 w-4 shrink-0 opacity-70" />
-                    Enrolled
-                  </TabsTrigger>
+                    <Users className="h-4 w-4 shrink-0 opacity-70" />{t("teacher.roster.tabs.enrolled")}</TabsTrigger>
                   <TabsTrigger
                     value="schedule"
                     className="rounded-lg px-4 gap-2 data-[state=active]:shadow-sm"
                   >
-                    <CalendarDays className="h-4 w-4 shrink-0 opacity-70" />
-                    Schedule
-                  </TabsTrigger>
+                    <CalendarDays className="h-4 w-4 shrink-0 opacity-70" />{t("teacher.roster.tabs.schedule")}</TabsTrigger>
                   <TabsTrigger
                     value="resume"
                     className="rounded-lg px-4 gap-2 data-[state=active]:shadow-sm"
                   >
-                    <FileText className="h-4 w-4 shrink-0 opacity-70" />
-                    Resume
-                  </TabsTrigger>
+                    <FileText className="h-4 w-4 shrink-0 opacity-70" />{t("teacher.roster.tabs.resume")}</TabsTrigger>
                   <TabsTrigger
                     value="quiz"
                     className="rounded-lg px-4 gap-2 data-[state=active]:shadow-sm"
                   >
-                    <ClipboardList className="h-4 w-4 shrink-0 opacity-70" />
-                    Quiz
-                  </TabsTrigger>
+                    <ClipboardList className="h-4 w-4 shrink-0 opacity-70" />{t("teacher.roster.tabs.quiz")}</TabsTrigger>
                   <TabsTrigger
                     value="attendance"
                     className="rounded-lg px-4 gap-2 data-[state=active]:shadow-sm"
                   >
-                    <QrCode className="h-4 w-4 shrink-0 opacity-70" />
-                    Attendance
-                  </TabsTrigger>
+                    <QrCode className="h-4 w-4 shrink-0 opacity-70" />{t("teacher.roster.tabs.attendance")}</TabsTrigger>
                   <TabsTrigger
                     value="grades"
                     className="rounded-lg px-4 gap-2 data-[state=active]:shadow-sm"
                   >
-                    <GraduationCap className="h-4 w-4 shrink-0 opacity-70" />
-                    Grades
-                  </TabsTrigger>
+                    <GraduationCap className="h-4 w-4 shrink-0 opacity-70" />{t("teacher.roster.tabs.grades")}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="roster" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
                   <h2 className="text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
-                    <Users className="h-5 w-5 text-[#1e40af]" />
-                    Enrolled students
-                  </h2>
+                    <Users className="h-5 w-5 text-[#1e40af]" />{t("teacher.roster.enrolled.title")}</h2>
                   <p className="text-sm text-foreground/60 mb-4">
                     Everyone signed up for this class in the platform. Local-only classes won&apos;t show rows until the
                     class exists on the server.
@@ -1132,23 +1110,21 @@ export default function TeacherCourseRosterPage() {
                       </p>
                     </div>
                   ) : studentsQuery.isLoading ? (
-                    <p className="text-sm text-foreground/60">Loading students…</p>
+                    <p className="text-sm text-foreground/60">{t("teacher.roster.enrolled.loading")}</p>
                   ) : studentsQuery.isError ? (
                     <p className="text-sm text-red-600">
                       Could not load enrollment list. Check permissions or try again later.
                     </p>
                   ) : !studentsQuery.data?.length ? (
-                    <p className="text-sm text-foreground/70 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-8 text-center">
-                      No students enrolled yet.
-                    </p>
+                    <p className="text-sm text-foreground/70 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-8 text-center">{t("teacher.roster.enrolled.empty")}</p>
                   ) : (
                     <div className="space-y-2">
                       <div className="rounded-xl border border-gray-200 bg-gray-50/30 overflow-hidden shadow-sm">
                         <Table>
                           <TableHeader>
                             <TableRow className="bg-slate-50/90 hover:bg-slate-50/90">
-                              <TableHead>Name</TableHead>
-                              <TableHead>Email</TableHead>
+                              <TableHead>{t("common.name")}</TableHead>
+                              <TableHead>{t("teacherSettings.email")}</TableHead>
                               <TableHead
                                 className="text-right whitespace-nowrap min-w-[10rem]"
                                 title="Check-ins recorded on this browser vs planned class meetings in six months (class settings)."
@@ -1214,9 +1190,7 @@ export default function TeacherCourseRosterPage() {
                       <Link
                         to="/dashboard/teacher/schedule"
                         className="font-medium text-[#3954d0] underline underline-offset-2 hover:text-[#2f46b3]"
-                      >
-                        Schedule approvals
-                      </Link>{" "}
+                      >{t("teacherNav.scheduleApprovals")}</Link>{" "}
                       for every class, or use{" "}
                       <Link
                         to={`/dashboard/teacher/courses/${courseMeta.id}/edit/schedule`}
@@ -1421,9 +1395,7 @@ export default function TeacherCourseRosterPage() {
                             <TableRow className="bg-slate-50/90 hover:bg-slate-50/90">
                               <TableHead className="w-14">#</TableHead>
                               <TableHead>Session</TableHead>
-                              <TableHead className="min-w-[10rem] max-w-[14rem]" title="Lecturer invited when the course lead cannot run this session (demo workflow).">
-                                Substitute instructor
-                              </TableHead>
+                              <TableHead className="min-w-[10rem] max-w-[14rem]" title="Lecturer invited when the course lead cannot run this session (demo workflow).">{t("teacher.courses.tabs.substitute")}</TableHead>
                               <TableHead className="whitespace-nowrap">Date</TableHead>
                               <TableHead className="whitespace-nowrap">Time</TableHead>
                             </TableRow>
@@ -1472,7 +1444,7 @@ export default function TeacherCourseRosterPage() {
                       {scheduleSubstituteCoverage.wholeClass.length > 0 ||
                       scheduleSubstituteCoverage.bySlotIndex.size > 0 ? (
                         <p className="text-xs text-muted-foreground leading-relaxed px-0.5">
-                          The <span className="font-medium text-foreground/80">Substitute instructor</span> column lists
+                          The <span className="font-medium text-foreground/80">{t("teacher.courses.tabs.substitute")}</span> column lists
                           the work email from your invite when the course lead cannot run that session (or every row for a
                           whole-class invite with no session picked). Chips show where that invite sits in the approval
                           flow.
@@ -1486,9 +1458,7 @@ export default function TeacherCourseRosterPage() {
                   <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-[#1e40af]" />
-                        Class resumes
-                      </h2>
+                        <FileText className="h-5 w-5 text-[#1e40af]" />{t("teacher.roster.resume.title")}</h2>
                       <p className="mt-1 text-sm text-foreground/60 max-w-xl">
                         Each card is a recap students can read on their class page (Resume tab). Create or edit on a dedicated page.
                       </p>
@@ -1501,15 +1471,13 @@ export default function TeacherCourseRosterPage() {
                         void navigate(`/dashboard/teacher/courses/${courseMeta.id}/resume/new`);
                       }}
                     >
-                      <Plus className="h-4 w-4 shrink-0" />
-                      New resume
-                    </Button>
+                      <Plus className="h-4 w-4 shrink-0" />{t("teacher.roster.resume.newResume")}</Button>
                   </div>
 
                   {classResumes.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-6 py-10 text-center">
                       <FileText className="mx-auto h-10 w-10 text-foreground/20" aria-hidden />
-                      <p className="mt-3 text-sm font-medium text-foreground">No resumes yet</p>
+                      <p className="mt-3 text-sm font-medium text-foreground">{t("teacher.roster.resume.emptyTitle")}</p>
                       <p className="mt-1 text-sm text-foreground/60">
                         Write your first recap so enrolled students can review it anytime.
                       </p>
@@ -1521,9 +1489,7 @@ export default function TeacherCourseRosterPage() {
                           void navigate(`/dashboard/teacher/courses/${courseMeta.id}/resume/new`);
                         }}
                       >
-                        <Plus className="h-4 w-4 shrink-0" />
-                        Create resume
-                      </Button>
+                        <Plus className="h-4 w-4 shrink-0" />{t("teacher.roster.resume.createResume")}</Button>
                     </div>
                   ) : (
                     <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -1549,7 +1515,7 @@ export default function TeacherCourseRosterPage() {
                                   {r.sessionLabel}
                                 </p>
                               ) : (
-                                <p className="text-xs font-medium text-muted-foreground">Whole class recap</p>
+                                <p className="text-xs font-medium text-muted-foreground">{t("teacher.roster.resume.wholeClassRecap")}</p>
                               )}
                               <p className="text-sm text-foreground leading-relaxed line-clamp-2 whitespace-pre-wrap">
                                 {r.body}
@@ -1575,9 +1541,7 @@ export default function TeacherCourseRosterPage() {
                                   void navigate(`/dashboard/teacher/courses/${courseMeta.id}/resume/${r.id}`);
                                 }}
                               >
-                                <Pencil className="mr-1.5 h-3.5 w-3.5" />
-                                Edit
-                              </Button>
+                                <Pencil className="mr-1.5 h-3.5 w-3.5" />{t("common.edit")}</Button>
                               {!isSubstituteViewer ? (
                                 <Button
                                   type="button"
@@ -1585,9 +1549,7 @@ export default function TeacherCourseRosterPage() {
                                   size="sm"
                                   className="rounded-full text-red-700 border-red-200 hover:bg-red-50"
                                   onClick={() => setResumeDeleteId(r.id)}
-                                >
-                                  Delete
-                                </Button>
+                                >{t("common.delete")}</Button>
                               ) : null}
                             </div>
                           </div>
@@ -1606,7 +1568,7 @@ export default function TeacherCourseRosterPage() {
                       </h2>
                       <p className="mt-1 text-sm text-foreground/60 max-w-xl">
                         Multiple-choice quizzes for this class appear below as cards. Use{" "}
-                        <span className="font-medium text-foreground/75">Create quiz</span> to add one, then publish,
+                        <span className="font-medium text-foreground/75">{t("teacher.roster.quiz.createQuiz")}</span> to add one, then publish,
                         edit, or open results from each card.
                       </p>
                     </div>
@@ -1624,9 +1586,7 @@ export default function TeacherCourseRosterPage() {
                               : "/dashboard/teacher/placement-test?new=1"
                           }
                         >
-                          <ClipboardList className="h-4 w-4 shrink-0 text-foreground/70" />
-                          Create quiz
-                        </Link>
+                          <ClipboardList className="h-4 w-4 shrink-0 text-foreground/70" />{t("teacher.roster.quiz.createQuiz")}</Link>
                       </Button>
                     ) : null}
                   </div>
@@ -1643,7 +1603,7 @@ export default function TeacherCourseRosterPage() {
                   ) : !isUuid(courseId) ? (
                     <p className="text-sm text-foreground/70 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-8 text-center">
                       This class exists only in your browser. Connect it to the API to list server-backed quizzes for this
-                      course. Use <span className="font-medium text-foreground/80">My Class</span> after your class is on
+                      course. Use <span className="font-medium text-foreground/80">{t("teacherNav.myClass")}</span> after your class is on
                       the server, then open this class and use the Quiz tab to create quizzes.
                     </p>
                   ) : (
@@ -1691,9 +1651,7 @@ export default function TeacherCourseRosterPage() {
                               <Link
                                 to={`/dashboard/teacher/placement-test?courseId=${encodeURIComponent(courseId)}&new=1`}
                               >
-                                <Plus className="h-4 w-4 shrink-0" />
-                                Create quiz
-                              </Link>
+                                <Plus className="h-4 w-4 shrink-0" />{t("teacher.roster.quiz.createQuiz")}</Link>
                             </Button>
                           </div>
                           <div className="space-y-2">
@@ -1747,16 +1705,10 @@ export default function TeacherCourseRosterPage() {
                                     </div>
                                     <div className="mt-4 flex shrink-0 flex-wrap gap-2 border-t border-slate-200/80 pt-3">
                                       {!d.published ? (
-                                        <span className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-muted-foreground">
-                                          Publish
-                                        </span>
+                                        <span className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-muted-foreground">{t("teacher.roster.quiz.publish")}</span>
                                       ) : null}
-                                      <span className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-muted-foreground">
-                                        Results
-                                      </span>
-                                      <span className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-muted-foreground">
-                                        Edit
-                                      </span>
+                                      <span className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-muted-foreground">{t("teacher.roster.quiz.results")}</span>
+                                      <span className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-muted-foreground">{t("common.edit")}</span>
                                     </div>
                                   </li>
                                 );
@@ -1828,9 +1780,7 @@ export default function TeacherCourseRosterPage() {
                                     asChild
                                   >
                                     <Link to={`/dashboard/teacher/placement-test/${courseId}/${q.id}/results`}>
-                                      <BarChart2 className="h-3.5 w-3.5" />
-                                      Results
-                                    </Link>
+                                      <BarChart2 className="h-3.5 w-3.5" />{t("teacher.roster.quiz.results")}</Link>
                                   </Button>
                                   <Button
                                     type="button"
@@ -1842,9 +1792,7 @@ export default function TeacherCourseRosterPage() {
                                     <Link
                                       to={`/dashboard/teacher/placement-test?courseId=${encodeURIComponent(courseId)}&edit=${encodeURIComponent(q.id)}`}
                                     >
-                                      <Pencil className="h-3.5 w-3.5" />
-                                      Edit
-                                    </Link>
+                                      <Pencil className="h-3.5 w-3.5" />{t("common.edit")}</Link>
                                   </Button>
                                 </div>
                               </li>
@@ -1997,8 +1945,8 @@ export default function TeacherCourseRosterPage() {
                           </Select>
                           <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
                             When a row matches the selected QR session, the{" "}
-                            <span className="font-medium text-foreground/80">Present</span> and{" "}
-                            <span className="font-medium text-foreground/80">Checked in</span> columns in this table use
+                            <span className="font-medium text-foreground/80">{t("teacher.roster.attendance.presentBadge")}</span> and{" "}
+                            <span className="font-medium text-foreground/80">{t("teacher.roster.attendance.table.checkedIn")}</span> columns in this table use
                             that meeting from the attendance API. If nothing matches, generate a QR for that day in Class
                             meeting check-in, then try again.
                           </p>
@@ -2009,16 +1957,14 @@ export default function TeacherCourseRosterPage() {
                           <Table>
                             <TableHeader>
                               <TableRow className="bg-slate-50/90 hover:bg-slate-50/90">
-                                <TableHead>Student</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead className="text-center whitespace-nowrap">Present</TableHead>
-                                <TableHead className="text-right whitespace-nowrap">Checked in</TableHead>
+                                <TableHead>{t("teacher.assignments.submissions.table.student")}</TableHead>
+                                <TableHead>{t("teacherSettings.email")}</TableHead>
+                                <TableHead className="text-center whitespace-nowrap">{t("teacher.roster.attendance.presentBadge")}</TableHead>
+                                <TableHead className="text-right whitespace-nowrap">{t("teacher.roster.attendance.table.checkedIn")}</TableHead>
                                 <TableHead
-                                  title="Instructor Check"
+                                  title={t("teacher.roster.attendance.table.instructorCheck")}
                                   className="text-center whitespace-nowrap border-l border-slate-200 bg-slate-50/70 min-w-[7.5rem] px-2"
-                                >
-                                  Instructor Check
-                                </TableHead>
+                                >{t("teacher.roster.attendance.table.instructorCheck")}</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -2048,10 +1994,8 @@ export default function TeacherCourseRosterPage() {
                                     <TableCell className="text-muted-foreground">{s.email}</TableCell>
                                     <TableCell className="text-center">
                                       {entry?.present ? (
-                                        <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700" title="Checked in">
-                                          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-                                          Present
-                                        </span>
+                                        <span className="inline-flex items-center justify-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700" title={t("teacher.roster.attendance.table.checkedIn")}>
+                                          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />{t("teacher.roster.attendance.presentBadge")}</span>
                                       ) : (
                                         <span className="text-muted-foreground">—</span>
                                       )}
@@ -2122,15 +2066,13 @@ export default function TeacherCourseRosterPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (deleteId) void handleDelete(deleteId);
               }}
               className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
+            >{t("common.delete")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -2144,7 +2086,7 @@ export default function TeacherCourseRosterPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setResumeDeleteId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setResumeDeleteId(null)}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={() => {
@@ -2152,9 +2094,7 @@ export default function TeacherCourseRosterPage() {
                   deleteResumeMutation.mutate({ resumeId: resumeDeleteId });
                 }
               }}
-            >
-              Delete
-            </AlertDialogAction>
+            >{t("common.delete")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -2232,12 +2172,8 @@ export default function TeacherCourseRosterPage() {
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => setSubstituteOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="button" className="bg-[#3954d0] hover:bg-[#2f46b3]" onClick={handleSubmitSubstituteInvite}>
-              Send invite
-            </Button>
+            <Button type="button" variant="outline" onClick={() => setSubstituteOpen(false)}>{t("common.cancel")}</Button>
+            <Button type="button" className="bg-[#3954d0] hover:bg-[#2f46b3]" onClick={handleSubmitSubstituteInvite}>{t("teacher.roster.substituteDialog.sendInvite")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

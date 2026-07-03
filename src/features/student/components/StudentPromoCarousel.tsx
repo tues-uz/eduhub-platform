@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "@/lib/icons";
 import {
@@ -23,6 +24,7 @@ const PROMO_SCRIM =
   "linear-gradient(90deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.52) 42%, rgba(0, 0, 0, 0.15) 72%, transparent 100%)";
 
 function PromoSlide({ promo }: { promo: StudentPromo }) {
+  const { t } = useTranslation();
   const hasImage = promo.imageUrl.trim().length > 0;
   const isExternal = /^https?:\/\//i.test(promo.ctaUrl);
 
@@ -49,7 +51,7 @@ function PromoSlide({ promo }: { promo: StudentPromo }) {
       ) : null}
       <div className="absolute inset-0" style={{ background: PROMO_SCRIM }} aria-hidden />
       <div className="relative z-10 mx-auto flex min-w-0 w-full max-w-none flex-1 flex-col justify-end px-8 pb-16 pt-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-white/80">Promo</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-white/80">{t("promo.label")}</p>
         <h2 className="mt-1 line-clamp-2 min-h-[2lh] max-w-[11rem] text-2xl font-bold leading-tight text-white sm:max-w-xs sm:text-3xl">
           {promo.title}
         </h2>
@@ -61,6 +63,7 @@ function PromoSlide({ promo }: { promo: StudentPromo }) {
 }
 
 export function StudentPromoCarousel({ placement, className, fullWidth = false }: StudentPromoCarouselProps) {
+  const { t } = useTranslation();
   const promos = useActiveStudentPromos(placement);
   const [api, setApi] = useState<CarouselApi>();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -97,7 +100,7 @@ export function StudentPromoCarousel({ placement, className, fullWidth = false }
   return (
     <section
       className={cn("w-full", fullWidth && "-mx-6 -mt-4 w-[calc(100%+3rem)]", className)}
-      aria-label="Promotions"
+      aria-label={t("promo.ariaLabel")}
     >
       <Carousel setApi={setApi} opts={{ loop: showControls, align: "start" }} className="relative w-full">
         <CarouselContent className="-ml-0">
@@ -120,7 +123,7 @@ export function StudentPromoCarousel({ placement, className, fullWidth = false }
                     index === selectedIndex ? "w-5 bg-white" : "w-1.5 bg-white/50 hover:bg-white/80",
                   )}
                   onClick={() => api?.scrollTo(index)}
-                  aria-label={`Go to promotion ${index + 1}`}
+                  aria-label={t("promo.goToPromotion", { index: index + 1 })}
                 />
               ))}
             </div>
@@ -131,7 +134,7 @@ export function StudentPromoCarousel({ placement, className, fullWidth = false }
                 size="icon"
                 className="h-8 w-8 rounded-full border-white/20 bg-white/45 text-slate-700 backdrop-blur-sm hover:bg-white/70 hover:text-slate-700 [&_svg]:opacity-100"
                 onClick={() => api?.scrollPrev()}
-                aria-label="Previous promotion"
+                aria-label={t("promo.previous")}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -141,7 +144,7 @@ export function StudentPromoCarousel({ placement, className, fullWidth = false }
                 size="icon"
                 className="h-8 w-8 rounded-full border-white/20 bg-white/45 text-slate-700 backdrop-blur-sm hover:bg-white/70 hover:text-slate-700 [&_svg]:opacity-100"
                 onClick={() => api?.scrollNext()}
-                aria-label="Next promotion"
+                aria-label={t("promo.next")}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>

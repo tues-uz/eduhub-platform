@@ -1,0 +1,1196 @@
+{
+  "teacher": {
+    "fallbackName": "Преподаватель",
+    "instructorFallback": "Instructor",
+    "courseLeadFallback": "Course lead",
+    "classFallback": "Класс",
+    "dashboard": {
+      "subtitle": "Instructor Панель",
+      "roleBadge": "Преподаватель",
+      "stats": {
+        "activeClasses": "Active классes",
+        "totalStudents": "Total студентs",
+        "pendingGrading": "Pending grading",
+        "collectedPayments": "Collected payments"
+      },
+      "attendanceQr": {
+        "title": "Посещаемость QR (projector)",
+        "description": "Generate a session QR code to show on the whiteboard—студентs scan to check in on their phones."
+      },
+      "upcomingSessions": {
+        "title": "Upcoming Sessions"
+      },
+      "classesTable": {
+        "title": "Teaching классes",
+        "loading": "Загрузка классes…",
+        "emptyPrefix": "No классes yet.",
+        "createFirstClass": "Create your first класс",
+        "lessonCount": "{{count}} lessons",
+        "header": {
+          "class": "Класс",
+          "students": "Студенты",
+          "progress": "Progress",
+          "completion": "Completion",
+          "actions": "Actions"
+        },
+        "action": {
+          "editClass": "Редактировать класс",
+          "manageStudents": "Manage Студенты"
+        }
+      },
+      "pendingGrading": {
+        "title": "Pending Grading",
+        "subtitle": "Review and grade студент submissions",
+        "gradeButton": "Grade",
+        "priority": {
+          "high": "high",
+          "medium": "medium",
+          "low": "low"
+        }
+      }
+    },
+    "notifications": {
+      "title": "Уведомления",
+      "subtitle": "Класс расписание, publishing, and other updates.",
+      "unreadCount": "{{count}} unread",
+      "markAllRead": "Mark all as read",
+      "loading": "Загрузка notifications…",
+      "markRead": "Mark read",
+      "receivedPrefix": "Received",
+      "time": {
+        "justNow": "Just now",
+        "minutesAgo": "{{count}} min ago",
+        "hoursAgo_one": "{{count}} hour ago",
+        "hoursAgo_other": "{{count}} hours ago",
+        "daysAgo_one": "{{count}} day ago",
+        "daysAgo_other": "{{count}} days ago"
+      },
+      "cta": {
+        "openClassPage": "Open this класс page",
+        "viewMyClasses": "View my классes",
+        "goToLinkedPage": "Go to linked page"
+      },
+      "empty": {
+        "title": "No notifications yet.",
+        "description": "Расписание proposals, класс publishing updates, and other notifications will appear here."
+      }
+    },
+    "placeholder": {
+      "fallbackTitle": "Преподаватель",
+      "comingSoon": "This section is coming soon.",
+      "backToDashboard": "Назад to Панель",
+      "sections": {
+        "courses": "My Класс",
+        "assignments": "Assignments",
+        "students": "Студенты",
+        "schedule": "Расписание",
+        "settings": "Settings"
+      }
+    },
+    "courses": {
+      "description": "New классes stay in draft until an admin sets a price and publishes them. Add lessons with PDF or video content, then wait for approval.",
+      "addClass": "Add класс",
+      "tabs": {
+        "classes": "Классes",
+        "attendance": "Студент attendance",
+        "schedule": "Расписание",
+        "substitute": "Substitute instructor"
+      },
+      "loading": "Загрузка классes…",
+      "empty": {
+        "title": "No классes yet",
+        "description": "Create your first класс and add lessons with PDF materials or video links.",
+        "cta": "Add your first класс"
+      },
+      "card": {
+        "sessionsInSixMonths": "{{count}} sessions in 6 months",
+        "sessionsNotSet": "Sessions in 6 months not set",
+        "studentCount_one": "{{count}} студент",
+        "studentCount_other": "{{count}} студентs"
+      },
+      "attendanceTab": {
+        "intro": "Name each meeting and generate a QR; past meetings stay on this device. Full-page tool:",
+        "attendanceQrLink": "Посещаемость QR"
+      },
+      "scheduleTab": {
+        "intro": "Редактировать the planned sessions (title, date, time) for each класс. This uses the same расписание section from the класс setup form.",
+        "loading": "Загрузка расписаниеs…",
+        "emptyDescription": "Create a класс first, then come back here to set up the per-session расписание.",
+        "sessionsSummary": "{{sessions}} sessions in 6 months",
+        "filledSuffix": " · {{filled}} filled",
+        "notSetYet": "Sessions in 6 months not set yet",
+        "editSchedule": "Редактировать расписание"
+      }
+    },
+    "students": {
+      "title": "Студенты",
+      "subtitle": "Студенты registered to your классes.",
+      "table": {
+        "name": "Студент name",
+        "email": "Email",
+        "class": "Класс",
+        "enrolledDate": "Enrolled date"
+      },
+      "empty": "No студентs registered yet."
+    },
+    "assignments": {
+      "title": "Assignments",
+      "subtitle": "Manage assignments and review студент submissions.",
+      "tabs": {
+        "assignments": "My Assignments",
+        "submissions": "Pending Submissions"
+      },
+      "empty": {
+        "title": "No assignments yet",
+        "description": "Assignments will appear here once you create them for your классes."
+      },
+      "table": {
+        "title": "Title",
+        "class": "Класс",
+        "dueDate": "Due Date",
+        "priority": "Priority",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "actions": {
+        "publish": "Publish",
+        "view": "View",
+        "review": "Review"
+      },
+      "submissions": {
+        "empty": {
+          "title": "No pending submissions",
+          "description": "All студент submissions have been graded."
+        },
+        "table": {
+          "student": "Студент",
+          "assignment": "Assignment",
+          "submitted": "Отправитьted"
+        }
+      },
+      "deleteDialog": {
+        "title": "Удалить this assignment?",
+        "description": "This will permanently remove the assignment. Студенты will no longer see it."
+      }
+    },
+    "attendanceQr": {
+      "title": "Посещаемость QR",
+      "description": "Select the класс and the planned session from the расписание, then generate a QR. When you stop the session, that meeting is marked held for студент enrollment. Use projector view for full screen. Студенты sign in to check in."
+    },
+    "scheduleApprovals": {
+      "title": "Расписание approvals",
+      "subtitle": "Review расписаниеs proposed by an admin, then approve or request changes on each класс.",
+      "loading": "Загрузка your классes…",
+      "empty": "No классes yet. Create a класс first.",
+      "addClass": "Add класс",
+      "pendingSectionTitle": "Needs your approval",
+      "createdDate": "Created {{date}}",
+      "allSectionTitle": "All your классes",
+      "openButton": "Open",
+      "status": {
+        "actionNeeded": "Action needed",
+        "approved": "Одобрено",
+        "rejected": "Rejected",
+        "draft": "Черновик",
+        "published": "Опубликовано"
+      },
+      "statusDescriptions": {
+        "scheduleApproved": "Расписание approved — waiting for admin to publish",
+        "draft": "Черновик — admin will propose a расписание",
+        "rejected": "Rejected — admin sent feedback",
+        "default": "Open the расписание step to view or approve when ready."
+      }
+    },
+    "status": {
+      "published": "Опубликовано",
+      "draft": "Черновик",
+      "high": "HIGH",
+      "medium": "MEDIUM",
+      "low": "LOW"
+    },
+    "substitute": {
+      "status": {
+        "pendingSubstitute": "Waiting for substitute",
+        "pendingPrimary": "Waiting for your approval",
+        "pendingAdmin": "With admin for final approval",
+        "approved": "Одобрено",
+        "declinedBySubstitute": "Declined by substitute",
+        "rejectedByPrimary": "Rejected by primary instructor",
+        "rejectedByAdmin": "Rejected by admin"
+      },
+      "coverChip": {
+        "substituteCover": "Substitute cover",
+        "admin": "Cover · admin",
+        "instructor": "Cover · instructor",
+        "substitute": "Cover · substitute"
+      }
+    },
+    "substitutePanel": {
+      "empty": {
+        "title": "No substitute cover requests",
+        "description": "When you invite a substitute from a класс page, requests appear here for you and the substitute to review."
+      },
+      "summary": {
+        "needsResponse": "{{count}} request needs your response.",
+        "needsResponse_other": "{{count}} requests need your response.",
+        "track": "Track substitute invitations and approval status for your классes."
+      },
+      "card": {
+        "courseLead": "Course lead:",
+        "substitute": "Substitute:"
+      },
+      "role": {
+        "youAreSubstitute": "You are the substitute",
+        "youInvited": "You invited",
+        "participant": "Participant"
+      },
+      "updated": "Updated {{datetime}}",
+      "actions": {
+        "review": "Review",
+        "viewDetails": "View details",
+        "openClass": "Open класс"
+      }
+    },
+    "substituteSummary": {
+      "labels": {
+        "course": "Course",
+        "from": "From",
+        "session": "Session",
+        "date": "date"
+      },
+      "invitedSubstitute": "Invited substitute",
+      "theirNote": "Their note"
+    },
+    "substituteReview": {
+      "backToNotifications": "Назад to notifications",
+      "backButton": "Уведомления",
+      "title": "Cover request",
+      "subtitle": "Review details and respond when you are ready.",
+      "statusLabel": "Status",
+      "substituteDecideHint": "If you accept, the primary instructor will be asked to approve before admin finalizes.",
+      "acceptInvite": "Accept invite",
+      "declineInvite": "Decline invite",
+      "primaryDecideHint": "The substitute has accepted. Approve to send this cover request to admin for final approval.",
+      "approveCover": "Approve cover",
+      "reject": "Reject",
+      "noAccess": "This cover request is not linked to your instructor account, or you have already responded.",
+      "errors": {
+        "missingId": "Missing request id.",
+        "notFound": "This cover request could not be found on this device."
+      },
+      "toast": {
+        "acceptFailed": "Could not accept invite",
+        "accepted": "You accepted the cover invite",
+        "declined": "Invite declined",
+        "forwardedToAdmin": "Forwarded to admin for final approval",
+        "coverNotApproved": "Cover not approved",
+        "approveFailed": "Could not approve cover request"
+      },
+      "readonlyMessages": {
+        "waitingSubstitute": "Waiting for the substitute to accept or decline.",
+        "waitingPrimary": "Waiting for the primary instructor to approve.",
+        "nothingToConfirm": "There is nothing for you to confirm on this request right now."
+      }
+    },
+    "courseForm": {
+      "title": {
+        "edit": "Редактировать Класс",
+        "new": "Add New Класс"
+      },
+      "steps": {
+        "ariaLabel": "Класс setup steps",
+        "details": "1 · Details",
+        "schedule": "2 · Расписание approval",
+        "lessons": "3 · Lessons"
+      },
+      "errors": {
+        "classNotFound": "Класс not found.",
+        "uploadFailed": "Upload failed",
+        "titleRequired": "Класс title is required.",
+        "categoryMissing": "Your teaching category is not set. Contact an administrator to assign it before creating a класс.",
+        "datesBothOrNeither": "Enter both a класс start date and a класс end date, or leave both empty.",
+        "datesInvalid": "Класс dates are invalid.",
+        "endBeforeStart": "Класс end date must be on or after the start date.",
+        "lessonRequired": "Add at least one lesson with a title and PDF or video URL for this класс.",
+        "saveFailed": "Failed to save. Please try again."
+      },
+      "toast": {
+        "invalidImageType": "Please choose an image file (JPEG, PNG, WebP, etc.).",
+        "imageTooLarge": "Image must be 8 MB or smaller.",
+        "thumbnailUploaded": "Thumbnail uploaded",
+        "thumbnailUploadFailed": "Thumbnail upload failed",
+        "pdfReadingTimeFailed": "Could not estimate reading time (link may be private or unsupported). Enter it manually (e.g. 5 min read)."
+      },
+      "dialog": {
+        "completeLesson": {
+          "title": "Complete the current lesson first",
+          "description": "Please add a title and video or PDF content before adding another lesson."
+        },
+        "removeLesson": {
+          "title": "Remove this lesson?",
+          "description": "This will remove the lesson from the класс. You can add it again later."
+        }
+      },
+      "details": {
+        "replaceImage": "Replace image",
+        "addCoverImage": "Add cover image",
+        "instructorLabel": "Instructor",
+        "classNameLabel": "Класс name *",
+        "classNamePlaceholder": "e.g. Introduction to Economics",
+        "categoryLabel": "Category *",
+        "categoryNotAssigned": "Not assigned",
+        "categoryHint": "Assigned by admin when your instructor account was created. Contact support if this looks wrong.",
+        "aboutLabel": "About this класс (optional)",
+        "aboutPlaceholder": "What студентs will learn — a sentence or two is enough.",
+        "datesSectionTitle": "Класс dates (optional)",
+        "datesSectionHint": "When this run starts and ends. Leave blank if not decided yet.",
+        "startLabel": "Класс starts",
+        "endLabel": "Класс ends",
+        "pricingTitle": "Pricing",
+        "pricingHint": "Set by an admin after you save this класс and they publish it.",
+        "continueToSchedule": "Continue to расписание"
+      },
+      "schedule": {
+        "status": {
+          "awaitingApproval": "Awaiting your approval",
+          "approved": "Расписание approved",
+          "draft": "Черновик"
+        },
+        "sessionLabel": "Session {{num}}",
+        "dateLabel": "Date",
+        "timeLabel": "Time",
+        "sectionTitle": "Расписание",
+        "newClassInfo": "After you create this класс, an administrator will propose session dates and times for your review.",
+        "newClassNote": "Your new класс is saved with a minimal placeholder расписание until admin proposes the real one.",
+        "rejectionNoteTitle": "Your note to admin",
+        "loading": "Загрузка расписание…",
+        "noProposal": "When an admin proposes a расписание for this класс, session rows will appear here for your approval.",
+        "sessionsInSixMonths": "Sessions in 6 months",
+        "proposedBy": "Proposed by {{name}}. Студент attendance expectations follow this plan once approved.",
+        "month1Heading": "Sessions in 1st month",
+        "month2Heading": "Sessions in 2nd month",
+        "month3Heading": "Sessions in 3rd month",
+        "perSessionDetails": "Per-session details",
+        "noSessionRows": "No session rows yet — waiting for admin.",
+        "saving": "Saving…",
+        "approveSchedule": "Approve расписание",
+        "requestChanges": "Request changes",
+        "approvedNote": "Расписание approved. The admin can now set pricing and publish the класс.",
+        "continueToLessons": "Continue to lessons",
+        "rejectDialog": {
+          "title": "Request расписание changes",
+          "description": "Describe what should change (days, times, session count). Admin will revise and send a new proposal.",
+          "placeholder": "e.g. Wednesday evenings don't work — can we move to Thursday?",
+          "send": "Send to admin"
+        },
+        "toast": {
+          "approved": "Расписание approved",
+          "approveFailed": "Could not approve расписание",
+          "rejected": "Feedback sent to admin",
+          "rejectFailed": "Could not reject расписание"
+        }
+      },
+      "lessons": {
+        "title": "Lessons (PDF or video link)",
+        "addLesson": "Add lesson",
+        "minimize": "Minimize",
+        "expand": "Expand",
+        "lessonLabel": "Lesson {{n}}",
+        "removeLessonTitle": "Remove lesson",
+        "titleLabel": "Lesson title",
+        "titlePlaceholder": "e.g. Supply and Demand",
+        "contentTypeLabel": "Content type",
+        "contentType": {
+          "videoLink": "Video link",
+          "videoUpload": "Video upload",
+          "pdfLink": "PDF link",
+          "pdfUpload": "PDF upload"
+        },
+        "uploadedPrefix": "Uploaded:",
+        "urlPlaceholders": {
+          "video": "https://youtube.com/…",
+          "pdf": "https://… or Google Drive PDF link"
+        },
+        "preview": "Preview",
+        "pdfPreview": "PDF Preview",
+        "removeVideoTitle": "Remove video link",
+        "removePdfTitle": "Remove PDF link",
+        "videoPreviewTitle": "Video preview",
+        "pdfPreviewTitle": "PDF preview",
+        "durationLabel": "Duration (optional)",
+        "durationHint": {
+          "pdf": "Estimated reading time for the PDF.",
+          "video": "Length of the video."
+        },
+        "durationPlaceholders": {
+          "pdf": "e.g. 5 min read",
+          "video": "e.g. 12 min"
+        },
+        "getFromLink": "Get from link",
+        "estimate": "Estimate",
+        "editSchedule": "Редактировать расписание",
+        "saving": "Saving…",
+        "saveChanges": "Сохранить changes",
+        "createClass": "Create класс",
+        "createDialog": {
+          "title": "Create this класс?",
+          "description": "Your класс is saved as a draft. An admin will set pricing and publish it after reviewing your расписание and lessons.",
+          "confirm": "Create класс"
+        }
+      }
+    },
+    "quiz": {
+      "loading": "Загрузка quiz…",
+      "backToQuizzes": "Назад to класс quizzes",
+      "title": {
+        "edit": "Редактировать quiz",
+        "create": "Create quiz"
+      },
+      "form": {
+        "questionImageAlt": "Question",
+        "changeImage": "Change",
+        "addImageAriaLabel": "Add image to the current question.",
+        "findAndInsertMedia": "Find and insert media",
+        "uploadFile": "Upload file",
+        "dragHere": "or drag here to upload",
+        "detailsTitle": "Тест details",
+        "typeLabel": "Type",
+        "typePlaceholder": "Select type",
+        "typeHint": "Тест for practice or Placement test for assessment.",
+        "classLabel": "Класс",
+        "classPlaceholder": "Select класс",
+        "noClass": "No класс",
+        "classLockedHint": "Класс is locked for this quiz.",
+        "classPickerHint": "Загрузка…",
+        "titleLabels": {
+          "placement": "Placement test title *",
+          "quiz": "Тест title *"
+        },
+        "titlePlaceholder": "e.g. Economics Placement Test",
+        "release": {
+          "label": "Release date and time",
+          "date": "Date",
+          "time": "Time",
+          "selectDate": "Select date",
+          "selectTime": "Select time"
+        },
+        "releaseHint": "When this placement test becomes available to студентs.",
+        "questionsTitle": "Questions (multiple choice)",
+        "addQuestion": "Add question",
+        "questionActions": {
+          "expand": "Expand",
+          "minimize": "Minimize",
+          "remove": "Remove question"
+        },
+        "questionLabel": "Question {{n}}",
+        "pointsLabel": "{{n}} pts",
+        "questionTextLabel": "Question text *",
+        "questionTextPlaceholder": "e.g. What is the main focus of microeconomics?",
+        "questionImageLabel": "Image for this question",
+        "timeLimit": {
+          "label": "Time limit",
+          "choose": "Choose…",
+          "seconds": "{{sec}} s"
+        },
+        "options": {
+          "title": "Options (check the correct answer)",
+          "option": "Option {{letter}}"
+        },
+        "saveChanges": "Сохранить changes",
+        "createQuiz": "Create quiz"
+      },
+      "types": {
+        "quiz": "Тест",
+        "placementTest": "Placement test"
+      },
+      "errors": {
+        "titleRequired": "Тест title is required.",
+        "questionRequired": "Add at least one question.",
+        "questionIncomplete": "Each question needs text, at least two options, and one correct answer.",
+        "classRequired": "Please select a класс for this quiz.",
+        "saveFailed": "Failed to save quiz.",
+        "loadFailed": "Could not load quiz."
+      },
+      "toast": {
+        "savedLocally": "Сохранитьd on this device only",
+        "savedLocallyDescription": "Connect to the API to sync quizzes across devices."
+      },
+      "dialog": {
+        "removeQuestion": {
+          "title": "Remove this question?",
+          "description": "This question will be removed from the quiz."
+        }
+      }
+    },
+    "quizResults": {
+      "loading": "Загрузка quiz results...",
+      "backLink": "Назад to класс quizzes",
+      "title": "quiz results — {{title}}",
+      "subtitle": "Студент attempts and scores for this quiz.",
+      "localDataBadge": "(Showing local data)",
+      "exportButton": "Export to Excel",
+      "exportTitle": "Export to Excel spreadsheet",
+      "empty": "No attempts yet. Results appear here after студентs complete the quiz.",
+      "checkedInTitle": "When the студент finished the quiz",
+      "errors": {
+        "notFound": "Тест not found",
+        "loadFailed": "Failed to load quiz results",
+        "localStorage": "Could not read quiz results from local storage."
+      },
+      "table": {
+        "no": "No.",
+        "student": "Студент",
+        "email": "Email",
+        "score": "Score",
+        "correct": "Correct",
+        "fillingDate": "Filling date"
+      }
+    },
+    "payroll": {
+      "title": "Зарплата",
+      "subtitle": "Your классes and linked студент payments. Отправить monthly payroll when расписание months are complete.",
+      "tabs": {
+        "payroll": "Зарплата",
+        "submissions": "My submissions"
+      },
+      "summary": {
+        "classes": "Your классes",
+        "paymentRows": "payment row(s)",
+        "classesCount": "класс(es)",
+        "totalInView": "Total in view"
+      },
+      "searchPlaceholder": "Search класс, студент, invoice…",
+      "empty": {
+        "signIn": "Sign in with a profile that has instructor классes to see payroll.",
+        "loading": "Загрузка your классes…",
+        "noMatch": "No классes match your search.",
+        "noClasses": "No active классes yet. Create a класс and wait for enrollment."
+      },
+      "table": {
+        "class": "Класс",
+        "students": "Студенты",
+        "invoices": "Invoices",
+        "totalTuition": "Total tuition",
+        "yourShare": "Your share",
+        "request": "Request",
+        "action": "Action"
+      },
+      "demo": {
+        "badge": "Demo",
+        "scheduleComplete": "3-month расписание complete — submit payroll per month."
+      },
+      "adminNotePrefix": "Admin: {{note}}",
+      "invoiceSummary": "{{paid}} paid · {{unpaid}} unpaid",
+      "sharePercent": "{{percent}}% of tuition",
+      "requestStatus": {
+        "pendingReview": "Pending review",
+        "approved": "Одобрено",
+        "declined": "Declined",
+        "ready": "Ready"
+      },
+      "actions": {
+        "viewPayout": "View payout",
+        "submitPayroll": "Отправить payroll"
+      },
+      "expandAria": {
+        "hide": "Hide студент payments",
+        "show": "Show студент payments"
+      },
+      "enrolledSection": {
+        "title": "Enrolled студентs"
+      },
+      "enrolledTable": {
+        "student": "Студент",
+        "amount": "Amount",
+        "status": "Status",
+        "due": "Due",
+        "paid": "Paid",
+        "loading": "Загрузка enrolled студентs…",
+        "empty": "No enrolled студентs for this класс yet."
+      },
+      "status": {
+        "enrolled": "Enrolled"
+      },
+      "submissions": {
+        "title": "My submissions",
+        "subtitle": "Track your monthly submissions and admin review status.",
+        "viewNotifications": "View notifications",
+        "stats": {
+          "total": "Total submissions",
+          "pending": "Pending",
+          "search": "Search"
+        },
+        "searchPlaceholder": "Класс, period, status…",
+        "empty": {
+          "none": "No payroll submissions yet.",
+          "noMatch": "No submissions match your search."
+        },
+        "table": {
+          "class": "Класс",
+          "period": "Period",
+          "requested": "Requested",
+          "status": "Status",
+          "bankReceipt": "Bank receipt",
+          "submitted": "Отправитьted",
+          "adminNote": "Admin note"
+        },
+        "enrolledSubtitle": "{{count}} enrolled",
+        "viewReceipt": "View receipt",
+        "viewStatus": "View status"
+      },
+      "submissionStatus": {
+        "approved": "Одобрено",
+        "notApproved": "Not approved",
+        "pending": "Pending"
+      },
+      "time": {
+        "justNow": "Just now",
+        "minutesAgo": "{{count}} min ago",
+        "hoursAgo_one": "{{count}} hour ago",
+        "hoursAgo_other": "{{count}} hours ago",
+        "daysAgo_one": "{{count}} day ago",
+        "daysAgo_other": "{{count}} days ago"
+      },
+      "toast": {
+        "selectPeriod": "Select a расписание period",
+        "submitFailed": "Could not submit payroll request",
+        "submitted": "Зарплата request sent"
+      }
+    },
+    "payrollPayout": {
+      "title": "Payout information",
+      "description": "Your submission details and any bank transfer receipt uploaded by admin.",
+      "fields": {
+        "yourSubmission": "Your submission",
+        "status": "Status",
+        "scheduleMonth": "Расписание month",
+        "requestedPayout": "Requested payout",
+        "payoutDetails": "Payout details",
+        "reviewed": "Reviewed",
+        "adminReference": "Admin reference",
+        "adminNote": "Admin note"
+      },
+      "noSubmission": "No payroll submission on file for this класс yet.",
+      "sections": {
+        "payoutNotes": "Payout notes from admin",
+        "bankReceipt": "Bank transfer receipt (from admin)"
+      },
+      "wrongFileWarning": "Filename suggests this may not be a bank receipt PDF. Open to verify before relying on it.",
+      "receipt": {
+        "uploadedByAdmin": "Uploaded by EduHub admin",
+        "released": "Released",
+        "attached": "Attached",
+        "pdfTitle": "Bank transfer receipt PDF",
+        "imageAlt": "Bank transfer receipt from admin",
+        "downloadPdf": "Download PDF",
+        "openPdfTab": "Open PDF in new tab",
+        "openReceipt": "Open receipt",
+        "pendingApproved": "Одобрено — waiting for admin to attach the bank transfer receipt.",
+        "pendingNotYet": "Receipt not available yet. Admin uploads it after processing your payout."
+      }
+    },
+    "payrollSubmit": {
+      "title": "Отправить payroll for approval",
+      "description": "Choose a completed расписание month and submit your requested payout to admin.",
+      "pricing": {
+        "title": "Класс pricing",
+        "listedTuition": "Listed tuition (per студент)",
+        "totalClassPrice": "Total класс price",
+        "payrollSubmissions": "Зарплата submissions",
+        "instructorShare": "Instructor share",
+        "platformShare": "Platform share"
+      },
+      "monthlyPayout": {
+        "count": "{{count}} расписание month(s)",
+        "label": "Instructor payout per расписание month"
+      },
+      "pricingHints": {
+        "noTuition": "Admin-listed tuition is not set for this класс yet.",
+        "noStudents": "No enrolled студентs yet — payout preview uses listed tuition × 0."
+      },
+      "period": {
+        "label": "Расписание period",
+        "loading": "Загрузка класс расписание…",
+        "placeholder": "Select расписание month"
+      },
+      "noApprovedMonths": "No approved расписание months ready for payroll yet.",
+      "payoutSection": {
+        "requested": "Requested payout for this month",
+        "previewOnly": "(preview only — confirm before submitting)",
+        "breakdown": "Breakdown"
+      },
+      "payoutDetails": {
+        "label": "Payout details (optional)",
+        "placeholder": "Bank account, payment method, or other details for admin"
+      },
+      "notes": {
+        "label": "Notes to admin (optional)",
+        "placeholder": "Any context admin should know when reviewing this submission"
+      },
+      "systemSummaryPrefix": "System summary:",
+      "submitToAdmin": "Отправить to admin",
+      "toast": {
+        "scheduleNotReady": "Расписание not ready for payroll",
+        "scheduleNotReadyDescription": "Зарплата is submitted per month from the класс расписание admin created and you approved. Publish that расписание first.",
+        "selectMonth": "Select a расписание month",
+        "selectMonthDescription": "Choose a month where all sessions are finished.",
+        "alreadySubmitted": "Month already submitted",
+        "monthNotReady": "Month not ready for payroll",
+        "meetingsNotComplete": "Meetings not complete"
+      }
+    },
+    "resumeEdit": {
+      "backToClasses": "Назад to My Классes",
+      "backToResumes": "Назад to resumes",
+      "title": {
+        "new": "New класс resume",
+        "edit": "Редактировать класс resume"
+      },
+      "intro": "Recaps and reminders appear on the студент класс page under the Resume tab.",
+      "substituteBanner": {
+        "viewingAs": "You are редактироватьing as substitute.",
+        "courseLead": "Course lead:",
+        "hint": "You can add or редактировать resumes for студентs while covering this класс."
+      },
+      "primaryBanner": "You are the course lead. Substitute instructors with approved cover can also add resumes in demo mode.",
+      "thumbnail": {
+        "label": "Thumbnail image (optional)",
+        "previewAlt": "Resume thumbnail preview",
+        "hint": "Shows on the resume cards студентs see on their класс page."
+      },
+      "sessionLabel": "Link to a расписаниеd session",
+      "sessionHints": {
+        "primary": "Optional — tie this recap to a specific session or leave as whole-класс.",
+        "substituteLocked": "Session is set from your substitute cover invite.",
+        "noSessions": "No расписаниеd sessions yet — recap applies to the whole класс.",
+        "wholeClass": "Whole класс — general recap"
+      },
+      "session": {
+        "wholeClass": "Whole класс — general recap",
+        "placeholder": "Whole класс or one session…",
+        "loadingAssigned": "Загрузка assigned session…"
+      },
+      "bodyLabel": "Resume text",
+      "bodyPlaceholder": "Key points, homework, reminders for студентs…",
+      "actions": {
+        "delete": "Удалить",
+        "saveForStudents": "Сохранить for студентs"
+      },
+      "deleteDialog": {
+        "title": "Удалить this resume?",
+        "description": "Студенты will no longer see this recap. This cannot be undone."
+      },
+      "errors": {
+        "missingClass": "Missing класс.",
+        "noAccess": "You don't have access to редактировать resumes for this класс.",
+        "classNotFound": "Класс not found.",
+        "emptyBody": "Write something before saving."
+      },
+      "toast": {
+        "notFound": "Resume not found",
+        "saveFailed": "Could not save.",
+        "deleteFailed": "Could not удалить resume.",
+        "deleted": "Resume удалитьd",
+        "created": "Resume created",
+        "createdDescription": "Студенты can now read this recap on their класс page.",
+        "updated": "Resume updated",
+        "updatedDescription": "Your changes are saved for студентs.",
+        "invalidImage": "Please pick an image file.",
+        "uploadFailed": "Could not upload image."
+      }
+    },
+    "roster": {
+      "backToMyClass": "Назад to My Класс",
+      "awaitingAdminApproval": "Awaiting admin approval",
+      "awaitingAdminTitle": "An admin will set the price and publish this класс.",
+      "actions": {
+        "unarchive": "Unarchive",
+        "archive": "Archive",
+        "deleteClass": "Удалить класс",
+        "editClassContent": "Редактировать класс content"
+      },
+      "errors": {
+        "missingClass": "Missing класс.",
+        "loading": "Загрузка класс…",
+        "forbidden": "You don't have access to this класс roster.",
+        "loadFailed": "Could not load this класс. It may have been removed or you may need to sign in again.",
+        "notFound": "Класс not found."
+      },
+      "thumbnailAlt": "{{title}} thumbnail",
+      "banners": {
+        "substitute": {
+          "viewingAs": "You are viewing as substitute.",
+          "courseLead": "Course lead (owns this класс in the catalog):",
+          "description": "You can use класс resumes and local attendance (QR and this browser's check-ins). The server enrollment list is only returned for the course lead today, so the Enrolled tab explains that limitation. Catalog редактироватьs, deleting the класс, and inviting another substitute stay with the course lead."
+        },
+        "primary": {
+          "title": "You are the course lead.",
+          "description": "Одобрено substitute {{email}} has demo access to this класс page for resumes and local attendance. The server enrollment list stays course-lead only until the API supports substitutes."
+        }
+      },
+      "enrollmentHint": "Студенты enrolled from the catalog appear below when the API returns roster data.",
+      "inviteSubstitute": "Invite Substitute",
+      "inviteSubstituteHint": "Covers a session when you're unavailable. Enter the Substitute's admin-registered lecturer email. Demo: in-app notifications only.",
+      "tabs": {
+        "enrolled": "Enrolled",
+        "schedule": "Расписание",
+        "resume": "Resume",
+        "quiz": "Тест",
+        "attendance": "Посещаемость",
+        "grades": "Оценки"
+      },
+      "enrolled": {
+        "title": "Enrolled студентs",
+        "intro": "Everyone signed up for this класс in the platform. Local-only классes won't show rows until the класс exists on the server.",
+        "sessionsNote": "This класс is set to {{count}} sessions in 6 months (from класс settings); the table compares local check-ins to that target.",
+        "localOnly": "This класс is stored only in your browser. Connect it to the API to load enrolled студентs here.",
+        "substituteNoRoster": "Enrollment list is not loaded for substitutes (API).",
+        "substituteNoRosterDescription": "The server only returns /courses/…/студентs for the catalog course lead. Your access here is from the approved substitute workflow (demo).",
+        "loading": "Загрузка студентs…",
+        "loadError": "Could not load enrollment list. Check permissions or try again later.",
+        "empty": "No студентs enrolled yet.",
+        "table": {
+          "name": "Name",
+          "email": "Email",
+          "sessionsTitle": "Check-ins recorded on this browser vs planned класс meetings in six months (класс settings).",
+          "sessionsInSixMonths": "Sessions in 6 months *"
+        },
+        "footnote": "* Sessions in 6 months is the planned total from класс settings. The first number is how many distinct sessions this студент checked into on this browser only."
+      },
+      "schedule": {
+        "yourCover": "Your cover on this класс",
+        "classSchedule": "Класс расписание",
+        "substituteIntro": "Only the session(s) you are covering appear here—not the course lead's full term calendar.",
+        "courseLead": "Course lead:",
+        "primaryIntro": "Session plan from the catalog and, when present, the latest admin proposal from the server.",
+        "scheduleApprovalsLink": "Расписание approvals",
+        "editClassScheduleLink": "Редактировать класс → Расписание",
+        "feedbackTitle": "Расписание feedback on file",
+        "classWindowStart": "Класс window start:",
+        "classWindowEnd": "End:",
+        "approveOrRequest": "Approve or request расписание changes",
+        "loadingProposal": "Загрузка latest admin расписание proposal…",
+        "substituteNoMatch": "We couldn't match an active substitute invite on this device to a расписание row.",
+        "substituteNoMatchHint": "Check that your sign-in email matches the invited substitute, or ask the course lead which session you cover.",
+        "wholeClassCover": "Whole-класс substitute cover",
+        "wholeClassCoverDescription": "The course lead did not tie this cover to a single calendar row, so the full term расписание is not listed here.",
+        "sessionsCovering": "Session(s) you are covering:",
+        "table": {
+          "number": "#",
+          "session": "Session",
+          "yourCover": "Your cover",
+          "yourCoverTitle": "Your invited cover email and workflow status.",
+          "substituteInstructor": "Substitute instructor",
+          "substituteInstructorTitle": "Lecturer invited when the course lead cannot run this session (demo workflow).",
+          "date": "Date",
+          "time": "Time",
+          "yourEmailTitle": "Your work email on this cover",
+          "invitedEmailTitle": "Invited substitute work email"
+        },
+        "substituteHiddenNote": "Other sessions in this класс are hidden on purpose. The course lead still sees the full расписание.",
+        "noSessions": "No session rows yet. When an admin proposes dates and times, they will show here.",
+        "adminProposal": "Admin proposal from {{name}}.",
+        "plannedSessions": "Planned sessions (six-month window):",
+        "substituteColumnNote": "The Substitute instructor column lists the work email from your invite when the course lead cannot run that session."
+      },
+      "scheduleStatus": {
+        "pendingApproval": "Расписание pending your approval",
+        "approved": "Расписание approved",
+        "draft": "Черновик",
+        "published": "Опубликовано"
+      },
+      "sessionFallback": "Session {{n}}",
+      "substituteCoverTitle": "Substitute cover · {{title}}",
+      "resume": {
+        "title": "Класс resumes",
+        "intro": "Each card is a recap студентs can read on their класс page (Resume tab). Create or редактировать on a dedicated page.",
+        "newResume": "New resume",
+        "emptyTitle": "No resumes yet",
+        "emptyDescription": "Write your first recap so enrolled студентs can review it anytime.",
+        "createResume": "Create resume",
+        "wholeClassRecap": "Whole класс recap",
+        "updated": "Updated",
+        "thumbnailAlt": "Resume thumbnail"
+      },
+      "quiz": {
+        "title": "Тест & placement tests",
+        "intro": "Multiple-choice quizzes for this класс appear below as cards. Use Create quiz to add one, then publish, редактировать, or open results from each card.",
+        "createQuiz": "Create quiz",
+        "substituteRestriction": "Тест management is for the course lead.",
+        "substituteRestrictionDescription": "Creating and publishing quizzes for this класс is done by the instructor who owns the catalog listing.",
+        "localOnly": "This класс exists only in your browser. Connect it to the API to list server-backed quizzes for this course.",
+        "yourQuizzes": "Your quizzes",
+        "fetchNoteFallback": "Тест list could not be loaded. Тестzes you save on this device still appear below.",
+        "fetchNoteWithError": "Тест list could not be loaded ({{error}}). Тестzes you save on this device still appear below.",
+        "loadError": "Could not load quizzes for this класс.",
+        "emptyTitle": "No quizzes for this класс yet",
+        "emptyDescription": "Your real quizzes will replace the example cards below. Create a practice quiz or placement test to get started.",
+        "exampleLayout": "Example layout (not saved — disappears when you add a quiz)",
+        "example": "Example",
+        "placement": "Placement",
+        "quiz": "Тест",
+        "questionCount_one": "{{count}} question",
+        "questionCount_other": "{{count}} questions",
+        "publish": "Publish",
+        "results": "Results",
+        "toast": {
+          "publishedLocally": "Опубликовано on this device",
+          "published": "Тест published",
+          "publishFailed": "Could not publish quiz."
+        }
+      },
+      "attendance": {
+        "qrTitle": "Класс meeting check-in (QR)",
+        "qrIntro": "Each QR opens the check-in link; студентs must use it signed in as a студент. The roster table below only shows check-ins stored on this browser.",
+        "overviewTitle": "Студент attendance overview",
+        "overviewIntro": "Use Jump by класс расписание to pick the last planned session or a specific row from your расписание.",
+        "connectApi": "Connect this класс to the API to align attendance tracking with enrolled студентs.",
+        "substituteOverview": "Посещаемость overview needs the server roster.",
+        "substituteOverviewDescription": "That roster is only returned for the course lead today, so this table cannot load while you are signed in as substitute.",
+        "loadingRoster": "Загрузка roster for attendance table…",
+        "loadStudentsError": "Could not load студентs for this overview.",
+        "noStudents": "No enrolled студентs yet — nothing to show in the attendance overview.",
+        "phoneScanNote": "Phone scan vs this screen:",
+        "phoneScanDescription": "студент phone scans now sync through the EduHub attendance API.",
+        "confirmEmailNote": "Confirm the студент account email matches the roster row, the meeting selected here matches the QR they scanned, and they are signed in as a студент on the check-in page.",
+        "showingFor": "Showing attendance for:",
+        "presentForMeeting": "Present for this meeting:",
+        "selectMeetingHint": "Select a meeting with Jump by класс расписание or in Класс meeting check-in to load check-in data for the table below.",
+        "enrollmentNote": "Enrollment lists everyone who joined the класс on the platform. Present and Checked in now use the EduHub attendance API for the selected QR meeting.",
+        "jumpBySchedule": "Jump by класс расписание",
+        "chooseScheduleContext": "Choose расписание context",
+        "latestQr": "Latest QR session (newest)",
+        "lastScheduled": "Last date on класс расписание",
+        "matchHint": "When a row matches the selected QR session, the Present and Checked in columns in this table use that meeting from the attendance API.",
+        "tableAria": "Студент attendance for the selected check-in meeting",
+        "table": {
+          "student": "Студент",
+          "email": "Email",
+          "present": "Present",
+          "checkedIn": "Checked in",
+          "instructorCheck": "Instructor Check"
+        },
+        "presentBadge": "Present",
+        "checkedInTitle": "Checked in",
+        "signInToCheck": "Sign in to save преподаватель check",
+        "toast": {
+          "noQrMeetings": "No QR meetings yet — generate check-in in Класс meeting check-in above.",
+          "noSavedMeeting": "No saved meeting matches that расписание row yet. Generate a QR for that класс day, or pick the meeting manually in Класс meeting check-in."
+        }
+      },
+      "dialogs": {
+        "deleteClass": {
+          "title": "Are you sure you want to удалить this класс?",
+          "description": "This will permanently remove this класс and all its lessons. This action cannot be undone."
+        },
+        "deleteResume": {
+          "title": "Удалить this resume?",
+          "description": "Студенты will no longer see this recap on their класс page. This cannot be undone."
+        }
+      },
+      "substituteDialog": {
+        "title": "Invite a substitute instructor",
+        "description": "Use the work email of a lecturer your admin created. They receive an in-app notification here; your admin is notified too (browser demo until the API exists).",
+        "emailLabel": "Substitute email",
+        "emailPlaceholder": "colleague@school.org",
+        "sessionLabel": "Расписаниеd session",
+        "sessionOptional": "Расписаниеd session (optional)",
+        "sessionPlaceholder": "Select session to cover",
+        "messageLabel": "Message (optional)",
+        "messagePlaceholder": "Brief note for the substitute…",
+        "sendInvite": "Send invite",
+        "toast": {
+          "needEmail": "Your account needs an email to send this invite.",
+          "enterEmail": "Enter the substitute lecturer's email.",
+          "ownEmail": "Use another instructor's email — not your own.",
+          "notRegistered": "That email is not on the admin lecturer list (demo).",
+          "notRegisteredDescription": "Ask your admin to register the lecturer (Add user role), then invite using that work email.",
+          "selectSession": "Select the расписаниеd session this substitute will cover.",
+          "success": "Substitute invite recorded",
+          "successDescription": "The substitute must accept, then you approve. Check instructor notifications (demo)."
+        }
+      },
+      "toast": {
+        "resumeDeleted": "Resume удалитьd",
+        "resumeDeleteFailed": "Could not удалить resume."
+      }
+    },
+    "attendancePanel": {
+      "title": "Класс meeting check-in",
+      "description": {
+        "fixed": "Generate a QR for this класс. Студенты scan to check in on their phones.",
+        "schedule": "Pick a planned session from the расписание, name the meeting, then generate a QR.",
+        "embedded": "Name each meeting and generate a QR; past meetings stay on this device.",
+        "default": "Select a класс and meeting, then generate a QR code for студент check-in."
+      },
+      "loading": "Загрузка классes…",
+      "noClasses": "No классes yet. Create a класс first.",
+      "classLabel": "Класс",
+      "classPlaceholder": "Select класс",
+      "scheduleHint": {
+        "meetingsPerWeek": "{{count}} meetings per week on average (from расписание).",
+        "setSessions": "Set Sessions in 6 months on the класс расписание to align meeting names with planned rows."
+      },
+      "meetingName": {
+        "label": "Name this класс meeting",
+        "placeholder": "e.g. Week 3 — Supply & Demand",
+        "helper": "Shown on the projector and in the session log."
+      },
+      "generateQr": {
+        "new": "New QR for next meeting",
+        "this": "Generate QR for this meeting"
+      },
+      "projectorView": "Projector view",
+      "stopSession": "Stop session",
+      "modality": {
+        "online": "Online check-in — студентs scan from anywhere.",
+        "inPerson": "In-person check-in — show QR on the projector."
+      },
+      "sessionTimer": {
+        "label": "Класс session time",
+        "max": "max {{duration}}",
+        "remaining": "{{time}} remaining",
+        "closesAt": "Check-in closes at {{time}}"
+      },
+      "qrHint": "Scan opens студент check-in — they must be signed in as a студент.",
+      "sessionEnded": {
+        "stopped": {
+          "title": "Session stopped",
+          "body": "Check-in is closed for this meeting."
+        },
+        "windowEnded": {
+          "title": "Check-in closed",
+          "body": "The check-in window for this session has ended."
+        },
+        "closed": {
+          "title": "Check-in window ended",
+          "body": "Start a new QR session for the next meeting."
+        }
+      },
+      "emptyQr": {
+        "tapGenerate": "Tap Generate below to create a QR for this meeting.",
+        "pickClass": "Pick a класс and tap Generate to start check-in."
+      },
+      "sessionLog": {
+        "title": "Session log (this класс)",
+        "description": "Past QR sessions for this класс on this device."
+      },
+      "projector": {
+        "title": "Посещаемость QR — projector",
+        "scanHint": "Студенты scan with their phone to check in",
+        "meetingLabel": "Meeting:",
+        "exitAria": "Exit projector view",
+        "ariaLabel": "Projector attendance QR"
+      },
+      "meetingFallback": "Meeting",
+      "toast": {
+        "generateFailed": "Could not generate attendance QR",
+        "stopFailed": "Could not stop attendance session"
+      }
+    },
+    "attendancePicker": {
+      "label": "Meeting (for the table below)",
+      "placeholders": {
+        "pickSession": "Pick a planned session…",
+        "chooseMeeting": "Choose a meeting",
+        "noMeetings": "No meetings generated yet"
+      },
+      "group": {
+        "plannedSessions": "Planned sessions (approved расписание)",
+        "savedCheckIns": "Сохранитьd check-ins (this browser)"
+      },
+      "checkInSuffix": {
+        "count": " · {{count}} checked in (this browser)",
+        "none": " · no check-ins stored here yet"
+      },
+      "helper": {
+        "generateBelow": "Generate a meeting in Класс meeting check-in above, then pick it here.",
+        "generateAbove": "Generate a meeting in Класс meeting check-in above, then pick it here.",
+        "plannedRows": "Planned rows mirror your approved расписание; saved check-ins come from QR sessions on this browser."
+      },
+      "empty": {
+        "pickSession": "Pick a planned session or a saved check-in to load the attendance table.",
+        "generateMeeting": "Generate a meeting QR first, then select it here."
+      }
+    },
+    "attendanceLogs": {
+      "title": "Посещаемость QR session log",
+      "description": "Past check-in sessions for this класс on this browser.",
+      "empty": "No attendance sessions logged yet.",
+      "table": {
+        "started": "Started",
+        "ended": "Ended",
+        "timeInClass": "Time in класс",
+        "class": "Класс",
+        "meeting": "Meeting",
+        "instructor": "Instructor",
+        "howEnded": "How it ended"
+      },
+      "inProgress": "In progress",
+      "endReason": {
+        "windowEnded": "2h 15m window ended",
+        "newQr": "New QR / next meeting",
+        "switchedClass": "Switched класс",
+        "stoppedByInstructor": "Stopped by instructor"
+      }
+    },
+    "grades": {
+      "title": "Final scores",
+      "intro": "Total = average of attendance % and instructor score (0–100). Publish certificates when grades are final.",
+      "publishAll": "Publish all certificates",
+      "empty": {
+        "substitute": "Substitute instructors cannot редактировать grades on this demo page.",
+        "connectApi": "Connect this класс to the API to load enrolled студентs for grading.",
+        "loading": "Загрузка студентs…",
+        "error": "Could not load студентs for grading.",
+        "noStudents": "No студентs enrolled yet."
+      },
+      "table": {
+        "student": "Студент",
+        "sessions": "Sessions",
+        "attendance": "Attend. %",
+        "instructor": "Instructor",
+        "total": "Total",
+        "feedback": "Feedback",
+        "actions": "Actions",
+        "headerTitles": {
+          "sessions": "QR check-ins on this browser vs planned sessions",
+          "attendance": "Auto: sessions attended ÷ planned sessions in 6 months",
+          "instructor": "Your score 0–100",
+          "total": "Average of attendance % and instructor score"
+        }
+      },
+      "feedback": {
+        "sessions": "sess.",
+        "platformPending": "Platform pending",
+        "platformBonus": "+ platform",
+        "pending": "Pending",
+        "readReview": "Read review"
+      },
+      "scorePlaceholder": "0–100",
+      "actions": {
+        "save": "Сохранить",
+        "update": "Update",
+        "publish": "Publish",
+        "done": "Done"
+      },
+      "footnote": "Attend. % = sessions checked in on this browser ÷ planned sessions (класс settings). Not synced across devices until an attendance API exists.",
+      "reviewDialog": {
+        "title": "Студент review",
+        "description": "Ratings and comments submitted by the студент.",
+        "instructorRating": "Instructor rating",
+        "platformRating": "Platform rating",
+        "noComment": "No comment.",
+        "submitted": "Отправитьted {{date}}"
+      },
+      "starsAriaLabel": "{{rating}} out of 5 stars",
+      "toast": {
+        "gradeSaved": "Grade saved",
+        "certificatePublished": "Certificate published",
+        "saveFailed": "Could not save grade",
+        "publishFailed": "Could not publish certificate",
+        "publishAllDone": "All certificates published"
+      }
+    }
+  }
+}

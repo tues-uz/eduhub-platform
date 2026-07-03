@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { eduhubNotifications } from "@/api/eduhubClient";
 import type { NotificationResponse } from "@/api/eduhubTypes";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -72,6 +73,7 @@ function categoryPillClass(label: "Student" | "Teacher" | "System") {
 }
 
 export default function AdminNotificationsPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const queryKey = ["notifications"];
@@ -124,7 +126,7 @@ export default function AdminNotificationsPage() {
 
     const matchesFilter = (n: NotificationResponse) => {
       if (filter === "all") return true;
-      return categoryLabel(n.kind) === (filter === "student" ? "Student" : "Teacher");
+      return categoryLabel(n.kind) === (filter === "student" ? t("admin.shared.student") : "Teacher");
     };
 
     return notifications.filter((n) => matchesFilter(n) && matchesText(n));
@@ -135,8 +137,8 @@ export default function AdminNotificationsPage() {
       <div className="container mx-auto px-6 max-w-4xl">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Notifications</h1>
-            <p className="text-sm text-slate-600 mt-1">Admin activity alerts and updates.</p>
+            <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">{t("adminNav.notifications")}</h1>
+            <p className="text-sm text-slate-600 mt-1">{t("admin.notifications.description")}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
                 {unreadCount} unread
@@ -163,17 +165,17 @@ export default function AdminNotificationsPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search notifications…"
+              placeholder={t("admin.notifications.searchPlaceholder")}
               className="bg-white w-full sm:flex-1"
             />
             <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
               <SelectTrigger className="bg-white w-full sm:w-[140px]">
-                <SelectValue placeholder="Filter" />
+                <SelectValue placeholder={t("admin.notifications.filterPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
-                <SelectItem value="student">Students</SelectItem>
-                <SelectItem value="teacher">Teachers</SelectItem>
+                <SelectItem value="student">{t("admin.dashboard.stats.students")}</SelectItem>
+                <SelectItem value="teacher">{t("admin.notifications.filterTeachers")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -198,7 +200,7 @@ export default function AdminNotificationsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center text-sm text-slate-600">
-            {notifications.length === 0 ? "No notifications yet." : "No notifications match your search."}
+            {notifications.length === 0 ? t("admin.notifications.empty.none") : t("admin.notifications.empty.noMatch")}
           </div>
         ) : (
           <div className="space-y-3">
@@ -220,7 +222,7 @@ export default function AdminNotificationsPage() {
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="font-semibold text-slate-900 truncate">{n.title}</p>
                             {!n.read ? (
-                              <span className="inline-flex h-2 w-2 rounded-full bg-[#3954d0]" aria-label="Unread" />
+                              <span className="inline-flex h-2 w-2 rounded-full bg-[#3954d0]" aria-label={t("admin.notifications.ariaUnread")} />
                             ) : null}
                           </div>
                           <div className="mt-1 flex flex-wrap items-center gap-2">

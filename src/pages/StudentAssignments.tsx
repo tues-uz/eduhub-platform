@@ -1,12 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { FileText, Calendar, Loader2, AlertCircle, CheckCircle } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { eduhubAssignments, eduhubEnrollments, type AssignmentResponse, type SubmissionResponse } from "@/api/eduhubClient";
-
-const formatDate = (dateString?: string) => {
-  if (!dateString) return "No due date";
-  return new Date(dateString).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-};
 
 const getDaysUntilDue = (dateString?: string) => {
   if (!dateString) return undefined;
@@ -19,19 +15,30 @@ interface EnrichedAssignment extends AssignmentResponse {
 }
 
 const StudentAssignments = () => {
+  const { t } = useTranslation();
   const [enrichments, setEnrichments] = useState<EnrichedAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return t("assignments.noDueDate");
+    return new Date(dateString).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  };
+
+  const priorityLabel = (priority: string) => {
+    if (priority === "HIGH") return t("assignments.priorityHigh");
+    if (priority === "MEDIUM") return t("assignments.priorityMedium");
+    if (priority === "LOW") return t("assignments.priorityLow");
+    return priority;
+  };
 
   const fetchAssignments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      // 1. Get enrolled courses
       const enrollments = await eduhubEnrollments.getMy();
       const courseIds = Array.from(new Set(enrollments.map(e => e.course.id)));
 
-      // 2. Fetch assignments for all enrolled courses in parallel
       const courseAssignmentResults = await Promise.all(
         courseIds.map(async (cid) => {
           try {
@@ -45,7 +52,6 @@ const StudentAssignments = () => {
       );
       const allAssignments: AssignmentResponse[] = courseAssignmentResults.flat();
 
-      // 3. Enrich with submission status
       const enriched: EnrichedAssignment[] = await Promise.all(
         allAssignments.map(async (a) => {
           try {
@@ -57,25 +63,23 @@ const StudentAssignments = () => {
         })
       );
 
-      // Sort: Pending/Urgent first, then Submitted
       enriched.sort((a, b) => {
-        // If one is submitted and other isn't, put submitted last
         if (a.submission && !b.submission) return 1;
         if (!a.submission && b.submission) return -1;
-        
-        // Otherwise sort by due date
+
         if (!a.dueDate) return 1;
         if (!b.dueDate) return -1;
         return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
       });
 
       setEnrichments(enriched);
-    } catch (err: any) {
-      setError(err.message || "Failed to load assignments");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t("assignments.loadFailed");
+      setError(message || t("assignments.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchAssignments();
@@ -87,28 +91,34 @@ const StudentAssignments = () => {
   return (
     <div className="container mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           <div className="mb-8">
-            <p className="text-foreground/70 text-sm">View and complete your class assignments.</p>
+            <p className="text-foreground/70 text-sm">{t("assignments.subtitle")}</p>
             <div className="mt-4 flex flex-wrap gap-3 text-sm">
-              <span className="rounded-full bg-amber-50 px-4 py-2 text-amber-700 font-medium">{activeCount} pending</span>
-              <span className="rounded-full bg-green-50 px-4 py-2 text-green-700 font-medium">{completedCount} completed</span>
+              <span className="rounded-full bg-amber-50 px-4 py-2 text-amber-700 font-medium">
+                {t("assignments.pending", { count: activeCount })}
+              </span>
+              <span className="rounded-full bg-green-50 px-4 py-2 text-green-700 font-medium">
+                {t("assignments.completed", { count: completedCount })}
+              </span>
             </div>
           </div>
 
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-foreground/40">
               <Loader2 className="h-8 w-8 animate-spin mb-4" />
-              <p>Loading your assignments...</p>
+              <p>{t("assignments.loading")}</p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-20 text-red-500">
               <AlertCircle className="h-8 w-8 mb-4" />
               <p>{error}</p>
-              <Button variant="outline" className="mt-4 rounded-full" onClick={fetchAssignments}>Retry</Button>
+              <Button variant="outline" className="mt-4 rounded-full" onClick={fetchAssignments}>
+                {t("common.retry")}
+              </Button>
             </div>
           ) : enrichments.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-200 p-20 text-center">
               <FileText className="mx-auto h-12 w-12 text-foreground/20 mb-4" />
-              <p className="text-foreground/40 font-medium">No assignments found in your enrolled classes.</p>
+              <p className="text-foreground/40 font-medium">{t("assignments.empty")}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -116,17 +126,17 @@ const StudentAssignments = () => {
                 const days = getDaysUntilDue(a.dueDate);
                 const isUrgent = !a.submission && days !== undefined && days <= 3 && days >= 0;
                 const isOverdue = !a.submission && days !== undefined && days < 0;
-                
+
                 return (
                   <div
                     key={a.id}
                     className={`rounded-xl border p-6 transition-shadow hover:shadow-md ${
-                      a.submission 
-                        ? "border-gray-100 bg-gray-50/50 opacity-80" 
-                        : isOverdue 
-                          ? "border-red-200 bg-red-50/20" 
-                          : isUrgent 
-                            ? "border-red-200 bg-red-50/30" 
+                      a.submission
+                        ? "border-gray-100 bg-gray-50/50 opacity-80"
+                        : isOverdue
+                          ? "border-red-200 bg-red-50/20"
+                          : isUrgent
+                            ? "border-red-200 bg-red-50/30"
                             : "border-gray-200/50 bg-white/80"
                     }`}
                   >
@@ -142,17 +152,19 @@ const StudentAssignments = () => {
                             </h3>
                             {a.submission && (
                               <span className="bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded">
-                                {a.submission.status === "GRADED" ? "Graded" : "Submitted"}
+                                {a.submission.status === "GRADED" ? t("assignments.graded") : t("assignments.submitted")}
                               </span>
                             )}
                           </div>
                           <p className="text-sm text-foreground/60 mt-0.5">{a.course.title}</p>
                           <div className="mt-2 flex items-center gap-2 text-sm text-foreground/60">
                             <Calendar className="h-4 w-4" />
-                            {a.submission ? `Submitted ${formatDate(a.submission.submittedAt)}` : `Due ${formatDate(a.dueDate)}`}
+                            {a.submission
+                              ? t("assignments.submittedAt", { date: formatDate(a.submission.submittedAt) })
+                              : t("assignments.due", { date: formatDate(a.dueDate) })}
                             {!a.submission && days !== undefined && (
                               <span className={isUrgent || isOverdue ? "text-red-600 font-medium" : "text-foreground/70"}>
-                                ({isOverdue ? "Overdue" : `${days} ${days === 1 ? "day" : "days"} left`})
+                                ({isOverdue ? t("assignments.overdue") : t("assignments.daysLeft", { count: days })})
                               </span>
                             )}
                           </div>
@@ -164,20 +176,20 @@ const StudentAssignments = () => {
                             a.priority === "HIGH" ? "bg-red-100 text-red-700" : a.priority === "MEDIUM" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-700"
                           }`}
                         >
-                          {a.priority}
+                          {priorityLabel(a.priority)}
                         </span>
                         {a.submission ? (
                           <Button size="sm" variant="outline" className="rounded-full border-green-200 text-green-700 hover:bg-green-50">
-                            View Submission
+                            {t("assignments.viewSubmission")}
                           </Button>
                         ) : (
-                          <Button 
-                            size="sm" 
-                            className="rounded-full" 
+                          <Button
+                            size="sm"
+                            className="rounded-full"
                             style={{ backgroundColor: "#3954d0" }}
                             disabled={isOverdue}
                           >
-                            {isOverdue ? "Closed" : "Start"}
+                            {isOverdue ? t("assignments.closed") : t("assignments.start")}
                           </Button>
                         )}
                       </div>

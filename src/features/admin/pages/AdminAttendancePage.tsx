@@ -7,6 +7,7 @@ import { mockAdminAttendance, type AdminAttendanceRow } from "@/features/admin/d
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -32,21 +33,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-function sessionStatusBadge(status: AdminAttendanceRow["sessionLog"][0]["status"]) {
+function sessionStatusBadge(
+  status: AdminAttendanceRow["sessionLog"][0]["status"],
+  t: (key: string) => string,
+) {
   switch (status) {
     case "present":
-      return <Badge className="bg-emerald-600 font-normal">Present</Badge>;
+      return <Badge className="bg-emerald-600 font-normal">{t("admin.attendance.sessionStatus.present")}</Badge>;
     case "late":
-      return <Badge variant="secondary" className="font-normal">Late</Badge>;
+      return <Badge variant="secondary" className="font-normal">{t("admin.attendance.sessionStatus.late")}</Badge>;
     case "excused":
-      return <Badge variant="outline" className="font-normal">Excused</Badge>;
+      return <Badge variant="outline" className="font-normal">{t("admin.attendance.sessionStatus.excused")}</Badge>;
     case "absent":
     default:
-      return <Badge variant="destructive" className="font-normal">Absent</Badge>;
+      return <Badge variant="destructive" className="font-normal">{t("admin.attendance.sessionStatus.absent")}</Badge>;
   }
 }
 
 export default function AdminAttendancePage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [riskFilter, setRiskFilter] = useState<string>("all");
   const [lecturerFilter, setLecturerFilter] = useState<string>("all");
@@ -77,17 +82,17 @@ export default function AdminAttendancePage() {
       <div className="container mx-auto px-6">
         <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Attendance & progress"
-          description="Monitor partial attendance and completion. Use filters for at-risk learners once the API exposes thresholds."
+          title={t("adminNav.attendanceProgress")}
+          description={t("admin.attendance.description")}
         />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search student, class, lecturer…"
+            placeholder={t("admin.shared.searchStudentClassLecturer")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
@@ -97,9 +102,9 @@ export default function AdminAttendancePage() {
               <SelectValue placeholder="Risk" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All risk levels</SelectItem>
-              <SelectItem value="at_risk">At risk only</SelectItem>
-              <SelectItem value="on_track">On track only</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allRiskLevels")}</SelectItem>
+              <SelectItem value="at_risk">{t("admin.attendance.atRiskOnly")}</SelectItem>
+              <SelectItem value="on_track">{t("admin.attendance.onTrackOnly")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={lecturerFilter} onValueChange={setLecturerFilter}>
@@ -107,7 +112,7 @@ export default function AdminAttendancePage() {
               <SelectValue placeholder="Lecturer" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All lecturers</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allLecturers")}</SelectItem>
               {lecturerOptions.map((name) => (
                 <SelectItem key={name} value={name}>
                   {name}
@@ -136,13 +141,13 @@ export default function AdminAttendancePage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50">
-                <TableHead>Student</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Lecturer</TableHead>
-                <TableHead>Attendance</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>Risk</TableHead>
-                <TableHead className="text-right w-[140px]">Details</TableHead>
+                <TableHead>{t("admin.shared.student")}</TableHead>
+                <TableHead>{t("admin.shared.class")}</TableHead>
+                <TableHead>{t("admin.shared.lecturer")}</TableHead>
+                <TableHead>{t("admin.attendance.table.attendance")}</TableHead>
+                <TableHead>{t("admin.attendance.table.progress")}</TableHead>
+                <TableHead>{t("admin.attendance.riskPlaceholder")}</TableHead>
+                <TableHead className="text-right w-[140px]">{t("admin.shared.details")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -168,7 +173,7 @@ export default function AdminAttendancePage() {
                   </TableCell>
                   <TableCell>
                     {a.atRisk ? (
-                      <Badge variant="destructive">At risk</Badge>
+                      <Badge variant="destructive">{t("admin.attendance.atRisk")}</Badge>
                     ) : (
                       <Badge variant="outline" className="text-emerald-700 border-emerald-200">
                         On track
@@ -192,7 +197,7 @@ export default function AdminAttendancePage() {
             {detailRow ? (
               <>
                 <DialogHeader>
-                  <DialogTitle>Attendance details</DialogTitle>
+                  <DialogTitle>{t("admin.attendance.detailDialog.title")}</DialogTitle>
                   <DialogDescription>
                     {detailRow.studentName} · {detailRow.course}
                   </DialogDescription>
@@ -201,15 +206,15 @@ export default function AdminAttendancePage() {
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                      <p className="text-xs text-slate-500 uppercase tracking-wide">Class</p>
+                      <p className="text-xs text-slate-500 uppercase tracking-wide">{t("admin.shared.class")}</p>
                       <p className="font-medium text-slate-900">{detailRow.className}</p>
                     </div>
                     <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                      <p className="text-xs text-slate-500 uppercase tracking-wide">Lecturer</p>
+                      <p className="text-xs text-slate-500 uppercase tracking-wide">{t("admin.shared.lecturer")}</p>
                       <p className="font-medium text-slate-900">{detailRow.lecturerName}</p>
                     </div>
                     <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                      <p className="text-xs text-slate-500 uppercase tracking-wide">Sessions</p>
+                      <p className="text-xs text-slate-500 uppercase tracking-wide">{t("admin.attendance.detailDialog.sessions")}</p>
                       <p className="font-medium text-slate-900">
                         {detailRow.sessionsPresent} / {detailRow.sessionsTotal} attended
                       </p>
@@ -217,18 +222,18 @@ export default function AdminAttendancePage() {
                   </div>
 
                   <div>
-                    <p className="text-xs text-slate-500 mb-2">Overall</p>
+                    <p className="text-xs text-slate-500 mb-2">{t("admin.attendance.detailDialog.overall")}</p>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <div className="flex justify-between text-xs text-slate-600 mb-1">
-                          <span>Attendance</span>
+                          <span>{t("admin.attendance.table.attendance")}</span>
                           <span>{detailRow.attendancePct}%</span>
                         </div>
                         <Progress value={detailRow.attendancePct} className="h-2" />
                       </div>
                       <div>
                         <div className="flex justify-between text-xs text-slate-600 mb-1">
-                          <span>Class progress</span>
+                          <span>{t("admin.attendance.detailDialog.classProgress")}</span>
                           <span>{detailRow.progressPct}%</span>
                         </div>
                         <Progress value={detailRow.progressPct} className="h-2" />
@@ -237,21 +242,21 @@ export default function AdminAttendancePage() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-600">Last recorded activity</span>
+                    <span className="text-slate-600">{t("admin.attendance.detailDialog.lastActivity")}</span>
                     <span className="font-medium text-slate-900">{detailRow.lastActivity}</span>
                   </div>
 
                   <Separator />
 
                   <div>
-                    <p className="text-sm font-medium text-slate-900 mb-2">Recent sessions</p>
+                    <p className="text-sm font-medium text-slate-900 mb-2">{t("admin.attendance.detailDialog.recentSessions")}</p>
                     <div className="rounded-md border border-slate-200 overflow-hidden">
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-slate-50">
-                            <TableHead className="w-[110px]">Date</TableHead>
-                            <TableHead>Session</TableHead>
-                            <TableHead className="text-right w-[100px]">Status</TableHead>
+                            <TableHead className="w-[110px]">{t("admin.shared.date")}</TableHead>
+                            <TableHead>{t("admin.attendance.detailDialog.session")}</TableHead>
+                            <TableHead className="text-right w-[100px]">{t("common.status")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -259,7 +264,7 @@ export default function AdminAttendancePage() {
                             <TableRow key={`${detailRow.id}-${s.date}-${i}`}>
                               <TableCell className="text-slate-600 whitespace-nowrap">{s.date}</TableCell>
                               <TableCell>{s.label}</TableCell>
-                              <TableCell className="text-right">{sessionStatusBadge(s.status)}</TableCell>
+                              <TableCell className="text-right">{sessionStatusBadge(s.status, t)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>

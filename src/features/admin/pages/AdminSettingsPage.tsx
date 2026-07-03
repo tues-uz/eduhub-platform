@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "@/lib/icons";
 import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
@@ -12,15 +13,17 @@ import {
 } from "@/features/settings/LanguageSettingsSection";
 
 export default function AdminSettingsPage() {
+  const { t } = useTranslation();
+
   return (
     <AdminLayout>
       <div className="container mx-auto px-6 max-w-lg">
         <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
-        <AdminPageHeader title="Settings" description="Platform toggles (demo). Persist via admin settings API later." />
+        <AdminPageHeader title={t("common.settings")} description={t("admin.settings.description")} />
 
         <div className="space-y-6">
           <LanguageSettingsSection
@@ -32,18 +35,18 @@ export default function AdminSettingsPage() {
             <div className="p-4 flex items-center justify-between gap-4">
               <div>
                 <Label htmlFor="notify" className="text-base">
-                  Email admins on new registration
+                  {t("admin.settings.emailAdminsOnRegistration")}
                 </Label>
-                <p className="text-xs text-slate-500 mt-0.5">Sends to operations inbox.</p>
+                <p className="text-xs text-slate-500 mt-0.5">{t("admin.settings.emailAdminsHint")}</p>
               </div>
               <Switch id="notify" defaultChecked />
             </div>
             <div className="p-4 flex items-center justify-between gap-4">
               <div>
                 <Label htmlFor="strict" className="text-base">
-                  Block LMS access when payment overdue
+                  {t("admin.settings.blockLmsWhenOverdue")}
                 </Label>
-                <p className="text-xs text-slate-500 mt-0.5">Enforced server-side; this mirrors policy.</p>
+                <p className="text-xs text-slate-500 mt-0.5">{t("admin.settings.blockLmsHint")}</p>
               </div>
               <Switch id="strict" />
             </div>
@@ -55,10 +58,10 @@ export default function AdminSettingsPage() {
           type="button"
           onClick={() => {
             persistUiLanguagePreference();
-            toast.success("Settings saved (demo)");
+            toast.success(t("admin.settings.savedDemo"));
           }}
         >
-          Save changes
+          {t("admin.settings.saveChanges")}
         </Button>
       </div>
     </AdminLayout>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
 import { AlertCircle, ArrowLeft, Loader2 } from "@/lib/icons";
 import { toast } from "sonner";
@@ -100,6 +101,7 @@ function AttendanceJoinShell({
 }
 
 export default function StudentAttendanceJoin() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") ?? "";
   const { user } = useAuthSession();
@@ -146,12 +148,12 @@ export default function StudentAttendanceJoin() {
         }
       })
       .catch((e) => {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Could not load attendance session.");
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : t("attendance.loadSessionFailed"));
       });
     return () => {
       cancelled = true;
     };
-  }, [hasToken, token, validParams]);
+  }, [hasToken, t, token, validParams]);
 
   useEffect(() => {
     if (!validParams || !hasToken || !info || user.role !== "student") {
@@ -223,14 +225,17 @@ export default function StudentAttendanceJoin() {
         if (cancelled) return;
         setConfirmed(true);
         setAlreadyRecorded(res.alreadyRecorded);
-        toast.success(res.alreadyRecorded ? "Attendance already recorded" : "Attendance check-in recorded", {
-          description: "Your instructor can now see this check-in in the class attendance roster.",
-        });
+        toast.success(
+          res.alreadyRecorded ? t("attendance.toastAlreadyRecorded") : t("attendance.toastRecorded"),
+          {
+            description: t("attendance.toastRecordedHint"),
+          },
+        );
       })
       .catch((e) => {
         if (!cancelled) {
           checkInStartedRef.current = false;
-          setLoadError(e instanceof Error ? e.message : "Could not record attendance check-in.");
+          setLoadError(e instanceof Error ? e.message : t("attendance.recordFailed"));
         }
       })
       .finally(() => {
@@ -239,58 +244,58 @@ export default function StudentAttendanceJoin() {
     return () => {
       cancelled = true;
     };
-  }, [confirmed, hasToken, loadError, processing, token, tuitionBlock, tuitionCheckDone, user.role, validParams]);
+  }, [confirmed, hasToken, loadError, processing, t, token, tuitionBlock, tuitionCheckDone, user.role, validParams]);
 
   return (
     <div className="mx-auto w-full max-w-md px-2 sm:px-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         {!validParams ? (
           <AttendanceJoinShell
             tone="fun"
-            eyebrow="Attendance check-in"
-            title="Invalid check-in link"
-            description="This QR code is missing session information. Scan the code shown in class, or ask your instructor to display it again."
+            eyebrow={t("attendance.eyebrowCheckIn")}
+            title={t("attendance.invalidLinkTitle")}
+            description={t("attendance.invalidLinkDescription")}
           >
             <Button asChild className="h-11 w-full rounded-full text-white hover:bg-[#2f47b3]" style={{ backgroundColor: "#3954d0" }}>
               <Link to="/dashboard">
                 <ArrowLeft className="h-4 w-4" aria-hidden />
-                Back to dashboard
+                {t("attendance.backToDashboard")}
               </Link>
             </Button>
           </AttendanceJoinShell>
         ) : !hasToken ? (
           <AttendanceJoinShell
             tone="default"
-            eyebrow="Almost there"
-            title="Sign in to check in"
-            description="Use your student account so we can match this scan to you and record attendance for class."
+            eyebrow={t("attendance.almostThere")}
+            title={t("attendance.signInTitle")}
+            description={t("attendance.signInDescription")}
           >
             <Button asChild className="h-11 w-full rounded-full text-white hover:bg-[#2f47b3]" style={{ backgroundColor: "#3954d0" }}>
-              <Link to={signInLink}>Sign in & check in</Link>
+              <Link to={signInLink}>{t("attendance.signInAndCheckIn")}</Link>
             </Button>
             <Button asChild variant="ghost" className="h-11 w-full rounded-full text-zinc-600">
-              <Link to="/dashboard">Maybe later</Link>
+              <Link to="/dashboard">{t("attendance.maybeLater")}</Link>
             </Button>
           </AttendanceJoinShell>
         ) : user.role === "student" ? (
           <AttendanceJoinShell
             tone={confirmed ? "success" : checkInExpired || loadError ? "warning" : "default"}
-            eyebrow={confirmed ? "You're in!" : "Class check-in"}
+            eyebrow={confirmed ? t("attendance.youreIn") : t("attendance.classCheckIn")}
             title={
               confirmed
                 ? alreadyRecorded
-                  ? "Already checked in"
-                  : "Check-in complete!"
+                  ? t("attendance.alreadyCheckedIn")
+                  : t("attendance.checkInComplete")
                 : tuitionBlock
-                  ? "Tuition required"
+                  ? t("attendance.tuitionRequired")
                 : loadError
-                  ? "Something went wrong"
+                  ? t("attendance.somethingWrong")
                   : checkInExpired
-                    ? "Check-in closed"
+                    ? t("attendance.checkInClosed")
                     : processing
-                      ? "Recording you..."
+                      ? t("attendance.recording")
                       : !tuitionCheckDone
-                        ? "Checking access..."
-                        : "Getting ready..."
+                        ? t("attendance.checkingAccess")
+                        : t("attendance.gettingReady")
             }
             description={
               info ? (
@@ -299,9 +304,9 @@ export default function StudentAttendanceJoin() {
                   <span>{info.meetingName}</span>
                 </span>
               ) : loadError ? (
-                "We couldn't load this session."
+                t("attendance.couldNotLoadSession")
               ) : (
-                "Hang tight while we load your class session."
+                t("attendance.loadingSession")
               )
             }
           >
@@ -312,7 +317,7 @@ export default function StudentAttendanceJoin() {
                   <span>{tuitionBlock}</span>
                 </div>
                 <Button asChild className="h-11 w-full rounded-full text-white hover:bg-[#2f47b3]" style={{ backgroundColor: "#3954d0" }}>
-                  <Link to={tuitionPayHref}>Pay this schedule month</Link>
+                  <Link to={tuitionPayHref}>{t("attendance.payScheduleMonth")}</Link>
                 </Button>
               </div>
             ) : loadError ? (
@@ -322,51 +327,42 @@ export default function StudentAttendanceJoin() {
               </div>
             ) : checkInExpired && !confirmed ? (
               <div className="rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950">
-                Check-in is closed{info?.endsAt ? ` since ${formatTime(info.endsAt)}` : ""}. Ask your instructor
-                for a new QR if the session is still running.
+                {t("attendance.checkInClosedSince", {
+                  since: info?.endsAt ? t("attendance.since", { time: formatTime(info.endsAt) }) : "",
+                })}
               </div>
             ) : confirmed ? (
               <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-4 text-center">
                 <p className="text-sm font-medium text-emerald-900">
-                  {alreadyRecorded
-                    ? "You're already on the roster for this session."
-                    : "Nice — your attendance is saved on the class roster."}
+                  {alreadyRecorded ? t("attendance.alreadyOnRoster") : t("attendance.attendanceSaved")}
                 </p>
               </div>
             ) : (
               <div className="flex items-center justify-center gap-2 rounded-2xl bg-zinc-50 px-4 py-4 text-sm text-zinc-600">
                 <Loader2 className="h-4 w-4 animate-spin text-[#3954d0]" aria-hidden />
                 {processing
-                  ? "Saving your check-in..."
+                  ? t("attendance.savingCheckIn")
                   : !tuitionCheckDone
-                    ? "Checking tuition for this session..."
-                    : "One moment..."}
+                    ? t("attendance.checkingTuition")
+                    : t("attendance.oneMoment")}
               </div>
             )}
             <Button asChild variant="outline" className="h-11 w-full rounded-full border-zinc-200">
-              <Link to="/dashboard">Back to dashboard</Link>
+              <Link to="/dashboard">{t("attendance.backToDashboard")}</Link>
             </Button>
           </AttendanceJoinShell>
         ) : (
           <AttendanceJoinShell
             tone="default"
-            eyebrow="Student check-in"
-            title="This QR is for students"
-            description={
-              <>
-                Sign in with a student account to complete check-in, or open the teacher{" "}
-                <Link to="/dashboard/teacher/attendance" className="font-semibold text-[#3954d0] underline-offset-2 hover:underline">
-                  Attendance QR
-                </Link>{" "}
-                tool to generate a new code.
-              </>
-            }
+            eyebrow={t("attendance.studentCheckIn")}
+            title={t("attendance.qrForStudentsTitle")}
+            description={t("attendance.qrForStudentsDescription")}
           >
             <Button asChild className="h-11 w-full rounded-full text-white hover:bg-[#2f47b3]" style={{ backgroundColor: "#3954d0" }}>
-              <Link to={signInLink}>Sign in as student</Link>
+              <Link to={signInLink}>{t("attendance.signInAsStudent")}</Link>
             </Button>
             <Button asChild variant="outline" className="h-11 w-full rounded-full">
-              <Link to="/dashboard/teacher/attendance">Teacher QR tool</Link>
+              <Link to="/dashboard/teacher/attendance">{t("attendance.teacherQrTool")}</Link>
             </Button>
           </AttendanceJoinShell>
         )}

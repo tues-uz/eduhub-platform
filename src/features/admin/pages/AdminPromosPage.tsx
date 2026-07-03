@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -65,6 +66,7 @@ const EMPTY_FORM: StudentPromoInput = {
 };
 
 export default function AdminPromosPage() {
+  const { t } = useTranslation();
   const promos = useStudentPromos();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<StudentPromoInput>(EMPTY_FORM);
@@ -99,17 +101,17 @@ export default function AdminPromosPage() {
 
   const savePromo = () => {
     if (!form.title.trim()) {
-      toast.error("Title is required");
+      toast.error(t("admin.promos.toast.titleRequired"));
       return;
     }
     upsertStudentPromo(form);
-    toast.success(form.id ? "Promotion updated" : "Promotion published");
+    toast.success(form.id ? t("admin.promos.toast.updated") : "Promotion published");
     setDialogOpen(false);
   };
 
   const toggleActive = (promo: StudentPromo) => {
     upsertStudentPromo({ ...promo, active: !promo.active });
-    toast.success(promo.active ? "Promotion hidden from students" : "Promotion is live");
+    toast.success(promo.active ? t("admin.promos.toast.hidden") : "Promotion is live");
   };
 
   return (
@@ -120,12 +122,12 @@ export default function AdminPromosPage() {
           className="mb-6 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Student promos"
-          description="Create carousel banners for student pages. Stored in this browser until a promos API exists."
+          title={t("adminNav.studentPromos")}
+          description={t("admin.promos.description")}
           actions={
             <>
               <Button type="button" variant="outline" onClick={() => resetStudentPromosToDefaults()}>
@@ -143,11 +145,11 @@ export default function AdminPromosPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Placement</TableHead>
-                <TableHead>Order</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("admin.shared.title")}</TableHead>
+                <TableHead>{t("admin.promos.table.placement")}</TableHead>
+                <TableHead>{t("admin.promos.table.order")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead className="text-right">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -178,7 +180,7 @@ export default function AdminPromosPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Switch checked={promo.active} onCheckedChange={() => toggleActive(promo)} />
-                        <span className="text-sm text-slate-600">{promo.active ? "Live" : "Hidden"}</span>
+                        <span className="text-sm text-slate-600">{promo.active ? t("admin.promos.live") : t("admin.promos.hidden")}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
@@ -194,7 +196,7 @@ export default function AdminPromosPage() {
                           className="text-red-600 hover:text-red-700"
                           onClick={() => {
                             deleteStudentPromo(promo.id);
-                            toast.success("Promotion deleted");
+                            toast.success(t("admin.promos.toast.deleted"));
                           }}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -211,7 +213,7 @@ export default function AdminPromosPage() {
         <div className="mt-6 flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
           <Megaphone className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" aria-hidden />
           <p>
-            Students see active promos in a carousel at the top of <strong>My Class</strong>. Use sort order to
+            Students see active promos in a carousel at the top of <strong>{t("admin.promos.placements.myClass")}</strong>. Use sort order to
             control slide sequence. Optional start/end dates hide promos outside the window.
           </p>
         </div>
@@ -220,32 +222,32 @@ export default function AdminPromosPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{form.id ? "Edit promotion" : "New promotion"}</DialogTitle>
+            <DialogTitle>{form.id ? t("admin.promos.dialog.editTitle") : t("admin.promos.dialog.newTitle")}</DialogTitle>
           </DialogHeader>
 
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
-              <Label htmlFor="promo-title">Title</Label>
+              <Label htmlFor="promo-title">{t("admin.shared.title")}</Label>
               <Input
                 id="promo-title"
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                placeholder="Summer enrollment is open"
+                placeholder={t("admin.promos.dialog.titlePlaceholder")}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="promo-body">Message</Label>
+              <Label htmlFor="promo-body">{t("admin.promos.dialog.messageLabel")}</Label>
               <Textarea
                 id="promo-body"
                 value={form.body}
                 onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
                 rows={3}
-                placeholder="Short promo copy shown on the banner"
+                placeholder={t("admin.promos.dialog.messagePlaceholder")}
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label htmlFor="promo-cta-label">Button label</Label>
+                <Label htmlFor="promo-cta-label">{t("admin.promos.dialog.buttonLabel")}</Label>
                 <Input
                   id="promo-cta-label"
                   value={form.ctaLabel}
@@ -253,27 +255,27 @@ export default function AdminPromosPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="promo-cta-url">Button link</Label>
+                <Label htmlFor="promo-cta-url">{t("admin.promos.dialog.buttonLink")}</Label>
                 <Input
                   id="promo-cta-url"
                   value={form.ctaUrl}
                   onChange={(e) => setForm((f) => ({ ...f, ctaUrl: e.target.value }))}
-                  placeholder="/eduhub or https://..."
+                  placeholder={t("admin.promos.dialog.buttonLinkPlaceholder")}
                 />
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="promo-image">Image URL (optional)</Label>
+              <Label htmlFor="promo-image">{t("admin.promos.dialog.imageUrl")}</Label>
               <Input
                 id="promo-image"
                 value={form.imageUrl}
                 onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
-                placeholder="https://..."
+                placeholder={t("admin.promos.dialog.imagePlaceholder")}
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label>Accent color</Label>
+                <Label>{t("admin.promos.dialog.accentColor")}</Label>
                 <Select
                   value={form.accentColor}
                   onValueChange={(value) => setForm((f) => ({ ...f, accentColor: value }))}
@@ -291,7 +293,7 @@ export default function AdminPromosPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label>Show on</Label>
+                <Label>{t("admin.promos.dialog.showOn")}</Label>
                 <Select
                   value={form.placement}
                   onValueChange={(value: StudentPromoPlacement) =>
@@ -313,7 +315,7 @@ export default function AdminPromosPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="grid gap-2">
-                <Label htmlFor="promo-order">Sort order</Label>
+                <Label htmlFor="promo-order">{t("admin.promos.dialog.sortOrder")}</Label>
                 <Input
                   id="promo-order"
                   type="number"
@@ -324,7 +326,7 @@ export default function AdminPromosPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="promo-starts">Starts (optional)</Label>
+                <Label htmlFor="promo-starts">{t("admin.promos.dialog.startsOptional")}</Label>
                 <Input
                   id="promo-starts"
                   type="date"
@@ -335,7 +337,7 @@ export default function AdminPromosPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="promo-ends">Ends (optional)</Label>
+                <Label htmlFor="promo-ends">{t("admin.promos.dialog.endsOptional")}</Label>
                 <Input
                   id="promo-ends"
                   type="date"
@@ -348,8 +350,8 @@ export default function AdminPromosPage() {
             </div>
             <div className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
               <div>
-                <Label htmlFor="promo-active">Live for students</Label>
-                <p className="text-xs text-slate-500">Hidden promos stay saved but do not appear in the carousel.</p>
+                <Label htmlFor="promo-active">{t("admin.promos.dialog.liveForStudents")}</Label>
+                <p className="text-xs text-slate-500">{t("admin.promos.dialog.liveHint")}</p>
               </div>
               <Switch
                 id="promo-active"
@@ -364,7 +366,7 @@ export default function AdminPromosPage() {
               Cancel
             </Button>
             <Button type="button" className="bg-slate-900 hover:bg-slate-800" onClick={savePromo}>
-              {form.id ? "Save changes" : "Publish promo"}
+              {form.id ? t("admin.settings.saveChanges") : t("admin.promos.dialog.publishPromo")}
             </Button>
           </DialogFooter>
         </DialogContent>

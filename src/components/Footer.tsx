@@ -1,139 +1,166 @@
 import { Facebook, Twitter, Instagram, Linkedin, Youtube, Mail, Phone, MapPin, ArrowRight } from "@/lib/icons";
 import { useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
-const footerLinks = {
-  academics: {
-    title: "Other",
-    links: ["About", "Contact", "FAQ", "Terms & Conditions", "Privacy Policy"],
-  },
-  admissions: {
-    title: "Information",
-    links: ["Payment Method", "EduHub Team", "International Students", "Open Days", "Contact Us"],
-  },
-  connect: {
-    title: "Connect",
-    links: ["Alumni", "Giving", "Jobs", "Press Office", "Conference & Events"],
-  },
-};
+type FooterLinkKey =
+  | "about"
+  | "contact"
+  | "faq"
+  | "termsConditions"
+  | "privacyPolicy"
+  | "paymentMethod"
+  | "eduhubTeam"
+  | "internationalStudents"
+  | "openDays"
+  | "contactUs"
+  | "alumni"
+  | "giving"
+  | "jobs"
+  | "pressOffice"
+  | "conferenceEvents";
 
-const socialLinks = [
-  { icon: Facebook, href: "#", label: "Facebook" },
-  { icon: Twitter, href: "#", label: "Twitter" },
-  { icon: Instagram, href: "#", label: "Instagram" },
-  { icon: Linkedin, href: "#", label: "LinkedIn" },
-  { icon: Youtube, href: "#", label: "YouTube" },
+type FooterSectionKey = "other" | "information" | "connect";
+
+const FOOTER_SECTIONS: { key: FooterSectionKey; links: FooterLinkKey[] }[] = [
+  {
+    key: "other",
+    links: ["about", "contact", "faq", "termsConditions", "privacyPolicy"],
+  },
+  {
+    key: "information",
+    links: ["paymentMethod", "eduhubTeam", "internationalStudents", "openDays", "contactUs"],
+  },
+  {
+    key: "connect",
+    links: ["alumni", "giving", "jobs", "pressOffice", "conferenceEvents"],
+  },
 ];
 
+const EDUHUB_HIDDEN_ADMISSIONS_LINKS: FooterLinkKey[] = ["internationalStudents", "openDays", "contactUs"];
+
+const SOCIAL_KEYS = ["facebook", "twitter", "instagram", "linkedin", "youtube"] as const;
+
 const Footer = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const isEduHubPage = location.pathname === "/eduhub" || location.pathname.startsWith("/eduhub/");
   const isJournalPage = location.pathname === "/journal" || location.pathname.startsWith("/journal/");
   const [email, setEmail] = useState("");
-  
+
+  const socialLinks = useMemo(
+    () =>
+      SOCIAL_KEYS.map((key) => ({
+        key,
+        icon: { facebook: Facebook, twitter: Twitter, instagram: Instagram, linkedin: Linkedin, youtube: Youtube }[key],
+        href: "#",
+        label: t(`public.footer.social.${key}`),
+      })),
+    [t],
+  );
+
+  const processedFooterSections = useMemo(() => {
+    let sections = isEduHubPage
+      ? FOOTER_SECTIONS.filter((section) => section.key !== "connect")
+      : FOOTER_SECTIONS;
+
+    if (isEduHubPage) {
+      sections = sections.map((section) =>
+        section.key === "information"
+          ? {
+              ...section,
+              links: section.links.filter((link) => !EDUHUB_HIDDEN_ADMISSIONS_LINKS.includes(link)),
+            }
+          : section,
+      );
+    }
+
+    return sections.map((section) => ({
+      ...section,
+      title: t(`public.footer.sections.${section.key}`),
+      links: section.links.map((link) => ({
+        key: link,
+        label: t(`public.footer.links.${link}`),
+      })),
+    }));
+  }, [isEduHubPage, t]);
+
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle subscription logic here
     console.log("Subscribe:", email);
     setEmail("");
   };
-  
-  // Filter out Connect section on EduHub page
-  const filteredFooterLinks = isEduHubPage 
-    ? Object.fromEntries(Object.entries(footerLinks).filter(([key]) => key !== "connect"))
-    : footerLinks;
-  
-  // Filter out specific links from Information section on EduHub page
-  const processedFooterLinks = isEduHubPage
-    ? Object.fromEntries(
-        Object.entries(filteredFooterLinks).map(([key, section]) => {
-          if (key === "admissions") {
-            return [
-              key,
-              {
-                ...section,
-                links: section.links.filter(
-                  (link) => !["International Students", "Open Days", "Contact Us"].includes(link)
-                ),
-              },
-            ];
-          }
-          return [key, section];
-        })
-      )
-    : filteredFooterLinks;
-  
-  // Journal page has different footer styling
+
   if (isJournalPage) {
     return (
       <footer className="bg-gray-100 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="grid md:grid-cols-4 gap-8">
-            {/* Brand */}
             <div className="md:col-span-1">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">TUES Journal</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Research, commentary, and analysis from economists, scholars, and policy thinkers.
-              </p>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">{t("public.footer.journal.brand")}</h3>
+              <p className="text-sm text-gray-600 leading-relaxed">{t("public.footer.journal.tagline")}</p>
             </div>
 
-            {/* Quick Links */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wide">Quick Links</h4>
+              <h4 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+                {t("public.footer.journal.quickLinks")}
+              </h4>
               <ul className="space-y-2">
                 <li>
                   <a href="/journal" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                    Home
+                    {t("public.footer.journal.home")}
                   </a>
                 </li>
                 <li>
                   <a href="/journal/articles" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                    Articles
+                    {t("public.footer.journal.articles")}
                   </a>
                 </li>
                 <li>
                   <a href="/journal/authors" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                    Authors
+                    {t("public.footer.journal.authors")}
                   </a>
                 </li>
                 <li>
                   <a href="/journal/topics" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                    Topics
+                    {t("public.footer.journal.topics")}
                   </a>
                 </li>
               </ul>
             </div>
 
-            {/* About */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wide">About</h4>
+              <h4 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+                {t("public.footer.journal.about")}
+              </h4>
               <ul className="space-y-2">
                 <li>
                   <a href="/journal/about" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                    About Us
+                    {t("public.footer.journal.aboutUs")}
                   </a>
                 </li>
                 <li>
                   <a href="#" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                    Editorial Team
+                    {t("public.footer.journal.editorialTeam")}
                   </a>
                 </li>
                 <li>
                   <a href="#" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                    Submission Guidelines
+                    {t("public.footer.journal.submissionGuidelines")}
                   </a>
                 </li>
                 <li>
                   <a href="#" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                    Contact
+                    {t("public.footer.journal.contact")}
                   </a>
                 </li>
               </ul>
             </div>
 
-            {/* Contact */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wide">Contact</h4>
+              <h4 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wide">
+                {t("public.footer.journal.contact")}
+              </h4>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
@@ -155,18 +182,15 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Bottom Bar */}
           <div className="border-t border-gray-300 mt-8 pt-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="text-sm text-gray-600">
-                © 2026 TUES Economics Journal. All rights reserved.
-              </div>
+              <div className="text-sm text-gray-600">{t("public.footer.journal.copyright")}</div>
               <div className="flex items-center gap-4">
                 <a href="#" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                  Privacy Policy
+                  {t("public.footer.links.privacyPolicy")}
                 </a>
                 <a href="#" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                  Terms of Use
+                  {t("public.footer.journal.termsOfUse")}
                 </a>
               </div>
             </div>
@@ -183,18 +207,12 @@ const Footer = () => {
   return (
     <footer className="w-full bg-white">
       <div className="container mx-auto px-6 py-8">
-        {/* Footer Banner - Framer style: dark rounded card */}
-        <div
-          className="rounded-[40px] p-8 lg:p-12"
-          style={{ backgroundColor: dark }}
-        >
-          {/* Footer Top - columns */}
+        <div className="rounded-[40px] p-8 lg:p-12" style={{ backgroundColor: dark }}>
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-8">
-            {/* Column 1 - Subscribe (EduHub only) */}
             {isEduHubPage && (
               <div className="lg:col-span-4">
                 <p className="text-sm font-medium mb-4" style={{ color: cream }}>
-                  Subscribe
+                  {t("public.footer.subscribe")}
                 </p>
                 <form onSubmit={handleSubscribe} className="space-y-3">
                   <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
@@ -202,7 +220,7 @@ const Footer = () => {
                       type="email"
                       required
                       name="Email"
-                      placeholder="Enter your email"
+                      placeholder={t("public.footer.emailPlaceholder")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="flex-1 min-w-0 rounded-full border px-4 py-3 text-sm placeholder:opacity-80 focus:outline-none focus:ring-2 focus:ring-white/30"
@@ -215,29 +233,28 @@ const Footer = () => {
                     <button
                       type="submit"
                       className="inline-flex items-center justify-center gap-2 rounded-full py-3 px-5 text-base font-medium shrink-0 hover:opacity-90 text-white transition-colors"
-                    style={{ backgroundColor: '#199eff' }}
+                      style={{ backgroundColor: "#199eff" }}
                     >
-                      Subscribe
+                      {t("public.footer.subscribeButton")}
                       <span className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: cream }}>
                         <ArrowRight className="h-4 w-4" style={{ color: dark }} />
                       </span>
                     </button>
                   </div>
                   <p className="text-xs leading-relaxed" style={{ color: creamMuted }}>
-                    By subscribing you agree to our{" "}
+                    {t("public.footer.subscribeConsent")}{" "}
                     <a href="#" className="underline hover:opacity-90" style={{ color: cream }}>
-                      Privacy Policy
+                      {t("public.footer.privacyPolicy")}
                     </a>{" "}
-                    and consent to receive updates from EduHub.
+                    {t("public.footer.subscribeConsentSuffix")}
                   </p>
                 </form>
               </div>
             )}
 
-            {/* Column 2 - Contact + Social (narrower so menu can widen) */}
             <div className={isEduHubPage ? "lg:col-span-3" : "lg:col-span-5"}>
               <p className="text-sm font-medium mb-4" style={{ color: cream }}>
-                Contact
+                {t("public.footer.contact")}
               </p>
               <ul className="space-y-2 text-sm mb-6" style={{ color: creamMuted }}>
                 <li className="flex items-start gap-2">
@@ -270,7 +287,7 @@ const Footer = () => {
                   const Icon = social.icon;
                   return (
                     <a
-                      key={social.label}
+                      key={social.key}
                       href={social.href}
                       aria-label={social.label}
                       className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-opacity"
@@ -283,20 +300,19 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* Column 3 - Menu Links (wider grid for single-line labels) */}
             <div className={isEduHubPage ? "lg:col-span-5" : "lg:col-span-7"}>
               <p className="text-sm font-medium mb-4" style={{ color: cream }}>
-                Menu Links
+                {t("public.footer.menuLinks")}
               </p>
               <ul className="grid grid-cols-3 gap-x-3 gap-y-2.5 sm:gap-x-6 lg:gap-x-10 list-none p-0 m-0 text-left [grid-template-columns:minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
-                {Object.values(processedFooterLinks).map((section) =>
+                {processedFooterSections.flatMap((section) =>
                   section.links.map((link) => (
-                    <li key={`${section.title}-${link}`} className="min-w-0">
+                    <li key={`${section.key}-${link.key}`} className="min-w-0">
                       <a
                         href="#"
                         className="block whitespace-nowrap text-sm text-gray-400 transition-colors hover:text-white"
                       >
-                        {link}
+                        {link.label}
                       </a>
                     </li>
                   )),
@@ -305,18 +321,23 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Footer Bottom */}
           <div className="mt-10 pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
             <a href="/eduhub" className="shrink-0">
               <img src="/logo-eduhub.png" alt="EduHub" className="h-8 w-auto object-contain opacity-90" />
             </a>
             <p className="text-sm text-center" style={{ color: creamMuted }}>
-              © 2026 EduHub. All rights reserved.
+              {t("public.footer.copyright")}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4 text-sm" style={{ color: creamMuted }}>
-              <a href="#" className="hover:opacity-90 transition-opacity">Privacy Policy</a>
-              <a href="#" className="hover:opacity-90 transition-opacity">Terms of Use</a>
-              <a href="#" className="hover:opacity-90 transition-opacity">Accessibility</a>
+              <a href="#" className="hover:opacity-90 transition-opacity">
+                {t("public.footer.links.privacyPolicy")}
+              </a>
+              <a href="#" className="hover:opacity-90 transition-opacity">
+                {t("public.footer.termsOfUse")}
+              </a>
+              <a href="#" className="hover:opacity-90 transition-opacity">
+                {t("public.footer.accessibility")}
+              </a>
             </div>
           </div>
         </div>

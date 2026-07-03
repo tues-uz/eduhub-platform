@@ -1,0 +1,291 @@
+{
+  "public": {
+    "hero": {
+      "badge": "优质语言教育",
+      "titleLine1": "您通往",
+      "words": ["卓越", "成功", "创新", "成长", "知识"],
+      "descriptionLine1": "EDUHUB 是乌兹别克斯坦领先私立大学 TISU 下属的教育中心。",
+      "descriptionLine2": "提供符合国际标准的现代高质量语言教育。",
+      "learnMore": "了解更多"
+    },
+    "partners": {
+      "title": "我们的重要合作伙伴",
+      "partner": "合作伙伴 {{number}}"
+    },
+    "stats": {
+      "whyChooseUs": "为什么选择我们",
+      "heading": "为什么您应该<br />加入我们？",
+      "students": "学生",
+      "classes": "课程",
+      "classesHeading": "500+ 课程",
+      "wideVariety": "种类丰富",
+      "teachers": "教师",
+      "completionRate": "完成率",
+      "yearsExcellence": "年卓越经验",
+      "tags": {
+        "language": "语言",
+        "business": "商业",
+        "tech": "科技",
+        "arts": "艺术",
+        "science": "科学",
+        "math": "数学"
+      }
+    },
+    "team": {
+      "titleLine1": "认识团队",
+      "titleLine2": "成就您的学习",
+      "subtitleLine1": "专业且经验丰富的教师和员工",
+      "subtitleLine2": "拥有硕士学位和国际证书",
+      "linkedin": "LinkedIn",
+      "roles": {
+        "director": "EDUHUB 总监",
+        "directorLine1": "EDUHUB",
+        "directorLine2": "总监",
+        "coExecutiveDirector": "联合执行总监",
+        "coExecutiveLine1": "联合执行",
+        "coExecutiveLine2": "总监",
+        "orgExcellenceManager": "组织卓越经理",
+        "orgExcellenceLine1": "组织卓越",
+        "orgExcellenceLine2": "经理",
+        "learningExperienceManager": "学习体验经理",
+        "learningExperienceLine1": "学习体验",
+        "learningExperienceLine2": "经理",
+        "callOperator": "电话接线员",
+        "callOperatorLine1": "电话",
+        "callOperatorLine2": "接线员",
+        "adminNavigator": "行政导航员",
+        "adminNavigatorLine1": "行政",
+        "adminNavigatorLine2": "导航员"
+      }
+    },
+    "features": {
+      "title": "为什么选择 EduHub？",
+      "descriptionLine1": "EDUHUB 是乌兹别克斯坦领先私立大学 TISU 下属的教育中心，提供符合国际标准的现代高质量语言教育。",
+      "descriptionLine2": "我们的课程将结构化教学与实践应用相结合，帮助您快速进步，并在工作和学习中自信地使用语言。无论您是为考试、职业发展还是学术交流做准备，EDUHUB 都以经验丰富的教师和专为您的成功设计的学习环境支持您的目标。",
+      "descriptionLine3": "加入选择 EDUHUB 的学习者和专业人士社区，我们致力于质量、灵活性和可衡量的成果。从小班课程到量身定制的一对一辅导，我们适应您的时间表和水平，让您按自己的节奏学习，同时朝着语言目标稳步前进。",
+      "learnMore": "了解更多",
+      "items": {
+        "onlineClasses": {
+          "title": "在线课程",
+          "description": "随时随地访问全面的课程",
+          "imageAlt": "在线学习"
+        },
+        "expertInstructors": {
+          "title": "专家讲师",
+          "description": "向行业专业人士和学术专家学习",
+          "imageAlt": "专家讲师"
+        },
+        "certifications": {
+          "title": "证书",
+          "description": "完成课程后获得认可的证书",
+          "imageAlt": "证书"
+        },
+        "careerGrowth": {
+          "title": "职业发展",
+          "description": "通过热门技能推进您的职业生涯",
+          "imageAlt": "职业发展"
+        },
+        "globalAccess": {
+          "title": "全球访问",
+          "description": "与世界各地的学习者建立联系",
+          "imageAlt": "全球学习"
+        },
+        "analyticsDashboard": {
+          "title": "分析仪表板",
+          "description": "跟踪您的进度和表现指标",
+          "imageAlt": "分析仪表板"
+        }
+      }
+    },
+    "vision": {
+      "badge": "愿景与使命",
+      "title": "我们的愿景与承诺<br />在此实现",
+      "imageAlt": "EduHub 愿景",
+      "tabs": {
+        "mission": "我们的使命",
+        "vision": "我们的愿景",
+        "values": "我们的价值观"
+      },
+      "mission": {
+        "intro": "EduHub 围绕明确的方向和一套以学习者为中心、充满趣味的承诺而建立，这些承诺指导每一堂课、每一项活动和创新实验。",
+        "items": [
+          "提供满足学术、职业和个人发展需求的高质量、可及性培训项目。",
+          "作为连接学生、教育者、专业人士和社区终身学习的协作平台。",
+          "设计并交付符合国家和国际标准的创新培训模式。",
+          "与机构和行业建立合作伙伴关系，提升培训相关性和全球竞争力。",
+          "在帮助参与者应对未来挑战时促进包容性、创造力和适应性。"
+        ]
+      },
+      "visionContent": {
+        "intro": "成为多元化培训项目的卓越中心，以国家和国际质量的相关技能和知识赋能学生、本地社区和全球学习者。",
+        "inspireTitle": "启发",
+        "inspireText": "让经济学和商业变得 exciting、可视化且故事驱动。",
+        "connectTitle": "连接",
+        "connectText": "在一个充满活力的空间中连接课堂、工作场所和社区。",
+        "elevateTitle": "提升",
+        "elevateText": "帮助每位学习者从好奇的初学者成长为自信的实践者。"
+      },
+      "values": {
+        "intro": "这些承诺指导我们如何设计每一个 EduHub 模块、活动和学习者旅程。",
+        "items": [
+          "国家和国际质量的相关技能和知识。",
+          "每堂课和每项活动中以学习者为中心的承诺。",
+          "面向未来挑战的包容性、创造力和适应性。"
+        ]
+      }
+    },
+    "reviews": {
+      "titleLine1": "来自",
+      "titleLine2": "课堂的声音",
+      "subtitle": "商业、语言和技能项目的学习者——在 EduHub 完成课程后，用他们自己的话说。",
+      "studentLabel": "EduHub 学生",
+      "starsAria": "{{rating}} 分，满分 5 分",
+      "items": {
+        "aziza": {
+          "course": "商务英语",
+          "quote": "每堂课都很实用，不是死板的教科书。我的口语自信在第一个月内就提高了。"
+        },
+        "jasur": {
+          "course": "经济学入门",
+          "quote": "解释清晰，例子真实。老师真的会回答问题——经济学终于让我明白了。"
+        },
+        "madina": {
+          "course": "数字营销基础",
+          "quote": "项目实践性强且相关。我在同一周就把课堂所学用在了自由职业客户提案中。"
+        },
+        "bobur": {
+          "course": "财务会计",
+          "quote": "课程结构清晰，反馈有帮助。在线形式很流畅——课与课之间从未感到迷失。"
+        },
+        "nilufar": {
+          "course": "商务英语",
+          "quote": "小组讨论和耐心的老师。现在我可以舒适地用英语写报告和参加会议了。"
+        },
+        "sardor": {
+          "course": "Excel 数据分析",
+          "quote": "从基础到仪表板，循序渐进。结束时掌握了可以立即写入简历的技能。"
+        }
+      }
+    },
+    "video": {
+      "titleLine1": "探索我们的",
+      "titleLine2": "学习平台",
+      "description": "通过这段全面的视频导览，体验我们创新的在线学习平台。了解我们如何让全球学生的教育变得可及、有趣且有效。",
+      "interactiveTitle": "互动学习",
+      "interactiveDesc": "参与多媒体内容和互动练习",
+      "expertTitle": "专家讲师",
+      "expertDesc": "向行业专业人士和学术专家学习",
+      "flexibleTitle": "灵活安排",
+      "flexibleDesc": "按自己的节奏，随时随地学习",
+      "unsupported": "您的浏览器不支持视频标签。"
+    },
+    "blog": {
+      "badge": "博客",
+      "title": "洞察与动态",
+      "readMore": "阅读更多",
+      "posts": {
+        "languagePrograms": {
+          "title": "新学期推出新语言项目",
+          "description": "探索我们在商务英语、学术写作和会话练习方面的扩展课程——专为忙碌的职场人士和学生设计。",
+          "imageAlt": "绿色蕨类"
+        },
+        "successStories": {
+          "title": "EduHub 学生成功故事：从课堂到职业",
+          "description": "了解我们的毕业生如何运用语言技能和证书在国际岗位和高等教育中取得进步。",
+          "imageAlt": "黄色花朵"
+        },
+        "workshops": {
+          "title": "即将举办的工作坊和文化交流活动",
+          "description": "加入口语俱乐部、考试备考课程以及与 TISU 的合作伙伴活动——了解日期和报名方式。",
+          "imageAlt": "橙色花朵"
+        }
+      }
+    },
+    "highlights": {
+      "title": "学习亮点",
+      "subtitle": "成功学习之旅所需的一切",
+      "items": {
+        "interactive": {
+          "title": "互动学习",
+          "description": "参与多媒体内容、测验和实践项目"
+        },
+        "goalOriented": {
+          "title": "目标导向",
+          "description": "通过个性化路径设定并实现学习目标"
+        },
+        "fastTrack": {
+          "title": "快速通道",
+          "description": "通过强化项目加速学习"
+        },
+        "community": {
+          "title": "社区支持",
+          "description": "加入活跃的学习者和导师社区"
+        }
+      }
+    },
+    "cta": {
+      "qualityEducation": "优质教育",
+      "title": "准备好开始学习了吗？",
+      "button": "立即开始 — 免费"
+    },
+    "scrollToTop": "回到顶部",
+    "footer": {
+      "subscribe": "订阅",
+      "emailPlaceholder": "输入您的邮箱",
+      "subscribeButton": "订阅",
+      "subscribeConsent": "订阅即表示您同意我们的",
+      "privacyPolicy": "隐私政策",
+      "subscribeConsentSuffix": "并同意接收 EduHub 的更新。",
+      "contact": "联系方式",
+      "menuLinks": "菜单链接",
+      "copyright": "© 2026 EduHub. 保留所有权利。",
+      "termsOfUse": "使用条款",
+      "accessibility": "无障碍",
+      "sections": {
+        "other": "其他",
+        "information": "信息",
+        "connect": "联系"
+      },
+      "links": {
+        "about": "关于",
+        "contact": "联系",
+        "faq": "常见问题",
+        "termsConditions": "条款与条件",
+        "privacyPolicy": "隐私政策",
+        "paymentMethod": "支付方式",
+        "eduhubTeam": "EduHub 团队",
+        "internationalStudents": "国际学生",
+        "openDays": "开放日",
+        "contactUs": "联系我们",
+        "alumni": "校友",
+        "giving": "捐赠",
+        "jobs": "招聘",
+        "pressOffice": "新闻办公室",
+        "conferenceEvents": "会议与活动"
+      },
+      "social": {
+        "facebook": "Facebook",
+        "twitter": "Twitter",
+        "instagram": "Instagram",
+        "linkedin": "LinkedIn",
+        "youtube": "YouTube"
+      },
+      "journal": {
+        "brand": "TUES Journal",
+        "tagline": "来自经济学家、学者和政策思想家的研究、评论与分析。",
+        "quickLinks": "快速链接",
+        "home": "首页",
+        "articles": "文章",
+        "authors": "作者",
+        "topics": "主题",
+        "about": "关于",
+        "aboutUs": "关于我们",
+        "editorialTeam": "编辑团队",
+        "submissionGuidelines": "投稿指南",
+        "contact": "联系",
+        "copyright": "© 2026 TUES Economics Journal. 保留所有权利。",
+        "termsOfUse": "使用条款"
+      }
+    }
+  }
+}

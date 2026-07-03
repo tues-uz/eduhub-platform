@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Bell, BookOpen, Loader2, Mail, Phone, Save, Upload, User, X } from "@/lib/icons";
 import { toast } from "sonner";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -40,6 +41,7 @@ function formatMemberSince(iso: string | undefined): string {
 }
 
 export default function TeacherSettingsPage() {
+  const { t } = useTranslation();
   const { user, refreshUser } = useAuthSession();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   const [name, setName] = useState(user.name);
@@ -175,7 +177,7 @@ export default function TeacherSettingsPage() {
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Teacher Dashboard
+            {t("teacherSettings.backToDashboard")}
           </Link>
 
           <div className="mb-8">
@@ -183,16 +185,16 @@ export default function TeacherSettingsPage() {
               className="text-2xl font-bold text-foreground"
               style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
             >
-              Settings
+              {t("teacherSettings.title")}
             </h1>
-            <p className="text-foreground/60 text-sm mt-1">Manage your instructor profile and preferences.</p>
+            <p className="text-foreground/60 text-sm mt-1">{t("teacherSettings.subtitle")}</p>
           </div>
 
           <form onSubmit={handleSave} className="space-y-8">
             <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm ring-1 ring-zinc-100/80">
               <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
                 <User className="h-5 w-5" aria-hidden />
-                Profile
+                {t("teacherSettings.profile")}
               </h2>
               <div className="space-y-6">
                 <div className="flex flex-wrap items-center gap-4">
@@ -206,8 +208,8 @@ export default function TeacherSettingsPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-foreground">Profile picture</p>
-                    <p className="text-xs text-foreground/60">Shown on your classes and student views. JPEG, PNG, or WebP. Max 8 MB.</p>
+                    <p className="text-sm font-medium text-foreground">{t("teacherSettings.profilePicture")}</p>
+                    <p className="text-xs text-foreground/60">{t("teacherSettings.profilePictureHint")}</p>
                     <div className="flex flex-wrap gap-2">
                       <input
                         ref={avatarInputRef}
@@ -232,12 +234,12 @@ export default function TeacherSettingsPage() {
                         {avatarUploading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                            Uploading…
+                            {t("teacherSettings.uploading")}
                           </>
                         ) : (
                           <>
                             <Upload className="mr-2 h-4 w-4" aria-hidden />
-                            {avatarUrl ? "Change photo" : "Upload photo"}
+                            {avatarUrl ? t("teacherSettings.changePhoto") : t("teacherSettings.uploadPhoto")}
                           </>
                         )}
                       </Button>
@@ -251,7 +253,7 @@ export default function TeacherSettingsPage() {
                           onClick={() => void handleRemoveAvatar()}
                         >
                           <X className="mr-2 h-4 w-4" aria-hidden />
-                          Remove
+                          {t("teacherSettings.remove")}
                         </Button>
                       ) : null}
                     </div>
@@ -259,30 +261,28 @@ export default function TeacherSettingsPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="teacher-display-name">Display name</Label>
+                  <Label htmlFor="teacher-display-name">{t("teacherSettings.displayName")}</Label>
                   <Input
                     id="teacher-display-name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="mt-1.5"
-                    placeholder="Your name"
+                    placeholder={t("teacherSettings.displayNamePlaceholder")}
                   />
                 </div>
 
                 <div className="space-y-4 border-t border-zinc-100 pt-6">
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">Account details</h3>
-                    <p className="mt-1 text-xs text-foreground/60">
-                      Teaching category is assigned by admin. Contact support if anything needs to be corrected.
-                    </p>
+                    <h3 className="text-sm font-semibold text-foreground">{t("teacherSettings.accountDetails")}</h3>
+                    <p className="mt-1 text-xs text-foreground/60">{t("teacherSettings.accountDetailsHint")}</p>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <DetailCard icon={User} label="Full name" value={accountDetails.fullName} />
-                    <DetailCard icon={Mail} label="Email" value={accountDetails.email} />
-                    <DetailCard icon={Phone} label="Phone" value={accountDetails.phone} />
-                    <DetailCard icon={BookOpen} label="Teaching category" value={accountDetails.category} />
-                    <DetailCard icon={User} label="Member since" value={accountDetails.memberSince} />
-                    <DetailCard icon={BookOpen} label="Published classes" value={accountDetails.coursesCount} />
+                    <DetailCard icon={User} label={t("teacherSettings.fullName")} value={accountDetails.fullName} />
+                    <DetailCard icon={Mail} label={t("teacherSettings.email")} value={accountDetails.email} />
+                    <DetailCard icon={Phone} label={t("teacherSettings.phone")} value={accountDetails.phone} />
+                    <DetailCard icon={BookOpen} label={t("teacherSettings.teachingCategory")} value={accountDetails.category} />
+                    <DetailCard icon={User} label={t("teacherSettings.memberSince")} value={accountDetails.memberSince} />
+                    <DetailCard icon={BookOpen} label={t("teacherSettings.publishedClasses")} value={accountDetails.coursesCount} />
                   </div>
                 </div>
               </div>
@@ -297,27 +297,27 @@ export default function TeacherSettingsPage() {
             <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm ring-1 ring-zinc-100/80">
               <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
                 <Bell className="h-5 w-5" aria-hidden />
-                Notifications
+                {t("teacherSettings.notifications")}
               </h2>
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-foreground">Email notifications</p>
-                    <p className="text-sm text-foreground/60">Announcements and account updates from EduHub.</p>
+                    <p className="font-medium text-foreground">{t("teacherSettings.emailNotifications")}</p>
+                    <p className="text-sm text-foreground/60">{t("teacherSettings.emailNotificationsHint")}</p>
                   </div>
                   <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-foreground">Payroll updates</p>
-                    <p className="text-sm text-foreground/60">When admin reviews or records payout for your submissions.</p>
+                    <p className="font-medium text-foreground">{t("teacherSettings.payrollUpdates")}</p>
+                    <p className="text-sm text-foreground/60">{t("teacherSettings.payrollUpdatesHint")}</p>
                   </div>
                   <Switch checked={payrollAlerts} onCheckedChange={setPayrollAlerts} />
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-foreground">Schedule approvals</p>
-                    <p className="text-sm text-foreground/60">When a new class schedule is sent for your review.</p>
+                    <p className="font-medium text-foreground">{t("teacherSettings.scheduleApprovals")}</p>
+                    <p className="text-sm text-foreground/60">{t("teacherSettings.scheduleApprovalsHint")}</p>
                   </div>
                   <Switch checked={scheduleAlerts} onCheckedChange={setScheduleAlerts} />
                 </div>
@@ -326,11 +326,11 @@ export default function TeacherSettingsPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-3">
               <Button type="button" variant="outline" className="rounded-full" asChild>
-                <Link to="/change-password">Change password</Link>
+                <Link to="/change-password">{t("teacherSettings.changePassword")}</Link>
               </Button>
               <Button type="submit" className="rounded-full" style={{ backgroundColor: "#3954d0" }}>
                 <Save className="mr-2 h-4 w-4" aria-hidden />
-                Save changes
+                {t("teacherSettings.saveChanges")}
               </Button>
             </div>
           </form>

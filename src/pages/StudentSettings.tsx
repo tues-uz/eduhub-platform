@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { User, Bell, Save, Upload, Loader2, X, IdCard, Phone, Calendar, MapPin, Mail, GraduationCap } from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,8 +24,8 @@ import {
   persistUiLanguagePreference,
 } from "@/features/settings/LanguageSettingsSection";
 
-function formatRegistrationDate(value: string): string {
-  if (!value.trim()) return "—";
+function formatRegistrationDate(value: string, notAvailable: string): string {
+  if (!value.trim()) return notAvailable;
   const parsed = new Date(`${value}T00:00:00`);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
@@ -34,10 +35,12 @@ function RegistrationDetail({
   icon: Icon,
   label,
   value,
+  notAvailable,
 }: {
   icon: typeof User;
   label: string;
   value: string;
+  notAvailable: string;
 }) {
   return (
     <div className="rounded-xl border border-gray-100 bg-gray-50/60 px-4 py-3">
@@ -45,12 +48,14 @@ function RegistrationDetail({
         <Icon className="h-3.5 w-3.5" aria-hidden />
         {label}
       </div>
-      <p className="text-sm font-medium text-foreground">{value || "—"}</p>
+      <p className="text-sm font-medium text-foreground">{value || notAvailable}</p>
     </div>
   );
 }
 
 const StudentSettings = () => {
+  const { t } = useTranslation();
+  const notAvailable = t("common.notAvailable");
   const { user, refreshUser } = useAuthSession();
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
@@ -73,17 +78,17 @@ const StudentSettings = () => {
 
   const registrationDetails = useMemo(() => {
     const phone =
-      (apiUser?.phoneNumber ?? user.phoneNumber ?? registrationPhoneForEmail(user.email)).trim() || "—";
+      (apiUser?.phoneNumber ?? user.phoneNumber ?? registrationPhoneForEmail(user.email)).trim() || notAvailable;
     const parentPhone =
-      (apiUser?.parentPhoneNumber ?? registrationParentPhoneForEmail(user.email)).trim() || "—";
-    const passport = registrationPassportForEmail(user.email).trim() || "—";
-    const dateOfBirth = formatRegistrationDate(registrationDateOfBirthForEmail(user.email));
-    const birthCity = registrationBirthCityForEmail(user.email).trim() || "—";
-    const latestSchool = registrationLatestSchoolForEmail(user.email).trim() || "—";
+      (apiUser?.parentPhoneNumber ?? registrationParentPhoneForEmail(user.email)).trim() || notAvailable;
+    const passport = registrationPassportForEmail(user.email).trim() || notAvailable;
+    const dateOfBirth = formatRegistrationDate(registrationDateOfBirthForEmail(user.email), notAvailable);
+    const birthCity = registrationBirthCityForEmail(user.email).trim() || notAvailable;
+    const latestSchool = registrationLatestSchoolForEmail(user.email).trim() || notAvailable;
 
     return {
       fullName: formatDisplayPersonName(apiUser?.fullName ?? user.name),
-      email: (apiUser?.email ?? user.email).trim() || "—",
+      email: (apiUser?.email ?? user.email).trim() || notAvailable,
       phone,
       parentPhone,
       passport,
@@ -91,7 +96,7 @@ const StudentSettings = () => {
       birthCity,
       latestSchool,
     };
-  }, [apiUser, user.email, user.name, user.phoneNumber]);
+  }, [apiUser, notAvailable, user.email, user.name, user.phoneNumber]);
 
   const persistProfile = async (updates: { name?: string; email?: string; avatarUrl?: string }) => {
     const next = {
@@ -118,12 +123,12 @@ const StudentSettings = () => {
 
   const handleAvatarUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      toast.error("Please choose an image file (JPEG, PNG, WebP, etc.).");
+      toast.error(t("settings.toastInvalidImage"));
       return;
     }
     const maxBytes = 8 * 1024 * 1024;
     if (file.size > maxBytes) {
-      toast.error("Image must be 8 MB or smaller.");
+      toast.error(t("settings.toastImageTooLarge"));
       return;
     }
 
@@ -132,9 +137,9 @@ const StudentSettings = () => {
       const { url } = await eduhubUploadFile(file, "avatars");
       setAvatarUrl(url);
       await persistProfile({ avatarUrl: url });
-      toast.success("Profile picture updated");
+      toast.success(t("settings.toastAvatarUpdated"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Profile picture upload failed");
+      toast.error(err instanceof Error ? err.message : t("settings.toastAvatarUploadFailed"));
     } finally {
       setAvatarUploading(false);
     }
@@ -143,20 +148,20 @@ const StudentSettings = () => {
   const handleRemoveAvatar = async () => {
     setAvatarUrl("");
     await persistProfile({ avatarUrl: "" });
-    toast.success("Profile picture removed");
+    toast.success(t("settings.toastAvatarRemoved"));
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     persistUiLanguagePreference();
     await persistProfile({ name, email });
-    toast.success("Settings saved");
+    toast.success(t("settings.toastSaved"));
   };
 
   return (
     <div className="w-full max-w-2xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <div className="mb-8">
-        <p className="text-foreground/70 text-sm">Manage your account and preferences.</p>
+        <p className="text-foreground/70 text-sm">{t("settings.subtitle")}</p>
       </div>
       <form onSubmit={handleSave} className="space-y-8">
         <div className="rounded-xl border border-gray-200/50 bg-white/80 p-4 shadow-sm sm:p-6">
@@ -165,7 +170,7 @@ const StudentSettings = () => {
             style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.5px" }}
           >
             <User className="h-5 w-5" />
-            Profile
+            {t("settings.profile")}
           </h2>
           <div className="space-y-6">
             <div className="flex flex-wrap items-center gap-4">
@@ -179,8 +184,8 @@ const StudentSettings = () => {
                 )}
               </div>
               <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Profile picture</p>
-                <p className="text-xs text-foreground/60">JPEG, PNG, or WebP. Max 8 MB.</p>
+                <p className="text-sm font-medium text-foreground">{t("settings.profilePicture")}</p>
+                <p className="text-xs text-foreground/60">{t("settings.profilePictureHint")}</p>
                 <div className="flex flex-wrap gap-2">
                   <input
                     ref={avatarInputRef}
@@ -205,12 +210,12 @@ const StudentSettings = () => {
                     {avatarUploading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Uploading…
+                        {t("settings.uploading")}
                       </>
                     ) : (
                       <>
                         <Upload className="mr-2 h-4 w-4" />
-                        {avatarUrl ? "Change photo" : "Upload photo"}
+                        {avatarUrl ? t("settings.changePhoto") : t("settings.uploadPhoto")}
                       </>
                     )}
                   </Button>
@@ -224,50 +229,50 @@ const StudentSettings = () => {
                       onClick={() => void handleRemoveAvatar()}
                     >
                       <X className="mr-2 h-4 w-4" />
-                      Remove
+                      {t("settings.remove")}
                     </Button>
                   ) : null}
                 </div>
               </div>
             </div>
             <div>
-              <Label htmlFor="name">Display name</Label>
+              <Label htmlFor="name">{t("settings.displayName")}</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="mt-1.5 rounded-xl"
-                placeholder="Your name"
+                placeholder={t("settings.displayNamePlaceholder")}
               />
             </div>
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("settings.emailAddress")}</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1.5 rounded-xl"
-                placeholder="your@email.com"
+                placeholder={t("settings.emailPlaceholder")}
               />
             </div>
 
             <div className="space-y-4 border-t border-gray-100 pt-6">
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Registration details</h3>
+                <h3 className="text-sm font-semibold text-foreground">{t("settings.registrationDetails")}</h3>
                 <p className="mt-1 text-xs text-foreground/60">
-                  Information provided when you created your account. Contact support if anything needs to be corrected.
+                  {t("settings.registrationDetailsHint")}
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <RegistrationDetail icon={User} label="Full name" value={registrationDetails.fullName} />
-                <RegistrationDetail icon={Mail} label="Email address" value={registrationDetails.email} />
-                <RegistrationDetail icon={Phone} label="Your phone number" value={registrationDetails.phone} />
-                <RegistrationDetail icon={Phone} label="Parent phone number" value={registrationDetails.parentPhone} />
-                <RegistrationDetail icon={IdCard} label="Passport number" value={registrationDetails.passport} />
-                <RegistrationDetail icon={Calendar} label="Date of birth" value={registrationDetails.dateOfBirth} />
-                <RegistrationDetail icon={MapPin} label="Born city" value={registrationDetails.birthCity} />
-                <RegistrationDetail icon={GraduationCap} label="Latest school, university or institution" value={registrationDetails.latestSchool} />
+                <RegistrationDetail icon={User} label={t("settings.fullName")} value={registrationDetails.fullName} notAvailable={notAvailable} />
+                <RegistrationDetail icon={Mail} label={t("settings.emailAddress")} value={registrationDetails.email} notAvailable={notAvailable} />
+                <RegistrationDetail icon={Phone} label={t("settings.yourPhone")} value={registrationDetails.phone} notAvailable={notAvailable} />
+                <RegistrationDetail icon={Phone} label={t("settings.parentPhone")} value={registrationDetails.parentPhone} notAvailable={notAvailable} />
+                <RegistrationDetail icon={IdCard} label={t("settings.passportNumber")} value={registrationDetails.passport} notAvailable={notAvailable} />
+                <RegistrationDetail icon={Calendar} label={t("settings.dateOfBirth")} value={registrationDetails.dateOfBirth} notAvailable={notAvailable} />
+                <RegistrationDetail icon={MapPin} label={t("settings.bornCity")} value={registrationDetails.birthCity} notAvailable={notAvailable} />
+                <RegistrationDetail icon={GraduationCap} label={t("settings.latestSchool")} value={registrationDetails.latestSchool} notAvailable={notAvailable} />
               </div>
             </div>
           </div>
@@ -279,20 +284,20 @@ const StudentSettings = () => {
             style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.5px" }}
           >
             <Bell className="h-5 w-5" />
-            Notifications
+            {t("settings.notifications")}
           </h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-foreground">Email notifications</p>
-                <p className="text-sm text-foreground/60">Receive updates and announcements by email.</p>
+                <p className="font-medium text-foreground">{t("settings.emailNotifications")}</p>
+                <p className="text-sm text-foreground/60">{t("settings.emailNotificationsHint")}</p>
               </div>
               <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-foreground">Class reminders</p>
-                <p className="text-sm text-foreground/60">Reminders for assignments and live sessions.</p>
+                <p className="font-medium text-foreground">{t("settings.classReminders")}</p>
+                <p className="text-sm text-foreground/60">{t("settings.classRemindersHint")}</p>
               </div>
               <Switch checked={classReminders} onCheckedChange={setClassReminders} />
             </div>
@@ -301,7 +306,7 @@ const StudentSettings = () => {
         <div className="flex justify-end">
           <Button type="submit" className="rounded-full" style={{ backgroundColor: "#3954d0" }}>
             <Save className="mr-2 h-4 w-4" />
-            Save changes
+            {t("settings.saveChanges")}
           </Button>
         </div>
       </form>

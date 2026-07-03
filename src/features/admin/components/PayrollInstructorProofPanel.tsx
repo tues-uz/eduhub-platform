@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { adminPayrollHistoryStore } from "@/features/admin/data/adminPayrollHistoryStore";
+import { useTranslation } from "react-i18next";
 import {
   adminPayrollProofStore,
   hasPayrollProofFile,
@@ -50,6 +51,7 @@ export function PayrollInstructorProofPanel({
   instructorEmail,
   payrollSummary,
 }: Props) {
+  const { t } = useTranslation();
   const proofMap = usePayrollProofMap();
   const key = payrollProofKey(className, course);
   const bundle = proofMap[key];
@@ -66,7 +68,7 @@ export function PayrollInstructorProofPanel({
 
   const saveNotes = () => {
     void adminPayrollProofStore.setInformationNotes(className, course, notesDraft, requestId);
-    toast.success("Information saved");
+    toast.success(t("admin.components.payrollProofPanel.toast.informationSaved"));
   };
 
   const handleProofFile = useCallback(
@@ -74,9 +76,9 @@ export function PayrollInstructorProofPanel({
       if (!file) return;
       const result = await adminPayrollProofStore.upload(className, course, file, requestId);
       if (result.ok) {
-        toast.success("Proof saved", { description: file.name });
+        toast.success(t("admin.components.payrollProofPanel.toast.proofSaved"), { description: file.name });
       } else {
-        toast.error("Could not upload", { description: "reason" in result ? result.reason : "Please try again." });
+        toast.error(t("admin.components.payrollProofPanel.toast.uploadFailed"), { description: "reason" in result ? result.reason : "Please try again." });
       }
     },
     [className, course, requestId],
@@ -93,24 +95,24 @@ export function PayrollInstructorProofPanel({
 
   const onApprove = async () => {
     const ok = await adminPayrollProofStore.approve(className, course, requestId);
-    if (ok) toast.success("Payout record approved");
-    else toast.error("Upload proof first");
+    if (ok) toast.success(t("admin.components.payrollProofPanel.toast.payoutApproved"));
+    else toast.error(t("admin.components.payrollProofPanel.toast.uploadFirst"));
   };
 
   const handleSubmitAll = async () => {
     await adminPayrollProofStore.setInformationNotes(className, course, notesDraft, requestId);
     const b = adminPayrollProofStore.get(className, course);
     if (!hasPayrollProofFile(b)) {
-      toast.error("Upload transfer proof before submitting.");
+      toast.error(t("admin.components.payrollProofPanel.toast.uploadBeforeSubmit"));
       return;
     }
     if (b.approvedAt) {
-      toast.success("Changes saved.");
+      toast.success(t("admin.components.payrollProofPanel.toast.changesSaved"));
       return;
     }
     const approved = await adminPayrollProofStore.approve(className, course, requestId);
     if (!approved) {
-      toast.error("Could not approve payout proof.");
+      toast.error(t("admin.components.payrollProofPanel.toast.approveFailed"));
       return;
     }
     adminPayrollHistoryStore.add({
@@ -131,7 +133,7 @@ export function PayrollInstructorProofPanel({
     });
     const canRouteNotify =
       Boolean(instructorEmail?.trim()) || Boolean((instructorName ?? "").trim());
-    toast.success("Payout proof submitted and approved.", {
+    toast.success(t("admin.components.payrollProofPanel.toast.submittedApproved"), {
       description: canRouteNotify
         ? "Instructor notified in-app (demo: same browser storage)."
         : "No instructor email or name on this page — notification skipped. Open proof from a class card or payroll request so instructor context is set.",
@@ -140,7 +142,7 @@ export function PayrollInstructorProofPanel({
 
   const onRemove = () => {
     adminPayrollProofStore.remove(className, course);
-    toast.message("Proof file removed");
+    toast.message(t("admin.components.payrollProofPanel.toast.fileRemoved"));
   };
 
   const proofMaxMb = Math.round(PAYROLL_PROOF_MAX_FILE_BYTES / (1024 * 1024));
@@ -160,7 +162,7 @@ export function PayrollInstructorProofPanel({
           aria-describedby={infoHintId}
           value={notesDraft}
           onChange={(e) => setNotesDraft(e.target.value.slice(0, PAYROLL_INFORMATION_MAX_CHARS))}
-          placeholder="e.g. Transfer ref ABC-2026-0312 · Period: March 1–15 · 60% contract rate · …"
+          placeholder={t("admin.components.payrollProofPanel.informationPlaceholder")}
           className="min-h-[100px] resize-y bg-white text-slate-900 border-slate-200"
           rows={4}
         />
@@ -220,7 +222,7 @@ export function PayrollInstructorProofPanel({
               </div>
               <div className="max-w-md space-y-1 px-2">
                 <p className="text-sm font-medium text-zinc-900">
-                  Drop a file here or <span className="text-[#3954d0]">browse</span>
+                  Drop a file here or <span className="text-[#3954d0]">{t("admin.components.payrollProofPanel.browse")}</span>
                 </p>
                 <p className="text-xs leading-relaxed text-zinc-500">
                   Bank receipt only (PNG, JPG, WebP, or PDF · max {proofMaxMb} MB). Do not upload course certificates.
@@ -269,7 +271,7 @@ export function PayrollInstructorProofPanel({
                 </Button>
               ) : (
                 <p className="text-xs text-zinc-500">
-                  Use <span className="font-medium text-zinc-700">Submit payout proof</span> below to save notes and
+                  Use <span className="font-medium text-zinc-700">{t("admin.components.payrollProofPanel.submitPayoutProof")}</span> below to save notes and
                   approve this record.
                 </p>
               )}
@@ -293,7 +295,7 @@ export function PayrollInstructorProofPanel({
         <div className="mt-8 border-t border-slate-200 pt-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <p className="max-w-lg text-xs leading-relaxed text-slate-500">
-              <span className="font-medium text-slate-700">Submit</span> saves your information, checks that a transfer
+              <span className="font-medium text-slate-700">{t("common.submit")}</span> saves your information, checks that a transfer
               file is attached, then marks this payout as approved for your local records (replace with server workflow
               when API is ready).
             </p>
@@ -304,11 +306,11 @@ export function PayrollInstructorProofPanel({
               className="w-full shrink-0 rounded-xl bg-[#3954d0] px-8 text-[15px] font-semibold text-white shadow-sm hover:bg-[#3954d0]/92 disabled:opacity-50 sm:w-auto sm:min-w-[200px]"
               onClick={() => void handleSubmitAll()}
             >
-              {bundle?.approvedAt ? "Save changes" : "Submit payout proof"}
+              {bundle?.approvedAt ? t("admin.settings.saveChanges") : "Submit payout proof"}
             </Button>
           </div>
           {!hasFile ? (
-            <p className="mt-2 text-[11px] text-amber-800/90">Attach a transfer proof file to enable submit.</p>
+            <p className="mt-2 text-[11px] text-amber-800/90">{t("admin.components.payrollProofPanel.attachToEnable")}</p>
           ) : null}
         </div>
       ) : null}

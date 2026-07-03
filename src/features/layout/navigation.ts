@@ -17,7 +17,7 @@ import {
 
 type MenuItemBase = {
   icon: typeof LayoutDashboard;
-  label: string;
+  labelKey: string;
 };
 
 export type FlatMenuItem = MenuItemBase & {
@@ -25,82 +25,109 @@ export type FlatMenuItem = MenuItemBase & {
 };
 
 export type NestedMenuItem = MenuItemBase & {
-  children: { label: string; path: string }[];
+  children: { labelKey: string; path: string }[];
 };
 
 export const studentMenuItems: FlatMenuItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: BookOpen, label: "My Class", path: "/dashboard/courses" },
-  { icon: Library, label: "Available Classes", path: "/dashboard/available-courses" },
-  { icon: CreditCard, label: "Payment history", path: "/dashboard/payment" },
-  { icon: ClipboardList, label: "Quiz", path: "/dashboard/quiz" },
-  { icon: Award, label: "Certificates", path: "/dashboard/certificates" },
-  { icon: Settings, label: "Settings", path: "/dashboard/settings" },
+  { icon: LayoutDashboard, labelKey: "studentNav.dashboard", path: "/dashboard" },
+  { icon: BookOpen, labelKey: "studentNav.myClass", path: "/dashboard/courses" },
+  { icon: Library, labelKey: "studentNav.availableClasses", path: "/dashboard/available-courses" },
+  { icon: CreditCard, labelKey: "studentNav.paymentHistory", path: "/dashboard/payment" },
+  { icon: ClipboardList, labelKey: "studentNav.quiz", path: "/dashboard/quiz" },
+  { icon: Award, labelKey: "studentNav.certificates", path: "/dashboard/certificates" },
+  { icon: Settings, labelKey: "studentNav.settings", path: "/dashboard/settings" },
 ];
 
 /** Admin: nested groups for LMS + booking + payments operations */
 export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard/admin" },
-  { icon: Bell, label: "Notifications", path: "/dashboard/admin/notifications" },
+  { icon: LayoutDashboard, labelKey: "adminNav.dashboard", path: "/dashboard/admin" },
+  { icon: Bell, labelKey: "adminNav.notifications", path: "/dashboard/admin/notifications" },
   {
     icon: Users,
-    label: "People",
+    labelKey: "adminNav.people",
     children: [
-      { label: "Students & registrations", path: "/dashboard/admin/students" },
-      { label: "Teachers", path: "/dashboard/admin/teachers" },
-      { label: "Staff", path: "/dashboard/admin/staff" },
-      { label: "Users", path: "/dashboard/admin/users" },
-      { label: "Add user role", path: "/dashboard/admin/add-user-role" },
+      { labelKey: "adminNav.studentsRegistrations", path: "/dashboard/admin/students" },
+      { labelKey: "adminNav.teachers", path: "/dashboard/admin/teachers" },
+      { labelKey: "adminNav.staff", path: "/dashboard/admin/staff" },
+      { labelKey: "adminNav.users", path: "/dashboard/admin/users" },
     ],
   },
   {
     icon: BookOpen,
-    label: "Classes",
+    labelKey: "adminNav.classes",
     children: [
-      { label: "All classes & schedules", path: "/dashboard/admin/courses" },
-      { label: "Enrollments & waitlist", path: "/dashboard/admin/enrollments" },
-      { label: "Enrollment applications", path: "/dashboard/admin/enrollment-applications" },
-      { label: "Classes & rosters", path: "/dashboard/admin/classes" },
-      { label: "Student promos", path: "/dashboard/admin/promos" },
-      { label: "Referral & discount codes", path: "/dashboard/admin/referral-codes" },
-      { label: "Special tuition grants", path: "/dashboard/admin/special-tuition" },
+      { labelKey: "adminNav.allClassesSchedules", path: "/dashboard/admin/courses" },
+      { labelKey: "adminNav.enrollmentsWaitlist", path: "/dashboard/admin/enrollments" },
+      { labelKey: "adminNav.enrollmentApplications", path: "/dashboard/admin/enrollment-applications" },
+      { labelKey: "adminNav.classesRosters", path: "/dashboard/admin/classes" },
+      { labelKey: "adminNav.studentPromos", path: "/dashboard/admin/promos" },
+      { labelKey: "adminNav.referralCodes", path: "/dashboard/admin/referral-codes" },
+      { labelKey: "adminNav.specialTuition", path: "/dashboard/admin/special-tuition" },
+      { labelKey: "adminNav.websiteContent", path: "/dashboard/admin/content" },
     ],
   },
   {
     icon: ClipboardList,
-    label: "Operations",
+    labelKey: "adminNav.operations",
     children: [
-      { label: "Payments & reminders", path: "/dashboard/admin/payments" },
-      { label: "Schedule month payments", path: "/dashboard/admin/installment-payments" },
-      { label: "Payroll", path: "/dashboard/admin/payroll" },
-      { label: "Transactions", path: "/dashboard/admin/transactions" },
-      { label: "Attendance & progress", path: "/dashboard/admin/attendance" },
-      { label: "Placement tests", path: "/dashboard/admin/placement-tests" },
-      { label: "Certifications", path: "/dashboard/admin/certifications" },
-      { label: "Calendar", path: "/dashboard/admin/calendar" },
-      { label: "Support sessions", path: "/dashboard/admin/support-sessions" },
-      { label: "Substitute cover requests", path: "/dashboard/admin/substitute-requests" },
+      { labelKey: "adminNav.paymentsReminders", path: "/dashboard/admin/payments" },
+      { labelKey: "adminNav.scheduleMonthPayments", path: "/dashboard/admin/installment-payments" },
+      { labelKey: "adminNav.payroll", path: "/dashboard/admin/payroll" },
+      { labelKey: "adminNav.transactions", path: "/dashboard/admin/transactions" },
+      { labelKey: "adminNav.attendanceProgress", path: "/dashboard/admin/attendance" },
+      { labelKey: "adminNav.placementTests", path: "/dashboard/admin/placement-tests" },
+      { labelKey: "adminNav.certifications", path: "/dashboard/admin/certifications" },
+      { labelKey: "adminNav.calendar", path: "/dashboard/admin/calendar" },
+      { labelKey: "adminNav.supportSessions", path: "/dashboard/admin/support-sessions" },
+      { labelKey: "adminNav.substituteRequests", path: "/dashboard/admin/substitute-requests" },
     ],
   },
-  { icon: Link2, label: "Integrations", path: "/dashboard/admin/integrations" },
-  { icon: BarChart3, label: "Reports", path: "/dashboard/admin/reports" },
-  { icon: Settings, label: "Settings", path: "/dashboard/admin/settings" },
+  { icon: Link2, labelKey: "adminNav.integrations", path: "/dashboard/admin/integrations" },
+  { icon: BarChart3, labelKey: "adminNav.analytics", path: "/dashboard/admin/analytic" },
+  { icon: BarChart3, labelKey: "adminNav.reports", path: "/dashboard/admin/reports" },
+  { icon: Settings, labelKey: "adminNav.settings", path: "/dashboard/admin/settings" },
 ];
 
 export const teacherMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard/teacher" },
-  { icon: GraduationCap, label: "All Student", path: "/dashboard/teacher/students" },
-  { icon: QrCode, label: "Attendance QR", path: "/dashboard/teacher/attendance" },
+  { icon: LayoutDashboard, labelKey: "teacherNav.dashboard", path: "/dashboard/teacher" },
+  { icon: GraduationCap, labelKey: "teacherNav.allStudent", path: "/dashboard/teacher/students" },
+  { icon: QrCode, labelKey: "teacherNav.attendanceQr", path: "/dashboard/teacher/attendance" },
   {
     icon: BookOpen,
-    label: "Class",
+    labelKey: "teacherNav.class",
     children: [
-      { label: "My Class", path: "/dashboard/teacher/courses" },
-      { label: "Add New Class", path: "/dashboard/teacher/courses/new" },
+      { labelKey: "teacherNav.myClass", path: "/dashboard/teacher/courses" },
+      { labelKey: "teacherNav.addNewClass", path: "/dashboard/teacher/courses/new" },
     ],
   },
-  { icon: Calendar, label: "Schedule approvals", path: "/dashboard/teacher/schedule" },
-  { icon: Bell, label: "Notifications", path: "/dashboard/teacher/notifications" },
-  { icon: CreditCard, label: "Payroll", path: "/dashboard/teacher/payroll" },
-  { icon: Settings, label: "Settings", path: "/dashboard/teacher/settings" },
+  { icon: Calendar, labelKey: "teacherNav.scheduleApprovals", path: "/dashboard/teacher/schedule" },
+  { icon: Bell, labelKey: "teacherNav.notifications", path: "/dashboard/teacher/notifications" },
+  { icon: CreditCard, labelKey: "teacherNav.payroll", path: "/dashboard/teacher/payroll" },
+  { icon: Settings, labelKey: "teacherNav.settings", path: "/dashboard/teacher/settings" },
 ];
+
+export type TranslatedFlatMenuItem = FlatMenuItem & { label: string };
+export type TranslatedNestedMenuItem = Omit<NestedMenuItem, "children"> & {
+  label: string;
+  children: { label: string; path: string }[];
+};
+export type TranslatedMenuItem = TranslatedFlatMenuItem | TranslatedNestedMenuItem;
+
+export function translateMenuItems(
+  items: Array<FlatMenuItem | NestedMenuItem>,
+  t: (key: string) => string,
+): TranslatedMenuItem[] {
+  return items.map((item) => {
+    if ("path" in item) {
+      return { ...item, label: t(item.labelKey) };
+    }
+    return {
+      ...item,
+      label: t(item.labelKey),
+      children: item.children.map((child) => ({
+        ...child,
+        label: t(child.labelKey),
+      })),
+    };
+  });
+}

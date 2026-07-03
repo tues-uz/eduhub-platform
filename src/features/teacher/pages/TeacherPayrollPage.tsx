@@ -61,6 +61,7 @@ import {
   PAYROLL_SUBMIT_DEMO_COURSE_ID,
 } from "@/features/payroll/payrollSubmitDemo";
 import { cn, formatThousandsInText } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 function formatRelativeTime(iso: string): string {
   const t = new Date(iso).getTime();
@@ -87,11 +88,10 @@ function SubmissionStatusPill({ status }: { status: "pending" | "approved" | "re
 }
 
 function StudentPayrollStatusBadge({ status }: { status: TeacherPayrollStudentRow["status"] }) {
+  const { t } = useTranslation();
   if (status === "enrolled") {
     return (
-      <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-        Enrolled
-      </span>
+      <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">{t("teacher.roster.tabs.enrolled")}</span>
     );
   }
   return <PaymentStatusBadge status={status} />;
@@ -164,6 +164,7 @@ function latestRequestForClass(
 }
 
 export default function TeacherPayrollPage() {
+  const { t } = useTranslation();
   const { user } = useAuthSession();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   const [search, setSearch] = useState("");
@@ -456,14 +457,10 @@ export default function TeacherPayrollPage() {
             to="/dashboard/teacher"
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Teacher Dashboard
-          </Link>
+            <ArrowLeft className="h-4 w-4" />{t("teacherSettings.backToDashboard")}</Link>
 
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground" style={{ letterSpacing: "0.5px" }}>
-              Payroll
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground" style={{ letterSpacing: "0.5px" }}>{t("teacherNav.payroll")}</h1>
             <p className="text-foreground/60 text-sm mt-1 max-w-2xl">
               Your classes and linked student payments. Submit a payroll request per class for admin approval, then track
               submissions on the My submissions tab.
@@ -472,9 +469,7 @@ export default function TeacherPayrollPage() {
 
           <Tabs defaultValue="payroll" className="w-full">
             <TabsList className="mb-6 h-11 w-full sm:w-auto justify-start bg-slate-100/90 p-1 rounded-xl border border-slate-200/80">
-              <TabsTrigger value="payroll" className="rounded-lg px-4 data-[state=active]:shadow-sm">
-                Payroll
-              </TabsTrigger>
+              <TabsTrigger value="payroll" className="rounded-lg px-4 data-[state=active]:shadow-sm">{t("teacherNav.payroll")}</TabsTrigger>
               <TabsTrigger value="submissions" className="rounded-lg px-4 data-[state=active]:shadow-sm">
                 My submissions
                 {pendingSubmissionCount > 0 ? (
@@ -528,8 +523,8 @@ export default function TeacherPayrollPage() {
                   <TableHeader>
                     <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
                       <TableHead className="w-10" />
-                      <TableHead>Class</TableHead>
-                      <TableHead className="text-right whitespace-nowrap">Students</TableHead>
+                      <TableHead>{t("teacher.dashboard.classesTable.header.class")}</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">{t("teacher.dashboard.classesTable.header.students")}</TableHead>
                       <TableHead className="text-right whitespace-nowrap">Invoices</TableHead>
                       <TableHead className="text-right whitespace-nowrap">Total tuition</TableHead>
                       <TableHead className="text-right whitespace-nowrap">Your share</TableHead>
@@ -717,16 +712,16 @@ export default function TeacherPayrollPage() {
                               <TableCell colSpan={8} className="px-4 py-4 sm:px-6">
                                 <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
                                   <div className="border-b border-slate-100 px-4 py-3">
-                                    <p className="text-sm font-medium text-slate-900">Enrolled students</p>
+                                    <p className="text-sm font-medium text-slate-900">{t("teacher.roster.enrolled.title")}</p>
                                     <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">{summaryText}</p>
                                   </div>
                                   <div className="overflow-x-auto">
                                     <Table>
                                       <TableHeader>
                                         <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
-                                          <TableHead>Student</TableHead>
+                                          <TableHead>{t("teacher.assignments.submissions.table.student")}</TableHead>
                                           <TableHead>Amount</TableHead>
-                                          <TableHead>Status</TableHead>
+                                          <TableHead>{t("common.status")}</TableHead>
                                           <TableHead>Due</TableHead>
                                           <TableHead>Paid</TableHead>
                                         </TableRow>
@@ -867,12 +862,12 @@ export default function TeacherPayrollPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50">
-                      <TableHead>Class</TableHead>
+                      <TableHead>{t("teacher.dashboard.classesTable.header.class")}</TableHead>
                       <TableHead>Period</TableHead>
                       <TableHead>Requested</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>{t("common.status")}</TableHead>
                       <TableHead>Bank receipt</TableHead>
-                      <TableHead>Submitted</TableHead>
+                      <TableHead>{t("teacher.assignments.submissions.table.submitted")}</TableHead>
                       <TableHead>Admin note</TableHead>
                     </TableRow>
                   </TableHeader>

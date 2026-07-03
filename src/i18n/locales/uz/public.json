@@ -1,0 +1,291 @@
+{
+  "public": {
+    "hero": {
+      "badge": "Sifatli til ta'limi",
+      "titleLine1": "Sizning yo'lingiz",
+      "words": ["Mukammallikka", "Muvaffaqiyatga", "Innovatsiyaga", "O'sishga", "Bilimga"],
+      "descriptionLine1": "EDUHUB — O'zbekistondagi yetakchi xususiy universitet TISU qoshida faoliyat yurituvchi ta'lim markazi.",
+      "descriptionLine2": "U xalqaro standartlarga asoslangan zamonaviy va yuqori sifatli til ta'limini taklif etadi.",
+      "learnMore": "Batafsil"
+    },
+    "partners": {
+      "title": "Bizning qimmatli hamkorlarimiz",
+      "partner": "Hamkor {{number}}"
+    },
+    "stats": {
+      "whyChooseUs": "Nega bizni tanlash kerak",
+      "heading": "Nega biz bilan<br />qo'shilishingiz kerak?",
+      "students": "Talabalar",
+      "classes": "Darslar",
+      "classesHeading": "500+ dars",
+      "wideVariety": "Keng tanlov",
+      "teachers": "O'qituvchilar",
+      "completionRate": "Tugatish darajasi",
+      "yearsExcellence": "Yillik tajriba",
+      "tags": {
+        "language": "Til",
+        "business": "Biznes",
+        "tech": "Texnologiya",
+        "arts": "San'at",
+        "science": "Fan",
+        "math": "Matematika"
+      }
+    },
+    "team": {
+      "titleLine1": "Jamoa bilan tanishing",
+      "titleLine2": "O'qishingiz ortida",
+      "subtitleLine1": "Professional va tajribali o'qituvchilar va xodimlar",
+      "subtitleLine2": "magistr darajasi va xalqaro sertifikatlarga ega",
+      "linkedin": "LinkedIn",
+      "roles": {
+        "director": "EDUHUB direktori",
+        "directorLine1": "EDUHUB",
+        "directorLine2": "Direktori",
+        "coExecutiveDirector": "Bosh direktor o'rinbosari",
+        "coExecutiveLine1": "Bosh direktor",
+        "coExecutiveLine2": "o'rinbosari",
+        "orgExcellenceManager": "Tashkiliy mukammallik menejeri",
+        "orgExcellenceLine1": "Tashkiliy mukammallik",
+        "orgExcellenceLine2": "Menejeri",
+        "learningExperienceManager": "O'quv tajribasi menejeri",
+        "learningExperienceLine1": "O'quv tajribasi",
+        "learningExperienceLine2": "Menejeri",
+        "callOperator": "Call-operator",
+        "callOperatorLine1": "Call",
+        "callOperatorLine2": "Operator",
+        "adminNavigator": "Ma'muriy navigator",
+        "adminNavigatorLine1": "Ma'muriy",
+        "adminNavigatorLine2": "Navigator"
+      }
+    },
+    "features": {
+      "title": "Nega EduHub?",
+      "descriptionLine1": "EDUHUB — O'zbekistondagi yetakchi xususiy universitet TISU qoshida faoliyat yurituvchi ta'lim markazi. U xalqaro standartlarga asoslangan zamonaviy va yuqori sifatli til ta'limini taklif etadi.",
+      "descriptionLine2": "Dasturlarimiz tuzilgan o'quv dasturlarini amaliy, real hayotdagi qo'llash bilan birlashtiradi, shunda siz tez rivojlanib, tilni ish va o'qishda ishonchli ishlata olasiz. Imtihonlarga, martaba o'sishiga yoki akademik almashinuvga tayyorgarlik ko'rayotgan bo'lsangiz ham, EDUHUB tajribali o'qituvchilar va muvaffaqiyatingiz uchun mo'ljallangan o'quv muhiti bilan maqsadlaringizni qo'llab-quvvatlaydi.",
+      "descriptionLine3": "Sifat, moslashuvchanlik va o'lchanadigan natijalarga sodiqligi uchun EDUHUBni tanlaydigan o'quvchilar va mutaxassislar jamoasiga qo'shiling. Kichik guruh darslaridan tortib, shaxsiy mashg'ulotlargacha — biz jadvalingiz va darajangizga moslashamiz, til maqsadlaringizga erishish yo'lida o'z sur'atingizda o'rganishingiz mumkin.",
+      "learnMore": "Batafsil",
+      "items": {
+        "onlineClasses": {
+          "title": "Onlayn darslar",
+          "description": "Istalgan joydan, istalgan vaqtda to'liq darslarga kirish",
+          "imageAlt": "Onlayn o'qish"
+        },
+        "expertInstructors": {
+          "title": "Mutaxassis o'qituvchilar",
+          "description": "Sanoat mutaxassislari va akademik ekspertlardan o'rganing",
+          "imageAlt": "Mutaxassis o'qituvchi"
+        },
+        "certifications": {
+          "title": "Sertifikatlar",
+          "description": "Darsni tugatgandan so'ng tan olingan sertifikatlar oling",
+          "imageAlt": "Sertifikat"
+        },
+        "careerGrowth": {
+          "title": "Karyera o'sishi",
+          "description": "Talab qilinadigan ko'nikmalar bilan karyerangizni rivojlantiring",
+          "imageAlt": "Karyera o'sishi"
+        },
+        "globalAccess": {
+          "title": "Global kirish",
+          "description": "Butun dunyo bo'ylab o'quvchilar bilan bog'laning",
+          "imageAlt": "Global o'qish"
+        },
+        "analyticsDashboard": {
+          "title": "Analitika paneli",
+          "description": "Rivojlanishingiz va natijalaringizni kuzatib boring",
+          "imageAlt": "Analitika paneli"
+        }
+      }
+    },
+    "vision": {
+      "badge": "Vazifa va maqsad",
+      "title": "Bizning maqsad va va'dalarimiz<br />hayotga tatbiq etiladi",
+      "imageAlt": "EduHub maqsadi",
+      "tabs": {
+        "mission": "Bizning vazifamiz",
+        "vision": "Bizning maqsadimiz",
+        "values": "Bizning qadriyatlarimiz"
+      },
+      "mission": {
+        "intro": "EduHub aniq yo'nalish va har bir dars, faoliyat va tajribani boshqaradigan qiziqarli, o'quvchi markazli majburiyatlar atrofida qurilgan.",
+        "items": [
+          "Akademik, kasbiy va shaxsiy rivojlanish ehtiyojlarini qondiradigan qulay va yuqori sifatli o'quv dasturlarini taqdim etish.",
+          "Talabalar, o'qituvchilar, mutaxassislar va jamoalarni umrbod o'rganish uchun bog'laydigan hamkorlik platformasi bo'lish.",
+          "Milliy va xalqaro standartlarga javob beradigan innovatsion o'quv modellarini ishlab chiqish va amalga oshirish.",
+          "O'quv dolzarbligini va global raqobatbardoshligini oshirish uchun muassasalar va sanoat bilan hamkorlik qurish.",
+          "Ishtirokchilarni kelajakdagi chaqiriqlarga tayyorlashda inklyuzivlik, ijodkorlik va moslashuvchanlikni rag'batlantirish."
+        ]
+      },
+      "visionContent": {
+        "intro": "Talabalar, mahalliy jamoalar va global o'quvchilarni milliy va xalqaro sifatdagi tegishli ko'nikmalar va bilimlar bilan ta'minlaydigan turli o'quv dasturlari uchun markaziy mukammallik markaziga aylanish.",
+        "inspireTitle": "Ilhomlantirish",
+        "inspireText": "Iqtisodiyot va biznesni qiziqarli, vizual va hikoya asosida qilish.",
+        "connectTitle": "Bog'lash",
+        "connectText": "Sinflar, ish joylari va jamoalarni bir qiziqarli makonda birlashtirish.",
+        "elevateTitle": "Ko'tarish",
+        "elevateText": "Har bir o'quvchining qiziquvchan boshlang'ichdan ishonchli mutaxassisgacha o'sishiga yordam berish."
+      },
+      "values": {
+        "intro": "Bu majburiyatlar har bir EduHub moduli, faoliyati va o'quvchi safarini qanday loyihalashtirishimizni boshqaradi.",
+        "items": [
+          "Milliy va xalqaro sifatdagi tegishli ko'nikmalar va bilimlar.",
+          "Har bir dars va faoliyatda o'quvchi markazli majburiyatlar.",
+          "Kelajakdagi chaqiriqlar uchun inklyuzivlik, ijodkorlik va moslashuvchanlik."
+        ]
+      }
+    },
+    "reviews": {
+      "titleLine1": "Sinfdan",
+      "titleLine2": "ovozlar",
+      "subtitle": "Biznes, til va ko'nikmalar dasturlari bo'yicha o'quvchilar — EduHubda darsni tugatgandan keyin o'z so'zlari bilan.",
+      "studentLabel": "EduHub talabasi",
+      "starsAria": "{{rating}} dan 5 yulduz",
+      "items": {
+        "aziza": {
+          "course": "Biznes ingliz tili",
+          "quote": "Har bir dars amaliy tuyuldi, darslik og'ir emas edi. Gapirish ishonchim birinchi oy ichida yaxshilandi."
+        },
+        "jasur": {
+          "course": "Iqtisodiyotga kirish",
+          "quote": "Aniq tushuntirishlar va real misollar. O'qituvchilar haqiqatan savollarga javob beradi — iqtisodiyot nihoyat tushunarli bo'ldi."
+        },
+        "madina": {
+          "course": "Raqamli marketing asoslari",
+          "quote": "Loyihalar amaliy va dolzarb edi. Darsda o'rganilganlarni shu hafta freelance mijoz uchun ishlatdim."
+        },
+        "bobur": {
+          "course": "Moliyaviy hisob",
+          "quote": "Tuzilgan darslar va foydali fikr-mulohazalar. Onlayn format silliq ishladi — sessiyalar orasida yo'qolgan his qilmadim."
+        },
+        "nilufar": {
+          "course": "Biznes uchun ingliz tili",
+          "quote": "Kichik guruh muhokamalari va sabrli o'qituvchilar. Endi hisobotlar yozib, ingliz tilida uchrashuvlarga qo'shila olaman."
+        },
+        "sardor": {
+          "course": "Excel bilan ma'lumotlar tahlili",
+          "quote": "Asoslardan dashboardlargacha, bosqichma-bosqich. CVda ko'rsatish mumkin bo'lgan ko'nikmalar bilan tugatdim."
+        }
+      }
+    },
+    "video": {
+      "titleLine1": "Bizning",
+      "titleLine2": "o'quv platformamizni kashf eting",
+      "description": "Innovatsion onlayn o'quv platformamizni ushbu to'liq video sayohat orqali bilib oling. Ta'limni butun dunyo talabalari uchun qulay, qiziqarli va samarali qilishimizni ko'ring.",
+      "interactiveTitle": "Interaktiv o'qish",
+      "interactiveDesc": "Multimedia kontent va interaktiv mashqlar bilan shug'ullaning",
+      "expertTitle": "Mutaxassis o'qituvchilar",
+      "expertDesc": "Sanoat mutaxassislari va akademik ekspertlardan o'rganing",
+      "flexibleTitle": "Moslashuvchan jadval",
+      "flexibleDesc": "O'z sur'atingizda, istalgan vaqtda va joyda o'qing",
+      "unsupported": "Brauzeringiz video tegini qo'llab-quvvatlamaydi."
+    },
+    "blog": {
+      "badge": "Blog",
+      "title": "Tahlillar va yangiliklar",
+      "readMore": "Ko'proq o'qish",
+      "posts": {
+        "languagePrograms": {
+          "title": "Yangi til dasturlari bu semestrda boshlanadi",
+          "description": "Band mutaxassislar va talabalar uchun mo'ljallangan biznes ingliz tili, akademik yozuv va suhbat mashg'ulotlaridagi kengaytirilgan takliflarimizni kashf eting.",
+          "imageAlt": "Yashil qirqo'g'ay"
+        },
+        "successStories": {
+          "title": "EduHub talaba muvaffaqiyat hikoyalari: sinfdan karyeraga",
+          "description": "Bitiruvchilarimiz til ko'nikmalari va sertifikatlaridan xalqaro rollarda va oliy ta'limda qanday foydalanayotganini o'qing.",
+          "imageAlt": "Sariq gul"
+        },
+        "workshops": {
+          "title": "Yaqinlashib kelayotgan seminarlar va madaniy almashinuv tadbirlari",
+          "description": "Nutq klublari, imtihon tayyorgarligi sessiyalari va TISU hamkor tadbirlariga qo'shiling — sanalar va ro'yxatdan o'tish haqida yangilanishlarni kuzating.",
+          "imageAlt": "To'q sariq gul"
+        }
+      }
+    },
+    "highlights": {
+      "title": "O'qishning asosiy yo'nalishlari",
+      "subtitle": "Muvaffaqiyatli o'qish safari uchun kerak bo'lgan hamma narsa",
+      "items": {
+        "interactive": {
+          "title": "Interaktiv o'qish",
+          "description": "Multimedia kontent, testlar va amaliy loyihalar bilan shug'ullaning"
+        },
+        "goalOriented": {
+          "title": "Maqsadga yo'naltirilgan",
+          "description": "Shaxsiylashtirilgan yo'llar bilan o'quv maqsadlaringizni belgilang va erishing"
+        },
+        "fastTrack": {
+          "title": "Tez yo'l",
+          "description": "Intensiv dasturlar bilan o'rganishni tezlashtiring"
+        },
+        "community": {
+          "title": "Jamoa qo'llab-quvvatlashi",
+          "description": "O'quvchilar va mentorlardan iborat jonli jamoaga qo'shiling"
+        }
+      }
+    },
+    "cta": {
+      "qualityEducation": "Sifatli ta'lim",
+      "title": "O'qishni boshlashga tayyormisiz?",
+      "button": "Boshlash — bepul"
+    },
+    "scrollToTop": "Yuqoriga aylantirish",
+    "footer": {
+      "subscribe": "Obuna bo'lish",
+      "emailPlaceholder": "Emailingizni kiriting",
+      "subscribeButton": "Obuna bo'lish",
+      "subscribeConsent": "Obuna bo'lish orqali siz bizning",
+      "privacyPolicy": "Maxfiylik siyosatimizga",
+      "subscribeConsentSuffix": "rozilik bildirasiz va EduHub yangilanishlarini olishga rozilik berasiz.",
+      "contact": "Aloqa",
+      "menuLinks": "Menyu havolalari",
+      "copyright": "© 2026 EduHub. Barcha huquqlar himoyalangan.",
+      "termsOfUse": "Foydalanish shartlari",
+      "accessibility": "Qulaylik",
+      "sections": {
+        "other": "Boshqa",
+        "information": "Ma'lumot",
+        "connect": "Bog'lanish"
+      },
+      "links": {
+        "about": "Biz haqimizda",
+        "contact": "Aloqa",
+        "faq": "FAQ",
+        "termsConditions": "Foydalanish shartlari",
+        "privacyPolicy": "Maxfiylik siyosati",
+        "paymentMethod": "To'lov usuli",
+        "eduhubTeam": "EduHub jamoasi",
+        "internationalStudents": "Xalqaro talabalar",
+        "openDays": "Ochiq kunlar",
+        "contactUs": "Biz bilan bog'laning",
+        "alumni": "Bitiruvchilar",
+        "giving": "Xayriya",
+        "jobs": "Ish o'rinlari",
+        "pressOffice": "Matbuot xizmati",
+        "conferenceEvents": "Konferensiya va tadbirlar"
+      },
+      "social": {
+        "facebook": "Facebook",
+        "twitter": "Twitter",
+        "instagram": "Instagram",
+        "linkedin": "LinkedIn",
+        "youtube": "YouTube"
+      },
+      "journal": {
+        "brand": "TUES Journal",
+        "tagline": "Iqtisodshilar, olimlar va siyosat mutafakkirlaridan tadqiqotlar, sharhlar va tahlillar.",
+        "quickLinks": "Tez havolalar",
+        "home": "Bosh sahifa",
+        "articles": "Maqolalar",
+        "authors": "Mualliflar",
+        "topics": "Mavzular",
+        "about": "Haqida",
+        "aboutUs": "Biz haqimizda",
+        "editorialTeam": "Tahririyat jamoasi",
+        "submissionGuidelines": "Maqola yuborish qoidalari",
+        "contact": "Aloqa",
+        "copyright": "© 2026 TUES Economics Journal. Barcha huquqlar himoyalangan.",
+        "termsOfUse": "Foydalanish shartlari"
+      }
+    }
+  }
+}

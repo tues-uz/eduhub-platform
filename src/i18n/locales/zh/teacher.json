@@ -1,0 +1,1196 @@
+{
+  "teacher": {
+    "fallbackName": "教师",
+    "instructorFallback": "Instructor",
+    "courseLeadFallback": "Course lead",
+    "classFallback": "课程",
+    "dashboard": {
+      "subtitle": "Instructor 仪表盘",
+      "roleBadge": "教师",
+      "stats": {
+        "activeClasses": "Active 课程es",
+        "totalStudents": "Total 学生s",
+        "pendingGrading": "Pending grading",
+        "collectedPayments": "Collected payments"
+      },
+      "attendanceQr": {
+        "title": "考勤 QR (projector)",
+        "description": "Generate a session QR code to show on the whiteboard—学生s scan to check in on their phones."
+      },
+      "upcomingSessions": {
+        "title": "Upcoming Sessions"
+      },
+      "classesTable": {
+        "title": "Teaching 课程es",
+        "loading": "加载中 课程es…",
+        "emptyPrefix": "No 课程es yet.",
+        "createFirstClass": "Create your first 课程",
+        "lessonCount": "{{count}} lessons",
+        "header": {
+          "class": "课程",
+          "students": "学生",
+          "progress": "Progress",
+          "completion": "Completion",
+          "actions": "Actions"
+        },
+        "action": {
+          "editClass": "编辑 课程",
+          "manageStudents": "Manage 学生"
+        }
+      },
+      "pendingGrading": {
+        "title": "Pending Grading",
+        "subtitle": "Review and grade 学生 submissions",
+        "gradeButton": "Grade",
+        "priority": {
+          "high": "high",
+          "medium": "medium",
+          "low": "low"
+        }
+      }
+    },
+    "notifications": {
+      "title": "通知",
+      "subtitle": "课程 课表, publishing, and other updates.",
+      "unreadCount": "{{count}} unread",
+      "markAllRead": "Mark all as read",
+      "loading": "加载中 notifications…",
+      "markRead": "Mark read",
+      "receivedPrefix": "Received",
+      "time": {
+        "justNow": "Just now",
+        "minutesAgo": "{{count}} min ago",
+        "hoursAgo_one": "{{count}} hour ago",
+        "hoursAgo_other": "{{count}} hours ago",
+        "daysAgo_one": "{{count}} day ago",
+        "daysAgo_other": "{{count}} days ago"
+      },
+      "cta": {
+        "openClassPage": "Open this 课程 page",
+        "viewMyClasses": "View my 课程es",
+        "goToLinkedPage": "Go to linked page"
+      },
+      "empty": {
+        "title": "No notifications yet.",
+        "description": "课表 proposals, 课程 publishing updates, and other notifications will appear here."
+      }
+    },
+    "placeholder": {
+      "fallbackTitle": "教师",
+      "comingSoon": "This section is coming soon.",
+      "backToDashboard": "返回 to 仪表盘",
+      "sections": {
+        "courses": "My 课程",
+        "assignments": "Assignments",
+        "students": "学生",
+        "schedule": "课表",
+        "settings": "Settings"
+      }
+    },
+    "courses": {
+      "description": "New 课程es stay in draft until an admin sets a price and publishes them. Add lessons with PDF or video content, then wait for approval.",
+      "addClass": "Add 课程",
+      "tabs": {
+        "classes": "课程es",
+        "attendance": "学生 attendance",
+        "schedule": "课表",
+        "substitute": "Substitute instructor"
+      },
+      "loading": "加载中 课程es…",
+      "empty": {
+        "title": "No 课程es yet",
+        "description": "Create your first 课程 and add lessons with PDF materials or video links.",
+        "cta": "Add your first 课程"
+      },
+      "card": {
+        "sessionsInSixMonths": "{{count}} sessions in 6 months",
+        "sessionsNotSet": "Sessions in 6 months not set",
+        "studentCount_one": "{{count}} 学生",
+        "studentCount_other": "{{count}} 学生s"
+      },
+      "attendanceTab": {
+        "intro": "Name each meeting and generate a QR; past meetings stay on this device. Full-page tool:",
+        "attendanceQrLink": "考勤 QR"
+      },
+      "scheduleTab": {
+        "intro": "编辑 the planned sessions (title, date, time) for each 课程. This uses the same 课表 section from the 课程 setup form.",
+        "loading": "加载中 课表s…",
+        "emptyDescription": "Create a 课程 first, then come back here to set up the per-session 课表.",
+        "sessionsSummary": "{{sessions}} sessions in 6 months",
+        "filledSuffix": " · {{filled}} filled",
+        "notSetYet": "Sessions in 6 months not set yet",
+        "editSchedule": "编辑 课表"
+      }
+    },
+    "students": {
+      "title": "学生",
+      "subtitle": "学生 registered to your 课程es.",
+      "table": {
+        "name": "学生 name",
+        "email": "Email",
+        "class": "课程",
+        "enrolledDate": "Enrolled date"
+      },
+      "empty": "No 学生s registered yet."
+    },
+    "assignments": {
+      "title": "Assignments",
+      "subtitle": "Manage assignments and review 学生 submissions.",
+      "tabs": {
+        "assignments": "My Assignments",
+        "submissions": "Pending Submissions"
+      },
+      "empty": {
+        "title": "No assignments yet",
+        "description": "Assignments will appear here once you create them for your 课程es."
+      },
+      "table": {
+        "title": "Title",
+        "class": "课程",
+        "dueDate": "Due Date",
+        "priority": "Priority",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "actions": {
+        "publish": "Publish",
+        "view": "View",
+        "review": "Review"
+      },
+      "submissions": {
+        "empty": {
+          "title": "No pending submissions",
+          "description": "All 学生 submissions have been graded."
+        },
+        "table": {
+          "student": "学生",
+          "assignment": "Assignment",
+          "submitted": "提交ted"
+        }
+      },
+      "deleteDialog": {
+        "title": "删除 this assignment?",
+        "description": "This will permanently remove the assignment. 学生 will no longer see it."
+      }
+    },
+    "attendanceQr": {
+      "title": "考勤 QR",
+      "description": "Select the 课程 and the planned session from the 课表, then generate a QR. When you stop the session, that meeting is marked held for 学生 enrollment. Use projector view for full screen. 学生 sign in to check in."
+    },
+    "scheduleApprovals": {
+      "title": "课表 approvals",
+      "subtitle": "Review 课表s proposed by an admin, then approve or request changes on each 课程.",
+      "loading": "加载中 your 课程es…",
+      "empty": "No 课程es yet. Create a 课程 first.",
+      "addClass": "Add 课程",
+      "pendingSectionTitle": "Needs your approval",
+      "createdDate": "Created {{date}}",
+      "allSectionTitle": "All your 课程es",
+      "openButton": "Open",
+      "status": {
+        "actionNeeded": "Action needed",
+        "approved": "已批准",
+        "rejected": "Rejected",
+        "draft": "草稿",
+        "published": "已发布"
+      },
+      "statusDescriptions": {
+        "scheduleApproved": "课表 approved — waiting for admin to publish",
+        "draft": "草稿 — admin will propose a 课表",
+        "rejected": "Rejected — admin sent feedback",
+        "default": "Open the 课表 step to view or approve when ready."
+      }
+    },
+    "status": {
+      "published": "已发布",
+      "draft": "草稿",
+      "high": "HIGH",
+      "medium": "MEDIUM",
+      "low": "LOW"
+    },
+    "substitute": {
+      "status": {
+        "pendingSubstitute": "Waiting for substitute",
+        "pendingPrimary": "Waiting for your approval",
+        "pendingAdmin": "With admin for final approval",
+        "approved": "已批准",
+        "declinedBySubstitute": "Declined by substitute",
+        "rejectedByPrimary": "Rejected by primary instructor",
+        "rejectedByAdmin": "Rejected by admin"
+      },
+      "coverChip": {
+        "substituteCover": "Substitute cover",
+        "admin": "Cover · admin",
+        "instructor": "Cover · instructor",
+        "substitute": "Cover · substitute"
+      }
+    },
+    "substitutePanel": {
+      "empty": {
+        "title": "No substitute cover requests",
+        "description": "When you invite a substitute from a 课程 page, requests appear here for you and the substitute to review."
+      },
+      "summary": {
+        "needsResponse": "{{count}} request needs your response.",
+        "needsResponse_other": "{{count}} requests need your response.",
+        "track": "Track substitute invitations and approval status for your 课程es."
+      },
+      "card": {
+        "courseLead": "Course lead:",
+        "substitute": "Substitute:"
+      },
+      "role": {
+        "youAreSubstitute": "You are the substitute",
+        "youInvited": "You invited",
+        "participant": "Participant"
+      },
+      "updated": "Updated {{datetime}}",
+      "actions": {
+        "review": "Review",
+        "viewDetails": "View details",
+        "openClass": "Open 课程"
+      }
+    },
+    "substituteSummary": {
+      "labels": {
+        "course": "Course",
+        "from": "From",
+        "session": "Session",
+        "date": "date"
+      },
+      "invitedSubstitute": "Invited substitute",
+      "theirNote": "Their note"
+    },
+    "substituteReview": {
+      "backToNotifications": "返回 to notifications",
+      "backButton": "通知",
+      "title": "Cover request",
+      "subtitle": "Review details and respond when you are ready.",
+      "statusLabel": "Status",
+      "substituteDecideHint": "If you accept, the primary instructor will be asked to approve before admin finalizes.",
+      "acceptInvite": "Accept invite",
+      "declineInvite": "Decline invite",
+      "primaryDecideHint": "The substitute has accepted. Approve to send this cover request to admin for final approval.",
+      "approveCover": "Approve cover",
+      "reject": "Reject",
+      "noAccess": "This cover request is not linked to your instructor account, or you have already responded.",
+      "errors": {
+        "missingId": "Missing request id.",
+        "notFound": "This cover request could not be found on this device."
+      },
+      "toast": {
+        "acceptFailed": "Could not accept invite",
+        "accepted": "You accepted the cover invite",
+        "declined": "Invite declined",
+        "forwardedToAdmin": "Forwarded to admin for final approval",
+        "coverNotApproved": "Cover not approved",
+        "approveFailed": "Could not approve cover request"
+      },
+      "readonlyMessages": {
+        "waitingSubstitute": "Waiting for the substitute to accept or decline.",
+        "waitingPrimary": "Waiting for the primary instructor to approve.",
+        "nothingToConfirm": "There is nothing for you to confirm on this request right now."
+      }
+    },
+    "courseForm": {
+      "title": {
+        "edit": "编辑 课程",
+        "new": "Add New 课程"
+      },
+      "steps": {
+        "ariaLabel": "课程 setup steps",
+        "details": "1 · Details",
+        "schedule": "2 · 课表 approval",
+        "lessons": "3 · Lessons"
+      },
+      "errors": {
+        "classNotFound": "课程 not found.",
+        "uploadFailed": "Upload failed",
+        "titleRequired": "课程 title is required.",
+        "categoryMissing": "Your teaching category is not set. Contact an administrator to assign it before creating a 课程.",
+        "datesBothOrNeither": "Enter both a 课程 start date and a 课程 end date, or leave both empty.",
+        "datesInvalid": "课程 dates are invalid.",
+        "endBeforeStart": "课程 end date must be on or after the start date.",
+        "lessonRequired": "Add at least one lesson with a title and PDF or video URL for this 课程.",
+        "saveFailed": "Failed to save. Please try again."
+      },
+      "toast": {
+        "invalidImageType": "Please choose an image file (JPEG, PNG, WebP, etc.).",
+        "imageTooLarge": "Image must be 8 MB or smaller.",
+        "thumbnailUploaded": "Thumbnail uploaded",
+        "thumbnailUploadFailed": "Thumbnail upload failed",
+        "pdfReadingTimeFailed": "Could not estimate reading time (link may be private or unsupported). Enter it manually (e.g. 5 min read)."
+      },
+      "dialog": {
+        "completeLesson": {
+          "title": "Complete the current lesson first",
+          "description": "Please add a title and video or PDF content before adding another lesson."
+        },
+        "removeLesson": {
+          "title": "Remove this lesson?",
+          "description": "This will remove the lesson from the 课程. You can add it again later."
+        }
+      },
+      "details": {
+        "replaceImage": "Replace image",
+        "addCoverImage": "Add cover image",
+        "instructorLabel": "Instructor",
+        "classNameLabel": "课程 name *",
+        "classNamePlaceholder": "e.g. Introduction to Economics",
+        "categoryLabel": "Category *",
+        "categoryNotAssigned": "Not assigned",
+        "categoryHint": "Assigned by admin when your instructor account was created. Contact support if this looks wrong.",
+        "aboutLabel": "About this 课程 (optional)",
+        "aboutPlaceholder": "What 学生s will learn — a sentence or two is enough.",
+        "datesSectionTitle": "课程 dates (optional)",
+        "datesSectionHint": "When this run starts and ends. Leave blank if not decided yet.",
+        "startLabel": "课程 starts",
+        "endLabel": "课程 ends",
+        "pricingTitle": "Pricing",
+        "pricingHint": "Set by an admin after you save this 课程 and they publish it.",
+        "continueToSchedule": "Continue to 课表"
+      },
+      "schedule": {
+        "status": {
+          "awaitingApproval": "Awaiting your approval",
+          "approved": "课表 approved",
+          "draft": "草稿"
+        },
+        "sessionLabel": "Session {{num}}",
+        "dateLabel": "Date",
+        "timeLabel": "Time",
+        "sectionTitle": "课表",
+        "newClassInfo": "After you create this 课程, an administrator will propose session dates and times for your review.",
+        "newClassNote": "Your new 课程 is saved with a minimal placeholder 课表 until admin proposes the real one.",
+        "rejectionNoteTitle": "Your note to admin",
+        "loading": "加载中 课表…",
+        "noProposal": "When an admin proposes a 课表 for this 课程, session rows will appear here for your approval.",
+        "sessionsInSixMonths": "Sessions in 6 months",
+        "proposedBy": "Proposed by {{name}}. 学生 attendance expectations follow this plan once approved.",
+        "month1Heading": "Sessions in 1st month",
+        "month2Heading": "Sessions in 2nd month",
+        "month3Heading": "Sessions in 3rd month",
+        "perSessionDetails": "Per-session details",
+        "noSessionRows": "No session rows yet — waiting for admin.",
+        "saving": "Saving…",
+        "approveSchedule": "Approve 课表",
+        "requestChanges": "Request changes",
+        "approvedNote": "课表 approved. The admin can now set pricing and publish the 课程.",
+        "continueToLessons": "Continue to lessons",
+        "rejectDialog": {
+          "title": "Request 课表 changes",
+          "description": "Describe what should change (days, times, session count). Admin will revise and send a new proposal.",
+          "placeholder": "e.g. Wednesday evenings don't work — can we move to Thursday?",
+          "send": "Send to admin"
+        },
+        "toast": {
+          "approved": "课表 approved",
+          "approveFailed": "Could not approve 课表",
+          "rejected": "Feedback sent to admin",
+          "rejectFailed": "Could not reject 课表"
+        }
+      },
+      "lessons": {
+        "title": "Lessons (PDF or video link)",
+        "addLesson": "Add lesson",
+        "minimize": "Minimize",
+        "expand": "Expand",
+        "lessonLabel": "Lesson {{n}}",
+        "removeLessonTitle": "Remove lesson",
+        "titleLabel": "Lesson title",
+        "titlePlaceholder": "e.g. Supply and Demand",
+        "contentTypeLabel": "Content type",
+        "contentType": {
+          "videoLink": "Video link",
+          "videoUpload": "Video upload",
+          "pdfLink": "PDF link",
+          "pdfUpload": "PDF upload"
+        },
+        "uploadedPrefix": "Uploaded:",
+        "urlPlaceholders": {
+          "video": "https://youtube.com/…",
+          "pdf": "https://… or Google Drive PDF link"
+        },
+        "preview": "Preview",
+        "pdfPreview": "PDF Preview",
+        "removeVideoTitle": "Remove video link",
+        "removePdfTitle": "Remove PDF link",
+        "videoPreviewTitle": "Video preview",
+        "pdfPreviewTitle": "PDF preview",
+        "durationLabel": "Duration (optional)",
+        "durationHint": {
+          "pdf": "Estimated reading time for the PDF.",
+          "video": "Length of the video."
+        },
+        "durationPlaceholders": {
+          "pdf": "e.g. 5 min read",
+          "video": "e.g. 12 min"
+        },
+        "getFromLink": "Get from link",
+        "estimate": "Estimate",
+        "editSchedule": "编辑 课表",
+        "saving": "Saving…",
+        "saveChanges": "保存 changes",
+        "createClass": "Create 课程",
+        "createDialog": {
+          "title": "Create this 课程?",
+          "description": "Your 课程 is saved as a draft. An admin will set pricing and publish it after reviewing your 课表 and lessons.",
+          "confirm": "Create 课程"
+        }
+      }
+    },
+    "quiz": {
+      "loading": "加载中 quiz…",
+      "backToQuizzes": "返回 to 课程 quizzes",
+      "title": {
+        "edit": "编辑 quiz",
+        "create": "Create quiz"
+      },
+      "form": {
+        "questionImageAlt": "Question",
+        "changeImage": "Change",
+        "addImageAriaLabel": "Add image to the current question.",
+        "findAndInsertMedia": "Find and insert media",
+        "uploadFile": "Upload file",
+        "dragHere": "or drag here to upload",
+        "detailsTitle": "测验 details",
+        "typeLabel": "Type",
+        "typePlaceholder": "Select type",
+        "typeHint": "测验 for practice or Placement test for assessment.",
+        "classLabel": "课程",
+        "classPlaceholder": "Select 课程",
+        "noClass": "No 课程",
+        "classLockedHint": "课程 is locked for this quiz.",
+        "classPickerHint": "加载中…",
+        "titleLabels": {
+          "placement": "Placement test title *",
+          "quiz": "测验 title *"
+        },
+        "titlePlaceholder": "e.g. Economics Placement Test",
+        "release": {
+          "label": "Release date and time",
+          "date": "Date",
+          "time": "Time",
+          "selectDate": "Select date",
+          "selectTime": "Select time"
+        },
+        "releaseHint": "When this placement test becomes available to 学生s.",
+        "questionsTitle": "Questions (multiple choice)",
+        "addQuestion": "Add question",
+        "questionActions": {
+          "expand": "Expand",
+          "minimize": "Minimize",
+          "remove": "Remove question"
+        },
+        "questionLabel": "Question {{n}}",
+        "pointsLabel": "{{n}} pts",
+        "questionTextLabel": "Question text *",
+        "questionTextPlaceholder": "e.g. What is the main focus of microeconomics?",
+        "questionImageLabel": "Image for this question",
+        "timeLimit": {
+          "label": "Time limit",
+          "choose": "Choose…",
+          "seconds": "{{sec}} s"
+        },
+        "options": {
+          "title": "Options (check the correct answer)",
+          "option": "Option {{letter}}"
+        },
+        "saveChanges": "保存 changes",
+        "createQuiz": "Create quiz"
+      },
+      "types": {
+        "quiz": "测验",
+        "placementTest": "Placement test"
+      },
+      "errors": {
+        "titleRequired": "测验 title is required.",
+        "questionRequired": "Add at least one question.",
+        "questionIncomplete": "Each question needs text, at least two options, and one correct answer.",
+        "classRequired": "Please select a 课程 for this quiz.",
+        "saveFailed": "Failed to save quiz.",
+        "loadFailed": "Could not load quiz."
+      },
+      "toast": {
+        "savedLocally": "保存d on this device only",
+        "savedLocallyDescription": "Connect to the API to sync quizzes across devices."
+      },
+      "dialog": {
+        "removeQuestion": {
+          "title": "Remove this question?",
+          "description": "This question will be removed from the quiz."
+        }
+      }
+    },
+    "quizResults": {
+      "loading": "加载中 quiz results...",
+      "backLink": "返回 to 课程 quizzes",
+      "title": "quiz results — {{title}}",
+      "subtitle": "学生 attempts and scores for this quiz.",
+      "localDataBadge": "(Showing local data)",
+      "exportButton": "Export to Excel",
+      "exportTitle": "Export to Excel spreadsheet",
+      "empty": "No attempts yet. Results appear here after 学生s complete the quiz.",
+      "checkedInTitle": "When the 学生 finished the quiz",
+      "errors": {
+        "notFound": "测验 not found",
+        "loadFailed": "Failed to load quiz results",
+        "localStorage": "Could not read quiz results from local storage."
+      },
+      "table": {
+        "no": "No.",
+        "student": "学生",
+        "email": "Email",
+        "score": "Score",
+        "correct": "Correct",
+        "fillingDate": "Filling date"
+      }
+    },
+    "payroll": {
+      "title": "工资",
+      "subtitle": "Your 课程es and linked 学生 payments. 提交 monthly payroll when 课表 months are complete.",
+      "tabs": {
+        "payroll": "工资",
+        "submissions": "My submissions"
+      },
+      "summary": {
+        "classes": "Your 课程es",
+        "paymentRows": "payment row(s)",
+        "classesCount": "课程(es)",
+        "totalInView": "Total in view"
+      },
+      "searchPlaceholder": "Search 课程, 学生, invoice…",
+      "empty": {
+        "signIn": "Sign in with a profile that has instructor 课程es to see payroll.",
+        "loading": "加载中 your 课程es…",
+        "noMatch": "No 课程es match your search.",
+        "noClasses": "No active 课程es yet. Create a 课程 and wait for enrollment."
+      },
+      "table": {
+        "class": "课程",
+        "students": "学生",
+        "invoices": "Invoices",
+        "totalTuition": "Total tuition",
+        "yourShare": "Your share",
+        "request": "Request",
+        "action": "Action"
+      },
+      "demo": {
+        "badge": "Demo",
+        "scheduleComplete": "3-month 课表 complete — submit payroll per month."
+      },
+      "adminNotePrefix": "Admin: {{note}}",
+      "invoiceSummary": "{{paid}} paid · {{unpaid}} unpaid",
+      "sharePercent": "{{percent}}% of tuition",
+      "requestStatus": {
+        "pendingReview": "Pending review",
+        "approved": "已批准",
+        "declined": "Declined",
+        "ready": "Ready"
+      },
+      "actions": {
+        "viewPayout": "View payout",
+        "submitPayroll": "提交 payroll"
+      },
+      "expandAria": {
+        "hide": "Hide 学生 payments",
+        "show": "Show 学生 payments"
+      },
+      "enrolledSection": {
+        "title": "Enrolled 学生s"
+      },
+      "enrolledTable": {
+        "student": "学生",
+        "amount": "Amount",
+        "status": "Status",
+        "due": "Due",
+        "paid": "Paid",
+        "loading": "加载中 enrolled 学生s…",
+        "empty": "No enrolled 学生s for this 课程 yet."
+      },
+      "status": {
+        "enrolled": "Enrolled"
+      },
+      "submissions": {
+        "title": "My submissions",
+        "subtitle": "Track your monthly submissions and admin review status.",
+        "viewNotifications": "View notifications",
+        "stats": {
+          "total": "Total submissions",
+          "pending": "Pending",
+          "search": "Search"
+        },
+        "searchPlaceholder": "课程, period, status…",
+        "empty": {
+          "none": "No payroll submissions yet.",
+          "noMatch": "No submissions match your search."
+        },
+        "table": {
+          "class": "课程",
+          "period": "Period",
+          "requested": "Requested",
+          "status": "Status",
+          "bankReceipt": "Bank receipt",
+          "submitted": "提交ted",
+          "adminNote": "Admin note"
+        },
+        "enrolledSubtitle": "{{count}} enrolled",
+        "viewReceipt": "View receipt",
+        "viewStatus": "View status"
+      },
+      "submissionStatus": {
+        "approved": "已批准",
+        "notApproved": "Not approved",
+        "pending": "Pending"
+      },
+      "time": {
+        "justNow": "Just now",
+        "minutesAgo": "{{count}} min ago",
+        "hoursAgo_one": "{{count}} hour ago",
+        "hoursAgo_other": "{{count}} hours ago",
+        "daysAgo_one": "{{count}} day ago",
+        "daysAgo_other": "{{count}} days ago"
+      },
+      "toast": {
+        "selectPeriod": "Select a 课表 period",
+        "submitFailed": "Could not submit payroll request",
+        "submitted": "工资 request sent"
+      }
+    },
+    "payrollPayout": {
+      "title": "Payout information",
+      "description": "Your submission details and any bank transfer receipt uploaded by admin.",
+      "fields": {
+        "yourSubmission": "Your submission",
+        "status": "Status",
+        "scheduleMonth": "课表 month",
+        "requestedPayout": "Requested payout",
+        "payoutDetails": "Payout details",
+        "reviewed": "Reviewed",
+        "adminReference": "Admin reference",
+        "adminNote": "Admin note"
+      },
+      "noSubmission": "No payroll submission on file for this 课程 yet.",
+      "sections": {
+        "payoutNotes": "Payout notes from admin",
+        "bankReceipt": "Bank transfer receipt (from admin)"
+      },
+      "wrongFileWarning": "Filename suggests this may not be a bank receipt PDF. Open to verify before relying on it.",
+      "receipt": {
+        "uploadedByAdmin": "Uploaded by EduHub admin",
+        "released": "Released",
+        "attached": "Attached",
+        "pdfTitle": "Bank transfer receipt PDF",
+        "imageAlt": "Bank transfer receipt from admin",
+        "downloadPdf": "Download PDF",
+        "openPdfTab": "Open PDF in new tab",
+        "openReceipt": "Open receipt",
+        "pendingApproved": "已批准 — waiting for admin to attach the bank transfer receipt.",
+        "pendingNotYet": "Receipt not available yet. Admin uploads it after processing your payout."
+      }
+    },
+    "payrollSubmit": {
+      "title": "提交 payroll for approval",
+      "description": "Choose a completed 课表 month and submit your requested payout to admin.",
+      "pricing": {
+        "title": "课程 pricing",
+        "listedTuition": "Listed tuition (per 学生)",
+        "totalClassPrice": "Total 课程 price",
+        "payrollSubmissions": "工资 submissions",
+        "instructorShare": "Instructor share",
+        "platformShare": "Platform share"
+      },
+      "monthlyPayout": {
+        "count": "{{count}} 课表 month(s)",
+        "label": "Instructor payout per 课表 month"
+      },
+      "pricingHints": {
+        "noTuition": "Admin-listed tuition is not set for this 课程 yet.",
+        "noStudents": "No enrolled 学生s yet — payout preview uses listed tuition × 0."
+      },
+      "period": {
+        "label": "课表 period",
+        "loading": "加载中 课程 课表…",
+        "placeholder": "Select 课表 month"
+      },
+      "noApprovedMonths": "No approved 课表 months ready for payroll yet.",
+      "payoutSection": {
+        "requested": "Requested payout for this month",
+        "previewOnly": "(preview only — confirm before submitting)",
+        "breakdown": "Breakdown"
+      },
+      "payoutDetails": {
+        "label": "Payout details (optional)",
+        "placeholder": "Bank account, payment method, or other details for admin"
+      },
+      "notes": {
+        "label": "Notes to admin (optional)",
+        "placeholder": "Any context admin should know when reviewing this submission"
+      },
+      "systemSummaryPrefix": "System summary:",
+      "submitToAdmin": "提交 to admin",
+      "toast": {
+        "scheduleNotReady": "课表 not ready for payroll",
+        "scheduleNotReadyDescription": "工资 is submitted per month from the 课程 课表 admin created and you approved. Publish that 课表 first.",
+        "selectMonth": "Select a 课表 month",
+        "selectMonthDescription": "Choose a month where all sessions are finished.",
+        "alreadySubmitted": "Month already submitted",
+        "monthNotReady": "Month not ready for payroll",
+        "meetingsNotComplete": "Meetings not complete"
+      }
+    },
+    "resumeEdit": {
+      "backToClasses": "返回 to My 课程es",
+      "backToResumes": "返回 to resumes",
+      "title": {
+        "new": "New 课程 resume",
+        "edit": "编辑 课程 resume"
+      },
+      "intro": "Recaps and reminders appear on the 学生 课程 page under the Resume tab.",
+      "substituteBanner": {
+        "viewingAs": "You are 编辑ing as substitute.",
+        "courseLead": "Course lead:",
+        "hint": "You can add or 编辑 resumes for 学生s while covering this 课程."
+      },
+      "primaryBanner": "You are the course lead. Substitute instructors with approved cover can also add resumes in demo mode.",
+      "thumbnail": {
+        "label": "Thumbnail image (optional)",
+        "previewAlt": "Resume thumbnail preview",
+        "hint": "Shows on the resume cards 学生s see on their 课程 page."
+      },
+      "sessionLabel": "Link to a 课表d session",
+      "sessionHints": {
+        "primary": "Optional — tie this recap to a specific session or leave as whole-课程.",
+        "substituteLocked": "Session is set from your substitute cover invite.",
+        "noSessions": "No 课表d sessions yet — recap applies to the whole 课程.",
+        "wholeClass": "Whole 课程 — general recap"
+      },
+      "session": {
+        "wholeClass": "Whole 课程 — general recap",
+        "placeholder": "Whole 课程 or one session…",
+        "loadingAssigned": "加载中 assigned session…"
+      },
+      "bodyLabel": "Resume text",
+      "bodyPlaceholder": "Key points, homework, reminders for 学生s…",
+      "actions": {
+        "delete": "删除",
+        "saveForStudents": "保存 for 学生s"
+      },
+      "deleteDialog": {
+        "title": "删除 this resume?",
+        "description": "学生 will no longer see this recap. This cannot be undone."
+      },
+      "errors": {
+        "missingClass": "Missing 课程.",
+        "noAccess": "You don't have access to 编辑 resumes for this 课程.",
+        "classNotFound": "课程 not found.",
+        "emptyBody": "Write something before saving."
+      },
+      "toast": {
+        "notFound": "Resume not found",
+        "saveFailed": "Could not save.",
+        "deleteFailed": "Could not 删除 resume.",
+        "deleted": "Resume 删除d",
+        "created": "Resume created",
+        "createdDescription": "学生 can now read this recap on their 课程 page.",
+        "updated": "Resume updated",
+        "updatedDescription": "Your changes are saved for 学生s.",
+        "invalidImage": "Please pick an image file.",
+        "uploadFailed": "Could not upload image."
+      }
+    },
+    "roster": {
+      "backToMyClass": "返回 to My 课程",
+      "awaitingAdminApproval": "Awaiting admin approval",
+      "awaitingAdminTitle": "An admin will set the price and publish this 课程.",
+      "actions": {
+        "unarchive": "Unarchive",
+        "archive": "Archive",
+        "deleteClass": "删除 课程",
+        "editClassContent": "编辑 课程 content"
+      },
+      "errors": {
+        "missingClass": "Missing 课程.",
+        "loading": "加载中 课程…",
+        "forbidden": "You don't have access to this 课程 roster.",
+        "loadFailed": "Could not load this 课程. It may have been removed or you may need to sign in again.",
+        "notFound": "课程 not found."
+      },
+      "thumbnailAlt": "{{title}} thumbnail",
+      "banners": {
+        "substitute": {
+          "viewingAs": "You are viewing as substitute.",
+          "courseLead": "Course lead (owns this 课程 in the catalog):",
+          "description": "You can use 课程 resumes and local attendance (QR and this browser's check-ins). The server enrollment list is only returned for the course lead today, so the Enrolled tab explains that limitation. Catalog 编辑s, deleting the 课程, and inviting another substitute stay with the course lead."
+        },
+        "primary": {
+          "title": "You are the course lead.",
+          "description": "已批准 substitute {{email}} has demo access to this 课程 page for resumes and local attendance. The server enrollment list stays course-lead only until the API supports substitutes."
+        }
+      },
+      "enrollmentHint": "学生 enrolled from the catalog appear below when the API returns roster data.",
+      "inviteSubstitute": "Invite Substitute",
+      "inviteSubstituteHint": "Covers a session when you're unavailable. Enter the Substitute's admin-registered lecturer email. Demo: in-app notifications only.",
+      "tabs": {
+        "enrolled": "Enrolled",
+        "schedule": "课表",
+        "resume": "Resume",
+        "quiz": "测验",
+        "attendance": "考勤",
+        "grades": "成绩"
+      },
+      "enrolled": {
+        "title": "Enrolled 学生s",
+        "intro": "Everyone signed up for this 课程 in the platform. Local-only 课程es won't show rows until the 课程 exists on the server.",
+        "sessionsNote": "This 课程 is set to {{count}} sessions in 6 months (from 课程 settings); the table compares local check-ins to that target.",
+        "localOnly": "This 课程 is stored only in your browser. Connect it to the API to load enrolled 学生s here.",
+        "substituteNoRoster": "Enrollment list is not loaded for substitutes (API).",
+        "substituteNoRosterDescription": "The server only returns /courses/…/学生s for the catalog course lead. Your access here is from the approved substitute workflow (demo).",
+        "loading": "加载中 学生s…",
+        "loadError": "Could not load enrollment list. Check permissions or try again later.",
+        "empty": "No 学生s enrolled yet.",
+        "table": {
+          "name": "Name",
+          "email": "Email",
+          "sessionsTitle": "Check-ins recorded on this browser vs planned 课程 meetings in six months (课程 settings).",
+          "sessionsInSixMonths": "Sessions in 6 months *"
+        },
+        "footnote": "* Sessions in 6 months is the planned total from 课程 settings. The first number is how many distinct sessions this 学生 checked into on this browser only."
+      },
+      "schedule": {
+        "yourCover": "Your cover on this 课程",
+        "classSchedule": "课程 课表",
+        "substituteIntro": "Only the session(s) you are covering appear here—not the course lead's full term calendar.",
+        "courseLead": "Course lead:",
+        "primaryIntro": "Session plan from the catalog and, when present, the latest admin proposal from the server.",
+        "scheduleApprovalsLink": "课表 approvals",
+        "editClassScheduleLink": "编辑 课程 → 课表",
+        "feedbackTitle": "课表 feedback on file",
+        "classWindowStart": "课程 window start:",
+        "classWindowEnd": "End:",
+        "approveOrRequest": "Approve or request 课表 changes",
+        "loadingProposal": "加载中 latest admin 课表 proposal…",
+        "substituteNoMatch": "We couldn't match an active substitute invite on this device to a 课表 row.",
+        "substituteNoMatchHint": "Check that your sign-in email matches the invited substitute, or ask the course lead which session you cover.",
+        "wholeClassCover": "Whole-课程 substitute cover",
+        "wholeClassCoverDescription": "The course lead did not tie this cover to a single calendar row, so the full term 课表 is not listed here.",
+        "sessionsCovering": "Session(s) you are covering:",
+        "table": {
+          "number": "#",
+          "session": "Session",
+          "yourCover": "Your cover",
+          "yourCoverTitle": "Your invited cover email and workflow status.",
+          "substituteInstructor": "Substitute instructor",
+          "substituteInstructorTitle": "Lecturer invited when the course lead cannot run this session (demo workflow).",
+          "date": "Date",
+          "time": "Time",
+          "yourEmailTitle": "Your work email on this cover",
+          "invitedEmailTitle": "Invited substitute work email"
+        },
+        "substituteHiddenNote": "Other sessions in this 课程 are hidden on purpose. The course lead still sees the full 课表.",
+        "noSessions": "No session rows yet. When an admin proposes dates and times, they will show here.",
+        "adminProposal": "Admin proposal from {{name}}.",
+        "plannedSessions": "Planned sessions (six-month window):",
+        "substituteColumnNote": "The Substitute instructor column lists the work email from your invite when the course lead cannot run that session."
+      },
+      "scheduleStatus": {
+        "pendingApproval": "课表 pending your approval",
+        "approved": "课表 approved",
+        "draft": "草稿",
+        "published": "已发布"
+      },
+      "sessionFallback": "Session {{n}}",
+      "substituteCoverTitle": "Substitute cover · {{title}}",
+      "resume": {
+        "title": "课程 resumes",
+        "intro": "Each card is a recap 学生s can read on their 课程 page (Resume tab). Create or 编辑 on a dedicated page.",
+        "newResume": "New resume",
+        "emptyTitle": "No resumes yet",
+        "emptyDescription": "Write your first recap so enrolled 学生s can review it anytime.",
+        "createResume": "Create resume",
+        "wholeClassRecap": "Whole 课程 recap",
+        "updated": "Updated",
+        "thumbnailAlt": "Resume thumbnail"
+      },
+      "quiz": {
+        "title": "测验 & placement tests",
+        "intro": "Multiple-choice quizzes for this 课程 appear below as cards. Use Create quiz to add one, then publish, 编辑, or open results from each card.",
+        "createQuiz": "Create quiz",
+        "substituteRestriction": "测验 management is for the course lead.",
+        "substituteRestrictionDescription": "Creating and publishing quizzes for this 课程 is done by the instructor who owns the catalog listing.",
+        "localOnly": "This 课程 exists only in your browser. Connect it to the API to list server-backed quizzes for this course.",
+        "yourQuizzes": "Your quizzes",
+        "fetchNoteFallback": "测验 list could not be loaded. 测验zes you save on this device still appear below.",
+        "fetchNoteWithError": "测验 list could not be loaded ({{error}}). 测验zes you save on this device still appear below.",
+        "loadError": "Could not load quizzes for this 课程.",
+        "emptyTitle": "No quizzes for this 课程 yet",
+        "emptyDescription": "Your real quizzes will replace the example cards below. Create a practice quiz or placement test to get started.",
+        "exampleLayout": "Example layout (not saved — disappears when you add a quiz)",
+        "example": "Example",
+        "placement": "Placement",
+        "quiz": "测验",
+        "questionCount_one": "{{count}} question",
+        "questionCount_other": "{{count}} questions",
+        "publish": "Publish",
+        "results": "Results",
+        "toast": {
+          "publishedLocally": "已发布 on this device",
+          "published": "测验 published",
+          "publishFailed": "Could not publish quiz."
+        }
+      },
+      "attendance": {
+        "qrTitle": "课程 meeting check-in (QR)",
+        "qrIntro": "Each QR opens the check-in link; 学生s must use it signed in as a 学生. The roster table below only shows check-ins stored on this browser.",
+        "overviewTitle": "学生 attendance overview",
+        "overviewIntro": "Use Jump by 课程 课表 to pick the last planned session or a specific row from your 课表.",
+        "connectApi": "Connect this 课程 to the API to align attendance tracking with enrolled 学生s.",
+        "substituteOverview": "考勤 overview needs the server roster.",
+        "substituteOverviewDescription": "That roster is only returned for the course lead today, so this table cannot load while you are signed in as substitute.",
+        "loadingRoster": "加载中 roster for attendance table…",
+        "loadStudentsError": "Could not load 学生s for this overview.",
+        "noStudents": "No enrolled 学生s yet — nothing to show in the attendance overview.",
+        "phoneScanNote": "Phone scan vs this screen:",
+        "phoneScanDescription": "学生 phone scans now sync through the EduHub attendance API.",
+        "confirmEmailNote": "Confirm the 学生 account email matches the roster row, the meeting selected here matches the QR they scanned, and they are signed in as a 学生 on the check-in page.",
+        "showingFor": "Showing attendance for:",
+        "presentForMeeting": "Present for this meeting:",
+        "selectMeetingHint": "Select a meeting with Jump by 课程 课表 or in 课程 meeting check-in to load check-in data for the table below.",
+        "enrollmentNote": "Enrollment lists everyone who joined the 课程 on the platform. Present and Checked in now use the EduHub attendance API for the selected QR meeting.",
+        "jumpBySchedule": "Jump by 课程 课表",
+        "chooseScheduleContext": "Choose 课表 context",
+        "latestQr": "Latest QR session (newest)",
+        "lastScheduled": "Last date on 课程 课表",
+        "matchHint": "When a row matches the selected QR session, the Present and Checked in columns in this table use that meeting from the attendance API.",
+        "tableAria": "学生 attendance for the selected check-in meeting",
+        "table": {
+          "student": "学生",
+          "email": "Email",
+          "present": "Present",
+          "checkedIn": "Checked in",
+          "instructorCheck": "Instructor Check"
+        },
+        "presentBadge": "Present",
+        "checkedInTitle": "Checked in",
+        "signInToCheck": "Sign in to save 教师 check",
+        "toast": {
+          "noQrMeetings": "No QR meetings yet — generate check-in in 课程 meeting check-in above.",
+          "noSavedMeeting": "No saved meeting matches that 课表 row yet. Generate a QR for that 课程 day, or pick the meeting manually in 课程 meeting check-in."
+        }
+      },
+      "dialogs": {
+        "deleteClass": {
+          "title": "Are you sure you want to 删除 this 课程?",
+          "description": "This will permanently remove this 课程 and all its lessons. This action cannot be undone."
+        },
+        "deleteResume": {
+          "title": "删除 this resume?",
+          "description": "学生 will no longer see this recap on their 课程 page. This cannot be undone."
+        }
+      },
+      "substituteDialog": {
+        "title": "Invite a substitute instructor",
+        "description": "Use the work email of a lecturer your admin created. They receive an in-app notification here; your admin is notified too (browser demo until the API exists).",
+        "emailLabel": "Substitute email",
+        "emailPlaceholder": "colleague@school.org",
+        "sessionLabel": "课表d session",
+        "sessionOptional": "课表d session (optional)",
+        "sessionPlaceholder": "Select session to cover",
+        "messageLabel": "Message (optional)",
+        "messagePlaceholder": "Brief note for the substitute…",
+        "sendInvite": "Send invite",
+        "toast": {
+          "needEmail": "Your account needs an email to send this invite.",
+          "enterEmail": "Enter the substitute lecturer's email.",
+          "ownEmail": "Use another instructor's email — not your own.",
+          "notRegistered": "That email is not on the admin lecturer list (demo).",
+          "notRegisteredDescription": "Ask your admin to register the lecturer (Add user role), then invite using that work email.",
+          "selectSession": "Select the 课表d session this substitute will cover.",
+          "success": "Substitute invite recorded",
+          "successDescription": "The substitute must accept, then you approve. Check instructor notifications (demo)."
+        }
+      },
+      "toast": {
+        "resumeDeleted": "Resume 删除d",
+        "resumeDeleteFailed": "Could not 删除 resume."
+      }
+    },
+    "attendancePanel": {
+      "title": "课程 meeting check-in",
+      "description": {
+        "fixed": "Generate a QR for this 课程. 学生 scan to check in on their phones.",
+        "schedule": "Pick a planned session from the 课表, name the meeting, then generate a QR.",
+        "embedded": "Name each meeting and generate a QR; past meetings stay on this device.",
+        "default": "Select a 课程 and meeting, then generate a QR code for 学生 check-in."
+      },
+      "loading": "加载中 课程es…",
+      "noClasses": "No 课程es yet. Create a 课程 first.",
+      "classLabel": "课程",
+      "classPlaceholder": "Select 课程",
+      "scheduleHint": {
+        "meetingsPerWeek": "{{count}} meetings per week on average (from 课表).",
+        "setSessions": "Set Sessions in 6 months on the 课程 课表 to align meeting names with planned rows."
+      },
+      "meetingName": {
+        "label": "Name this 课程 meeting",
+        "placeholder": "e.g. Week 3 — Supply & Demand",
+        "helper": "Shown on the projector and in the session log."
+      },
+      "generateQr": {
+        "new": "New QR for next meeting",
+        "this": "Generate QR for this meeting"
+      },
+      "projectorView": "Projector view",
+      "stopSession": "Stop session",
+      "modality": {
+        "online": "Online check-in — 学生s scan from anywhere.",
+        "inPerson": "In-person check-in — show QR on the projector."
+      },
+      "sessionTimer": {
+        "label": "课程 session time",
+        "max": "max {{duration}}",
+        "remaining": "{{time}} remaining",
+        "closesAt": "Check-in closes at {{time}}"
+      },
+      "qrHint": "Scan opens 学生 check-in — they must be signed in as a 学生.",
+      "sessionEnded": {
+        "stopped": {
+          "title": "Session stopped",
+          "body": "Check-in is closed for this meeting."
+        },
+        "windowEnded": {
+          "title": "Check-in closed",
+          "body": "The check-in window for this session has ended."
+        },
+        "closed": {
+          "title": "Check-in window ended",
+          "body": "Start a new QR session for the next meeting."
+        }
+      },
+      "emptyQr": {
+        "tapGenerate": "Tap Generate below to create a QR for this meeting.",
+        "pickClass": "Pick a 课程 and tap Generate to start check-in."
+      },
+      "sessionLog": {
+        "title": "Session log (this 课程)",
+        "description": "Past QR sessions for this 课程 on this device."
+      },
+      "projector": {
+        "title": "考勤 QR — projector",
+        "scanHint": "学生 scan with their phone to check in",
+        "meetingLabel": "Meeting:",
+        "exitAria": "Exit projector view",
+        "ariaLabel": "Projector attendance QR"
+      },
+      "meetingFallback": "Meeting",
+      "toast": {
+        "generateFailed": "Could not generate attendance QR",
+        "stopFailed": "Could not stop attendance session"
+      }
+    },
+    "attendancePicker": {
+      "label": "Meeting (for the table below)",
+      "placeholders": {
+        "pickSession": "Pick a planned session…",
+        "chooseMeeting": "Choose a meeting",
+        "noMeetings": "No meetings generated yet"
+      },
+      "group": {
+        "plannedSessions": "Planned sessions (approved 课表)",
+        "savedCheckIns": "保存d check-ins (this browser)"
+      },
+      "checkInSuffix": {
+        "count": " · {{count}} checked in (this browser)",
+        "none": " · no check-ins stored here yet"
+      },
+      "helper": {
+        "generateBelow": "Generate a meeting in 课程 meeting check-in above, then pick it here.",
+        "generateAbove": "Generate a meeting in 课程 meeting check-in above, then pick it here.",
+        "plannedRows": "Planned rows mirror your approved 课表; saved check-ins come from QR sessions on this browser."
+      },
+      "empty": {
+        "pickSession": "Pick a planned session or a saved check-in to load the attendance table.",
+        "generateMeeting": "Generate a meeting QR first, then select it here."
+      }
+    },
+    "attendanceLogs": {
+      "title": "考勤 QR session log",
+      "description": "Past check-in sessions for this 课程 on this browser.",
+      "empty": "No attendance sessions logged yet.",
+      "table": {
+        "started": "Started",
+        "ended": "Ended",
+        "timeInClass": "Time in 课程",
+        "class": "课程",
+        "meeting": "Meeting",
+        "instructor": "Instructor",
+        "howEnded": "How it ended"
+      },
+      "inProgress": "In progress",
+      "endReason": {
+        "windowEnded": "2h 15m window ended",
+        "newQr": "New QR / next meeting",
+        "switchedClass": "Switched 课程",
+        "stoppedByInstructor": "Stopped by instructor"
+      }
+    },
+    "grades": {
+      "title": "Final scores",
+      "intro": "Total = average of attendance % and instructor score (0–100). Publish certificates when grades are final.",
+      "publishAll": "Publish all certificates",
+      "empty": {
+        "substitute": "Substitute instructors cannot 编辑 grades on this demo page.",
+        "connectApi": "Connect this 课程 to the API to load enrolled 学生s for grading.",
+        "loading": "加载中 学生s…",
+        "error": "Could not load 学生s for grading.",
+        "noStudents": "No 学生s enrolled yet."
+      },
+      "table": {
+        "student": "学生",
+        "sessions": "Sessions",
+        "attendance": "Attend. %",
+        "instructor": "Instructor",
+        "total": "Total",
+        "feedback": "Feedback",
+        "actions": "Actions",
+        "headerTitles": {
+          "sessions": "QR check-ins on this browser vs planned sessions",
+          "attendance": "Auto: sessions attended ÷ planned sessions in 6 months",
+          "instructor": "Your score 0–100",
+          "total": "Average of attendance % and instructor score"
+        }
+      },
+      "feedback": {
+        "sessions": "sess.",
+        "platformPending": "Platform pending",
+        "platformBonus": "+ platform",
+        "pending": "Pending",
+        "readReview": "Read review"
+      },
+      "scorePlaceholder": "0–100",
+      "actions": {
+        "save": "保存",
+        "update": "Update",
+        "publish": "Publish",
+        "done": "Done"
+      },
+      "footnote": "Attend. % = sessions checked in on this browser ÷ planned sessions (课程 settings). Not synced across devices until an attendance API exists.",
+      "reviewDialog": {
+        "title": "学生 review",
+        "description": "Ratings and comments submitted by the 学生.",
+        "instructorRating": "Instructor rating",
+        "platformRating": "Platform rating",
+        "noComment": "No comment.",
+        "submitted": "提交ted {{date}}"
+      },
+      "starsAriaLabel": "{{rating}} out of 5 stars",
+      "toast": {
+        "gradeSaved": "Grade saved",
+        "certificatePublished": "Certificate published",
+        "saveFailed": "Could not save grade",
+        "publishFailed": "Could not publish certificate",
+        "publishAllDone": "All certificates published"
+      }
+    }
+  }
+}

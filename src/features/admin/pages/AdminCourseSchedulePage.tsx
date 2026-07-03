@@ -12,6 +12,7 @@ import { eduhubAdmin, eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import type { ScheduleProposalResponse } from "@/api/eduhubTypes";
 import { CourseStatusBadge } from "@/features/admin/components/AdminStatusBadges";
+import { useTranslation } from "react-i18next";
 import {
   mergeScheduleDisplayForAdminReview,
   toDateInputValue,
@@ -59,6 +60,7 @@ function monthPlansFromDistribution(counts: number[], buckets: ScheduleSlotRow[]
 }
 
 export default function AdminCourseSchedulePage() {
+  const { t } = useTranslation();
   const { courseId = "" } = useParams<{ courseId: string }>();
   const [title, setTitle] = useState("");
   const [instructorName, setInstructorName] = useState("");
@@ -216,7 +218,7 @@ export default function AdminCourseSchedulePage() {
   const handleSendToInstructor = async () => {
     const total = monthSessionCounts.reduce((sum, n) => sum + n, 0);
     if (total < 1) {
-      toast.error("Add at least one session across the schedule months.");
+      toast.error(t("admin.courses.schedule.toast.minOneSession"));
       return;
     }
     setSaving(true);
@@ -258,7 +260,7 @@ export default function AdminCourseSchedulePage() {
       );
       const { counts, buckets } = distributeSessionsIntoMonths(flatBack, { emptyEditorDefaults: true });
       setMonthPlans(monthPlansFromDistribution(counts, buckets));
-      toast.success("Schedule sent to instructor for approval");
+      toast.success(t("admin.courses.schedule.toast.sent"));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not send");
     } finally {
@@ -286,7 +288,7 @@ export default function AdminCourseSchedulePage() {
     return (
       <AdminLayout>
         <div className="container mx-auto px-6">
-          <p className="text-sm text-red-600">Invalid class id.</p>
+          <p className="text-sm text-red-600">{t("admin.courses.detail.invalidId")}</p>
         </div>
       </AdminLayout>
     );
@@ -304,18 +306,18 @@ export default function AdminCourseSchedulePage() {
         </Link>
 
         <AdminPageHeader
-          title="Class schedule"
-          description="Add one or more schedule months, set how many sessions fall in each, add optional date/time per row, then send the combined plan to the instructor."
+          title={t("admin.courses.schedule.title")}
+          description={t("admin.courses.schedule.description")}
         />
 
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="text-sm text-slate-600">Course status:</span>
+          <span className="text-sm text-slate-600">{t("admin.courses.schedule.courseStatus")}</span>
           <CourseStatusBadge status={courseStatus} />
           {courseStatus === "SCHEDULE_PENDING" && (
-            <span className="text-sm text-blue-600">— Waiting for instructor approval</span>
+            <span className="text-sm text-blue-600">{t("admin.courses.schedule.waitingInstructor")}</span>
           )}
           {courseStatus === "SCHEDULE_APPROVED" && (
-            <span className="text-sm text-teal-600">— Schedule approved, ready to publish</span>
+            <span className="text-sm text-teal-600">{t("admin.courses.schedule.scheduleApprovedReady")}</span>
           )}
           {scheduleRejectionNote && (
             <p className="text-sm text-red-800 w-full mt-1 rounded-md border border-red-200 bg-red-50 px-3 py-2">
@@ -325,7 +327,7 @@ export default function AdminCourseSchedulePage() {
         </div>
 
         {loading ? (
-          <p className="text-sm text-slate-600">Loading…</p>
+          <p className="text-sm text-slate-600">{t("common.loading")}</p>
         ) : error ? (
           <p className="text-sm text-red-600">{error}</p>
         ) : (
@@ -339,12 +341,12 @@ export default function AdminCourseSchedulePage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Instructor</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{t("admin.shared.instructor")}</p>
                   <p className="truncate text-base font-semibold text-slate-900" title={instructorName || undefined}>
                     {instructorName || "—"}
                   </p>
                   <div className="mt-2.5 border-t border-slate-100 pt-2.5">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Class</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{t("admin.shared.class")}</p>
                     <p className="text-sm font-medium leading-snug text-slate-800" title={title || undefined}>
                       {title || "—"}
                     </p>
@@ -356,13 +358,13 @@ export default function AdminCourseSchedulePage() {
             <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50/90 px-3 py-2.5 text-sm">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                 <div className="flex justify-between gap-4 sm:justify-start sm:gap-8">
-                  <span className="text-slate-500 shrink-0">Class start</span>
+                  <span className="text-slate-500 shrink-0">{t("admin.courses.detail.fields.classStart")}</span>
                   <span className="tabular-nums font-medium text-slate-900 text-right sm:text-left">
                     {formatClassDate(classStartDisplay)}
                   </span>
                 </div>
                 <div className="flex justify-between gap-4 sm:justify-start sm:gap-8">
-                  <span className="text-slate-500 shrink-0">Class end</span>
+                  <span className="text-slate-500 shrink-0">{t("admin.courses.detail.fields.classEnd")}</span>
                   <span className="tabular-nums font-medium text-slate-900 text-right sm:text-left">
                     {formatClassDate(classEndDisplay)}
                   </span>
@@ -428,7 +430,7 @@ export default function AdminCourseSchedulePage() {
                             <div className="space-y-1">
                               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                                 Per-session details{" "}
-                                <span className="font-normal normal-case tracking-normal text-slate-400">(optional)</span>
+                                <span className="font-normal normal-case tracking-normal text-slate-400">{t("admin.courses.schedule.optional")}</span>
                               </p>
                               <p className="max-w-lg text-xs leading-relaxed text-slate-500">
                                 Title, date, and time for each session in this month (optional).
@@ -520,7 +522,7 @@ export default function AdminCourseSchedulePage() {
 
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
               <Button type="button" variant="outline" asChild>
-                <Link to={`/dashboard/admin/courses/${courseId}`}>Cancel</Link>
+                <Link to={`/dashboard/admin/courses/${courseId}`}>{t("common.cancel")}</Link>
               </Button>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -530,7 +532,7 @@ export default function AdminCourseSchedulePage() {
                   onClick={() => void handleSendToInstructor()}
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  {courseStatus === "SCHEDULE_APPROVED" ? "Re-send to instructor" : "Send to instructor"}
+                  {courseStatus === "SCHEDULE_APPROVED" ? t("admin.courses.schedule.resendToInstructor") : t("admin.courses.schedule.sendToInstructor")}
                 </Button>
               </div>
             </div>

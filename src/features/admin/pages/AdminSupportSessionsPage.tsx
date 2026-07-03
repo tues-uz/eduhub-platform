@@ -8,6 +8,7 @@ import { mockAdminSupportSessions } from "@/features/admin/data/adminOperational
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/table";
 
 export default function AdminSupportSessionsPage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [courseFilter, setCourseFilter] = useState("all");
@@ -53,29 +55,29 @@ export default function AdminSupportSessionsPage() {
       <div className="container mx-auto px-6">
         <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Support teacher sessions"
-          description="Additional classes or support blocks requested by students. Approve and schedule when integrations are ready."
+          title={t("admin.supportSessions.title")}
+          description={t("admin.supportSessions.description")}
         />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search student, class, topic…"
+            placeholder={t("admin.supportSessions.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
           />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[180px] bg-white">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t("common.status")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="requested">Requested</SelectItem>
-              <SelectItem value="scheduled">Scheduled</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allStatuses")}</SelectItem>
+              <SelectItem value="requested">{t("admin.payroll.requests.table.requested")}</SelectItem>
+              <SelectItem value="scheduled">{t("admin.supportSessions.scheduled")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={courseFilter} onValueChange={setCourseFilter}>
@@ -83,7 +85,7 @@ export default function AdminSupportSessionsPage() {
               <SelectValue placeholder="Class" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All classes</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allClasses")}</SelectItem>
               {courseOptions.map((name) => (
                 <SelectItem key={name} value={name}>
                   {name}
@@ -112,19 +114,19 @@ export default function AdminSupportSessionsPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50">
-                <TableHead>Student</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Topic</TableHead>
-                <TableHead>Requested</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("admin.shared.student")}</TableHead>
+                <TableHead>{t("admin.shared.class")}</TableHead>
+                <TableHead>{t("admin.supportSessions.table.topic")}</TableHead>
+                <TableHead>{t("admin.payroll.requests.table.requested")}</TableHead>
+                <TableHead>{t("common.status")}</TableHead>
+                <TableHead className="text-right">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center text-slate-500">
-                    No sessions match your search or filters.
+                    {t("admin.supportSessions.empty")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -140,16 +142,16 @@ export default function AdminSupportSessionsPage() {
                           Scheduled
                         </Badge>
                       ) : (
-                        <Badge variant="secondary">Requested</Badge>
+                        <Badge variant="secondary">{t("admin.payroll.requests.table.requested")}</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
                       {s.status === "requested" ? (
-                        <Button size="sm" onClick={() => toast.success("Session approved (demo)")}>
+                        <Button size="sm" onClick={() => toast.success(t("admin.supportSessions.toast.approvedDemo"))}>
                           Approve & schedule
                         </Button>
                       ) : (
-                        <Button size="sm" variant="outline" onClick={() => toast.message("Open calendar slot (demo)")}>
+                        <Button size="sm" variant="outline" onClick={() => toast.message(t("admin.supportSessions.toast.viewSlotDemo"))}>
                           View slot
                         </Button>
                       )}

@@ -5,6 +5,7 @@ import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 import {
   Table,
   TableBody,
@@ -27,6 +28,7 @@ function formatWhen(iso: string) {
 }
 
 export default function AdminPayrollSubmissionsPage() {
+  const { t } = useTranslation();
   const rows = usePayrollSubmissions();
   const [q, setQ] = useState("");
 
@@ -53,15 +55,15 @@ export default function AdminPayrollSubmissionsPage() {
         </Link>
 
         <AdminPageHeader
-          title="Payout proof log"
-          description="History of when an admin submitted bank transfer proof for a class (local browser storage until an API replaces it). Instructor figure approvals are on Instructor payroll requests."
+          title={t("admin.instructorPayrollRequests.payoutProofLog")}
+          description={t("admin.payrollSubmissions.description")}
           actions={
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" asChild>
-                <Link to="/dashboard/admin/payroll/instructor-requests">Instructor requests</Link>
+                <Link to="/dashboard/admin/payroll/instructor-requests">{t("admin.shared.backToInstructorRequests")}</Link>
               </Button>
               <Button variant="outline" size="sm" asChild>
-                <Link to="/dashboard/admin/payroll">Payroll overview</Link>
+                <Link to="/dashboard/admin/payroll">{t("admin.payrollSubmissions.payrollOverview")}</Link>
               </Button>
             </div>
           }
@@ -69,7 +71,7 @@ export default function AdminPayrollSubmissionsPage() {
 
         <div className="mb-4 max-w-md">
           <Input
-            placeholder="Search class, course, instructor, email…"
+            placeholder={t("admin.payroll.proof.searchPlaceholder")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="bg-white"
@@ -80,13 +82,13 @@ export default function AdminPayrollSubmissionsPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50">
-                <TableHead>Submitted</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Course</TableHead>
-                <TableHead>Instructor</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead className="min-w-[200px]">Summary</TableHead>
-                <TableHead className="min-w-[140px]">Notes</TableHead>
+                <TableHead>{t("admin.shared.submitted")}</TableHead>
+                <TableHead>{t("admin.shared.class")}</TableHead>
+                <TableHead>{t("admin.shared.course")}</TableHead>
+                <TableHead>{t("admin.shared.instructor")}</TableHead>
+                <TableHead>{t("admin.shared.email")}</TableHead>
+                <TableHead className="min-w-[200px]">{t("admin.shared.summary")}</TableHead>
+                <TableHead className="min-w-[140px]">{t("admin.shared.notes")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -95,7 +97,7 @@ export default function AdminPayrollSubmissionsPage() {
                   <TableCell colSpan={7} className="h-24 text-center text-sm text-slate-500">
                     {rows.length === 0
                       ? "No submissions yet. Submit payout proof from a class card on Payroll."
-                      : "No rows match your search."}
+                      : t("admin.payroll.proof.emptyNoMatch")}
                   </TableCell>
                 </TableRow>
               ) : (

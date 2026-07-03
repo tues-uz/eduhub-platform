@@ -1,6 +1,13 @@
 /** Types aligned with EduHub Platform API (Swagger). */
 
-export type ApiRole = "ADMIN" | "LECTURER" | "STUDENT";
+export type ApiRole =
+  | "ADMIN"
+  | "ADMIN_FINANCE"
+  | "ADMIN_CONTENT"
+  | "ADMIN_SUPPORT"
+  | "ADMIN_ANALYTIC"
+  | "LECTURER"
+  | "STUDENT";
 
 export interface UserResponse {
   id: string;

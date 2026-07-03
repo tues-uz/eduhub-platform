@@ -25,6 +25,7 @@ import {
   countPresentForSession,
 } from "@/features/attendance/attendanceRollStorage";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export type ApprovedScheduleSlotOption = {
   index: number;
@@ -70,6 +71,7 @@ export function AttendanceOverviewQrPicker({
   deferAutoSelectFirstMeeting = false,
   onScheduleSlotIntent,
 }: Props) {
+  const { t } = useTranslation();
   const [meetings, setMeetings] = useState<StoredAttendanceMeeting[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   /** Radix value when user chose a plan row with no matching QR yet (`schedule-slot-${index}`). */

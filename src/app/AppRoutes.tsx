@@ -24,6 +24,8 @@ import StudentPlacementTests from "@/pages/StudentPlacementTests";
 import StudentPaymentInfo from "@/pages/StudentPaymentInfo";
 import StudentInstallmentPaymentPage from "@/pages/StudentInstallmentPaymentPage";
 import AdminDashboardPage from "@/features/admin/pages/AdminDashboardPage";
+import AdminFinanceDashboardPage from "@/features/admin/pages/AdminFinanceDashboardPage";
+import AdminAnalyticDashboardPage from "@/features/admin/pages/AdminAnalyticDashboardPage";
 import AdminNotificationsPage from "@/features/admin/pages/AdminNotificationsPage";
 import AdminSubstituteCoverRequestsPage from "@/features/admin/pages/AdminSubstituteCoverRequestsPage";
 import AdminSubstituteInviteDetailPage from "@/features/admin/pages/AdminSubstituteInviteDetailPage";
@@ -49,13 +51,17 @@ import AdminCourseSchedulePage from "@/features/admin/pages/AdminCourseScheduleP
 import AdminTeachersPage from "@/features/admin/pages/AdminTeachersPage";
 import AdminStaffPage from "@/features/admin/pages/AdminStaffPage";
 import AdminUsersPage from "@/features/admin/pages/AdminUsersPage";
-import AdminAddUserRolePage from "@/features/admin/pages/AdminAddUserRolePage";
+import AdminAddStaffHubPage from "@/features/admin/pages/AdminAddStaffHubPage";
+import AdminAddStaffUserPage from "@/features/admin/pages/AdminAddStaffUserPage";
+import AdminContentHubPage from "@/features/admin/pages/AdminContentHubPage";
+import AdminLandingPagePage from "@/features/admin/pages/AdminLandingPagePage";
 import AdminTransactionsPage from "@/features/admin/pages/AdminTransactionsPage";
 import AdminReportsPage from "@/features/admin/pages/AdminReportsPage";
 import AdminSettingsPage from "@/features/admin/pages/AdminSettingsPage";
 import AdminPromosPage from "@/features/admin/pages/AdminPromosPage";
 import AdminReferralCodesPage from "@/features/admin/pages/AdminReferralCodesPage";
 import AdminSpecialTuitionPage from "@/features/admin/pages/AdminSpecialTuitionPage";
+import { AdminRouteGuard } from "@/features/admin/components/AdminRouteGuard";
 import TeacherDashboard from "@/pages/TeacherDashboard";
 import TeacherCoursesPage from "@/features/teacher/pages/TeacherCoursesPage";
 import TeacherCourseFormLayout from "@/features/teacher/pages/TeacherCourseFormLayout";
@@ -96,50 +102,58 @@ export function AppRoutes() {
 
       <Route path={appRoutes.dashboard} element={<DashboardRedirect />} />
 
-      <Route path={appRoutes.dashboardAdmin} element={<AdminDashboardPage />} />
-      <Route path="/dashboard/admin/notifications" element={<AdminNotificationsPage />} />
-      <Route path="/dashboard/admin/substitute-requests" element={<AdminSubstituteCoverRequestsPage />} />
-      <Route path="/dashboard/admin/substitute-requests/:inviteId" element={<AdminSubstituteInviteDetailPage />} />
-      <Route path="/dashboard/admin/students" element={<AdminStudentsPage />} />
-      <Route path="/dashboard/admin/enrollments" element={<AdminEnrollmentsPage />} />
-      <Route
-        path="/dashboard/admin/enrollment-applications/:applicationId"
-        element={<AdminEnrollmentApplicationDetailPage />}
-      />
-      <Route path="/dashboard/admin/enrollment-applications" element={<AdminEnrollmentApplicationsPage />} />
-      <Route path="/dashboard/admin/classes" element={<AdminClassesPage />} />
-      <Route path="/dashboard/admin/attendance" element={<AdminAttendancePage />} />
-      <Route path="/dashboard/admin/payments" element={<AdminPaymentsPage />} />
-      <Route path="/dashboard/admin/installment-payments" element={<AdminInstallmentPaymentsPage />} />
-      <Route path="/dashboard/admin/payroll" element={<AdminPayrollPage />} />
-      <Route path="/dashboard/admin/payroll/instructor-request/:requestId" element={<AdminInstructorPayrollRequestDetailPage />} />
-      <Route
-        path="/dashboard/admin/payroll/instructor-requests"
-        element={<Navigate to="/dashboard/admin/payroll?tab=requests" replace />}
-      />
-      <Route path="/dashboard/admin/payroll/proof" element={<AdminPayrollProofPage />} />
-      <Route
-        path="/dashboard/admin/payroll/submissions"
-        element={<Navigate to="/dashboard/admin/payroll?tab=proof" replace />}
-      />
-      <Route path="/dashboard/admin/placement-tests" element={<AdminPlacementTestsPage />} />
-      <Route path="/dashboard/admin/certifications" element={<AdminCertificationsPage />} />
-      <Route path="/dashboard/admin/calendar" element={<AdminCalendarPage />} />
-      <Route path="/dashboard/admin/support-sessions" element={<AdminSupportSessionsPage />} />
-      <Route path="/dashboard/admin/integrations" element={<AdminIntegrationsPage />} />
-      <Route path="/dashboard/admin/teachers" element={<AdminTeachersPage />} />
-      <Route path="/dashboard/admin/staff" element={<AdminStaffPage />} />
-      <Route path="/dashboard/admin/courses" element={<AdminCoursesListPage />} />
-      <Route path="/dashboard/admin/courses/:courseId/schedule" element={<AdminCourseSchedulePage />} />
-      <Route path="/dashboard/admin/courses/:courseId" element={<AdminCourseDetailPage />} />
-      <Route path="/dashboard/admin/add-user-role" element={<AdminAddUserRolePage />} />
-      <Route path="/dashboard/admin/transactions" element={<AdminTransactionsPage />} />
-      <Route path="/dashboard/admin/reports" element={<AdminReportsPage />} />
-      <Route path="/dashboard/admin/users" element={<AdminUsersPage />} />
-      <Route path="/dashboard/admin/settings" element={<AdminSettingsPage />} />
-      <Route path="/dashboard/admin/promos" element={<AdminPromosPage />} />
-      <Route path="/dashboard/admin/referral-codes" element={<AdminReferralCodesPage />} />
-      <Route path="/dashboard/admin/special-tuition" element={<AdminSpecialTuitionPage />} />
+      <Route element={<AdminRouteGuard />}>
+        <Route path={appRoutes.dashboardAdmin} element={<AdminDashboardPage />} />
+        <Route path={appRoutes.dashboardAdminFinance} element={<AdminFinanceDashboardPage />} />
+        <Route path={appRoutes.dashboardAdminAnalytic} element={<AdminAnalyticDashboardPage />} />
+        <Route path="/dashboard/admin/notifications" element={<AdminNotificationsPage />} />
+        <Route path="/dashboard/admin/substitute-requests" element={<AdminSubstituteCoverRequestsPage />} />
+        <Route path="/dashboard/admin/substitute-requests/:inviteId" element={<AdminSubstituteInviteDetailPage />} />
+        <Route path="/dashboard/admin/students" element={<AdminStudentsPage />} />
+        <Route path="/dashboard/admin/enrollments" element={<AdminEnrollmentsPage />} />
+        <Route
+          path="/dashboard/admin/enrollment-applications/:applicationId"
+          element={<AdminEnrollmentApplicationDetailPage />}
+        />
+        <Route path="/dashboard/admin/enrollment-applications" element={<AdminEnrollmentApplicationsPage />} />
+        <Route path="/dashboard/admin/classes" element={<AdminClassesPage />} />
+        <Route path="/dashboard/admin/attendance" element={<AdminAttendancePage />} />
+        <Route path="/dashboard/admin/payments" element={<AdminPaymentsPage />} />
+        <Route path="/dashboard/admin/installment-payments" element={<AdminInstallmentPaymentsPage />} />
+        <Route path="/dashboard/admin/payroll" element={<AdminPayrollPage />} />
+        <Route path="/dashboard/admin/payroll/instructor-request/:requestId" element={<AdminInstructorPayrollRequestDetailPage />} />
+        <Route
+          path="/dashboard/admin/payroll/instructor-requests"
+          element={<Navigate to="/dashboard/admin/payroll?tab=requests" replace />}
+        />
+        <Route path="/dashboard/admin/payroll/proof" element={<AdminPayrollProofPage />} />
+        <Route
+          path="/dashboard/admin/payroll/submissions"
+          element={<Navigate to="/dashboard/admin/payroll?tab=proof" replace />}
+        />
+        <Route path="/dashboard/admin/placement-tests" element={<AdminPlacementTestsPage />} />
+        <Route path="/dashboard/admin/certifications" element={<AdminCertificationsPage />} />
+        <Route path="/dashboard/admin/calendar" element={<AdminCalendarPage />} />
+        <Route path="/dashboard/admin/support-sessions" element={<AdminSupportSessionsPage />} />
+        <Route path="/dashboard/admin/integrations" element={<AdminIntegrationsPage />} />
+        <Route path="/dashboard/admin/teachers" element={<AdminTeachersPage />} />
+        <Route path="/dashboard/admin/staff" element={<AdminStaffPage />} />
+        <Route path="/dashboard/admin/courses" element={<AdminCoursesListPage />} />
+        <Route path="/dashboard/admin/courses/:courseId/schedule" element={<AdminCourseSchedulePage />} />
+        <Route path="/dashboard/admin/courses/:courseId" element={<AdminCourseDetailPage />} />
+        <Route path="/dashboard/admin/add-user" element={<AdminAddStaffHubPage />} />
+        <Route path="/dashboard/admin/add-user/:roleSlug" element={<AdminAddStaffUserPage />} />
+        <Route path="/dashboard/admin/add-user-role" element={<Navigate to="/dashboard/admin/add-user" replace />} />
+        <Route path="/dashboard/admin/content" element={<AdminContentHubPage />} />
+        <Route path="/dashboard/admin/landing-page" element={<AdminLandingPagePage />} />
+        <Route path="/dashboard/admin/transactions" element={<AdminTransactionsPage />} />
+        <Route path="/dashboard/admin/reports" element={<AdminReportsPage />} />
+        <Route path="/dashboard/admin/users" element={<AdminUsersPage />} />
+        <Route path="/dashboard/admin/settings" element={<AdminSettingsPage />} />
+        <Route path="/dashboard/admin/promos" element={<AdminPromosPage />} />
+        <Route path="/dashboard/admin/referral-codes" element={<AdminReferralCodesPage />} />
+        <Route path="/dashboard/admin/special-tuition" element={<AdminSpecialTuitionPage />} />
+      </Route>
 
       <Route path={appRoutes.dashboardTeacher} element={<TeacherDashboard />} />
       <Route path="/dashboard/teacher/courses" element={<TeacherCoursesPage />} />

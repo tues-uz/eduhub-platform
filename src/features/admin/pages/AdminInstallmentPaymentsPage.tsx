@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -82,6 +83,7 @@ function PendingPaymentCard({
   onApprove: () => void;
   onReject: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 px-4 py-3.5 sm:px-5">
@@ -127,7 +129,7 @@ function PendingPaymentCard({
             </Link>
           </Button>
           <Button size="sm" className="rounded-lg" disabled={busy} onClick={onApprove}>
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : "Approve"}
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : t("admin.shared.approve")}
           </Button>
           <Button
             size="sm"
@@ -191,6 +193,7 @@ function HistoryPaymentRow({ payment }: { payment: EnrollmentInstallmentPayment 
 }
 
 export default function AdminInstallmentPaymentsPage() {
+  const { t } = useTranslation();
   const payments = useEnrollmentInstallmentPayments();
   const [adminActionCode, setAdminActionCode] = useAdminActionCodeState();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -230,7 +233,7 @@ export default function AdminInstallmentPaymentsPage() {
     try {
       const updated = approveInstallmentPayment(payment.id, code);
       if (!updated) throw new Error("Could not approve payment");
-      toast.success("Payment approved", {
+      toast.success(t("admin.installmentPayments.toast.approvedTitle"), {
         description: `${payment.scheduleMonthLabel} unlocked for QR attendance.`,
       });
     } catch (e) {
@@ -252,7 +255,7 @@ export default function AdminInstallmentPaymentsPage() {
     setBusyId(rejectTarget.id);
     try {
       rejectInstallmentPayment(rejectTarget.id, rejectNote, code);
-      toast.message("Payment rejected", {
+      toast.message(t("admin.installmentPayments.toast.rejectedTitle"), {
         description: "The student can submit again with corrected proof.",
       });
       setRejectTarget(null);
@@ -276,8 +279,8 @@ export default function AdminInstallmentPaymentsPage() {
         </Link>
 
         <AdminPageHeader
-          title="Schedule month payments"
-          description="Follow-up tuition from enrolled students. Approve to unlock QR attendance for that month."
+          title={t("adminNav.scheduleMonthPayments")}
+          description={t("admin.installmentPayments.description")}
         />
 
         <div className="mb-6 flex flex-wrap gap-2">
@@ -322,14 +325,14 @@ export default function AdminInstallmentPaymentsPage() {
 
         {payments.length === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
-            <p className="text-sm font-medium text-slate-900">No follow-up payments yet</p>
+            <p className="text-sm font-medium text-slate-900">{t("admin.installmentPayments.empty.noneTitle")}</p>
             <p className="mt-1 text-sm text-slate-500">
               When students pay a remaining schedule month, their transfer appears here for review.
             </p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center shadow-sm">
-            <p className="text-sm text-slate-600">No payments in this view.</p>
+            <p className="text-sm text-slate-600">{t("admin.installmentPayments.empty.noInView")}</p>
           </div>
         ) : statusFilter === "pending" ? (
           <div className="space-y-3">
@@ -350,7 +353,7 @@ export default function AdminInstallmentPaymentsPage() {
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-100 px-4 py-3 sm:px-5">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                {statusFilter === "all" ? "All payments" : `${FILTER_OPTIONS.find((o) => o.value === statusFilter)?.label} payments`}
+                {statusFilter === "all" ? t("admin.shared.allPayments") : `${FILTER_OPTIONS.find((o) => o.value === statusFilter)?.label} payments`}
               </p>
             </div>
             {filtered.map((p) => (
@@ -363,7 +366,7 @@ export default function AdminInstallmentPaymentsPage() {
       <Dialog open={rejectTarget != null} onOpenChange={(open) => !open && setRejectTarget(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject payment</DialogTitle>
+            <DialogTitle>{t("admin.installmentPayments.rejectDialog.title")}</DialogTitle>
           </DialogHeader>
           {rejectTarget ? (
             <p className="text-sm text-slate-600">
@@ -374,7 +377,7 @@ export default function AdminInstallmentPaymentsPage() {
           <Textarea
             value={rejectNote}
             onChange={(e) => setRejectNote(e.target.value)}
-            placeholder="Note for your records (optional) — e.g. amount mismatch, unclear screenshot"
+            placeholder={t("admin.installmentPayments.rejectDialog.notePlaceholder")}
             className="min-h-[88px]"
           />
           <DialogFooter>

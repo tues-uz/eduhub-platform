@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { BookOpen, Search, Loader2, PlayCircle } from "@/lib/icons";
 import { InstructorAvatar } from "@/components/InstructorAvatar";
 import { StudentAvatarGroup, type StudentAvatarPreview } from "@/components/StudentAvatarGroup";
@@ -55,8 +57,8 @@ type AvailableCourseItem = {
   enrolledStudents?: StudentAvatarPreview[];
 };
 
-function formatPrice(price: number | undefined, currency = "USD"): string {
-  if (price == null || price <= 0) return "Free";
+function formatPrice(price: number | undefined, currency: string, t: TFunction): string {
+  if (price == null || price <= 0) return t("availableCourses.free");
   return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
 }
 
@@ -124,6 +126,7 @@ async function enrichWithInstructorAvatars(items: AvailableCourseItem[]): Promis
 }
 
 const StudentAvailableCourses = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuthSession();
@@ -195,14 +198,16 @@ const StudentAvailableCourses = () => {
         const linkId = `teacher_${c.id}`;
         const enrolledData = enrolledByLinkId.get(linkId);
         const moduleCount = c.lessons?.length ?? 0;
-        const duration = moduleCount ? `${moduleCount} lessons` : "—";
+        const duration = moduleCount
+          ? `${moduleCount} ${t("courses.lesson", { count: moduleCount })}`
+          : "—";
         return {
           id: c.id,
           linkId,
           title: c.title,
           instructor: c.instructorName,
           instructorAvatarUrl: c.instructorAvatarUrl?.trim() || undefined,
-          category: c.category?.trim() || "Class",
+          category: c.category?.trim() || t("availableCourses.defaultCategory"),
           duration,
           modules: moduleCount,
           price: c.price,
@@ -223,7 +228,7 @@ const StudentAvailableCourses = () => {
           title: c.title,
           instructor: c.lecturerName,
           instructorAvatarUrl: c.lecturerAvatarUrl?.trim() || undefined,
-          category: c.category ?? "Class",
+          category: c.category ?? t("availableCourses.defaultCategory"),
           duration: "—",
           modules: 0,
           price: price as number | undefined,
@@ -266,7 +271,7 @@ const StudentAvailableCourses = () => {
     }
     load();
     return () => { cancelled = true; };
-  }, [enrolledCourses, enrollmentStoreTick, emailNorm, applicationsByCourse]);
+  }, [enrolledCourses, enrollmentStoreTick, emailNorm, applicationsByCourse, t]);
 
   const categoryOptions = useMemo(() => {
     const options = new Set<string>(categories);
@@ -308,17 +313,17 @@ const StudentAvailableCourses = () => {
               className="mb-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
-              Available Classes
+              {t("availableCourses.title")}
             </h1>
             <p className="mb-4 text-sm text-foreground/70">
-              Browse and enroll in classes offered on EduHub. Prices shown where set by instructors.
+              {t("availableCourses.subtitle")}
             </p>
             <div className="flex w-full flex-wrap items-center justify-between gap-3">
               <div className="relative min-w-0 flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
                 <Input
                   type="search"
-                  placeholder="Search by class name, instructor, or category..."
+                  placeholder={t("availableCourses.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -339,11 +344,11 @@ const StudentAvailableCourses = () => {
               </div>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="h-11 w-[150px] shrink-0 rounded-xl border-gray-200 bg-white">
-                  <SelectValue placeholder="All categories" />
+                  <SelectValue placeholder={t("availableCourses.allCategories")} />
                 </SelectTrigger>
                 <SelectContent align="end" className="rounded-2xl border-gray-200 p-2 shadow-lg">
                   <SelectItem value="all" className="cursor-pointer rounded-xl">
-                    All categories
+                    {t("availableCourses.allCategories")}
                   </SelectItem>
                   {categoryOptions.map((category) => (
                     <SelectItem key={category} value={category} className="cursor-pointer rounded-xl">
@@ -366,7 +371,7 @@ const StudentAvailableCourses = () => {
                   const category = course.category.trim();
                   const metaParts: string[] = [];
                   if (course.modules > 0) {
-                    metaParts.push(`${course.modules} module${course.modules === 1 ? "" : "s"}`);
+                    metaParts.push(`${course.modules} ${t("availableCourses.module", { count: course.modules })}`);
                   }
                   if (course.duration.trim() && course.duration !== "—") {
                     metaParts.push(course.duration.trim());
@@ -443,18 +448,18 @@ const StudentAvailableCourses = () => {
                         {scheduleSummary ? (
                           <dl className="mt-2.5 grid grid-cols-2 gap-x-4">
                             <div className="min-w-0">
-                              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Starts</dt>
+                              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t("availableCourses.starts")}</dt>
                               <dd className="mt-0.5 text-xs font-semibold leading-snug tabular-nums text-slate-800">
                                 {classStartLabel ?? (
-                                  <span className="font-normal text-slate-400">TBA</span>
+                                  <span className="font-normal text-slate-400">{t("availableCourses.tba")}</span>
                                 )}
                               </dd>
                             </div>
                             <div className="min-w-0">
-                              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Ends</dt>
+                              <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t("availableCourses.ends")}</dt>
                               <dd className="mt-0.5 text-xs font-semibold leading-snug tabular-nums text-slate-800">
                                 {classEndLabel ?? (
-                                  <span className="font-normal text-slate-400">TBA</span>
+                                  <span className="font-normal text-slate-400">{t("availableCourses.tba")}</span>
                                 )}
                               </dd>
                             </div>
@@ -472,7 +477,7 @@ const StudentAvailableCourses = () => {
                               <p className="truncate text-sm font-medium text-slate-800">
                                 {formatDisplayPersonName(course.instructor)}
                               </p>
-                              <p className="text-xs text-slate-500">Instructor</p>
+                              <p className="text-xs text-slate-500">{t("availableCourses.instructor")}</p>
                             </div>
                           </div>
                           {metaLabel ? (
@@ -482,12 +487,12 @@ const StudentAvailableCourses = () => {
 
                         {scheduleSummary ? (
                           <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                            <span className="text-xs font-medium text-slate-500">Sessions</span>
+                            <span className="text-xs font-medium text-slate-500">{t("availableCourses.sessions")}</span>
                             <span className="text-xs tabular-nums text-slate-700">
                               <span className="font-semibold text-slate-900">{scheduleSummary.reached}</span>
                               <span className="text-slate-400"> / </span>
                               <span className="font-medium">{scheduleSummary.total}</span>
-                              <span className="text-slate-500"> sessions</span>
+                              <span className="text-slate-500"> {t("availableCourses.sessionsLabel")}</span>
                             </span>
                           </div>
                         ) : null}
@@ -507,17 +512,17 @@ const StudentAvailableCourses = () => {
                         ) : null}
 
                         <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
-                          <span className="text-xs font-medium text-slate-500">Tuition</span>
+                          <span className="text-xs font-medium text-slate-500">{t("availableCourses.tuition")}</span>
                           {tuitionDisplay.allSessionsFinished ? (
-                            <span className="text-sm font-medium text-slate-500">Schedule complete</span>
+                            <span className="text-sm font-medium text-slate-500">{t("availableCourses.scheduleComplete")}</span>
                           ) : (
                             <div className="flex flex-col items-end gap-0.5">
                               <span className="text-sm font-bold tabular-nums tracking-tight text-slate-900">
-                                {formatPrice(tuitionDisplay.amount, course.currency)}
+                                {formatPrice(tuitionDisplay.amount, course.currency ?? "USD", t)}
                               </span>
                               {tuitionDisplay.listedAmount ? (
                                 <span className="text-[11px] tabular-nums text-slate-400 line-through">
-                                  {formatPrice(tuitionDisplay.listedAmount, course.currency)}
+                                  {formatPrice(tuitionDisplay.listedAmount, course.currency ?? "USD", t)}
                                 </span>
                               ) : null}
                             </div>
@@ -533,7 +538,7 @@ const StudentAvailableCourses = () => {
                             onClick={(e) => e.stopPropagation()}
                           >
                             <PlayCircle className="mr-2 h-5 w-5" aria-hidden />
-                            Continue learning
+                            {t("availableCourses.continueLearning")}
                           </Link>
                         ) : course.enrollmentStatus === "pending_review" ? (
                           <Link
@@ -546,7 +551,7 @@ const StudentAvailableCourses = () => {
                               variant="outline"
                               className="h-auto w-full rounded-xl border-zinc-200 bg-white px-5 py-2.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
                             >
-                              View application
+                              {t("availableCourses.viewApplication")}
                             </Button>
                           </Link>
                         ) : (
@@ -559,7 +564,7 @@ const StudentAvailableCourses = () => {
                               size="sm"
                               className="h-auto w-full rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
                             >
-                              {course.enrollmentStatus === "rejected" ? "Apply again" : "Join Class"}
+                              {course.enrollmentStatus === "rejected" ? t("availableCourses.applyAgain") : t("availableCourses.joinClass")}
                             </Button>
                           </Link>
                         )}
@@ -575,17 +580,17 @@ const StudentAvailableCourses = () => {
                   <BookOpen className="mx-auto mb-4 h-12 w-12 text-foreground/30" />
                   <p className="font-medium text-foreground/70">
                     {courses.length === 0
-                      ? "No classes available yet. Teachers can create classes from their dashboard."
-                      : "No classes match your search."}
+                      ? t("availableCourses.emptyNoClassesTitle")
+                      : t("availableCourses.emptyNoMatchTitle")}
                   </p>
                   <p className="mt-1 text-sm text-foreground/50">
-                    {courses.length === 0 ? "Check back later or ask your teacher to publish a class." : "Try a different search."}
+                    {courses.length === 0 ? t("availableCourses.emptyNoClassesHint") : t("availableCourses.emptyNoMatchHint")}
                   </p>
                   <div className="mt-4 flex flex-wrap justify-center gap-3">
                     {courses.length === 0 && (
                       <Link to="/dashboard/courses">
                         <Button className="rounded-full" style={{ backgroundColor: "#3954d0" }}>
-                          My Class
+                          {t("availableCourses.myClass")}
                         </Button>
                       </Link>
                     )}
@@ -598,7 +603,7 @@ const StudentAvailableCourses = () => {
                           setCategoryFilter("all");
                         }}
                       >
-                        Clear filters
+                        {t("availableCourses.clearFilters")}
                       </Button>
                     ) : null}
                   </div>

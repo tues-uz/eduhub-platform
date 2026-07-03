@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthSession } from "@/features/auth/context";
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export function AdminActionCodeField({ id, value, onChange, className }: Props) {
+  const { t } = useTranslation();
   const { user } = useAuthSession();
   const [seeded, setSeeded] = useState(false);
 
@@ -27,21 +29,19 @@ export function AdminActionCodeField({ id, value, onChange, className }: Props) 
 
   return (
     <div className={cn("space-y-2", className)}>
-      <Label htmlFor={id}>Your admin code</Label>
+      <Label htmlFor={id}>{t("admin.components.actionCode.label")}</Label>
       <Input
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value.toUpperCase())}
-        placeholder="e.g. AF01"
+        placeholder={t("admin.components.actionCode.placeholder")}
         className="bg-white font-mono text-sm uppercase max-w-[180px]"
         maxLength={16}
         autoComplete="off"
         spellCheck={false}
         required
       />
-      <p className="text-xs text-slate-500">
-        Short ID for audit trail — records who approved or rejected this action when several admins share the account.
-      </p>
+      <p className="text-xs text-slate-500">{t("admin.components.actionCode.hint")}</p>
     </div>
   );
 }

@@ -25,6 +25,7 @@ import {
   formatClassMeetingSlotLabel,
   resolveSubstituteAssignedSessionFromInvite,
 } from "@/features/teacher/pages/teacherCourseFormHelpers";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +42,7 @@ const CLASS_RESUME_SESSION_ALL = "__class_resume_all__";
 type SessionSelectOption = { value: string; label: string };
 
 export default function TeacherCourseResumeEditPage() {
+  const { t } = useTranslation();
   const { courseId = "", resumeId } = useParams<{ courseId: string; resumeId?: string }>();
   const matchNewResume = useMatch({ path: "/dashboard/teacher/courses/:courseId/resume/new", end: true });
   const navigate = useNavigate();
@@ -346,7 +348,7 @@ export default function TeacherCourseResumeEditPage() {
   if (!courseId) {
     return (
       <div className="min-h-screen bg-white p-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <p className="text-sm text-red-600">Missing class.</p>
+        <p className="text-sm text-red-600">{t("teacher.roster.errors.missingClass")}</p>
       </div>
     );
   }
@@ -354,7 +356,7 @@ export default function TeacherCourseResumeEditPage() {
   if (loadingCourse) {
     return (
       <div className="min-h-screen bg-white p-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <p className="text-sm text-foreground/60">Loading…</p>
+        <p className="text-sm text-foreground/60">{t("common.loading")}</p>
       </div>
     );
   }
@@ -365,9 +367,7 @@ export default function TeacherCourseResumeEditPage() {
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-6 text-sm text-amber-900">
           {forbidden ? "You don't have access to this class." : "Class not found."}
         </div>
-        <Link to="/dashboard/teacher/courses" className="mt-4 inline-block text-sm text-[#3954d0]">
-          Back to My Classes
-        </Link>
+        <Link to="/dashboard/teacher/courses" className="mt-4 inline-block text-sm text-[#3954d0]">{t("teacher.resumeEdit.backToClasses")}</Link>
       </div>
     );
   }
@@ -375,7 +375,7 @@ export default function TeacherCourseResumeEditPage() {
   if (!loaded) {
     return (
       <div className="min-h-screen bg-white p-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <p className="text-sm text-foreground/60">Loading…</p>
+        <p className="text-sm text-foreground/60">{t("common.loading")}</p>
       </div>
     );
   }
@@ -396,9 +396,7 @@ export default function TeacherCourseResumeEditPage() {
               to={backHref}
               className="inline-flex shrink-0 items-center gap-2 text-sm font-medium text-foreground/75 hover:text-foreground"
             >
-              <ArrowLeft className="h-4 w-4 shrink-0" />
-              Back to resumes
-            </Link>
+              <ArrowLeft className="h-4 w-4 shrink-0" />{t("teacher.resumeEdit.backToResumes")}</Link>
           </div>
         </header>
 
@@ -460,8 +458,7 @@ export default function TeacherCourseResumeEditPage() {
                   />
                   {uploadingThumbnail ? (
                     <span className="inline-flex items-center gap-1.5 text-xs text-foreground/60">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Uploading…
-                    </span>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />{t("teacherSettings.uploading")}</span>
                   ) : null}
                   {thumbnailDraft ? (
                     <Button
@@ -471,9 +468,7 @@ export default function TeacherCourseResumeEditPage() {
                       onClick={() => setThumbnailDraft("")}
                       title="Remove image"
                     >
-                      <X className="h-4 w-4" />
-                      Remove
-                    </Button>
+                      <X className="h-4 w-4" />{t("teacherSettings.remove")}</Button>
                   ) : null}
                 </div>
                 {thumbnailDraft ? (
@@ -590,12 +585,10 @@ export default function TeacherCourseResumeEditPage() {
                     variant="outline"
                     className="mr-auto border-red-200 text-red-700 hover:bg-red-50"
                     onClick={() => setDeleteOpen(true)}
-                  >
-                    Delete
-                  </Button>
+                  >{t("common.delete")}</Button>
                 ) : null}
                 <Button type="button" variant="outline" asChild>
-                  <Link to={backHref}>Cancel</Link>
+                  <Link to={backHref}>{t("common.cancel")}</Link>
                 </Button>
                 <Button type="button" className="bg-[#3954d0] hover:bg-[#2f46b3]" onClick={handleSave}>
                   Save for students
@@ -615,15 +608,13 @@ export default function TeacherCourseResumeEditPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={() => {
                 handleDelete();
               }}
-            >
-              Delete
-            </AlertDialogAction>
+            >{t("common.delete")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

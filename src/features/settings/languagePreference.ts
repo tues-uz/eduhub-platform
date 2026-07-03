@@ -26,6 +26,9 @@ export function setUiLanguage(code: UiLanguageCode): void {
   localStorage.setItem(STORAGE_KEY, code);
   document.documentElement.lang = code;
   window.dispatchEvent(new CustomEvent(UI_LANGUAGE_CHANGED_EVENT, { detail: { code } }));
+  void import("@/i18n").then(({ default: i18n }) => {
+    void i18n.changeLanguage(code);
+  });
 }
 
 export function applyStoredUiLanguage(): void {

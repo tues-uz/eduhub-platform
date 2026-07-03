@@ -39,6 +39,7 @@ import {
   getStudentCourseReviewSummary,
   type StudentCourseReviewSummary,
 } from "@/features/student/courseReviewsStorage";
+import { useTranslation } from "react-i18next";
 import {
   computeAttendanceScore,
   computeTotalFinalScore,
@@ -156,6 +157,7 @@ function StudentReviewDialog({
   studentEmail: string;
   reviews: StudentCourseReviewSummary;
 }) {
+  const { t } = useTranslation();
   const instructorDate = formatReviewDate(reviews.instructorSubmittedAt);
   const platformDate = formatReviewDate(reviews.platformSubmittedAt);
 
@@ -179,7 +181,7 @@ function StudentReviewDialog({
                 <p className="text-sm text-muted-foreground">No comment.</p>
               )}
               {instructorDate ? (
-                <p className="text-xs text-muted-foreground">Submitted {instructorDate}</p>
+                <p className="text-xs text-muted-foreground">{t("teacher.assignments.submissions.table.submitted")}{instructorDate}</p>
               ) : null}
             </section>
           ) : (
@@ -195,7 +197,7 @@ function StudentReviewDialog({
                 <p className="text-sm text-muted-foreground">No comment.</p>
               )}
               {platformDate ? (
-                <p className="text-xs text-muted-foreground">Submitted {platformDate}</p>
+                <p className="text-xs text-muted-foreground">{t("teacher.assignments.submissions.table.submitted")}{platformDate}</p>
               ) : null}
             </section>
           ) : null}
@@ -227,12 +229,13 @@ function RosterEmptyState({
   isError: boolean;
   studentsLength: number;
 }) {
+  const { t } = useTranslation();
   if (isSubstituteViewer) {
     return (
       <div className="rounded-xl border border-amber-200/90 bg-amber-50/90 px-4 py-4 text-sm text-amber-950 leading-relaxed">
-        <p className="font-semibold text-amber-950">Final scores are managed by the course lead.</p>
+        <p className="font-semibold text-amber-950">{t("teacher.grades.empty.substitute")}</p>
         <p className="mt-2 text-amber-950/90">
-          Substitute instructors cannot edit grades here. Ask the course lead to enter final scores.
+          {t("teacher.grades.empty.substitute")}
         </p>
       </div>
     );
@@ -240,21 +243,19 @@ function RosterEmptyState({
   if (!isApiCourse) {
     return (
       <p className="text-sm text-foreground/70 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-8 text-center">
-        Connect this class to the API to load enrolled students.
+        {t("teacher.grades.empty.connectApi")}
       </p>
     );
   }
   if (isLoading) {
-    return <p className="text-sm text-foreground/60">Loading students…</p>;
+    return <p className="text-sm text-foreground/60">{t("teacher.grades.empty.loading")}</p>;
   }
   if (isError) {
-    return <p className="text-sm text-red-600">Could not load enrollment list. Try again later.</p>;
+    return <p className="text-sm text-red-600">{t("teacher.grades.empty.error")}</p>;
   }
   if (studentsLength === 0) {
     return (
-      <p className="text-sm text-foreground/70 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-8 text-center">
-        No students enrolled yet.
-      </p>
+      <p className="text-sm text-foreground/70 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-8 text-center">{t("teacher.grades.empty.noStudents")}</p>
     );
   }
   return null;
@@ -272,6 +273,7 @@ export function TeacherCourseGradesPanel({
   isError = false,
   plannedSessions = null,
 }: TeacherCourseGradesPanelProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [gradesTick, setGradesTick] = useState(0);
   const [certTick, setCertTick] = useState(0);
@@ -631,9 +633,7 @@ export function TeacherCourseGradesPanel({
   return (
     <div>
       <h2 className="text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
-        <GraduationCap className="h-5 w-5 text-[#1e40af]" />
-        Final scores
-      </h2>
+        <GraduationCap className="h-5 w-5 text-[#1e40af]" />{t("teacher.grades.title")}</h2>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-foreground/60 min-w-0 flex-1 max-w-2xl">
           <span className="font-medium text-foreground/80">Total</span> = average of attendance % and instructor
@@ -674,7 +674,7 @@ export function TeacherCourseGradesPanel({
             <Table className="min-w-[40rem] w-full table-auto">
               <TableHeader>
                 <TableRow className="bg-slate-50/90 hover:bg-slate-50/90">
-                  <TableHead className="min-w-[10rem] whitespace-nowrap">Student</TableHead>
+                  <TableHead className="min-w-[10rem] whitespace-nowrap">{t("teacher.assignments.submissions.table.student")}</TableHead>
                   <TableHead
                     className="min-w-[5rem] whitespace-nowrap"
                     title="QR check-ins vs planned schedule sessions."
@@ -700,7 +700,7 @@ export function TeacherCourseGradesPanel({
                   >
                     Feedback
                   </TableHead>
-                  <TableHead className="w-[1%] whitespace-nowrap text-right px-2">Actions</TableHead>
+                  <TableHead className="w-[1%] whitespace-nowrap text-right px-2">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

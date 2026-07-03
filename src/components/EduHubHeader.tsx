@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Menu, X, ChevronDown } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,22 +9,45 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import {
+  getUiLanguage,
+  setUiLanguage,
+  UI_LANGUAGE_CHANGED_EVENT,
+  UI_LANGUAGE_OPTIONS,
+  uiLanguageOption,
+  type UiLanguageCode,
+} from "@/features/settings/languagePreference";
+import i18n from "@/i18n";
 
-const languages = [
-  { code: "en", name: "En", flag: "🇬🇧" },
-  { code: "zh", name: "中文", flag: "🇨🇳" },
-  { code: "uz", name: "Uz", flag: "🇺🇿" },
-];
+const SHORT_LANGUAGE_LABEL: Record<UiLanguageCode, string> = {
+  en: "En",
+  uz: "Uz",
+  ru: "Ru",
+  zh: "中文",
+};
 
 const EduHubHeader = () => {
+  const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [currentLanguage, setCurrentLanguage] = useState(languages[0]); // Default to English
+  const [language, setLanguage] = useState<UiLanguageCode>(() => getUiLanguage());
+  const currentLanguage = uiLanguageOption(language);
+
+  useEffect(() => {
+    const sync = () => setLanguage(getUiLanguage());
+    window.addEventListener(UI_LANGUAGE_CHANGED_EVENT, sync);
+    return () => window.removeEventListener(UI_LANGUAGE_CHANGED_EVENT, sync);
+  }, []);
+
+  const handleLanguageChange = (code: UiLanguageCode) => {
+    setLanguage(code);
+    setUiLanguage(code);
+    void i18n.changeLanguage(code);
+  };
 
   return (
     <header
       className="fixed top-0 left-0 right-0 z-50 w-full backdrop-blur-[5px]"
-      style={{ fontFamily: "'DM Sans', sans-serif", backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
+      style={{ fontFamily: "'DM Sans', sans-serif", backgroundColor: "rgba(255, 255, 255, 0.6)" }}
     >
       <nav className="px-6 lg:px-20">
         <div className="flex items-center justify-between h-[80px] relative">
@@ -43,22 +68,30 @@ const EduHubHeader = () => {
               <Link
                 to="/eduhub"
                 className="block py-2 px-2 text-sm font-medium transition-colors hover:opacity-80"
-                style={{ color: 'rgb(109, 109, 109)' }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = 'rgb(101, 155, 255)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = 'rgb(109, 109, 109)'; }}
+                style={{ color: "rgb(109, 109, 109)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "rgb(101, 155, 255)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "rgb(109, 109, 109)";
+                }}
               >
-                Home
+                {t("nav.home")}
               </Link>
             </div>
             <div>
               <Link
                 to="/eduhub"
                 className="block py-2 px-2 text-sm font-medium transition-colors hover:opacity-80"
-                style={{ color: 'rgb(109, 109, 109)' }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = 'rgb(101, 155, 255)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = 'rgb(109, 109, 109)'; }}
+                style={{ color: "rgb(109, 109, 109)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "rgb(101, 155, 255)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "rgb(109, 109, 109)";
+                }}
               >
-                About
+                {t("nav.about")}
               </Link>
             </div>
             <div>
@@ -66,20 +99,24 @@ const EduHubHeader = () => {
                 <DropdownMenuTrigger asChild>
                   <button
                     className="py-2 px-2 text-base font-medium transition-colors flex items-center gap-1 hover:opacity-80"
-                    style={{ color: 'rgb(109, 109, 109)' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = 'rgb(101, 155, 255)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = 'rgb(109, 109, 109)'; }}
+                    style={{ color: "rgb(109, 109, 109)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "rgb(101, 155, 255)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "rgb(109, 109, 109)";
+                    }}
                   >
-                    Program
+                    {t("nav.program")}
                     <ChevronDown className="h-4 w-4" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-white border border-foreground/10 rounded-2xl">
                   <DropdownMenuItem className="cursor-pointer hover:bg-gray-100">
-                    Language Training Program
+                    {t("nav.languageTraining")}
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer hover:bg-gray-100">
-                    Academic Services
+                    {t("nav.academicServices")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -99,15 +136,18 @@ const EduHubHeader = () => {
                   <ChevronDown className="ml-0 h-3.5 w-3.5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-white border border-foreground/10 !w-[100px] min-w-[100px] max-w-[100px] rounded-2xl" align="end">
-                {languages.map((lang) => (
+              <DropdownMenuContent
+                className="bg-white border border-foreground/10 !w-[100px] min-w-[100px] max-w-[100px] rounded-2xl"
+                align="end"
+              >
+                {UI_LANGUAGE_OPTIONS.map((lang) => (
                   <DropdownMenuItem
                     key={lang.code}
                     className="cursor-pointer hover:bg-gray-100"
-                    onClick={() => setCurrentLanguage(lang)}
+                    onClick={() => handleLanguageChange(lang.code)}
                   >
                     <span className="mr-2">{lang.flag}</span>
-                    {lang.name}
+                    {SHORT_LANGUAGE_LABEL[lang.code]}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -117,7 +157,7 @@ const EduHubHeader = () => {
             <div className="hidden md:flex items-center gap-2">
               <Link to="/register">
                 <Button className="text-sm font-semibold bg-transparent text-foreground rounded-full border-0 hover:bg-gray-100 transition-all duration-300 h-10 px-6">
-                  Register
+                  {t("nav.register")}
                 </Button>
               </Link>
               <Link to="/signin">
@@ -126,7 +166,7 @@ const EduHubHeader = () => {
                   className="text-sm font-semibold text-white border-0 rounded-full h-10 px-6 hover:bg-[#3954d0] hover:text-white hover:opacity-90 transition-opacity"
                   style={{ backgroundColor: "#3954d0" }}
                 >
-                  Sign In
+                  {t("nav.signIn")}
                 </Button>
               </Link>
             </div>
@@ -152,54 +192,57 @@ const EduHubHeader = () => {
                 className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Home
+                {t("nav.home")}
               </Link>
               <Link
                 to="/eduhub"
                 className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                About
+                {t("nav.about")}
               </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors w-full text-left flex items-center justify-between">
-                    Program
+                    {t("nav.program")}
                     <ChevronDown className="h-4 w-4" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-white border border-foreground/10 rounded-2xl">
                   <DropdownMenuItem className="cursor-pointer hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>
-                    Language Training Program
+                    {t("nav.languageTraining")}
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>
-                    Academic Services
+                    {t("nav.academicServices")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               <div className="pt-4 border-t border-foreground/10 space-y-3">
                 {/* Language Switcher - Mobile */}
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-sm font-medium text-foreground/70">Language</span>
+                  <span className="text-sm font-medium text-foreground/70">{t("language.title")}</span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="outline"
                         className="bg-transparent text-foreground border border-foreground/20 hover:bg-gray-100 hover:border-foreground/40 rounded-full text-sm h-9 px-3"
                       >
-<span className="mr-0">{currentLanguage.flag}</span>
-                  <ChevronDown className="ml-0 h-3.5 w-3.5" />
+                        <span className="mr-0">{currentLanguage.flag}</span>
+                        <ChevronDown className="ml-0 h-3.5 w-3.5" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-white border border-foreground/10 !w-[100px] min-w-[100px] max-w-[100px] rounded-2xl" align="end">
-                      {languages.map((lang) => (
+                    <DropdownMenuContent
+                      className="bg-white border border-foreground/10 !w-[100px] min-w-[100px] max-w-[100px] rounded-2xl"
+                      align="end"
+                    >
+                      {UI_LANGUAGE_OPTIONS.map((lang) => (
                         <DropdownMenuItem
                           key={lang.code}
                           className="cursor-pointer hover:bg-gray-100"
-                          onClick={() => setCurrentLanguage(lang)}
+                          onClick={() => handleLanguageChange(lang.code)}
                         >
                           <span className="mr-2">{lang.flag}</span>
-                          {lang.name}
+                          {SHORT_LANGUAGE_LABEL[lang.code]}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
@@ -207,12 +250,15 @@ const EduHubHeader = () => {
                 </div>
                 <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
                   <Button className="w-full text-sm font-semibold bg-transparent text-foreground rounded-full border-0 hover:bg-gray-100 transition-all duration-300 h-10">
-                    Register
+                    {t("nav.register")}
                   </Button>
                 </Link>
                 <Link to="/signin" onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="w-full text-sm font-semibold text-white rounded-full h-10 hover:opacity-90 transition-opacity" style={{ backgroundColor: '#3954d0' }}>
-                    Sign In
+                  <Button
+                    className="w-full text-sm font-semibold text-white rounded-full h-10 hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: "#3954d0" }}
+                  >
+                    {t("nav.signIn")}
                   </Button>
                 </Link>
               </div>
@@ -225,4 +271,3 @@ const EduHubHeader = () => {
 };
 
 export default EduHubHeader;
-

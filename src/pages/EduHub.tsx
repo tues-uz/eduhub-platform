@@ -1,144 +1,91 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { BookOpen, Users, Award, TrendingUp, Globe, BarChart3, GraduationCap, Lightbulb, Target, Zap, Heart, ChevronUp, ArrowRight, Linkedin, Check, Star } from "@/lib/icons";
+import { BookOpen, Users, Award, GraduationCap, Lightbulb, Target, Zap, Heart, ChevronUp, ArrowRight, Linkedin, Check, Star } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import EduHubHeader from "@/components/EduHubHeader";
 import Footer from "@/components/Footer";
+import { useLandingPageContent } from "@/features/landing/useLandingPageContent";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const features = [
-  {
-    title: "Online Classes",
-    description: "Access comprehensive classes from anywhere, anytime",
-    image: "https://picsum.photos/seed/online-learning/600/450",
-    imageAlt: "Online learning",
-  },
-  {
-    title: "Expert Instructors",
-    description: "Learn from industry professionals and academic experts",
-    image: "https://picsum.photos/seed/expert-instructor/600/450",
-    imageAlt: "Expert instructor",
-  },
-  {
-    title: "Certifications",
-    description: "Earn recognized certificates upon class completion",
-    image: "https://picsum.photos/seed/certification/600/450",
-    imageAlt: "Certificate",
-  },
-  {
-    title: "Career Growth",
-    description: "Advance your career with in-demand skills",
-    image: "https://picsum.photos/seed/career/600/450",
-    imageAlt: "Career growth",
-  },
-  {
-    title: "Global Access",
-    description: "Connect with learners from around the world",
-    image: "https://picsum.photos/seed/global/600/450",
-    imageAlt: "Global learning",
-  },
-  {
-    title: "Analytics Dashboard",
-    description: "Track your progress and performance metrics",
-    image: "https://picsum.photos/seed/analytics/600/450",
-    imageAlt: "Analytics dashboard",
-  },
-];
-
-const stats = [
-  { icon: GraduationCap, value: "50,000+", label: "Students", color: "text-blue-500", bento: "wide" as const },
-  { icon: BookOpen, value: "500+", label: "Classes", color: "text-purple-500", bento: "normal" as const },
-  { icon: Users, value: "200+", label: "Teachers", color: "text-green-500", bento: "normal" as const },
-  { icon: Award, value: "95%", label: "Completion Rate", color: "text-orange-500", bento: "accent" as const },
-  { icon: Target, value: "10+", label: "Years of Excellence", color: "text-amber-600", bento: "normal" as const },
-];
-
-const highlights = [
-  {
-    icon: Lightbulb,
-    title: "Interactive Learning",
-    description: "Engage with multimedia content, quizzes, and hands-on projects",
-    gradient: "from-pink-500 to-rose-500",
-  },
-  {
-    icon: Target,
-    title: "Goal-Oriented",
-    description: "Set and achieve your learning objectives with personalized paths",
-    gradient: "from-cyan-500 to-blue-500",
-  },
-  {
-    icon: Zap,
-    title: "Fast Track",
-    description: "Accelerate your learning with intensive programs",
-    gradient: "from-yellow-500 to-amber-500",
-  },
-  {
-    icon: Heart,
-    title: "Community Support",
-    description: "Join a vibrant community of learners and mentors",
-    gradient: "from-red-500 to-pink-500",
-  },
-];
-
-const teamMembers = [
-  { name: "Buriyeva Shakhnoza", nameLine1: "Buriyeva", nameLine2: "Shakhnoza", role: "EDUHUB Director", roleLine1: "EDUHUB", roleLine2: "Director", image: "/eduhub/1.png" },
-  { name: "Indiana Ayu Alwasilah", nameLine1: "Indiana Ayu", nameLine2: "Alwasilah", role: "Co-Executive Director", roleLine1: "Co-Executive", roleLine2: "Director", image: "/eduhub/2.png" },
-  { name: "Riyadi Maulaya", nameLine1: "Riyadi", nameLine2: "Maulaya", role: "Co-Executive Director", roleLine1: "Co-Executive", roleLine2: "Director", image: "/eduhub/3.png" },
-  { name: "Saidakhmedova Dilfuzakhon", nameLine1: "Saidakhmedova", nameLine2: "Dilfuzakhon", role: "Organizational Excellence Manager", roleLine1: "Organizational Excellence", roleLine2: "Manager", image: "/eduhub/4.png" },
-  { name: "Abdurazakova Samira", nameLine1: "Abdurazakova", nameLine2: "Samira", role: "Learning Experience Manager", roleLine1: "Learning Experience", roleLine2: "Manager", image: "/eduhub/5.png" },
-  { name: "Jurakulova Yulduz", nameLine1: "Jurakulova", nameLine2: "Yulduz", role: "Call Operator", roleLine1: "Call", roleLine2: "Operator", image: "/eduhub/6.png" },
-  { name: "Tursunova Yuliroz", nameLine1: "Tursunova", nameLine2: "Yuliroz", role: "Administrative Navigator", roleLine1: "Administrative", roleLine2: "Navigator", image: "/eduhub/7.png" },
-  { name: "Amirov Jamshid", nameLine1: "Amirov", nameLine2: "Jamshid", role: "Call Operator", roleLine1: "Call", roleLine2: "Operator", image: "/eduhub/8.png" },
-];
-
-const studentReviews = [
-  {
-    name: "Aziza Karimova",
-    course: "Business English",
-    rating: 5,
-    quote:
-      "Every class felt practical, not textbook-heavy. My speaking confidence improved within the first month.",
-  },
-  {
-    name: "Jasur Toshmatov",
-    course: "Introduction to Economics",
-    rating: 5,
-    quote:
-      "Clear explanations and real examples. Instructors actually answer questions — economics finally clicked for me.",
-  },
-  {
-    name: "Madina Rakhimova",
-    course: "Digital Marketing Essentials",
-    featured: true,
-    rating: 5,
-    quote:
-      "The projects were hands-on and relevant. I used what I learned in class the same week for a freelance client pitch.",
-  },
-  {
-    name: "Bobur Nazarov",
-    course: "Financial Accounting",
-    rating: 4,
-    quote:
-      "Structured lessons and helpful feedback. The online format was smooth — I never felt lost between sessions.",
-  },
-  {
-    name: "Nilufar Yusupova",
-    course: "English for Business",
-    rating: 5,
-    quote:
-      "Small-group discussions and patient teachers. I can write reports and join meetings in English comfortably now.",
-  },
-  {
-    name: "Sardor Alimov",
-    course: "Data Analysis with Excel",
-    rating: 5,
-    quote:
-      "From basics to dashboards, step by step. I finished with skills I could show on my CV right away.",
-  },
+const FEATURE_KEYS = [
+  "onlineClasses",
+  "expertInstructors",
+  "certifications",
+  "careerGrowth",
+  "globalAccess",
+  "analyticsDashboard",
 ] as const;
+
+const FEATURE_IMAGES: Record<(typeof FEATURE_KEYS)[number], string> = {
+  onlineClasses: "https://picsum.photos/seed/online-learning/600/450",
+  expertInstructors: "https://picsum.photos/seed/expert-instructor/600/450",
+  certifications: "https://picsum.photos/seed/certification/600/450",
+  careerGrowth: "https://picsum.photos/seed/career/600/450",
+  globalAccess: "https://picsum.photos/seed/global/600/450",
+  analyticsDashboard: "https://picsum.photos/seed/analytics/600/450",
+};
+
+const HIGHLIGHT_KEYS = ["interactive", "goalOriented", "fastTrack", "community"] as const;
+
+const HIGHLIGHT_ICONS = {
+  interactive: Lightbulb,
+  goalOriented: Target,
+  fastTrack: Zap,
+  community: Heart,
+} as const;
+
+const HIGHLIGHT_GRADIENTS = {
+  interactive: "from-pink-500 to-rose-500",
+  goalOriented: "from-cyan-500 to-blue-500",
+  fastTrack: "from-yellow-500 to-amber-500",
+  community: "from-red-500 to-pink-500",
+} as const;
+
+const TEAM_MEMBERS = [
+  { name: "Buriyeva Shakhnoza", nameLine1: "Buriyeva", nameLine2: "Shakhnoza", roleKey: "director", image: "/eduhub/1.png" },
+  { name: "Indiana Ayu Alwasilah", nameLine1: "Indiana Ayu", nameLine2: "Alwasilah", roleKey: "coExecutiveDirector", image: "/eduhub/2.png" },
+  { name: "Riyadi Maulaya", nameLine1: "Riyadi", nameLine2: "Maulaya", roleKey: "coExecutiveDirector", image: "/eduhub/3.png" },
+  { name: "Saidakhmedova Dilfuzakhon", nameLine1: "Saidakhmedova", nameLine2: "Dilfuzakhon", roleKey: "orgExcellenceManager", image: "/eduhub/4.png" },
+  { name: "Abdurazakova Samira", nameLine1: "Abdurazakova", nameLine2: "Samira", roleKey: "learningExperienceManager", image: "/eduhub/5.png" },
+  { name: "Jurakulova Yulduz", nameLine1: "Jurakulova", nameLine2: "Yulduz", roleKey: "callOperator", image: "/eduhub/6.png" },
+  { name: "Tursunova Yuliroz", nameLine1: "Tursunova", nameLine2: "Yuliroz", roleKey: "adminNavigator", image: "/eduhub/7.png" },
+  { name: "Amirov Jamshid", nameLine1: "Amirov", nameLine2: "Jamshid", roleKey: "callOperator", image: "/eduhub/8.png" },
+] as const;
+
+type TeamRoleKey = (typeof TEAM_MEMBERS)[number]["roleKey"];
+
+const ROLE_LINE_KEYS: Record<TeamRoleKey, { line1: string; line2: string }> = {
+  director: { line1: "directorLine1", line2: "directorLine2" },
+  coExecutiveDirector: { line1: "coExecutiveLine1", line2: "coExecutiveLine2" },
+  orgExcellenceManager: { line1: "orgExcellenceLine1", line2: "orgExcellenceLine2" },
+  learningExperienceManager: { line1: "learningExperienceLine1", line2: "learningExperienceLine2" },
+  callOperator: { line1: "callOperatorLine1", line2: "callOperatorLine2" },
+  adminNavigator: { line1: "adminNavigatorLine1", line2: "adminNavigatorLine2" },
+};
+
+const REVIEW_KEYS = ["aziza", "jasur", "madina", "bobur", "nilufar", "sardor"] as const;
+
+const REVIEW_META: Record<(typeof REVIEW_KEYS)[number], { name: string; rating: number; featured?: boolean }> = {
+  aziza: { name: "Aziza Karimova", rating: 5 },
+  jasur: { name: "Jasur Toshmatov", rating: 5 },
+  madina: { name: "Madina Rakhimova", rating: 5, featured: true },
+  bobur: { name: "Bobur Nazarov", rating: 4 },
+  nilufar: { name: "Nilufar Yusupova", rating: 5 },
+  sardor: { name: "Sardor Alimov", rating: 5 },
+};
+
+
+const BLOG_POST_KEYS = ["languagePrograms", "successStories", "workshops"] as const;
+
+const BLOG_IMAGES = {
+  languagePrograms: "https://framerusercontent.com/images/iY9yzf6jj5xEzAY4OnAslUkNlrs.jpeg",
+  successStories: "https://framerusercontent.com/images/Bn1przMMEo1Gy185OXSiWZPiy8c.jpeg",
+  workshops: "https://framerusercontent.com/images/4FZjdsBmWWHU4pj8TT0nUi9q4.jpeg",
+} as const;
 
 function reviewIndexLabel(index: number): string {
   return String(index + 1).padStart(2, "0");
@@ -148,15 +95,17 @@ function ReviewStars({
   rating,
   size = "sm",
   className,
+  starsLabel,
 }: {
   rating: number;
   size?: "sm" | "md";
   className?: string;
+  starsLabel: string;
 }) {
   return (
     <div
       className={cn("flex items-center gap-0.5", className)}
-      aria-label={`${rating} out of 5 stars`}
+      aria-label={starsLabel}
     >
       {Array.from({ length: 5 }, (_, index) => (
         <Star
@@ -174,12 +123,142 @@ function ReviewStars({
 }
 
 const EduHub = () => {
-  const words = ["Excellence", "Success", "Innovation", "Growth", "Knowledge"];
+  const { t } = useTranslation();
+  const landingContent = useLandingPageContent();
+  const words =
+    landingContent?.hero.words ??
+    (t("public.hero.words", { returnObjects: true }) as string[]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [visionTab, setVisionTab] = useState<"mission" | "vision" | "values">("mission");
-  const featuredReview = studentReviews.find((review) => "featured" in review && review.featured) ?? studentReviews[0];
-  const supportingReviews = studentReviews.filter((review) => review !== featuredReview);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  const features = useMemo(
+    () =>
+      FEATURE_KEYS.map((key) => ({
+        key,
+        title: t(`public.features.items.${key}.title`),
+        description: t(`public.features.items.${key}.description`),
+        image: FEATURE_IMAGES[key],
+        imageAlt: t(`public.features.items.${key}.imageAlt`),
+      })),
+    [t],
+  );
+
+  const stats = useMemo(
+    () => [
+      {
+        icon: GraduationCap,
+        value: landingContent?.stats.students ?? "50,000+",
+        label: t("public.stats.students"),
+        color: "text-blue-500",
+        bento: "wide" as const,
+      },
+      {
+        icon: BookOpen,
+        value: landingContent?.stats.classes ?? "500+",
+        label: t("public.stats.classes"),
+        color: "text-purple-500",
+        bento: "normal" as const,
+      },
+      {
+        icon: Users,
+        value: landingContent?.stats.teachers ?? "200+",
+        label: t("public.stats.teachers"),
+        color: "text-green-500",
+        bento: "normal" as const,
+      },
+      {
+        icon: Award,
+        value: landingContent?.stats.completionRate ?? "95%",
+        label: t("public.stats.completionRate"),
+        color: "text-orange-500",
+        bento: "accent" as const,
+      },
+      {
+        icon: Target,
+        value: landingContent?.stats.yearsExcellence ?? "10+",
+        label: t("public.stats.yearsExcellence"),
+        color: "text-amber-600",
+        bento: "normal" as const,
+      },
+    ],
+    [t, landingContent],
+  );
+
+  const statTags = useMemo(
+    () => ({
+      row1: ["language", "business", "tech", "arts", "science"] as const,
+      row2: ["math", "science", "language", "business", "tech"] as const,
+    }),
+    [],
+  );
+
+  const highlights = useMemo(
+    () =>
+      HIGHLIGHT_KEYS.map((key) => ({
+        key,
+        icon: HIGHLIGHT_ICONS[key],
+        title: t(`public.highlights.items.${key}.title`),
+        description: t(`public.highlights.items.${key}.description`),
+        gradient: HIGHLIGHT_GRADIENTS[key],
+      })),
+    [t],
+  );
+
+  const teamMembers = useMemo(
+    () =>
+      TEAM_MEMBERS.map((member) => {
+        const lineKeys = ROLE_LINE_KEYS[member.roleKey];
+        return {
+          ...member,
+          roleLine1: t(`public.team.roles.${lineKeys.line1}`),
+          roleLine2: t(`public.team.roles.${lineKeys.line2}`),
+        };
+      }),
+    [t],
+  );
+
+  const studentReviews = useMemo(
+    () =>
+      REVIEW_KEYS.map((key) => ({
+        key,
+        name: REVIEW_META[key].name,
+        rating: REVIEW_META[key].rating,
+        featured: REVIEW_META[key].featured,
+        course: t(`public.reviews.items.${key}.course`),
+        quote: t(`public.reviews.items.${key}.quote`),
+      })),
+    [t],
+  );
+
+  const featuredReview = studentReviews.find((review) => review.featured) ?? studentReviews[0];
+  const supportingReviews = studentReviews.filter((review) => review !== featuredReview);
+
+  const missionItems = t("public.vision.mission.items", { returnObjects: true }) as string[];
+  const valuesItems = t("public.vision.values.items", { returnObjects: true }) as string[];
+
+  const visionPoints = useMemo(
+    () => [
+      { title: t("public.vision.visionContent.inspireTitle"), text: t("public.vision.visionContent.inspireText") },
+      { title: t("public.vision.visionContent.connectTitle"), text: t("public.vision.visionContent.connectText") },
+      { title: t("public.vision.visionContent.elevateTitle"), text: t("public.vision.visionContent.elevateText") },
+    ],
+    [t],
+  );
+
+  const blogPosts = useMemo(
+    () =>
+      BLOG_POST_KEYS.map((key) => ({
+        key,
+        title: t(`public.blog.posts.${key}.title`),
+        description: t(`public.blog.posts.${key}.description`),
+        imageAlt: t(`public.blog.posts.${key}.imageAlt`),
+        image: BLOG_IMAGES[key],
+      })),
+    [t],
+  );
+
+  const starsLabel = (rating: number) => t("public.reviews.starsAria", { rating });
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 200);
@@ -346,12 +425,12 @@ const EduHub = () => {
                   <span className="absolute inline-flex h-full w-full rounded-full opacity-90" style={{ backgroundColor: 'rgb(94, 107, 100)', transform: 'scale(1.9)' }} />
                   <span className="relative inline-flex h-2 w-2 rounded-full" style={{ backgroundColor: 'rgb(19, 38, 27)' }} />
                 </span>
-                <span className="text-sm font-medium" style={{ color: 'rgb(19, 38, 27)' }}>Quality language education</span>
+                <span className="text-sm font-medium" style={{ color: 'rgb(19, 38, 27)' }}>{landingContent?.hero.badge ?? t("public.hero.badge")}</span>
               </div>
               {/* Heading */}
               <div className="mb-4">
                 <h1 className="font-extrabold text-foreground tracking-tight" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '80px', lineHeight: '80%' }}>
-                  Your Gateway to
+                  {landingContent?.hero.titleLine1 ?? t("public.hero.titleLine1")}
                   <br />
                   <span className="block relative overflow-hidden" style={{ height: '1.2em', minWidth: '300px', display: 'inline-block' }}>
                     <span 
@@ -373,9 +452,9 @@ const EduHub = () => {
               </div>
               {/* Description */}
               <p className="max-w-4xl mx-auto mb-8 leading-relaxed" style={{ color: 'rgb(82, 94, 88)', fontSize: '16px' }}>
-                EDUHUB is an educational center working under TISU, a leading private university in Uzbekistan.
+                {landingContent?.hero.descriptionLine1 ?? t("public.hero.descriptionLine1")}
                 <br />
-                It offers modern, high-quality language education using international standards.
+                {landingContent?.hero.descriptionLine2 ?? t("public.hero.descriptionLine2")}
               </p>
               {/* CTA - dark green, arrow */}
               <div className="flex flex-wrap justify-center">
@@ -383,7 +462,7 @@ const EduHub = () => {
                   className="inline-flex items-center gap-2 px-6 py-4 text-white rounded-[37px] font-semibold transition-all duration-300 hover:opacity-95 shadow-lg"
                   style={{ backgroundColor: '#3954d0' }}
                 >
-                  <span>Learn More</span>
+                  <span>{landingContent?.hero.learnMore ?? t("public.hero.learnMore")}</span>
                   <ArrowRight className="h-5 w-5 flex-shrink-0" />
                 </button>
               </div>
@@ -409,7 +488,7 @@ const EduHub = () => {
           {/* Tagline + heading */}
           <div className="text-center mb-12">
             <h2 className="text-lg lg:text-xl font-bold text-foreground mb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-              Our Valuable Partners
+              {t("public.partners.title")}
             </h2>
           </div>
 
@@ -424,10 +503,10 @@ const EduHub = () => {
             <ul className="flex items-center gap-4 list-none m-0 p-0 animate-scroll w-max">
               {[1, 2, 3].map((set) =>
                 [
-                  { name: "Partner 1", logo: "/partnership/1.png" },
-                  { name: "Partner 2", logo: "/partnership/2.png" },
-                  { name: "Partner 3", logo: "/partnership/3.png" },
-                  { name: "Partner 4", logo: "/partnership/4.png" },
+                  { name: t("public.partners.partner", { number: 1 }), logo: "/partnership/1.png" },
+                  { name: t("public.partners.partner", { number: 2 }), logo: "/partnership/2.png" },
+                  { name: t("public.partners.partner", { number: 3 }), logo: "/partnership/3.png" },
+                  { name: t("public.partners.partner", { number: 4 }), logo: "/partnership/4.png" },
                 ].map((partner, index) => (
                   <li key={`set-${set}-${index}`} className="flex-shrink-0">
                     <div className="flex items-center justify-center p-4 transition-all duration-300 hover:opacity-80" style={{ minWidth: '120px' }}>
@@ -465,15 +544,14 @@ const EduHub = () => {
               style={{ backgroundColor: "rgb(240, 244, 243)" }}
             >
               <span className="text-sm font-medium" style={{ color: "rgb(19, 38, 27)" }}>
-                Why Choose Us
+                {t("public.stats.whyChooseUs")}
               </span>
             </div>
             <h2
               className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground leading-tight tracking-tight"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
-            >
-              Why you should<br />join with us?
-            </h2>
+              dangerouslySetInnerHTML={{ __html: t("public.stats.heading") }}
+            />
           </div>
           <div
             className="stats-cards-grid grid gap-4 max-w-5xl mx-auto"
@@ -507,7 +585,7 @@ const EduHub = () => {
                     className="text-center text-[32px] font-bold mb-3 flex-shrink-0 px-5 lg:px-6 pt-5 lg:pt-6"
                     style={{ color: "rgb(38, 41, 46)", fontFamily: "'DM Sans', sans-serif" }}
                   >
-                    500+ Classes
+                    {t("public.stats.classesHeading")}
                   </h4>
                   <div className="flex flex-col gap-2 flex-1 justify-center min-h-0 overflow-hidden">
                     {/* Row 1 - marquee right-to-left, looped */}
@@ -519,13 +597,13 @@ const EduHub = () => {
                         }}
                       >
                         {[...Array(8)].map((_, copy) =>
-                          ["Language", "Business", "Tech", "Arts", "Science"].map((tag) => (
+                          statTags.row1.map((tag) => (
                             <span
                               key={`r1-${copy}-${tag}`}
                               className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap flex-shrink-0"
                               style={{ backgroundColor: "rgb(255, 255, 255)", color: "rgb(38, 41, 46)" }}
                             >
-                              {tag}
+                              {t(`public.stats.tags.${tag}`)}
                             </span>
                           ))
                         )}
@@ -540,13 +618,13 @@ const EduHub = () => {
                         }}
                       >
                         {[...Array(8)].map((_, copy) =>
-                          ["Math", "Science", "Language", "Business", "Tech"].map((tag, i) => (
+                          statTags.row2.map((tag, i) => (
                             <span
                               key={`r2-${copy}-${i}-${tag}`}
                               className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap flex-shrink-0"
                               style={{ backgroundColor: "rgb(255, 255, 255)", color: "rgb(38, 41, 46)" }}
                             >
-                              {tag}
+                              {t(`public.stats.tags.${tag}`)}
                             </span>
                           ))
                         )}
@@ -561,13 +639,13 @@ const EduHub = () => {
                         }}
                       >
                         {[...Array(8)].map((_, copy) =>
-                          ["Language", "Business", "Tech", "Arts", "Science"].map((tag) => (
+                          statTags.row1.map((tag) => (
                             <span
                               key={`r3a-${copy}-${tag}`}
                               className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap flex-shrink-0"
                               style={{ backgroundColor: "rgb(255, 255, 255)", color: "rgb(38, 41, 46)" }}
                             >
-                              {tag}
+                              {t(`public.stats.tags.${tag}`)}
                             </span>
                           ))
                         )}
@@ -578,7 +656,7 @@ const EduHub = () => {
                     className="text-center text-sm font-medium mt-2 flex-shrink-0 px-5 lg:px-6 pb-5 lg:pb-6"
                     style={{ color: "rgb(102, 112, 122)", fontFamily: "'DM Sans', sans-serif" }}
                   >
-                    Wide variety
+                    {t("public.stats.wideVariety")}
                   </p>
                 </div>
               </div>
@@ -628,14 +706,14 @@ const EduHub = () => {
                   className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight flex-shrink-0"
                   style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(3, 2, 11)" }}
                 >
-                  Meet the Team
+                  {t("public.team.titleLine1")}
                 <br />
-                Behind Your Learning
+                {t("public.team.titleLine2")}
                 </h2>
                 <p className="text-base leading-relaxed max-w-2xl lg:ml-auto lg:text-right" style={{ color: "rgb(88, 88, 102)" }}>
-                  Professional & experienced teachers & staffs
+                  {t("public.team.subtitleLine1")}
                   <br />
-                  with master&apos;s degree & international certificates
+                  {t("public.team.subtitleLine2")}
                 </p>
               </div>
             </div>
@@ -679,7 +757,7 @@ const EduHub = () => {
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center w-10 h-10 rounded-full text-white hover:opacity-90 transition-opacity flex-shrink-0"
                     style={{ backgroundColor: "rgb(3, 2, 11)", borderRadius: "100px" }}
-                    aria-label="LinkedIn"
+                    aria-label={t("public.team.linkedin")}
                   >
                     <Linkedin className="h-5 w-5" />
                   </a>
@@ -695,17 +773,16 @@ const EduHub = () => {
           <div className="grid grid-cols-1 gap-8 items-start lg:grid-cols-2 lg:gap-12">
             <div className="text-center lg:text-left lg:sticky lg:top-24 pt-4 flex flex-col lg:h-[600px]">
               <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                Why Choose EduHub?
+                {t("public.features.title")}
               </h2>
               <p className="text-foreground/70 max-w-2xl lg:max-w-none mx-auto lg:mx-0 leading-relaxed mb-4 lg:mb-4" style={{ fontSize: '16px' }}>
-                EDUHUB is an educational center working under TISU, a leading private university in Uzbekistan.
-                It offers modern, high-quality language education using international standards.
+                {t("public.features.descriptionLine1")}
                 <span className="hidden lg:inline">
-                  {" "}Our programs combine structured curricula with practical, real-world use so you can progress quickly and use the language confidently in work and study. Whether you are preparing for exams, career advancement, or academic exchange, EDUHUB supports your goals with experienced instructors and a learning environment designed for your success.
+                  {" "}{t("public.features.descriptionLine2")}
                 </span>
               </p>
               <p className="hidden lg:block text-foreground/70 max-w-2xl lg:max-w-none mx-auto lg:mx-0 leading-relaxed mb-6 flex-1 min-h-0" style={{ fontSize: '16px' }}>
-                Join a community of learners and professionals who choose EDUHUB for its commitment to quality, flexibility, and measurable results. From small-group classes to tailored one-on-one sessions, we adapt to your schedule and level so you can learn at your own pace while staying on track toward your language goals.
+                {t("public.features.descriptionLine3")}
               </p>
               <div className="hidden lg:block">
               <Link
@@ -713,7 +790,7 @@ const EduHub = () => {
                 className="mt-auto self-start inline-flex items-center gap-2 px-6 py-3 rounded-[37px] font-semibold text-white transition-opacity hover:opacity-90 w-fit mx-auto lg:mx-0 shrink-0"
                 style={{ backgroundColor: "#3954d0" }}
               >
-                Learn More
+                {t("public.features.learnMore")}
                 <ArrowRight className="h-4 w-4" />
               </Link>
               </div>
@@ -722,7 +799,7 @@ const EduHub = () => {
             <div className="flex flex-col gap-6 pt-2 lg:pt-4 pb-8 lg:pb-0">
             {features.map((feature, index) => (
                 <div
-                  key={index}
+                  key={feature.key}
                   className="sticky top-[5.5rem] lg:top-24 rounded-[24px] overflow-hidden p-4 shadow-sm"
                   style={{
                     background: "rgb(249, 250, 251)",
@@ -761,7 +838,7 @@ const EduHub = () => {
               className="inline-flex items-center gap-2 px-6 py-3 rounded-[37px] font-semibold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: "#3954d0" }}
             >
-              Learn More
+              {t("public.features.learnMore")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -773,16 +850,14 @@ const EduHub = () => {
       <section className="py-20 bg-white relative">
         <div className="section-reveal container mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
-            {/* Left - Image (fixed height, does not change when switching tabs) */}
             <div className="vision-reveal-left rounded-[24px] overflow-hidden w-full h-[320px] sm:h-[400px] lg:h-[600px] relative flex-shrink-0">
               <img
                 src="https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80"
-                alt="EduHub vision"
+                alt={t("public.vision.imageAlt")}
                 className="absolute inset-0 w-full h-full object-cover object-center"
               />
             </div>
 
-            {/* Right - Content with tabs */}
             <div className="vision-reveal-right flex flex-col min-h-[320px]">
               <div className="flex flex-col gap-4 mb-6">
                 <div
@@ -790,15 +865,16 @@ const EduHub = () => {
                   style={{ backgroundColor: "rgb(240, 244, 243)" }}
                 >
                   <span className="text-sm font-medium" style={{ color: "rgb(19, 38, 27)" }}>
-                    Vision &amp; Mission
+                    {t("public.vision.badge")}
                   </span>
                 </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                  Where our vision and promises<br />come to life
-                </h2>
+                <h2
+                  className="text-3xl md:text-4xl font-bold text-foreground leading-tight"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  dangerouslySetInnerHTML={{ __html: t("public.vision.title") }}
+                />
               </div>
 
-              {/* Tabs with elastic sliding indicator */}
               <div className="tabs mb-6">
                 <div className="relative w-full">
                   <span
@@ -818,7 +894,7 @@ const EduHub = () => {
                         className={`relative z-10 inline-flex h-10 w-full items-center justify-center rounded-full px-1 text-[11px] font-medium leading-tight transition-colors duration-200 sm:h-11 sm:px-2 sm:text-xs lg:h-12 lg:px-4 lg:text-sm ${visionTab !== "mission" ? "text-gray-500 hover:text-gray-800" : ""}`}
                         style={visionTab === "mission" ? { color: "#fff" } : undefined}
                       >
-                        Our Mission
+                        {t("public.vision.tabs.mission")}
                       </button>
                     </li>
                     <li>
@@ -829,7 +905,7 @@ const EduHub = () => {
                         className={`relative z-10 inline-flex h-10 w-full items-center justify-center rounded-full px-1 text-[11px] font-medium leading-tight transition-colors duration-200 sm:h-11 sm:px-2 sm:text-xs lg:h-12 lg:px-4 lg:text-sm ${visionTab !== "vision" ? "text-gray-500 hover:text-gray-800" : ""}`}
                         style={visionTab === "vision" ? { color: "#fff" } : undefined}
                       >
-                        Our Vision
+                        {t("public.vision.tabs.vision")}
                       </button>
                     </li>
                     <li>
@@ -840,28 +916,21 @@ const EduHub = () => {
                         className={`relative z-10 inline-flex h-10 w-full items-center justify-center rounded-full px-1 text-[11px] font-medium leading-tight transition-colors duration-200 sm:h-11 sm:px-2 sm:text-xs lg:h-12 lg:px-4 lg:text-sm ${visionTab !== "values" ? "text-gray-500 hover:text-gray-800" : ""}`}
                         style={visionTab === "values" ? { color: "#fff" } : undefined}
                       >
-                        Our Values
+                        {t("public.vision.tabs.values")}
                       </button>
                     </li>
                   </ul>
                 </div>
               </div>
 
-              {/* Tab content */}
               <div className="space-y-4">
                 {visionTab === "mission" && (
                   <>
                     <p className="text-base leading-relaxed" style={{ color: "rgb(75, 85, 84)" }}>
-                      EduHub is built around a clear direction and a set of fun, learner‑centered commitments that guide every class, activity, and experiment.
+                      {t("public.vision.mission.intro")}
                     </p>
                     <ul className="space-y-3">
-                      {[
-                        "To provide accessible, high‑quality training programs that address academic, professional, and personal development needs.",
-                        "To serve as a collaborative platform connecting students, educators, professionals, and communities for lifelong learning.",
-                        "To design and deliver innovative training models that meet national and international standards.",
-                        "To build partnerships with institutions and industries to enhance training relevance and global competitiveness.",
-                        "To foster inclusivity, creativity, and adaptability in preparing participants for future challenges.",
-                      ].map((text, i) => (
+                      {missionItems.map((text, i) => (
                         <li key={i} className="flex items-start gap-3">
                           <div className="w-5 h-5 rounded-full bg-black flex items-center justify-center flex-shrink-0 mt-0.5">
                           <Check className="h-3 w-3 text-white" strokeWidth={2.5} />
@@ -875,14 +944,10 @@ const EduHub = () => {
                 {visionTab === "vision" && (
                   <>
                     <p className="text-base leading-relaxed" style={{ color: "rgb(75, 85, 84)" }}>
-                      To become a central hub of excellence for diverse training programs that empower students, local communities, and global learners with relevant skills and knowledge of national and international quality.
+                      {t("public.vision.visionContent.intro")}
                     </p>
                     <ul className="space-y-3">
-                      {[
-                        { title: "Inspire", text: "Make economics and business feel exciting, visual, and story‑driven." },
-                        { title: "Connect", text: "Bridge classrooms, workplaces, and communities in one playful space." },
-                        { title: "Elevate", text: "Help every learner grow from curious beginner to confident practitioner." },
-                      ].map((item, i) => (
+                      {visionPoints.map((item, i) => (
                         <li key={i} className="flex items-start gap-3">
                           <div className="w-5 h-5 rounded-full bg-black flex items-center justify-center flex-shrink-0 mt-0.5">
                           <Check className="h-3 w-3 text-white" strokeWidth={2.5} />
@@ -896,14 +961,10 @@ const EduHub = () => {
                 {visionTab === "values" && (
                   <>
                     <p className="text-base leading-relaxed" style={{ color: "rgb(75, 85, 84)" }}>
-                      These commitments guide how we design every EduHub module, activity, and learner journey.
+                      {t("public.vision.values.intro")}
                     </p>
                     <ul className="space-y-3">
-                      {[
-                        "Relevant skills and knowledge of national and international quality.",
-                        "Learner‑centered commitments in every class and activity.",
-                        "Inclusivity, creativity, and adaptability for future challenges.",
-                      ].map((text, i) => (
+                      {valuesItems.map((text, i) => (
                         <li key={i} className="flex items-start gap-3">
                           <div className="w-5 h-5 rounded-full bg-black flex items-center justify-center flex-shrink-0 mt-0.5">
                           <Check className="h-3 w-3 text-white" strokeWidth={2.5} />
@@ -929,15 +990,15 @@ const EduHub = () => {
                 className="flex-shrink-0 text-3xl font-bold leading-tight sm:text-4xl md:text-5xl"
                 style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(3, 2, 11)" }}
               >
-                Voices from
+                {t("public.reviews.titleLine1")}
                 <br />
-                the classroom
+                {t("public.reviews.titleLine2")}
               </h2>
               <p
                 className="max-w-2xl text-base leading-relaxed lg:ml-auto lg:text-right"
                 style={{ color: "rgb(88, 88, 102)" }}
               >
-                Learners across business, language, and skills programs — in their own words, after finishing a class at EduHub.
+                {t("public.reviews.subtitle")}
               </p>
             </div>
           </div>
@@ -955,7 +1016,7 @@ const EduHub = () => {
                     >
                       {featuredReview.course}
                     </span>
-                    <ReviewStars rating={featuredReview.rating} size="md" />
+                    <ReviewStars rating={featuredReview.rating} size="md" starsLabel={starsLabel(featuredReview.rating)} />
                   </div>
                   <p
                     className="mt-6 text-xl font-medium leading-snug sm:text-2xl lg:text-[1.65rem] lg:leading-[1.35]"
@@ -970,7 +1031,7 @@ const EduHub = () => {
                       {featuredReview.name}
                     </p>
                     <p className="mt-1 text-sm" style={{ color: "rgb(88, 88, 102)" }}>
-                      EduHub student
+                      {t("public.reviews.studentLabel")}
                     </p>
                   </div>
                   <span
@@ -1001,7 +1062,7 @@ const EduHub = () => {
                         {review.course}
                       </p>
                     </div>
-                    <ReviewStars rating={review.rating} className="mt-3" />
+                    <ReviewStars rating={review.rating} className="mt-3" starsLabel={starsLabel(review.rating)} />
                     <p className="mt-3 flex-1 text-sm leading-relaxed sm:text-[15px]" style={{ color: "rgb(75, 85, 84)" }}>
                       {review.quote}
                     </p>
@@ -1030,7 +1091,7 @@ const EduHub = () => {
                         {review.course}
                       </p>
                     </div>
-                    <ReviewStars rating={review.rating} className="mt-3" />
+                    <ReviewStars rating={review.rating} className="mt-3" starsLabel={starsLabel(review.rating)} />
                     <p className="mt-3 flex-1 text-sm leading-relaxed line-clamp-4" style={{ color: "rgb(75, 85, 84)" }}>
                       {review.quote}
                     </p>
@@ -1052,13 +1113,12 @@ const EduHub = () => {
             {/* Left - Content (Framer style: pill badge, heading, text, button, stars) */}
             <div className="flex flex-col">
               <h2 className="text-3xl lg:text-4xl font-bold mb-4 leading-tight" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(17, 17, 17)" }}>
-                Discover Our
+                {t("public.video.titleLine1")}
                 <br />
-                Learning Platform
+                {t("public.video.titleLine2")}
               </h2>
               <p className="mb-6 leading-relaxed max-w-md" style={{ color: "rgb(61, 61, 61)", fontSize: "16px" }}>
-                Experience our innovative online learning platform through this comprehensive video tour.
-                See how we make education accessible, engaging, and effective for students worldwide.
+                {t("public.video.description")}
               </p>
               <div className="space-y-4 mb-8">
                 <div className="flex items-start gap-3">
@@ -1068,8 +1128,8 @@ const EduHub = () => {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-bold mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>Interactive Learning</h3>
-                    <p className="text-sm" style={{ color: "rgb(61, 61, 61)" }}>Engage with multimedia content and interactive exercises</p>
+                    <h3 className="font-bold mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>{t("public.video.interactiveTitle")}</h3>
+                    <p className="text-sm" style={{ color: "rgb(61, 61, 61)" }}>{t("public.video.interactiveDesc")}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -1079,8 +1139,8 @@ const EduHub = () => {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-bold mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>Expert Instructors</h3>
-                    <p className="text-sm" style={{ color: "rgb(61, 61, 61)" }}>Learn from industry professionals and academic experts</p>
+                    <h3 className="font-bold mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>{t("public.video.expertTitle")}</h3>
+                    <p className="text-sm" style={{ color: "rgb(61, 61, 61)" }}>{t("public.video.expertDesc")}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -1090,18 +1150,17 @@ const EduHub = () => {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-bold mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>Flexible Schedule</h3>
-                    <p className="text-sm" style={{ color: "rgb(61, 61, 61)" }}>Study at your own pace, anytime and anywhere</p>
+                    <h3 className="font-bold mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>{t("public.video.flexibleTitle")}</h3>
+                    <p className="text-sm" style={{ color: "rgb(61, 61, 61)" }}>{t("public.video.flexibleDesc")}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Right - Video (Framer image slot) */}
             <div className="relative rounded-lg overflow-hidden h-full">
               <video className="w-full h-full object-cover rounded-[16px]" controls>
                 <source src="/tisu2.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
+                {t("public.video.unsupported")}
               </video>
             </div>
           </div>
@@ -1116,15 +1175,16 @@ const EduHub = () => {
               className="inline-flex items-center justify-center rounded-[40px] px-5 py-2.5 mb-6 border border-[rgb(230,230,230)] bg-white text-base font-medium"
               style={{ boxShadow: "rgba(0,0,0,0.1) 0px 4px 12px 0px", color: "rgb(61, 61, 61)" }}
             >
-              Blog
+              {t("public.blog.badge")}
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-center" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
-              Insights &amp; Updates
+              {t("public.blog.title")}
             </h2>
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div>
+            {blogPosts.map((post) => (
+            <div key={post.key}>
             <Link
               to="/journal"
               className="group block rounded-[24px] overflow-hidden transition-shadow duration-300 hover:shadow-[0_10px_15px_rgba(0,0,0,0.15)]"
@@ -1133,74 +1193,23 @@ const EduHub = () => {
               <div className="rounded-[20px] overflow-hidden p-2">
                 <div className="rounded-[20px] overflow-hidden aspect-[4/3] bg-gray-200">
                   <img
-                    src="https://framerusercontent.com/images/iY9yzf6jj5xEzAY4OnAslUkNlrs.jpeg"
-                    alt="Green Fern"
+                    src={post.image}
+                    alt={post.imageAlt}
                     className="w-full h-full object-cover object-center"
                   />
                 </div>
               </div>
               <div className="p-5 pt-0">
                 <h5 className="text-lg font-semibold mb-2 group-hover:underline" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
-                  New Language Programs Launch This Semester
+                  {post.title}
                 </h5>
                 <p className="text-sm leading-relaxed" style={{ color: "rgb(153, 153, 153)" }}>
-                  Discover our expanded offerings in business English, academic writing, and conversation practice—designed for busy professionals and students.
+                  {post.description}
                 </p>
               </div>
             </Link>
             </div>
-
-            <div>
-            <Link
-              to="/journal"
-              className="group block rounded-[24px] overflow-hidden transition-shadow duration-300 hover:shadow-[0_10px_15px_rgba(0,0,0,0.15)]"
-              style={{ background: "linear-gradient(336deg, rgb(250,250,250) 0%, rgb(255,255,255) 54%, rgb(238,238,238) 100%)" }}
-            >
-              <div className="rounded-[20px] overflow-hidden p-2">
-                <div className="rounded-[20px] overflow-hidden aspect-[4/3] bg-gray-200">
-                  <img
-                    src="https://framerusercontent.com/images/Bn1przMMEo1Gy185OXSiWZPiy8c.jpeg"
-                    alt="Yellow Flower"
-                    className="w-full h-full object-cover object-center"
-                  />
-                </div>
-              </div>
-              <div className="p-5 pt-0">
-                <h5 className="text-lg font-semibold mb-2 group-hover:underline" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
-                  EduHub Student Success Stories: From Classroom to Career
-                </h5>
-                <p className="text-sm leading-relaxed" style={{ color: "rgb(153, 153, 153)" }}>
-                  Read how our graduates are using their language skills and certifications to advance in international roles and higher education.
-                </p>
-              </div>
-            </Link>
-            </div>
-
-            <div>
-            <Link
-              to="/journal"
-              className="group block rounded-[24px] overflow-hidden transition-shadow duration-300 hover:shadow-[0_10px_15px_rgba(0,0,0,0.15)]"
-              style={{ background: "linear-gradient(336deg, rgb(250,250,250) 0%, rgb(255,255,255) 54%, rgb(238,238,238) 100%)" }}
-            >
-              <div className="rounded-[20px] overflow-hidden p-2">
-                <div className="rounded-[20px] overflow-hidden aspect-[4/3] bg-gray-200">
-                  <img
-                    src="https://framerusercontent.com/images/4FZjdsBmWWHU4pj8TT0nUi9q4.jpeg"
-                    alt="Orange Flower"
-                    className="w-full h-full object-cover object-center"
-                  />
-                </div>
-              </div>
-              <div className="p-5 pt-0">
-                <h5 className="text-lg font-semibold mb-2 group-hover:underline" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
-                  Upcoming Workshops and Cultural Exchange Events
-                </h5>
-                <p className="text-sm leading-relaxed" style={{ color: "rgb(153, 153, 153)" }}>
-                  Join speaking clubs, exam prep sessions, and partner events with TISU—stay updated on dates and how to register.
-                </p>
-              </div>
-            </Link>
-            </div>
+            ))}
           </div>
 
           <div className="flex justify-center">
@@ -1210,7 +1219,7 @@ const EduHub = () => {
               className="inline-flex items-center justify-center rounded-[40px] px-6 py-3.5 font-medium transition-opacity hover:opacity-90"
               style={{ backgroundColor: "rgb(0, 0, 0)", color: "rgb(255, 255, 255)", boxShadow: "rgba(0,0,0,0.15) 0px 4px 8px 0px" }}
             >
-              Read More
+              {t("public.blog.readMore")}
             </Link>
           </div>
           </div>
@@ -1222,19 +1231,19 @@ const EduHub = () => {
         <div className="section-reveal container mx-auto px-6">
           <div className="text-center mb-8">
             <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-              Learning Highlights
+              {t("public.highlights.title")}
             </h2>
             <p className="text-foreground/70 max-w-2xl mx-auto leading-relaxed" style={{ fontSize: '16px' }}>
-              Everything you need for a successful learning journey
+              {t("public.highlights.subtitle")}
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {highlights.map((highlight, index) => {
+            {highlights.map((highlight) => {
               const Icon = highlight.icon;
               return (
                 <div
-                  key={index}
+                  key={highlight.key}
                   className="flex flex-col rounded-2xl p-6 bg-white"
                 >
                   <div className="flex flex-col gap-3 mb-3">
@@ -1278,21 +1287,21 @@ const EduHub = () => {
                   className="inline-flex items-center rounded-[10px] px-3 py-1.5 text-sm font-medium text-white"
                   style={{ backgroundColor: "rgba(255, 255, 255, 0.08)" }}
                 >
-                  Quality education
+                  {landingContent?.cta.qualityEducation ?? t("public.cta.qualityEducation")}
                 </div>
               </div>
               <h3
                 className="text-2xl lg:text-4xl font-bold mb-8 text-white max-w-2xl"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
-                Ready to start learning?
+                {landingContent?.cta.title ?? t("public.cta.title")}
               </h3>
               <Link
                 to="/register"
                 className="inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-base font-medium transition-opacity hover:opacity-90"
                 style={{ backgroundColor: "rgb(215, 245, 188)", color: "rgb(3, 31, 42)" }}
               >
-                Get started — it's free
+                {landingContent?.cta.button ?? t("public.cta.button")}
                 <span className="ml-1">→</span>
               </Link>
             </div>
@@ -1307,7 +1316,7 @@ const EduHub = () => {
           showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
         }`}
         style={{ backgroundColor: '#199eff' }}
-        aria-label="Scroll to top"
+        aria-label={t("public.scrollToTop")}
       >
         <ChevronUp className="h-7 w-7" />
       </button>

@@ -1,0 +1,1280 @@
+{
+  "admin": {
+    "shared": {
+      "backToDashboard": "Boshqaruv paneliga qaytish",
+      "backToPayments": "To'lovlarga qaytish",
+      "backToPayroll": "Ish haqiga qaytish",
+      "backToPayrollOverview": "Ish haqi umumiy ko'rinishiga qaytish",
+      "backToEnrollmentApplications": "Ro'yxatdan o'tish arizalariga qaytish",
+      "backToAllClasses": "Barcha sinflar",
+      "backToClassOverview": "Sinf umumiy ko'rinishi",
+      "backToInstructorRequests": "O'qituvchi so'rovlari",
+      "backToNotifications": "Bildirishnomalarga qaytish",
+      "clearFilters": "Filtrlarni tozalash",
+      "clear": "Tozalash",
+      "roleBadge": "Admin",
+      "allRoles": "Barcha rollar",
+      "allStatuses": "Barcha holatlar",
+      "allCategories": "Barcha toifalar",
+      "allClasses": "Barcha sinflar",
+      "allLecturers": "Barcha o'qituvchilar",
+      "allTypes": "Barcha turlar",
+      "allMethods": "Barcha usullar",
+      "allPayments": "Barcha to'lovlar",
+      "allEnrollments": "Barcha ro'yxatdan o'tishlar",
+      "allClassStatuses": "Barcha sinf holatlari",
+      "allRiskLevels": "Barcha xavf darajalari",
+      "allResults": "Barcha natijalar",
+      "allEligibility": "Barcha moslik",
+      "anyCourseLoad": "Har qanday kurs yuklamasi",
+      "active": "Faol",
+      "inactive": "Nofaol",
+      "pending": "Kutilmoqda",
+      "paid": "To'langan",
+      "overdue": "Muddati o'tgan",
+      "approved": "Tasdiqlangan",
+      "rejected": "Rad etilgan",
+      "notApproved": "Tasdiqlanmagan",
+      "awaitingReview": "Ko'rib chiqish kutilmoqda",
+      "pendingReview": "Ko'rib chiqish kutilmoqda",
+      "yes": "Ha",
+      "no": "Yo'q",
+      "done": "Bajarildi",
+      "missing": "Yo'q",
+      "demo": "demo",
+      "loadingUsers": "Loading users…",
+      "loading": "Yuklanmoqda…",
+      "loadingApplications": "Loading applications...",
+      "loadingClass": "Loading class…",
+      "loadingClasses": "Loading classes…",
+      "loadingApplication": "Loading application...",
+      "loadingNotifications": "Loading notifications…",
+      "loadingPayrollSubmission": "Loading payroll submission…",
+      "loadingClassSchedule": "Loading class schedule…",
+      "loadingListedPrice": "Loading listed class price…",
+      "retrying": "Retrying…",
+      "tryAgain": "Qayta urinish",
+      "submitting": "Yuborilmoqda…",
+      "publishing": "Nashr qilinmoqda…",
+      "saving": "Saqlanmoqda…",
+      "creating": "Yaratilmoqda...",
+      "approving": "Tasdiqlanmoqda…",
+      "rejecting": "Rad etilmoqda…",
+      "copied": "Nusxalandi",
+      "copy": "Nusxalash",
+      "email": "Email",
+      "phone": "Telefon",
+      "role": "Rol",
+      "category": "Toifa",
+      "class": "Sinf",
+      "course": "Kurs",
+      "lecturer": "O'qituvchi",
+      "instructor": "O'qituvchi",
+      "student": "Talaba",
+      "amount": "Summa",
+      "date": "Sana",
+      "time": "Vaqt",
+      "title": "Sarlavha",
+      "reference": "Ma'lumotnoma",
+      "method": "Usul",
+      "period": "Davr",
+      "submitted": "Yuborilgan",
+      "updated": "Yangilangan",
+      "recorded": "Qayd etilgan",
+      "due": "Muddat",
+      "notes": "Izohlar",
+      "summary": "Xulosa",
+      "details": "Tafsilotlar",
+      "viewDetails": "Tafsilotlarni ko'rish",
+      "openDetails": "Tafsilotni ochish",
+      "review": "Ko'rib chiqish",
+      "approve": "Tasdiqlash",
+      "reject": "Rad etish",
+      "deactivate": "O'chirish",
+      "activate": "Faollashtirish",
+      "returnToList": "Ro'yxatga qaytish",
+      "backToList": "Ro'yxatga qaytish",
+      "noRowsMatch": "No rows match your search or filters.",
+      "loggedInAs": "Logged in as {{name}}",
+      "waiting": "Kutilmoqda",
+      "completed": "Tugallangan",
+      "trial": "Sinov",
+      "allRequests": "Barcha so'rovlar",
+      "allSubstituteRequests": "Barcha o'rnini bosish so'rovlari",
+      "view": "Ko'rish",
+      "edit": "Tahrirlash",
+      "searchNameEmailRole": "Search name, email, role…",
+      "searchNameEmail": "Search name or email…",
+      "searchStudentClass": "Search student, class…",
+      "searchStudentClassLecturer": "Search student, class, lecturer…",
+      "enterAdminCode": "Admin kodingizni kiriting",
+      "unknownError": "Noma'lum xato",
+      "couldNotLoadUsers": "Could not load users.",
+      "noUsersYet": "No users yet.",
+      "noUsersMatch": "No users match your search or filters."
+    },
+    "dashboard": {
+      "subtitle": "Admin boshqaruv paneli",
+      "stats": {
+        "totalUsers": "Jami foydalanuvchilar",
+        "students": "Talabalar",
+        "classes": "Sinflar"
+      },
+      "recentUsers": {
+        "title": "So'nggi foydalanuvchilar",
+        "addUser": "Foydalanuvchi qo'shish",
+        "searchPlaceholder": "Search name, email, role…",
+        "rolePlaceholder": "Rol",
+        "statusPlaceholder": "Holat",
+        "table": {
+          "name": "Ism",
+          "email": "Email",
+          "role": "Rol",
+          "status": "Holat",
+          "actions": "Amallar"
+        },
+        "empty": {
+          "none": "No users yet.",
+          "noMatch": "No users match your search or filters."
+        },
+        "loadError": "Could not load users.",
+        "actions": {
+          "view": "Ko'rish",
+          "edit": "Tahrirlash",
+          "deactivate": "O'chirish"
+        }
+      },
+      "systemActivity": {
+        "title": "Tizim faoliyati"
+      },
+      "quickActions": {
+        "title": "Tezkor amallar",
+        "studentsRegistrations": "Talabalar va ro'yxatdan o'tish",
+        "enrollmentsWaitlist": "Ro'yxatdan o'tish va kutish ro'yxati",
+        "paymentsReminders": "To'lovlar va eslatmalar",
+        "allClasses": "Barcha sinflar",
+        "calendar": "Taqvim",
+        "users": "Foydalanuvchilar",
+        "reports": "Hisobotlar",
+        "settings": "Sozlamalar"
+      },
+      "adminAccess": {
+        "title": "Admin kirish",
+        "description": "You have full access to users, classes, and platform configuration."
+      }
+    },
+    "students": {
+      "description": "Directory and status of enrolled students.",
+      "remindSelected": "Tanlanganlarga eslatma",
+      "remindQueuedDemo": "Reminder queued (demo)",
+      "remindQueuedDescription": "{{count}} student(s)",
+      "searchPlaceholder": "Search name or email…",
+      "statusPlaceholder": "Student status",
+      "table": {
+        "student": "Talaba",
+        "status": "Holat",
+        "classes": "Sinflar",
+        "registered": "Ro'yxatdan o'tgan"
+      },
+      "actions": {
+        "viewEnrollments": "View enrollments"
+      },
+      "empty": "No students match your search or filters.",
+      "toast": {
+        "loadFailed": "Failed to load students",
+        "deactivated": "Student deactivated",
+        "activated": "Student activated",
+        "updateFailed": "Failed to update status"
+      }
+    },
+    "teachers": {
+      "description": "Lecturer accounts and class load.",
+      "searchPlaceholder": "Search name, email, classes, students…",
+      "classLoadPlaceholder": "Class load",
+      "withAssignedClasses": "With assigned classes",
+      "noClasses": "No classes (0)",
+      "table": {
+        "name": "Ism",
+        "email": "Email",
+        "classes": "Sinflar",
+        "totalStudents": "Jami talabalar",
+        "status": "Holat",
+        "actions": "Amallar"
+      },
+      "viewProfile": "View profile",
+      "profileDialog": {
+        "title": "Teacher profile",
+        "description": "Lecturer account · {{email}}",
+        "assignedCourses": "Assigned courses",
+        "totalStudents": "Jami talabalar",
+        "classesTaught": "Classes taught",
+        "noClassesAssigned": "No classes assigned.",
+        "enrolledCapacity": "Enrolled / capacity",
+        "viewDetails": "Tafsilotlarni ko'rish"
+      },
+      "toast": {
+        "loadFailed": "Failed to load teachers"
+      }
+    },
+    "staff": {
+      "description": "Non-teaching staff accounts (demo data).",
+      "searchPlaceholder": "Search name, email, role…",
+      "empty": "No staff match your search or filters."
+    },
+    "users": {
+      "description": "Cross-role user list.",
+      "empty": "No users match your search or filters.",
+      "toast": {
+        "loadFailedTitle": "Xato",
+        "loadFailed": "Failed to load users"
+      }
+    },
+    "addUserRole": {
+      "description": "Create a new staff account. A secure temporary password will be shown once after creation and the user must change it on first sign-in.",
+      "form": {
+        "fullName": "Full Name",
+        "fullNamePlaceholder": "Enter full name",
+        "email": "Email",
+        "emailPlaceholder": "user@school.com",
+        "phoneNumber": "Phone Number",
+        "phonePlaceholder": "+6281234567890",
+        "role": "Rol",
+        "selectRole": "Select role",
+        "category": "Toifa",
+        "selectCategory": "Select category",
+        "adminCode": "Admin code",
+        "adminCodePlaceholder": "masalan, AF01",
+        "adminCodeHint": "Short ID used on approve/reject actions so you can tell which admin handled a request.",
+        "createUser": "Foydalanuvchi yaratish"
+      },
+      "roles": {
+        "teacher": "O'qituvchi",
+        "adminFinance": "Admin Finance",
+        "adminContent": "Admin Content",
+        "adminSupport": "Admin Support",
+        "adminAnalytic": "Admin Analytic"
+      },
+      "tempPasswordDialog": {
+        "title": "Temporary password created",
+        "description": "Share this password securely with {{email}}. It will not be shown again.",
+        "instruction": "The user must enter this as their current password on first sign-in.",
+        "ariaLabel": "Temporary password",
+        "storedSecurely": "I have stored it securely",
+        "leaveWarning": "Store the temporary password before leaving this screen."
+      },
+      "toast": {
+        "fillAllFields": "Please fill in all fields",
+        "selectCategory": "Please select a teacher category",
+        "invalidAdminCode": "Enter an admin code (2–16 letters or numbers, e.g. AF01)",
+        "accountCreated": "{{role}} account created successfully",
+        "createFailed": "Failed to create user",
+        "passwordCopied": "Temporary password copied",
+        "copyFailed": "Could not copy password. Select and copy it manually."
+      }
+    },
+    "settings": {
+      "description": "Platform toggles (demo). Persist via admin settings API later.",
+      "emailAdminsOnRegistration": "Email admins on new registration",
+      "emailAdminsHint": "Sends to operations inbox.",
+      "blockLmsWhenOverdue": "Block LMS access when payment overdue",
+      "blockLmsHint": "Enforced server-side; this mirrors policy.",
+      "saveChanges": "O'zgarishlarni saqlash",
+      "savedDemo": "Settings saved (demo)"
+    },
+    "notifications": {
+      "description": "Admin activity alerts and updates.",
+      "unread": "{{count}} unread",
+      "markAllRead": "Barchasini o'qilgan deb belgilash",
+      "searchPlaceholder": "Search notifications…",
+      "filterPlaceholder": "Filtr",
+      "filterStudents": "Talabalar",
+      "filterTeachers": "O'qituvchilar",
+      "ariaUnread": "O'qilmagan",
+      "markRead": "O'qilgan deb belgilash",
+      "empty": {
+        "none": "No notifications yet.",
+        "noMatch": "No notifications match your search."
+      },
+      "categories": {
+        "student": "Talaba",
+        "teacher": "O'qituvchi",
+        "system": "Tizim"
+      },
+      "relativeTime": {
+        "justNow": "Hozirgina",
+        "minutesAgo": "{{count}} min ago",
+        "hoursAgo_one": "{{count}} hour ago",
+        "hoursAgo_other": "{{count}} hours ago",
+        "daysAgo_one": "{{count}} day ago",
+        "daysAgo_other": "{{count}} days ago"
+      }
+    },
+    "courses": {
+      "list": {
+        "description": "Quick list by title, lecturer, category, and status. Open a class for pricing, schedule workflow, and review.",
+        "searchPlaceholder": "Search title, category, lecturer…",
+        "statusDraft": "Draft (pending review)",
+        "statusPublished": "Nashr qilingan",
+        "statusRejected": "Rad etilgan",
+        "statusArchived": "Arxivlangan",
+        "categoryPlaceholder": "Toifa",
+        "table": {
+          "title": "Sarlavha",
+          "lecturer": "O'qituvchi",
+          "status": "Holat",
+          "actions": "Amallar",
+          "category": "Toifa"
+        },
+        "details": "Tafsilotlar",
+        "detailsTitle": "View class details",
+        "emptyNone": "No classes returned.",
+        "emptyNoMatch": "No classes match your search or filters.",
+        "loadError": {
+          "default": "Could not load classes.",
+          "network": "Could not reach the API. In Brave (or strict blockers), try Shields down for this site, or confirm you are logged in here (tokens are per-browser).",
+          "accessDeniedSuffix": " Sign out and sign in again if your session was refreshed in another tab."
+        }
+      },
+      "detail": {
+        "subtitle": "Catalog, schedule workflow, and review tools.",
+        "invalidId": "Invalid class id.",
+        "backToAllClasses": "← Back to all classes",
+        "loadError": "Could not load this class.",
+        "schedule": "Jadval",
+        "reviewPricing": "Review & pricing",
+        "catalogPricing": "Catalog & pricing",
+        "overview": "Umumiy ko'rinish",
+        "pricing": "Narxlash",
+        "scheduleCard": "Jadval",
+        "description": "Tavsif",
+        "fields": {
+          "category": "Toifa",
+          "lecturer": "O'qituvchi",
+          "status": "Holat",
+          "submitted": "Submitted (draft created)",
+          "enrollments": "Ro'yxatdan o'tishlar",
+          "catalogPrice": "Katalog narxi",
+          "referralCode": "Referral kodi",
+          "discount": "Chegirma",
+          "discountedPrice": "Discounted price",
+          "totalSessions": "Total sessions (6 mo.)",
+          "classStart": "Class start",
+          "classEnd": "Class end"
+        },
+        "scheduleBadges": {
+          "instructorApproved": "Instructor approved",
+          "awaitingInstructor": "Awaiting instructor",
+          "changesRequested": "Changes requested",
+          "noApprovalRecorded": "No schedule approval step recorded (this browser)."
+        }
+      },
+      "schedule": {
+        "description": "Add one or more schedule months, set how many sessions fall in each, add optional date/time per row, then send the combined plan to the instructor.",
+        "courseStatus": "Course status:",
+        "waitingInstructor": "— Waiting for instructor approval",
+        "scheduleApprovedReady": "— Schedule approved, ready to publish",
+        "instructorNote": "Instructor note: {{note}}",
+        "instructorAvatarAlt": "O'qituvchi",
+        "classLabel": "Sinf",
+        "classStart": "Class start",
+        "classEnd": "Class end",
+        "datesHint": "From session dates below, or the class start/end saved on the course when no session dates are set.",
+        "removeMonth": "Oyni olib tashlash",
+        "perSessionDetails": "Per-session details",
+        "optional": "(optional)",
+        "perSessionHint": "Title, date, and time for each session in this month (optional).",
+        "session": "Session {{num}}",
+        "sessionTitlePlaceholder": "Session {{num}} title",
+        "addScheduleMonth": "Jadval oyini qo'shish",
+        "sendToInstructor": "O'qituvchiga yuborish",
+        "resendToInstructor": "O'qituvchiga qayta yuborish",
+        "monthHeading": "Sessions in {{ordinal}} month",
+        "sessionDefaultTitle": "Session {{num}}",
+        "toast": {
+          "minOneSession": "Add at least one session across the schedule months.",
+          "sent": "Schedule sent to instructor for approval",
+          "sendFailed": "Could not send"
+        },
+        "loadError": "Could not load class."
+      }
+    },
+    "classesRosters": {
+      "description": "Assign students to classes, track session quota, and handle class switching from the student or enrollment record.",
+      "searchPlaceholder": "Search class, schedule…",
+      "classStatusPlaceholder": "Sinf holati",
+      "table": {
+        "class": "Sinf",
+        "schedule": "Jadval",
+        "capacity": "Sig'im",
+        "status": "Holat",
+        "sessionQuota": "Session quota",
+        "roster": "Ro'yxat",
+        "sessions": "{{used}}/{{total}} sessions"
+      },
+      "openRoster": "Ro'yxatni ochish",
+      "openRosterDemo": "Open roster (demo)",
+      "empty": "No classes match your search or filters."
+    },
+    "enrollments": {
+      "description": "Class enrollment, roster assignment, and waitlist promotion. Server validates capacity and payment rules.",
+      "promoteSelected": "Kutish ro'yxatidan tanlanganlarni ko'tarish",
+      "promotionSentDemo": "Promotion request sent (demo)",
+      "searchPlaceholder": "Search student, class…",
+      "paymentPlaceholder": "To'lov",
+      "enrollmentPlaceholder": "Ro'yxatdan o'tish",
+      "enrolled": "Ro'yxatdan o'tgan",
+      "table": {
+        "student": "Talaba",
+        "class": "Sinf",
+        "waitlistNumber": "Waitlist #",
+        "enrollment": "Ro'yxatdan o'tish",
+        "payment": "To'lov",
+        "classStatus": "Sinf holati"
+      },
+      "empty": "No enrollments match your search or filters."
+    },
+    "enrollmentApplications": {
+      "list": {
+        "description": "Review student requests (full or down payment, schedule-based tuition). Approve to enroll or reject with feedback.",
+        "pendingBanner_one": "{{count}} enrollment pending review",
+        "pendingBanner_other": "{{count}} enrollments pending review",
+        "noPending": "No pending enrollments.",
+        "followUpBanner_one": "{{count}} approved enrollment with follow-up tuition to review",
+        "followUpBanner_other": "{{count}} approved enrollments with follow-up tuition to review",
+        "table": {
+          "submitted": "Yuborilgan",
+          "class": "Sinf",
+          "student": "Talaba",
+          "tuition": "To'lov",
+          "status": "Holat",
+          "actions": "Amallar"
+        },
+        "badgeReviewFollowUp": "Review follow-up",
+        "badgeFollowUpPayment": "Follow-up payment",
+        "reviewPayment": "To'lovni ko'rib chiqish",
+        "empty": "No applications yet. Students submit from Available Classes → Request enrollment.",
+        "loadFailed": "Failed to load applications"
+      },
+      "detail": {
+        "eyebrow": "Enrollment application",
+        "title": "Review submission",
+        "description": "Verify contact details, full or down payment (schedule-based tuition), and open proof / ID before approving or rejecting.",
+        "submittedAt": "Submitted {{date}}",
+        "sections": {
+          "class": "Sinf",
+          "student": "Talaba",
+          "contact": "Contact",
+          "officialDocuments": "Official documents",
+          "invoice": "Invoice: {{number}}",
+          "receipt": "Receipt: {{number}}",
+          "method": "Method: {{method}}",
+          "payment": "To'lov",
+          "paymentMethod": "Payment method",
+          "monthsPaidAtEnrollment": "Months paid at enrollment",
+          "monthsPaid": "Months paid",
+          "amountOnTransfer": "Amount on transfer",
+          "furtherInstalments": "Further instalments",
+          "instalmentPolicy": "{{count}} payments (school policy)",
+          "schedule": "Jadval",
+          "paymentProof": "Payment proof",
+          "idDocument": "ID document",
+          "adminNote": "Admin note"
+        },
+        "openProof": "Open proof in new tab",
+        "openId": "Open ID in new tab",
+        "noUploadRequired": "{{method}} — no transfer proof or ID upload required.",
+        "listedPrice": "Listed class price:",
+        "proratedTuition": "Student tuition (prorated):",
+        "expectedForPlan": "Expected for this plan:",
+        "amountMismatch": "Transfer amount does not match expected tuition for this plan — check the payment proof.",
+        "amountMatches": "Transfer amount matches expected tuition.",
+        "priceUnavailable": "Listed class price not available for this course. Summary:",
+        "reviewed": "Reviewed {{date}}{{by}}",
+        "reviewedBy": " by {{name}}",
+        "approveEnrollment": "Ro'yxatdan o'tishni tasdiqlash",
+        "rejectDialog": {
+          "title": "Arizani rad etish",
+          "noteLabel": "Note to student (optional)",
+          "notePlaceholder": "e.g. Amount mismatch, illegible screenshot",
+          "rejectApplication": "Arizani rad etish"
+        },
+        "notFound": {
+          "title": "Application not found",
+          "description": "It may have been removed or the link is invalid.",
+          "missing": "Missing application."
+        },
+        "toast": {
+          "loadFailed": "Failed to load application",
+          "approvedTitle": "Tasdiqlangan",
+          "approvedDescription": "Student enrolled. Invoice and receipt are available in their Payment history.",
+          "approveFailed": "Could not approve application",
+          "rejectedTitle": "Application rejected",
+          "rejectedDescription": "The student can submit again if needed.",
+          "rejectFailed": "Could not reject application"
+        }
+      }
+    },
+    "payments": {
+      "description": "Mark as paid, validate transfer proof, filter overdue, and send reminders. Authoritative status lives on the API.",
+      "remindSelected": "Tanlanganlarga eslatma",
+      "remindersSentDemo": "Payment reminders sent (demo)",
+      "installmentBanner": "Enrolled students paying tuition month-by-month submit follow-up transfers for review.",
+      "scheduleMonthPayments": "Jadval oylik to'lovlari",
+      "scheduleMonthPending": "Schedule month payments ({{count}} pending)",
+      "searchPlaceholder": "Search student, class, lecturer, invoice…",
+      "paymentStatusPlaceholder": "To'lov holati",
+      "lecturerPlaceholder": "O'qituvchi",
+      "table": {
+        "student": "Talaba",
+        "class": "Sinf",
+        "course": "Kurs",
+        "lecturer": "O'qituvchi",
+        "amount": "Summa",
+        "status": "Holat",
+        "actions": "Amallar"
+      },
+      "viewDetails": "Tafsilotlarni ko'rish",
+      "markPaid": "To'langan deb belgilash",
+      "markPaidDialog": {
+        "title": "Mark as paid",
+        "description": "Only do this after you verify the payment (e.g. bank transfer received).",
+        "paidDate": "Paid date",
+        "paymentMethod": "Payment method",
+        "selectMethod": "Select method",
+        "selectEllipsis": "Select…",
+        "methods": {
+          "bankTransfer": "Bank o'tkazmasi",
+          "cash": "Naqd",
+          "card": "Karta",
+          "payme": "Payme",
+          "click": "Click",
+          "other": "Boshqa"
+        },
+        "reference": "Ma'lumotnoma",
+        "referencePlaceholder": "e.g. bank txn id / receipt number",
+        "noteOptional": "Note (optional)",
+        "notePlaceholder": "Internal admin note…",
+        "confirmPaid": "To'langan deb tasdiqlash",
+        "markedPaidDemo": "Marked paid (demo)"
+      },
+      "detailsDialog": {
+        "title": "Payment details",
+        "dueDate": "Due date",
+        "created": "Created",
+        "paidAt": "Paid at",
+        "proofUploaded": "Proof uploaded",
+        "proofYes": "Ha",
+        "proofNo": "Yo'q",
+        "openProof": "Open proof"
+      },
+      "proofDialog": {
+        "title": "Transfer proof",
+        "description": "Preview uploaded receipt or PDF from storage. Approve to mark payment as validated and update student access.",
+        "demoNoFile": "Demo: no file attached in mock data",
+        "approveProof": "Dalilni tasdiqlash",
+        "approvedDemo": "Proof approved (demo)"
+      },
+      "empty": "No payments match your search or filters."
+    },
+    "installmentPayments": {
+      "description": "Follow-up tuition from enrolled students. Approve to unlock QR attendance for that month.",
+      "filters": {
+        "awaitingReview": "Ko'rib chiqish kutilmoqda",
+        "approved": "Tasdiqlangan",
+        "rejected": "Rad etilgan",
+        "all": "All"
+      },
+      "scheduleMonth": "Schedule month",
+      "submitted": "Submitted {{date}}",
+      "viewProof": "View proof",
+      "enrollment": "Ro'yxatdan o'tish",
+      "proof": "Dalil",
+      "allPayments": "Barcha to'lovlar",
+      "filteredPayments": "{{filter}} payments",
+      "adminCodeHint": "Enter your code once, then approve or reject each payment below.",
+      "empty": {
+        "noneTitle": "No follow-up payments yet",
+        "noneDescription": "When students pay a remaining schedule month, their transfer appears here for review.",
+        "noInView": "No payments in this view."
+      },
+      "rejectDialog": {
+        "title": "To'lovni rad etish",
+        "notePlaceholder": "Note for your records (optional) — e.g. amount mismatch, unclear screenshot",
+        "rejectPayment": "To'lovni rad etish"
+      },
+      "toast": {
+        "approvedTitle": "Payment approved",
+        "approvedDescription": "{{month}} unlocked for QR attendance.",
+        "approveFailed": "Could not approve",
+        "rejectedTitle": "Payment rejected",
+        "rejectedDescription": "The student can submit again with corrected proof.",
+        "rejectFailed": "Could not reject"
+      }
+    },
+    "promos": {
+      "description": "Create carousel banners for student pages. Stored in this browser until a promos API exists.",
+      "resetSamples": "Namunalarni tiklash",
+      "addPromo": "Promo qo'shish",
+      "table": {
+        "title": "Sarlavha",
+        "placement": "Joylash",
+        "order": "Tartib",
+        "status": "Holat",
+        "actions": "Amallar"
+      },
+      "live": "Faol",
+      "hidden": "Yashirin",
+      "empty": "No promos yet. Add one to show a carousel on My Class.",
+      "hint": "Students see active promos in a carousel at the top of My Class. Use sort order to control slide sequence. Optional start/end dates hide promos outside the window.",
+      "dialog": {
+        "editTitle": "Edit promotion",
+        "newTitle": "New promotion",
+        "titleLabel": "Sarlavha",
+        "titlePlaceholder": "Summer enrollment is open",
+        "messageLabel": "Message",
+        "messagePlaceholder": "Short promo copy shown on the banner",
+        "buttonLabel": "Button label",
+        "buttonLink": "Button link",
+        "buttonLinkPlaceholder": "/eduhub or https://...",
+        "imageUrl": "Image URL (optional)",
+        "imagePlaceholder": "https://...",
+        "accentColor": "Accent color",
+        "showOn": "Show on",
+        "sortOrder": "Sort order",
+        "startsOptional": "Starts (optional)",
+        "endsOptional": "Ends (optional)",
+        "liveForStudents": "Live for students",
+        "liveHint": "Hidden promos stay saved but do not appear in the carousel.",
+        "publishPromo": "Publish promo",
+        "saveChanges": "O'zgarishlarni saqlash"
+      },
+      "accentPresets": {
+        "eduhubBlue": "EduHub ko'k",
+        "teal": "Ko'k-yashil",
+        "amber": "Yantar",
+        "violet": "Binafsha",
+        "slate": "Kulrang"
+      },
+      "placements": {
+        "myClass": "Mening sinflarim",
+        "dashboard": "Boshqaruv paneli",
+        "allStudentPages": "Barcha talaba sahifalari"
+      },
+      "defaultCta": "Batafsil",
+      "toast": {
+        "titleRequired": "Title is required",
+        "updated": "Promotion updated",
+        "published": "Promotion published",
+        "hidden": "Promotion hidden from students",
+        "live": "Promotion is live",
+        "deleted": "Promotion deleted"
+      }
+    },
+    "referralCodes": {
+      "description": "Set referral codes and discount percentages per class. Students enter the code at enrollment to receive the listed discount off catalog tuition.",
+      "searchPlaceholder": "Search class, code, lecturer…",
+      "table": {
+        "class": "Sinf",
+        "status": "Holat",
+        "catalogPrice": "Katalog narxi",
+        "referralCode": "Referral kodi",
+        "discount": "Chegirma",
+        "actions": "Amallar"
+      },
+      "setPricing": "Narx belgilash",
+      "empty": "No classes match your search.",
+      "editDialog": {
+        "title": "Edit referral code",
+        "catalogSuffix": " · Catalog {{price}}",
+        "referralCode": "Referral kodi",
+        "referralPlaceholder": "e.g. SPRING2026",
+        "discountPercent": "Discount (%)",
+        "discountHint": "Percent off catalog price when the code matches (0–100).",
+        "withCode": "With code:",
+        "discountSuffix": " (−{{percent}}%)"
+      },
+      "toast": {
+        "saved": "Referral code saved",
+        "savedDescription": "{{title}} updated.",
+        "saveFailed": "Could not save referral code",
+        "pricingRequired": "Set catalog pricing on the class before adding referral codes.",
+        "discountRange": "Discount must be between 0 and 100%."
+      }
+    },
+    "specialTuition": {
+      "description": "Grant free enrollment to specific student emails—for example staff family or scholarship cases. Stored in this browser until a grants API exists.",
+      "addGrant": "Imtiyoz qo'shish",
+      "addGrantHint": "The student must sign in with this email when applying. Tuition shows as free on their enrollment form.",
+      "studentEmail": "Student email",
+      "emailPlaceholder": "student@example.com",
+      "classScope": "Class scope",
+      "chooseClass": "Choose class",
+      "allClassesScope": "Barcha sinflar",
+      "noteOptional": "Note (optional)",
+      "notePlaceholder": "e.g. Rector family",
+      "saveGrant": "Save grant",
+      "table": {
+        "email": "Email",
+        "class": "Sinf",
+        "note": "Note",
+        "active": "Faol",
+        "added": "Added"
+      },
+      "toggleGrantAria": "Toggle grant for {{email}}",
+      "removeGrantAria": "Remove grant for {{email}}",
+      "empty": "No grants yet. Add a student email above.",
+      "toast": {
+        "saved": "Special tuition grant saved",
+        "savedClass": "{{email}} can enroll in this class for free.",
+        "savedAll": "{{email}} can enroll in any class for free.",
+        "saveFailed": "Could not save grant.",
+        "enabled": "Grant enabled",
+        "paused": "Grant paused",
+        "removed": "Grant removed"
+      }
+    },
+    "payroll": {
+      "description": "Review instructor payroll submissions, then record bank transfer proof. Student tuition is available separately for reference when checking figures.",
+      "paymentsLink": "To'lovlar va eslatmalar",
+      "tabs": {
+        "instructorRequests": "O'qituvchi so'rovlari",
+        "studentTuition": "Talaba to'lovi",
+        "payoutProof": "To'lov dalili"
+      },
+      "howItWorks": {
+        "title": "How payroll works",
+        "step1": "Open a submission and verify class figures against the schedule month.",
+        "step2": "Approve or reject the instructor's requested payout.",
+        "step3": "After you pay them, record transfer proof on the detail page or Payout proof tab."
+      },
+      "stats": {
+        "pendingReview": "Ko'rib chiqish kutilmoqda",
+        "approved": "Tasdiqlangan",
+        "allSubmissions": "All submissions"
+      },
+      "pendingBanner": "{{count}} submission(s) waiting for your decision. Filter by Pending review or open any row to review.",
+      "requests": {
+        "searchPlaceholder": "Search instructor, class, period, amount…",
+        "table": {
+          "submitted": "Yuborilgan",
+          "instructor": "O'qituvchi",
+          "class": "Sinf",
+          "scheduleMonth": "Schedule month",
+          "requested": "So'ralgan",
+          "status": "Holat",
+          "action": "Amal"
+        },
+        "review": "Ko'rib chiqish",
+        "emptyNone": "No instructor payroll submissions yet. They appear when a teacher submits from their Payroll page.",
+        "emptyNoMatch": "No rows match your search or status filter."
+      },
+      "tuition": {
+        "description": "Student tuition rows for reference when validating instructor payroll. Use Payments & reminders to chase unpaid invoices.",
+        "searchPlaceholder": "Search student, class, lecturer, invoice…",
+        "totalsTitle": "Totals in current view",
+        "totalsHint": "Collected counts paid tuition; outstanding is pending and overdue rows that match your filters.",
+        "collected": "Yig'ilgan",
+        "outstanding": "Qarzdorlik",
+        "paidRows": "{{count}} paid row(s)",
+        "unpaidRows": "{{count}} unpaid row(s)",
+        "noPaymentsInView": "No payments in this view.",
+        "summary": "{{count}} payment row(s) total · {{sections}} class section(s) with activity",
+        "table": {
+          "student": "Talaba",
+          "class": "Sinf",
+          "course": "Kurs",
+          "lecturer": "O'qituvchi",
+          "amount": "Summa",
+          "status": "Holat",
+          "due": "Muddat",
+          "paid": "To'langan"
+        }
+      },
+      "proof": {
+        "description": "Log of bank transfer proof recorded after you pay an instructor. Instructors are notified when proof is saved. Approve the payroll request first on the Instructor requests tab.",
+        "searchPlaceholder": "Search class, course, instructor, email…",
+        "table": {
+          "submitted": "Yuborilgan",
+          "class": "Sinf",
+          "course": "Kurs",
+          "instructor": "O'qituvchi",
+          "email": "Email",
+          "summary": "Xulosa",
+          "notes": "Izohlar"
+        },
+        "emptyNone": "No payout proof recorded yet. After approving a request and paying the instructor, record proof from the submission detail page.",
+        "emptyNoMatch": "No rows match your search."
+      }
+    },
+    "payrollSubmissions": {
+      "description": "History of when an admin submitted bank transfer proof for a class (local browser storage until an API replaces it). Instructor figure approvals are on Instructor payroll requests.",
+      "instructorRequests": "O'qituvchi so'rovlari",
+      "payrollOverview": "Ish haqi umumiy ko'rinishi",
+      "searchPlaceholder": "Search class, course, instructor, email…",
+      "emptyNone": "No submissions yet. Submit payout proof from a class card on Payroll.",
+      "emptyNoMatch": "No rows match your search."
+    },
+    "payrollProof": {
+      "title": "Instructor payout proof",
+      "descriptionMissingParams": "Open this page from Payroll — pick a class card and use \"Upload proof\".",
+      "description": "Attach bank transfer confirmation. Submit records the payout, logs it for admins, and notifies the instructor when their email is on file.",
+      "goToPayroll": "Ish haqiga o'tish",
+      "fields": {
+        "class": "Sinf",
+        "course": "Kurs",
+        "instructor": "O'qituvchi",
+        "email": "Email"
+      },
+      "noEmailWarning": "No lecturer email on this link — add lecturer email to payment rows so the instructor gets an in-app notification.",
+      "paymentSummaryLabel": "Payment summary for notification:"
+    },
+    "instructorPayrollRequests": {
+      "description": "Review figures instructors submitted from Payroll. Approve or reject, then record bank transfer proof so they are notified (demo: this browser).",
+      "payoutProofLog": "To'lov dalili jurnali",
+      "emptyTitle": "No pending requests",
+      "emptyDescription": "When an instructor submits payroll for a class, it appears here for approval and transfer proof.",
+      "openPayrollOverview": "Ish haqi umumiy ko'rinishini ochish",
+      "pendingTitle": "Pending ({{count}})",
+      "pendingInstructions": "1. Approve or reject (optional note on reject). 2. After you pay them, open Record transfer proof (or use Upload payout proof on a class card on Payroll overview). Submitting proof sends an in-app notification to the instructor.",
+      "openDetail": "Tafsilotni ochish",
+      "recordTransferProof": "O'tkazma dalilini qayd etish",
+      "fields": {
+        "period": "Davr",
+        "sessionsTaught": "Sessions taught",
+        "requestedPayout": "Requested payout",
+        "payoutDetails": "Payout details",
+        "instructorNotes": "Instructor notes:"
+      },
+      "rejectNoteLabel": "Optional note to instructor (shown on reject)",
+      "rejectNotePlaceholder": "Reason or next steps…",
+      "toast": {
+        "approved": "Request approved",
+        "approveFailed": "Could not approve",
+        "approveFailedDescription": "Request may have been removed.",
+        "rejected": "Request rejected",
+        "rejectFailed": "Could not reject"
+      }
+    },
+    "instructorPayrollRequestDetail": {
+      "allRequests": "Barcha so'rovlar",
+      "classLabel": "Sinf",
+      "statusLabel": "Holat",
+      "instructor": "O'qituvchi",
+      "requestAmount": "Request amount",
+      "submitted": "Yuborilgan",
+      "periodPrefix": "Period: {{label}}",
+      "status": {
+        "approved": "Tasdiqlangan",
+        "notApproved": "Tasdiqlanmagan",
+        "awaitingDecision": "Awaiting your decision"
+      },
+      "schedule": {
+        "title": "Class schedule",
+        "description": "Admin-proposed schedule, approved by the instructor. Payroll for {{period}} is eligible only when every session in that calendar month is marked finished (attendance held).",
+        "requestedPeriod": "the requested period",
+        "loading": "Loading class schedule…",
+        "noMatch": "Could not match this class to a course schedule. Check that the class section and course title align with an admin course or teacher course in the demo.",
+        "demoSchedule": "Showing the demo schedule for this class so you can verify sessions before approving payroll. When the API returns live course data, this panel updates automatically.",
+        "sessionsFinished": "{{finished}}/{{total}} sessions finished",
+        "noSessionsInMonth": "no sessions in this month",
+        "eligible": "All sessions in this month are finished — eligible for payroll for this period.",
+        "notEligible": "Payroll should be processed after the remaining sessions in this month are finished.",
+        "confirmPeriod": "Confirm the period label matches a month that has scheduled sessions.",
+        "sessionsInPeriod": "Sessions in {{period}}",
+        "meeting": "Meeting {{num}}",
+        "dateTba": "Date TBA"
+      },
+      "submission": {
+        "show": "Show full submission from instructor",
+        "hide": "Hide full submission from instructor",
+        "sessionsTaught": "Sessions taught",
+        "payoutDetails": "Payout details",
+        "instructorNotes": "Instructor notes",
+        "noteToInstructor": "Note sent to instructor"
+      },
+      "approvedBanner": "Figures are approved by {{code}} ({{date}}). Use the transfer proof section below to attach or update the bank receipt — that notifies the instructor in this demo.",
+      "rejectedBanner": "This request was declined ({{date}}) · {{code}}. You can still use the proof section below if you need a receipt on file.",
+      "pendingBanner": "Suggested order: attach and submit bank transfer proof in the section below first, then scroll down to approve or decline the instructor's figures.",
+      "transferProof": {
+        "title": "Transfer proof",
+        "description": "Upload the bank receipt and submit here. When you're done, scroll down to approve or decline the payroll request (pending requests only).",
+        "tuitionSnapshot": "Tuition snapshot (for their notification):",
+        "openDedicatedPage": "Open the same proof tools on a dedicated page"
+      },
+      "decision": {
+        "title": "Approve or decline",
+        "description": "After transfer proof is on file (recommended), confirm whether you accept this instructor's payroll figures. Decline opens a confirmation step so you don't mis-click. Approve or decline sends an in-app notification to the instructor (Teacher → Notifications): Payroll request approved or Payroll request not approved, with your note when you decline. Demo uses this browser only; skipped if there is no instructor email and no name on the submission.",
+        "approveRequest": "Ushbu so'rovni tasdiqlash",
+        "declineNotify": "Decline and notify instructor…"
+      },
+      "approveDialog": {
+        "title": "Approve this payroll request?",
+        "description": "Confirm you accept {{name}}'s figures for {{classSection}}. The instructor will be notified in Teacher → Notifications.",
+        "approveRequest": "So'rovni tasdiqlash"
+      },
+      "declineDialog": {
+        "title": "Decline this payroll request?",
+        "description": "The instructor will see this in their notifications. You can leave a short explanation (recommended).",
+        "noteLabel": "Note to instructor",
+        "notePlaceholder": "Reason they should fix or resubmit…",
+        "declineRequest": "So'rovni rad etish"
+      },
+      "noTuitionRows": "No tuition rows for this class in the current payment list.",
+      "toast": {
+        "approved": "Tasdiqlangan",
+        "approvedDescription": "{{name}} was notified.",
+        "approveFailed": "Could not approve",
+        "declined": "Request declined",
+        "declineFailed": "Could not decline"
+      }
+    },
+    "transactions": {
+      "description": "Recorded movements (demo). Pair with Payments for reconciliation when the ledger API is live.",
+      "searchPlaceholder": "Search reference, student, amount, method…",
+      "typePlaceholder": "Tur",
+      "methodPlaceholder": "Usul",
+      "table": {
+        "reference": "Ma'lumotnoma",
+        "student": "Talaba",
+        "type": "Tur",
+        "amount": "Summa",
+        "method": "Usul",
+        "recorded": "Qayd etilgan"
+      },
+      "empty": "No transactions match your search or filters."
+    },
+    "attendance": {
+      "description": "Monitor partial attendance and completion. Use filters for at-risk learners once the API exposes thresholds.",
+      "searchPlaceholder": "Search student, class, lecturer…",
+      "riskPlaceholder": "Xavf",
+      "atRiskOnly": "At risk only",
+      "onTrackOnly": "On track only",
+      "table": {
+        "student": "Talaba",
+        "class": "Sinf",
+        "lecturer": "O'qituvchi",
+        "attendance": "Davomat",
+        "progress": "Progress",
+        "risk": "Xavf",
+        "details": "Tafsilotlar"
+      },
+      "atRisk": "Xavf ostida",
+      "onTrack": "Yo'lda",
+      "viewDetails": "Tafsilotlarni ko'rish",
+      "detailDialog": {
+        "title": "Attendance details",
+        "sessions": "Sessiyalar",
+        "sessionsAttended": "{{present}} / {{total}} attended",
+        "overall": "Overall",
+        "classProgress": "Class progress",
+        "lastActivity": "Last recorded activity",
+        "recentSessions": "Recent sessions",
+        "session": "Sessiya",
+        "status": "Holat"
+      },
+      "sessionStatus": {
+        "present": "Ishtirok etdi",
+        "late": "Kechikdi",
+        "excused": "Uzrli",
+        "absent": "Kelmadi"
+      }
+    },
+    "placementTests": {
+      "description": "Monitor placement results and tie outcomes to enrollments and class placement.",
+      "searchPlaceholder": "Search student, class, lecturer, assessment…",
+      "resultPlaceholder": "Natija",
+      "passed": "O'tdi",
+      "belowThreshold": "Chegara ostida",
+      "table": {
+        "student": "Talaba",
+        "class": "Sinf",
+        "lecturer": "O'qituvchi",
+        "assessment": "Baholash",
+        "score": "Ball",
+        "result": "Natija",
+        "completed": "Tugallangan"
+      }
+    },
+    "certifications": {
+      "description": "Eligibility requires survey completion and class completion. Issue actions call the API when available.",
+      "searchPlaceholder": "Search student, class…",
+      "eligibilityPlaceholder": "Eligibility",
+      "eligible": "Mos",
+      "notEligible": "Mos emas",
+      "table": {
+        "student": "Talaba",
+        "class": "Sinf",
+        "survey": "So'rovnoma",
+        "classComplete": "Sinf tugallangan",
+        "eligible": "Mos",
+        "issue": "Berish"
+      },
+      "surveyDone": "Bajarildi",
+      "surveyMissing": "Yo'q",
+      "classCompleteYes": "Ha",
+      "classCompleteNo": "Yo'q",
+      "issueCertificate": "Sertifikat berish",
+      "issueDisabledTitle": "Complete survey and class first",
+      "toast": {
+        "issuedDemo": "Certificate issued (demo)"
+      }
+    },
+    "calendar": {
+      "description": "Class schedules, placement or mock tests, and review sessions. Drill through to the class or student when wired to routes.",
+      "searchPlaceholder": "Search title, type, time…",
+      "eventTypePlaceholder": "Tadbir turi",
+      "types": {
+        "class": "Sinf",
+        "test": "Test",
+        "review": "Ko'rib chiqish"
+      },
+      "empty": "No events match your search or filters."
+    },
+    "supportSessions": {
+      "description": "Additional classes or support blocks requested by students. Approve and schedule when integrations are ready.",
+      "searchPlaceholder": "Search student, class, topic…",
+      "requested": "So'ralgan",
+      "scheduled": "Rejalashtirilgan",
+      "table": {
+        "student": "Talaba",
+        "class": "Sinf",
+        "topic": "Mavzu",
+        "requested": "So'ralgan",
+        "status": "Holat",
+        "actions": "Amallar"
+      },
+      "approveSchedule": "Tasdiqlash va rejalashtirish",
+      "viewSlot": "Vaqt oralig'ini ko'rish",
+      "toast": {
+        "approvedDemo": "Session approved (demo)",
+        "viewSlotDemo": "Open calendar slot (demo)"
+      },
+      "empty": "No sessions match your search or filters."
+    },
+    "substituteCover": {
+      "list": {
+        "description": "Open a request to see full details. When both instructors agree, you can give final approval on the request page.",
+        "empty": "No substitute cover requests yet. They appear here when an instructor sends a substitute invite (demo data in this browser).",
+        "reviewApprove": "Ko'rib chiqish va tasdiqlash",
+        "viewDetails": "Tafsilotlarni ko'rish"
+      },
+      "detail": {
+        "title": "Substitute cover request",
+        "descriptionPendingFinal": "Both instructors have agreed. Use the buttons below to give final sign-off.",
+        "descriptionCanDecide": "The invite is still with instructors. You can still approve or reject this substitute cover below (demo: admin may decide at any time before it is finalized).",
+        "descriptionClosed": "This request is no longer open for admin approval.",
+        "status": "Holat",
+        "adminDecision": "Admin decision",
+        "adminDecisionFinal": "Approve to record this cover in the system after both instructors agreed, or reject to stop it.",
+        "adminDecisionEarly": "Approve to confirm this substitute arrangement now, or reject to cancel it. In a full rollout you might wait for instructor replies first.",
+        "finalApprove": "Yakuniy tasdiqlash",
+        "approveCover": "Approve substitute cover",
+        "reject": "Rad etish",
+        "viewInTeachers": "O'qituvchilarda ko'rish",
+        "readonlyNotes": {
+          "finalized": "This substitute cover has been finalized.",
+          "rejectedAdmin": "This request was rejected at the final admin step.",
+          "declinedSubstitute": "The substitute declined; no admin approval is needed.",
+          "rejectedPrimary": "The primary instructor did not approve this cover.",
+          "nothingToConfirm": "There is nothing for you to confirm at this step."
+        },
+        "missingId": "Missing request id.",
+        "notFound": "This cover request was not found. It may have been removed."
+      },
+      "status": {
+        "waitingSubstitute": "Waiting for substitute",
+        "waitingPrimary": "Waiting for primary",
+        "waitingPrimaryInstructor": "Waiting for primary instructor",
+        "needsAdminApproval": "Needs admin approval",
+        "readyForFinalApproval": "Ready for your final approval",
+        "approved": "Tasdiqlangan",
+        "declinedSubstitute": "Declined (substitute)",
+        "declinedBySubstitute": "Declined by substitute",
+        "rejectedPrimary": "Rejected (primary)",
+        "rejectedByPrimary": "Rejected by primary instructor",
+        "rejectedAdmin": "Rejected (admin)",
+        "rejectedByAdmin": "Rejected by admin"
+      },
+      "toast": {
+        "finalized": "Substitute cover finalized",
+        "approved": "Substitute cover approved",
+        "approveFailed": "Could not approve substitute cover",
+        "rejected": "Substitute arrangement rejected",
+        "rejectFailed": "Could not reject substitute cover"
+      }
+    },
+    "integrations": {
+      "description": "External LMS links and trial policy. Values are typically loaded from environment or admin settings API.",
+      "lmsBaseUrl": "LMS base URL",
+      "lmsHint": "Students open this from their dashboard; admins use it for support.",
+      "freeTrialPolicy": "Free trial policy",
+      "freeTrialDescription": "One trial per account. The student profile shows whether the trial has been consumed; blocking a second trial is enforced server-side."
+    },
+    "reports": {
+      "description": "High-level KPIs and exports will connect to reporting APIs. Below is a placeholder layout.",
+      "kpis": {
+        "activeEnrollments": "Faol ro'yxatdan o'tishlar",
+        "overduePayments": "Muddati o'tgan to'lovlar",
+        "certificates30d": "Certificates (30d)"
+      }
+    },
+    "components": {
+      "statusBadges": {
+        "course": {
+          "published": "Nashr qilingan",
+          "draft": "Qoralama",
+          "schedulePending": "Jadval kutilmoqda",
+          "scheduleApproved": "Jadval tasdiqlangan",
+          "rejected": "Rad etilgan",
+          "archived": "Arxivlangan"
+        },
+        "payment": {
+          "paid": "To'langan",
+          "pending": "Kutilmoqda",
+          "overdue": "Muddati o'tgan"
+        },
+        "class": {
+          "active": "Faol",
+          "waiting": "Kutilmoqda",
+          "completed": "Tugallangan"
+        },
+        "student": {
+          "active": "Faol",
+          "trial": "Sinov",
+          "inactive": "Nofaol"
+        }
+      },
+      "actionCode": {
+        "label": "Sizning admin kodingiz",
+        "placeholder": "masalan, AF01",
+        "hint": "Short ID for audit trail — records who approved or rejected this action when several admins share the account.",
+        "validationError": "Enter your admin code (2–16 letters or numbers, e.g. AF01)."
+      },
+      "courseReviewDialog": {
+        "titleReviewPublish": "Review & publish class",
+        "titleSchedulePending": "Schedule pending",
+        "titleReview": "Review class",
+        "descReviewableIntro": "The instructor has approved the schedule. Set the catalog price and publish.",
+        "steps": {
+          "setCatalogPrice": "Set catalog price (required for publishing).",
+          "addReferralDiscount": "Optionally add a referral code and discount %.",
+          "clickPublish": "Click Publish class to make it visible in the catalog."
+        },
+        "descSchedulePending": "The schedule has been sent to the instructor and is awaiting their approval. You can publish once they approve.",
+        "descDraft": "This class is in draft. Propose a class schedule first, then get instructor approval before publishing.",
+        "descDefault": "Review the class details below. You can reject with feedback or set pricing to publish.",
+        "fields": {
+          "title": "Sarlavha",
+          "lecturer": "O'qituvchi",
+          "status": "Holat",
+          "lastRejection": "Last rejection",
+          "scheduleRejection": "Schedule rejection",
+          "category": "Toifa",
+          "description": "Tavsif",
+          "catalogPrice": "Catalog price ({{currency}}) — admin only",
+          "catalogPricePlaceholder": "e.g. 1200000",
+          "catalogPriceHint": "Teachers do not set this. Persisted in-browser until the billing API stores class fees.",
+          "referralCode": "Referral code (optional)",
+          "referralPlaceholder": "e.g. SPRING2026 or PARTNER-ALI",
+          "referralHint": "Students enter this at enrollment or checkout. Pair with a discount below so the code has a clear benefit.",
+          "discountPercent": "Referral discount (%)",
+          "discountPlaceholder": "0",
+          "discountHint": "Percent off the catalog price when the referral code is applied (0–100).",
+          "rejectionReason": "Rejection reason",
+          "rejectionPlaceholder": "Explain what the lecturer needs to fix before approval.",
+          "rejectionHint": "Required only when rejecting the class."
+        },
+        "pricePreview": {
+          "title": "Price with referral",
+          "discountedPrice": "Discounted price",
+          "catalog": "Catalog:",
+          "studentSaves": "Student saves {{amount}} vs catalog",
+          "noDiscount": "Discounted price:",
+          "fullCatalog": "(no discount — full catalog price)"
+        },
+        "rejectClass": "Sinfni rad etish",
+        "approvePublish": "Tasdiqlash va nashr qilish",
+        "saveCatalog": "Katalogni saqlash",
+        "publishBlockedPending": "Publishing is blocked until the instructor approves the proposed schedule.",
+        "publishBlockedDraft": "Propose a class schedule first.",
+        "toast": {
+          "rejectedTitle": "Class rejected",
+          "rejectedDescription": "{{title}} was sent back to the lecturer.",
+          "rejectedDescriptionGeneric": "The lecturer can revise and resubmit.",
+          "approvedTitle": "Class approved and published",
+          "approvedDescription": "{{title}} is live for students.",
+          "approvedDescriptionGeneric": "The class is now published.",
+          "catalogSaved": "Catalog saved",
+          "reviewFailed": "Class review failed",
+          "reviewFailedDescription": "Try again or check API permissions.",
+          "invalidClass": "Invalid class",
+          "rejectionRequired": "Enter a reason before rejecting this class.",
+          "waitSchedulePending": "Wait for the instructor to approve the class schedule before publishing.",
+          "proposeScheduleFirst": "Propose a class schedule and get instructor approval before publishing.",
+          "invalidPrice": "Enter a valid catalog price (0 or greater).",
+          "discountRange": "Discount must be between 0 and 100%."
+        },
+        "loadError": "Could not load class details."
+      },
+      "enrollmentPaidMonths": {
+        "title": "Jadval oylik to'lovlari",
+        "description": "Students can scan attendance QR only for schedule months marked paid. When they submit a follow-up payment in the app, approve it under Schedule month payments — or toggle months manually here after verifying a transfer.",
+        "scheduleMonthPaymentsLink": "Jadval oylik to'lovlari",
+        "loadingSchedule": "Loading class schedule…",
+        "noScheduleMonths": "No schedule months on file. Paid months follow the enrollment plan until a schedule is published.",
+        "sessions_one": "{{count}} session",
+        "sessions_other": "{{count}} sessions",
+        "qrAllowed": " · QR check-in allowed",
+        "paymentAwaitingReview": " · payment submitted — awaiting review",
+        "qrBlocked": " · QR check-in blocked",
+        "summaryAllPaid": "All schedule months paid",
+        "summaryPaid": "Paid: {{labels}}",
+        "summaryNonePaid": "No months marked paid",
+        "partialPlanWarning": "Unpaid months are blocked from attendance QR until you mark them paid here.",
+        "fullAccess": "All schedule months are paid — full attendance access.",
+        "toast": {
+          "minOneMonth": "At least one schedule month must stay paid.",
+          "markedPaid": "Schedule month marked paid",
+          "markedUnpaid": "Schedule month marked unpaid",
+          "attendanceUpdate": "Attendance QR access updates for this student immediately."
+        }
+      },
+      "payrollProofPanel": {
+        "informationTitle": "Information & recommendations",
+        "informationHint": "Optional. Bank reference, period, rate notes, etc. When you submit payout proof, this text can be included in the instructor's in-app notification.",
+        "informationPlaceholder": "e.g. Transfer ref ABC-2026-0312 · Period: March 1–15 · 60% contract rate · …",
+        "saveInformation": "Ma'lumotni saqlash",
+        "bankReceiptTitle": "Bank transfer receipt",
+        "bankReceiptHint": "Upload the bank transfer confirmation for the instructor payout (screenshot or PDF). Not student course certificates — instructors only see this after you submit payout proof below.",
+        "dropOrBrowse": "Drop a file here or browse",
+        "browse": "ko'rib chiqish",
+        "fileHint": "Bank receipt only (PNG, JPG, WebP, or PDF · max {{maxMb}} MB). Do not upload course certificates.",
+        "uploadedAttached": "Uploaded {{date}} · attached",
+        "replace": "Almashtirish",
+        "approved": "Approved {{date}}",
+        "approvePayoutRecord": "Approve payout record",
+        "submitHint": "Use Submit payout proof below to save notes and approve this record.",
+        "removeFile": "Faylni olib tashlash",
+        "submitDescription": "Submit saves your information, checks that a transfer file is attached, then marks this payout as approved for your local records (replace with server workflow when API is ready).",
+        "saveChanges": "O'zgarishlarni saqlash",
+        "submitPayoutProof": "To'lov dalilini yuborish",
+        "attachToEnable": "Attach a transfer proof file to enable submit.",
+        "toast": {
+          "informationSaved": "Information saved",
+          "proofSaved": "Proof saved",
+          "uploadFailed": "Could not upload",
+          "tryAgain": "Please try again.",
+          "payoutApproved": "Payout record approved",
+          "uploadFirst": "Upload proof first",
+          "uploadBeforeSubmit": "Upload transfer proof before submitting.",
+          "changesSaved": "Changes saved.",
+          "approveFailed": "Could not approve payout proof.",
+          "submittedApproved": "Payout proof submitted and approved.",
+          "notifyInstructor": "Instructor notified in-app (demo: same browser storage).",
+          "notifySkipped": "No instructor email or name on this page — notification skipped. Open proof from a class card or payroll request so instructor context is set.",
+          "fileRemoved": "Proof file removed"
+        }
+      }
+    }
+  }
+}

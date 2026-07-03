@@ -7,6 +7,7 @@ import { eduhubAdmin, eduhubCourses } from "@/api/eduhubClient";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import { useTranslation } from "react-i18next";
 import {
   AdminActionCodeField,
   useAdminActionCodeState,
@@ -50,6 +51,7 @@ function formatMoney(amount: number, currency: string) {
 }
 
 export default function AdminReferralCodesPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [editCourse, setEditCourse] = useState<CourseSummaryResponse | null>(null);
@@ -91,11 +93,11 @@ export default function AdminReferralCodesPage() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!editCourse?.pricing) throw new Error("Set catalog pricing on the class before adding referral codes.");
+      if (!editCourse?.pricing) throw new Error(t("admin.referralCodes.toast.pricingRequired"));
       const code = validateAdminActionCodeOrThrow(adminActionCode);
       const dp = Number(String(discountInput).replace(/\s/g, ""));
       if (!Number.isFinite(dp) || dp < 0 || dp > 100) {
-        throw new Error("Discount must be between 0 and 100%.");
+        throw new Error(t("admin.referralCodes.toast.discountRange"));
       }
       return eduhubAdmin.reviewCourse(editCourse.id, {
         decision: "APPROVE",
@@ -107,14 +109,14 @@ export default function AdminReferralCodesPage() {
       });
     },
     onSuccess: () => {
-      toast.success("Referral code saved", {
+      toast.success(t("admin.referralCodes.toast.saved"), {
         description: editCourse ? `${editCourse.title} updated.` : undefined,
       });
       queryClient.invalidateQueries({ queryKey: ["admin", "courses", "list"] });
       setEditCourse(null);
     },
     onError: (e: Error) => {
-      toast.error("Could not save referral code", { description: e.message });
+      toast.error(t("admin.referralCodes.toast.saveFailed"), { description: e.message });
     },
   });
 
@@ -132,17 +134,17 @@ export default function AdminReferralCodesPage() {
           className="mb-6 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Referral & discount codes"
-          description="Set referral codes and discount percentages per class. Students enter the code at enrollment to receive the listed discount off catalog tuition."
+          title={t("adminNav.referralCodes")}
+          description={t("admin.referralCodes.description")}
         />
 
         <div className="mb-4 max-w-md">
           <Input
-            placeholder="Search class, code, lecturer…"
+            placeholder={t("admin.referralCodes.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="bg-white"
@@ -150,20 +152,20 @@ export default function AdminReferralCodesPage() {
         </div>
 
         {isLoading ? (
-          <p className="text-sm text-slate-600">Loading classes…</p>
+          <p className="text-sm text-slate-600">{t("admin.shared.loadingClasses")}</p>
         ) : error ? (
-          <p className="text-sm text-red-600">Could not load classes.</p>
+          <p className="text-sm text-red-600">{t("admin.courses.list.loadError.default")}</p>
         ) : (
           <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50">
-                  <TableHead>Class</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Catalog price</TableHead>
-                  <TableHead>Referral code</TableHead>
-                  <TableHead>Discount</TableHead>
-                  <TableHead className="w-[120px]">Actions</TableHead>
+                  <TableHead>{t("admin.shared.class")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
+                  <TableHead>{t("admin.courses.detail.fields.catalogPrice")}</TableHead>
+                  <TableHead>{t("admin.courses.detail.fields.referralCode")}</TableHead>
+                  <TableHead>{t("admin.courses.detail.fields.discount")}</TableHead>
+                  <TableHead className="w-[120px]">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -210,7 +212,7 @@ export default function AdminReferralCodesPage() {
                             </Button>
                           ) : (
                             <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs" asChild>
-                              <Link to={`/dashboard/admin/courses/${course.id}`}>Set pricing</Link>
+                              <Link to={`/dashboard/admin/courses/${course.id}`}>{t("admin.referralCodes.setPricing")}</Link>
                             </Button>
                           )}
                         </TableCell>
@@ -226,7 +228,7 @@ export default function AdminReferralCodesPage() {
         <Dialog open={editCourse != null} onOpenChange={(open) => !open && setEditCourse(null)}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Edit referral code</DialogTitle>
+              <DialogTitle>{t("admin.referralCodes.editDialog.title")}</DialogTitle>
             </DialogHeader>
             {editCourse ? (
               <div className="space-y-4 text-sm">
@@ -238,12 +240,12 @@ export default function AdminReferralCodesPage() {
                 </p>
 
                 <div className="space-y-2">
-                  <Label htmlFor="referral-code">Referral code</Label>
+                  <Label htmlFor="referral-code">{t("admin.courses.detail.fields.referralCode")}</Label>
                   <Input
                     id="referral-code"
                     value={referralInput}
                     onChange={(e) => setReferralInput(e.target.value)}
-                    placeholder="e.g. SPRING2026"
+                    placeholder={t("admin.referralCodes.editDialog.referralPlaceholder")}
                     className="bg-white font-mono text-sm"
                     maxLength={64}
                     autoComplete="off"
@@ -251,7 +253,7 @@ export default function AdminReferralCodesPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="referral-discount">Discount (%)</Label>
+                  <Label htmlFor="referral-discount">{t("admin.referralCodes.editDialog.discountPercent")}</Label>
                   <Input
                     id="referral-discount"
                     value={discountInput}
@@ -259,7 +261,7 @@ export default function AdminReferralCodesPage() {
                     inputMode="decimal"
                     className="max-w-[120px] bg-white font-mono tabular-nums"
                   />
-                  <p className="text-xs text-slate-500">Percent off catalog price when the code matches (0–100).</p>
+                  <p className="text-xs text-slate-500">{t("admin.referralCodes.editDialog.discountHint")}</p>
                 </div>
 
                 {pricePreview ? (
@@ -291,7 +293,7 @@ export default function AdminReferralCodesPage() {
                 disabled={!editCourse?.pricing || saveMutation.isPending}
                 onClick={() => saveMutation.mutate()}
               >
-                {saveMutation.isPending ? "Saving…" : "Save"}
+                {saveMutation.isPending ? t("admin.shared.saving") : t("common.save")}
               </Button>
             </DialogFooter>
           </DialogContent>

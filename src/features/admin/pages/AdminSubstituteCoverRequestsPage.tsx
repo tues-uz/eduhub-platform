@@ -4,6 +4,7 @@ import { ArrowLeft, ClipboardCheck } from "@/lib/icons";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { adminSubstituteDetailHref } from "@/features/admin/substituteCoverAdminRoutes";
+import { useTranslation } from "react-i18next";
 import {
   substituteInviteWorkflowStore,
   type SubstituteInviteRecord,
@@ -50,6 +51,7 @@ function statusPillClass(status: SubstituteInviteStatus): string {
 }
 
 export default function AdminSubstituteCoverRequestsPage() {
+  const { t } = useTranslation();
   const [tick, setTick] = useState(0);
   const bump = useCallback(() => setTick((x) => x + 1), []);
 
@@ -76,7 +78,7 @@ export default function AdminSubstituteCoverRequestsPage() {
 
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Substitute cover requests</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{t("adminNav.substituteRequests")}</h1>
             <p className="mt-1 text-sm text-slate-600">
               Open a request to see full details. When both instructors agree, you can give final approval on the
               request page.

@@ -115,18 +115,23 @@ function toCamel(o: any): any {
   return newObj;
 }
 
+/** API fields that stay camelCase in JSON (CreateUserRequest.adminCode per Swagger). */
+const SNAKE_CASE_KEY_EXCEPTIONS = new Set(["adminCode"]);
+
 function toSnake(o: any): any {
   if (o === null || typeof o !== "object") return o;
   if (Array.isArray(o)) return o.map(toSnake);
   const newObj: any = {};
   for (const key in o) {
-    const newKey = key.replace(/([A-Z])/g, "_$1").toLowerCase().replace(/^_/, "");
+    const newKey = SNAKE_CASE_KEY_EXCEPTIONS.has(key)
+      ? key
+      : key.replace(/([A-Z])/g, "_$1").toLowerCase().replace(/^_/, "");
     newObj[newKey] = toSnake(o[key]);
   }
   return newObj;
 }
 
-/** Auth API shape. Staging Swagger: https://eduhub-platform-api-staging.kubeletto.app/swagger-ui/index.html */
+/** Auth API shape. Staging Swagger: https://hqhp7j.kubeletto.app/swagger-ui/index.html */
 async function request<T>(
   path: string,
   options: RequestInit & { skipAuth?: boolean; _retrying?: boolean } = {}

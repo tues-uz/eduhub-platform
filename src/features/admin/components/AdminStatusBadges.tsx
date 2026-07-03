@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import type { ClassStatus, PaymentStatus, StudentStatus } from "@/features/admin/data/adminOperationalMock";
 
@@ -11,25 +12,27 @@ const courseStatusClass: Record<string, string> = {
   ARCHIVED: "border-slate-300 bg-slate-100 text-slate-700",
 };
 
-const courseStatusLabel: Record<string, string> = {
-  PUBLISHED: "Published",
-  DRAFT: "Draft",
-  SCHEDULE_PENDING: "Schedule Pending",
-  SCHEDULE_APPROVED: "Schedule Approved",
-  REJECTED: "Rejected",
-  ARCHIVED: "Archived",
+const courseStatusKey: Record<string, string> = {
+  PUBLISHED: "admin.components.statusBadges.course.published",
+  DRAFT: "admin.components.statusBadges.course.draft",
+  SCHEDULE_PENDING: "admin.components.statusBadges.course.schedulePending",
+  SCHEDULE_APPROVED: "admin.components.statusBadges.course.scheduleApproved",
+  REJECTED: "admin.components.statusBadges.course.rejected",
+  ARCHIVED: "admin.components.statusBadges.course.archived",
 };
 
 export function CourseStatusBadge({ status }: { status?: string | null }) {
+  const { t } = useTranslation();
   if (status == null || status === "") {
     return (
       <Badge variant="outline" className="font-medium border-slate-200 bg-slate-50 text-slate-500">
-        —
+        {t("common.notAvailable")}
       </Badge>
     );
   }
   const tone = courseStatusClass[status] ?? "border-slate-200 bg-slate-50 text-slate-700";
-  const label = courseStatusLabel[status] ?? status;
+  const key = courseStatusKey[status];
+  const label = key ? t(key) : status;
   return (
     <Badge variant="outline" className={`font-medium ${tone}`}>
       {label}
@@ -43,16 +46,17 @@ const paymentVariant: Record<PaymentStatus, "default" | "secondary" | "destructi
   overdue: "destructive",
 };
 
-const paymentLabel: Record<PaymentStatus, string> = {
-  paid: "Paid",
-  pending: "Pending",
-  overdue: "Overdue",
+const paymentKey: Record<PaymentStatus, string> = {
+  paid: "admin.components.statusBadges.payment.paid",
+  pending: "admin.components.statusBadges.payment.pending",
+  overdue: "admin.components.statusBadges.payment.overdue",
 };
 
 export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
+  const { t } = useTranslation();
   return (
     <Badge variant={paymentVariant[status]} className="font-medium capitalize">
-      {paymentLabel[status]}
+      {t(paymentKey[status])}
     </Badge>
   );
 }
@@ -63,16 +67,17 @@ const classVariant: Record<ClassStatus, "default" | "secondary" | "outline"> = {
   completed: "outline",
 };
 
-const classLabel: Record<ClassStatus, string> = {
-  active: "Active",
-  waiting: "Waiting",
-  completed: "Completed",
+const classKey: Record<ClassStatus, string> = {
+  active: "admin.components.statusBadges.class.active",
+  waiting: "admin.components.statusBadges.class.waiting",
+  completed: "admin.components.statusBadges.class.completed",
 };
 
 export function ClassStatusBadge({ status }: { status: ClassStatus }) {
+  const { t } = useTranslation();
   return (
     <Badge variant={classVariant[status]} className="font-medium capitalize">
-      {classLabel[status]}
+      {t(classKey[status])}
     </Badge>
   );
 }
@@ -83,16 +88,17 @@ const studentVariant: Record<StudentStatus, "default" | "secondary" | "outline">
   inactive: "outline",
 };
 
-const studentLabel: Record<StudentStatus, string> = {
-  active: "Active",
-  trial: "Trial",
-  inactive: "Inactive",
+const studentKey: Record<StudentStatus, string> = {
+  active: "admin.components.statusBadges.student.active",
+  trial: "admin.components.statusBadges.student.trial",
+  inactive: "admin.components.statusBadges.student.inactive",
 };
 
 export function StudentStatusBadge({ status }: { status: StudentStatus }) {
+  const { t } = useTranslation();
   return (
     <Badge variant={studentVariant[status]} className="font-medium capitalize">
-      {studentLabel[status]}
+      {t(studentKey[status])}
     </Badge>
   );
 }

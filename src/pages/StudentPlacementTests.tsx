@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { CheckCircle2, ClipboardList, Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { eduhubCourseQuizzes, QuizResponseForStudent, QuizResultResponse } from 
 const LETTER_COLORS = ["bg-blue-500", "bg-red-500", "bg-amber-500", "bg-green-500"] as const;
 
 export default function StudentPlacementTests() {
+  const { t } = useTranslation();
   const [quizzes, setQuizzes] = useState<QuizResponseForStudent[]>([]);
   const [completedQuizIds, setCompletedQuizIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -18,7 +20,7 @@ export default function StudentPlacementTests() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<{ questionId: string; selectedOptionId: string }[]>([]);
-  
+
   const [quizResult, setQuizResult] = useState<QuizResultResponse | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [quizStartTime, setQuizStartTime] = useState<number | null>(null);
@@ -27,23 +29,21 @@ export default function StudentPlacementTests() {
     try {
       setLoading(true);
       setError(null);
-      
-      // Fetch global placement tests
+
       const allQuizzes = await eduhubCourseQuizzes.getPlacementTests();
       setQuizzes(allQuizzes);
 
-      // Check completions using batch results endpoint
       const allResults = await eduhubCourseQuizzes.getAllMyResults();
       const completedList = new Set(allResults.map(r => r.quizId || "unknown"));
       setCompletedQuizIds(completedList);
 
     } catch (e) {
       console.error("Failed to load placement tests:", e);
-      setError("Failed to load placement tests. Please try again later.");
+      setError(t("placementTests.loadFailedHint"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchQuizzes();
@@ -85,7 +85,7 @@ export default function StudentPlacementTests() {
         setScreen("result");
       } catch (e) {
         console.error("Failed to submit placement test", e);
-        alert("Failed to submit placement test. Please try again.");
+        alert(t("placementTests.submitFailed"));
       } finally {
         setSubmitting(false);
       }
@@ -109,39 +109,39 @@ export default function StudentPlacementTests() {
               {loading ? (
                 <div className="flex min-h-[min(28rem,calc(100dvh-18rem))] w-full flex-col items-center justify-center px-4 py-12 text-zinc-400">
                   <Loader2 className="mb-4 h-10 w-10 animate-spin" />
-                  <p className="text-sm">Loading placement tests…</p>
+                  <p className="text-sm">{t("placementTests.loading")}</p>
                 </div>
               ) : error ? (
                 <StudentQuizListEmptyState
-                  title="Couldn't load placement tests"
-                  description="Check your connection and try again."
+                  title={t("placementTests.loadFailedTitle")}
+                  description={error}
                   action={
                     <Button
                       type="button"
                       className="mx-auto h-10 rounded-xl bg-[#3954d0] px-4 text-sm font-medium hover:bg-[#2f47b3]"
                       onClick={fetchQuizzes}
                     >
-                      Try again
+                      {t("placementTests.tryAgain")}
                     </Button>
                   }
                 />
               ) : quizzes.length === 0 ? (
                 <StudentQuizListEmptyState
-                  title="No placement tests yet"
-                  description="When your school publishes placement tests, they'll appear here so you can assess your level."
+                  title={t("placementTests.emptyTitle")}
+                  description={t("placementTests.emptyDescription")}
                   action={
                     <Button
                       asChild
                       className="mx-auto h-10 rounded-xl bg-[#3954d0] px-4 text-sm font-medium hover:bg-[#2f47b3]"
                     >
-                      <Link to="/dashboard/available-courses">Browse classes</Link>
+                      <Link to="/dashboard/available-courses">{t("placementTests.browseClasses")}</Link>
                     </Button>
                   }
                 />
               ) : (
                 <div className="mx-auto w-full max-w-3xl">
                   <div className="mb-8">
-                    <p className="text-sm text-foreground/70">Assess your level before starting a class.</p>
+                    <p className="text-sm text-foreground/70">{t("placementTests.subtitle")}</p>
                   </div>
                   <div className="space-y-4">
                   {quizzes.map((quiz) => {
@@ -163,16 +163,18 @@ export default function StudentPlacementTests() {
                               {completed && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
                                   <CheckCircle2 className="h-3.5 w-3.5" />
-                                  Completed
+                                  {t("placementTests.completed")}
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-foreground/60">{quiz.questions.length} questions • Assessing Level</p>
+                            <p className="text-sm text-foreground/60">
+                              {t("quiz.questions", { count: quiz.questions.length })} • {t("placementTests.assessingLevel")}
+                            </p>
                           </div>
                         </div>
                         {completed ? (
                           <Button variant="ghost" className="text-violet-600 font-bold" onClick={() => startQuiz(quiz)}>
-                            Retake
+                            {t("placementTests.retake")}
                           </Button>
                         ) : (
                           <Button
@@ -180,7 +182,7 @@ export default function StudentPlacementTests() {
                             style={{ backgroundColor: "#3954d0" }}
                             onClick={() => startQuiz(quiz)}
                           >
-                            Start Now
+                            {t("placementTests.startNow")}
                           </Button>
                         )}
                       </div>
@@ -240,54 +242,53 @@ export default function StudentPlacementTests() {
                 </div>
               </div>
               <div className="flex justify-end gap-3">
-                 <Button variant="ghost" onClick={resetQuiz} disabled={submitting}>Cancel</Button>
-                 <Button 
-                  className="rounded-full px-10 h-12 font-bold shadow-xl shadow-blue-200 hover:scale-105 active:scale-95 transition-all" 
-                  style={{ backgroundColor: "#3954d0" }} 
+                 <Button variant="ghost" onClick={resetQuiz} disabled={submitting}>{t("common.cancel")}</Button>
+                 <Button
+                  className="rounded-full px-10 h-12 font-bold shadow-xl shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
+                  style={{ backgroundColor: "#3954d0" }}
                   onClick={handleNext}
                   disabled={!selectedOptionId || submitting}
                 >
                   {submitting ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Submitting...
+                      {t("placementTests.submitting")}
                     </span>
-                  ) : (currentIndex < currentQuiz.questions.length - 1 ? "Next Step" : "Submit Test")}
+                  ) : (currentIndex < currentQuiz.questions.length - 1 ? t("placementTests.nextStep") : t("placementTests.submitTest"))}
                 </Button>
               </div>
             </>
           )}
 
           {screen === "result" && currentQuiz && quizResult && (() => {
-            const totalQuestions = quizResult.totalQuestions;
             const score = quizResult.score;
-            
+
             return (
               <div className="rounded-3xl border-b-8 border-gray-100 bg-white p-10 shadow-2xl text-center">
                 <div className="mb-6 inline-flex h-24 w-24 items-center justify-center rounded-full bg-green-100 ring-8 ring-green-50 shadow-inner">
                   <CheckCircle2 className="h-12 w-12 text-green-600" />
                 </div>
                 <h2 className="mb-2 text-3xl font-black text-foreground" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
-                  Great Job!
+                  {t("placementTests.greatJob")}
                 </h2>
                 <p className="mb-8 text-foreground/60 font-medium">
-                  You have successfully completed the {currentQuiz.title}.
+                  {t("placementTests.completedMessage", { title: currentQuiz.title })}
                 </p>
-                
+
                 <div className="mb-10 inline-block bg-violet-50 rounded-3xl px-12 py-8 border-2 border-dashed border-violet-200">
-                  <p className="text-sm font-bold text-violet-400 uppercase tracking-[0.2em] mb-2">Your Score</p>
+                  <p className="text-sm font-bold text-violet-400 uppercase tracking-[0.2em] mb-2">{t("placementTests.yourScore")}</p>
                   <p className="text-6xl font-black text-violet-600" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                     {score}<span className="text-3xl text-violet-300">/100</span>
                   </p>
                 </div>
 
                 <div className="flex flex-col items-center gap-4">
-                  <Button 
-                    className="rounded-full px-12 h-14 font-black shadow-xl shadow-blue-200 hover:scale-105 active:scale-95 transition-all text-lg" 
+                  <Button
+                    className="rounded-full px-12 h-14 font-black shadow-xl shadow-blue-200 hover:scale-105 active:scale-95 transition-all text-lg"
                     style={{ backgroundColor: "#3954d0" }}
                     onClick={resetQuiz}
                   >
-                    Explore My Class
+                    {t("placementTests.exploreMyClass")}
                   </Button>
                 </div>
               </div>

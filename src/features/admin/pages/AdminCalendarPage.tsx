@@ -8,6 +8,7 @@ import { mockAdminCalendarEvents } from "@/features/admin/data/adminOperationalM
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/select";
 
 export default function AdminCalendarPage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
 
@@ -37,30 +39,30 @@ export default function AdminCalendarPage() {
       <div className="container mx-auto px-6">
         <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          {t("admin.shared.backToDashboard")}
         </Link>
 
         <AdminPageHeader
-          title="Calendar"
-          description="Class schedules, placement or mock tests, and review sessions. Drill through to the class or student when wired to routes."
+          title={t("adminNav.calendar")}
+          description={t("admin.calendar.description")}
         />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
-            placeholder="Search title, type, time…"
+            placeholder={t("admin.calendar.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-md bg-white"
           />
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-full sm:w-[160px] bg-white">
-              <SelectValue placeholder="Event type" />
+              <SelectValue placeholder={t("admin.calendar.eventTypePlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              <SelectItem value="class">Class</SelectItem>
-              <SelectItem value="test">Test</SelectItem>
-              <SelectItem value="review">Review</SelectItem>
+              <SelectItem value="all">{t("admin.shared.allTypes")}</SelectItem>
+              <SelectItem value="class">{t("admin.shared.class")}</SelectItem>
+              <SelectItem value="test">{t("admin.calendar.types.test")}</SelectItem>
+              <SelectItem value="review">{t("admin.shared.review")}</SelectItem>
             </SelectContent>
           </Select>
           {hasActiveFilters ? (
@@ -81,7 +83,7 @@ export default function AdminCalendarPage() {
 
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm divide-y divide-slate-200">
           {filtered.length === 0 ? (
-            <div className="px-6 py-12 text-center text-slate-500 text-sm">No events match your search or filters.</div>
+            <div className="px-6 py-12 text-center text-slate-500 text-sm">{t("admin.calendar.empty")}</div>
           ) : (
             filtered.map((ev) => (
               <div key={ev.id} className="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">

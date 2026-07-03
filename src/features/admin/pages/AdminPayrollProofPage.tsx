@@ -7,6 +7,7 @@ import { PayrollInstructorProofPanel } from "@/features/admin/components/Payroll
 import { Button } from "@/components/ui/button";
 import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
 import { aggregatePaymentsByClass, buildPayrollSummaryText } from "@/features/payroll/classPayrollAggregate";
+import { useTranslation } from "react-i18next";
 
 function decodeParam(v: string | null): string {
   if (v == null || v === "") return "";
@@ -18,6 +19,7 @@ function decodeParam(v: string | null): string {
 }
 
 export default function AdminPayrollProofPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const section = decodeParam(searchParams.get("section"));
   const course = decodeParam(searchParams.get("course"));
@@ -56,39 +58,39 @@ export default function AdminPayrollProofPage() {
         {!valid ? (
           <>
             <AdminPageHeader
-              title="Instructor payout proof"
+              title={t("admin.payrollProof.title")}
               description="Open this page from Payroll — pick a class card and use “Upload proof”."
             />
             <Button asChild variant="outline" size="sm">
-              <Link to="/dashboard/admin/payroll">Go to payroll</Link>
+              <Link to="/dashboard/admin/payroll">{t("admin.payrollProof.goToPayroll")}</Link>
             </Button>
           </>
         ) : (
           <>
             <AdminPageHeader
-              title="Instructor payout proof"
-              description="Attach bank transfer confirmation. Submit records the payout, logs it for admins, and notifies the instructor when their email is on file."
+              title={t("admin.payrollProof.title")}
+              description={t("admin.payrollProof.description")}
             />
 
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
               <dl className="space-y-2 text-sm">
                 <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-4">
-                  <dt className="text-slate-500 shrink-0 w-24">Class</dt>
+                  <dt className="text-slate-500 shrink-0 w-24">{t("admin.shared.class")}</dt>
                   <dd className="font-medium text-slate-900">{section}</dd>
                 </div>
                 <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-4">
-                  <dt className="text-slate-500 shrink-0 w-24">Course</dt>
+                  <dt className="text-slate-500 shrink-0 w-24">{t("admin.shared.course")}</dt>
                   <dd className="text-slate-800">{course}</dd>
                 </div>
                 {instructor ? (
                   <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-4">
-                    <dt className="text-slate-500 shrink-0 w-24">Instructor</dt>
+                    <dt className="text-slate-500 shrink-0 w-24">{t("admin.shared.instructor")}</dt>
                     <dd className="text-slate-800">{instructor}</dd>
                   </div>
                 ) : null}
                 {instructorEmail ? (
                   <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-4">
-                    <dt className="text-slate-500 shrink-0 w-24">Email</dt>
+                    <dt className="text-slate-500 shrink-0 w-24">{t("admin.shared.email")}</dt>
                     <dd className="text-slate-800">{instructorEmail}</dd>
                   </div>
                 ) : (

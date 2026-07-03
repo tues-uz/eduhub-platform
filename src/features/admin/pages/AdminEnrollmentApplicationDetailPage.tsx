@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2 } from "@/lib/icons";
 import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,7 @@ function formatDate(iso: string) {
 }
 
 export default function AdminEnrollmentApplicationDetailPage() {
+  const { t } = useTranslation();
   const { applicationId } = useParams<{ applicationId: string }>();
   const navigate = useNavigate();
   const [record, setRecord] = useState<EnrollmentApplicationResponse | null>(null);
@@ -77,7 +79,7 @@ export default function AdminEnrollmentApplicationDetailPage() {
       .then(setRecord)
       .catch(() => {
         setRecord(null);
-        toast.error("Failed to load application");
+        toast.error(t("admin.enrollmentApplications.detail.toast.loadFailed"));
       })
       .finally(() => setLoading(false));
   }, [applicationId]);
@@ -133,13 +135,13 @@ export default function AdminEnrollmentApplicationDetailPage() {
         courseId: record.courseId,
         adminActionCode: code,
       });
-      toast.success("Approved", {
+      toast.success(t("admin.shared.approved"), {
         description: "Student enrolled. Invoice and receipt are available in their Payment history.",
       });
       navigate("/dashboard/admin/enrollment-applications");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
-      toast.error("Could not approve application", { description: msg });
+      toast.error(t("admin.enrollmentApplications.detail.toast.approveFailed"), { description: msg });
     } finally {
       setBusy(false);
     }
@@ -167,14 +169,14 @@ export default function AdminEnrollmentApplicationDetailPage() {
         studentEmailNorm: record.applicantEmailNorm,
         adminNote: rejectNote.trim() || undefined,
       });
-      toast.message("Application rejected", {
+      toast.message(t("admin.enrollmentApplications.detail.toast.rejectedTitle"), {
         description: "The student can submit again if needed.",
       });
       setRejectOpen(false);
       navigate("/dashboard/admin/enrollment-applications");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
-      toast.error("Could not reject application", { description: msg });
+      toast.error(t("admin.enrollmentApplications.detail.toast.rejectFailed"), { description: msg });
     } finally {
       setBusy(false);
     }
@@ -185,7 +187,7 @@ export default function AdminEnrollmentApplicationDetailPage() {
       <AdminLayout>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-          <span className="ml-2 text-sm text-slate-500">Loading application...</span>
+          <span className="ml-2 text-sm text-slate-500">{t("admin.shared.loadingApplication")}</span>
         </div>
       </AdminLayout>
     );
@@ -195,9 +197,9 @@ export default function AdminEnrollmentApplicationDetailPage() {
     return (
       <AdminLayout>
         <div className="container mx-auto px-6 py-8">
-          <p className="text-slate-600">Missing application.</p>
+          <p className="text-slate-600">{t("admin.enrollmentApplications.detail.notFound.missing")}</p>
           <Button asChild variant="outline" className="mt-4">
-            <Link to="/dashboard/admin/enrollment-applications">Back to list</Link>
+            <Link to="/dashboard/admin/enrollment-applications">{t("admin.shared.backToList")}</Link>
           </Button>
         </div>
       </AdminLayout>
@@ -218,12 +220,12 @@ export default function AdminEnrollmentApplicationDetailPage() {
             Back to enrollment applications
           </Link>
           <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-            <h1 className="text-lg font-semibold text-slate-900">Application not found</h1>
+            <h1 className="text-lg font-semibold text-slate-900">{t("admin.enrollmentApplications.detail.notFound.title")}</h1>
             <p className="mt-2 text-sm text-slate-600">
               It may have been removed or the link is invalid.
             </p>
             <Button asChild className="mt-6">
-              <Link to="/dashboard/admin/enrollment-applications">Return to list</Link>
+              <Link to="/dashboard/admin/enrollment-applications">{t("admin.shared.returnToList")}</Link>
             </Button>
           </div>
         </div>
@@ -243,8 +245,8 @@ export default function AdminEnrollmentApplicationDetailPage() {
         </Link>
 
         <div className="mb-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Enrollment application</p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Review submission</h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{t("admin.enrollmentApplications.detail.eyebrow")}</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{t("admin.enrollmentApplications.detail.title")}</h1>
           <p className="mt-2 text-sm text-slate-600">
             Verify contact details, full or down payment (schedule-based tuition), and open proof / ID before
             approving or rejecting.
@@ -273,19 +275,19 @@ export default function AdminEnrollmentApplicationDetailPage() {
 
           <div className="space-y-6 px-6 py-6 text-sm">
             <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Class</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("admin.shared.class")}</p>
               <p className="mt-1 font-medium text-slate-900">{record.courseTitle ?? record.courseId}</p>
               <p className="mt-1 text-xs text-slate-500 break-all font-mono">{record.courseId}</p>
             </div>
 
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Student</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("admin.shared.student")}</p>
               <p className="mt-1 font-medium text-slate-900">{record.fullName}</p>
               <p className="text-slate-600 break-all">{record.email}</p>
             </div>
 
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Contact</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("admin.enrollmentApplications.detail.sections.contact")}</p>
               <p className="mt-1">{record.phone}</p>
               {record.phoneSecondary ? <p className="text-slate-600">{record.phoneSecondary}</p> : null}
               <p className="mt-2 text-slate-700 whitespace-pre-wrap">{record.address}</p>
@@ -315,15 +317,15 @@ export default function AdminEnrollmentApplicationDetailPage() {
               const moneyCur = pay.listedTuition != null ? listedCurrency : pay.currency;
               return (
                 <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 space-y-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Payment</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("admin.enrollments.paymentPlaceholder")}</p>
                   <dl className="grid gap-2 text-sm sm:grid-cols-2">
                     <div>
-                      <dt className="text-xs text-slate-500">Payment method</dt>
+                      <dt className="text-xs text-slate-500">{t("admin.enrollmentApplications.detail.sections.paymentMethod")}</dt>
                       <dd className="font-medium text-slate-900">{pay.methodLabel}</dd>
                     </div>
                     <div>
                       <dt className="text-xs text-slate-500">
-                        {record.status === "APPROVED" ? "Months paid at enrollment" : "Months paid"}
+                        {record.status === "APPROVED" ? t("admin.enrollmentApplications.detail.sections.monthsPaidAtEnrollment") : t("admin.enrollmentApplications.detail.sections.monthsPaid")}
                       </dt>
                       <dd className="font-medium text-slate-900">{pay.planLabel}</dd>
                     </div>
@@ -331,7 +333,7 @@ export default function AdminEnrollmentApplicationDetailPage() {
                       <dt className="text-xs text-slate-500">
                         {enrollmentRequiresVerificationUploads(record.paymentMethod)
                           ? "Amount on transfer"
-                          : "Amount"}
+                          : t("admin.shared.amount")}
                       </dt>
                       <dd className="font-semibold tabular-nums text-slate-900">
                         {pay.declaredAmount != null && pay.declaredAmount > 0
@@ -341,13 +343,13 @@ export default function AdminEnrollmentApplicationDetailPage() {
                     </div>
                     {pay.installmentCount != null ? (
                       <div>
-                        <dt className="text-xs text-slate-500">Further instalments</dt>
+                        <dt className="text-xs text-slate-500">{t("admin.enrollmentApplications.detail.sections.furtherInstalments")}</dt>
                         <dd className="text-slate-900">{pay.installmentCount} payments (school policy)</dd>
                       </div>
                     ) : null}
                     {pay.scheduleScope ? (
                       <div className={pay.installmentCount != null ? "" : "sm:col-span-2"}>
-                        <dt className="text-xs text-slate-500">Schedule</dt>
+                        <dt className="text-xs text-slate-500">{t("admin.courses.detail.schedule")}</dt>
                         <dd className="text-slate-900">{pay.scheduleScope}</dd>
                       </div>
                     ) : null}
@@ -460,7 +462,7 @@ export default function AdminEnrollmentApplicationDetailPage() {
 
             {record.adminNote ? (
               <div className="rounded-lg border border-red-100 bg-red-50/60 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-red-800">Admin note</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-red-800">{t("admin.enrollmentApplications.detail.sections.adminNote")}</p>
                 <p className="mt-1 text-sm text-red-950">{record.adminNote}</p>
               </div>
             ) : null}
@@ -496,7 +498,7 @@ export default function AdminEnrollmentApplicationDetailPage() {
                   Reject
                 </Button>
                 <Button type="button" disabled={busy} onClick={() => void approve()} className="sm:order-2">
-                  {busy ? "Approving…" : "Approve enrollment"}
+                  {busy ? t("admin.shared.approving") : t("admin.enrollmentApplications.detail.approveEnrollment")}
                 </Button>
               </div>
             </div>
@@ -507,7 +509,7 @@ export default function AdminEnrollmentApplicationDetailPage() {
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject application</DialogTitle>
+            <DialogTitle>{t("admin.enrollmentApplications.detail.rejectDialog.title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <AdminActionCodeField
@@ -516,12 +518,12 @@ export default function AdminEnrollmentApplicationDetailPage() {
               onChange={setAdminActionCode}
             />
             <div className="space-y-2">
-              <Label htmlFor="reject-note-detail">Note to student (optional)</Label>
+              <Label htmlFor="reject-note-detail">{t("admin.enrollmentApplications.detail.rejectDialog.noteLabel")}</Label>
               <Textarea
                 id="reject-note-detail"
                 value={rejectNote}
                 onChange={(e) => setRejectNote(e.target.value)}
-                placeholder="e.g. Amount mismatch, illegible screenshot"
+                placeholder={t("admin.enrollmentApplications.detail.rejectDialog.notePlaceholder")}
                 className="min-h-[88px]"
               />
             </div>
@@ -531,7 +533,7 @@ export default function AdminEnrollmentApplicationDetailPage() {
               Cancel
             </Button>
             <Button variant="destructive" disabled={busy} onClick={() => void confirmReject()}>
-              {busy ? "Rejecting…" : "Reject application"}
+              {busy ? t("admin.shared.rejecting") : "Reject application"}
             </Button>
           </DialogFooter>
         </DialogContent>

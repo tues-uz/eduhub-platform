@@ -1,4 +1,5 @@
 import { studentMenuItems } from "@/features/layout/navigation";
+import i18n from "@/i18n";
 
 export type StudentPageHeaderResolved =
   | { kind: "back"; to: string; label: string }
@@ -55,70 +56,70 @@ export function resolveStudentPageHeader(pathname: string): StudentPageHeaderRes
     return {
       kind: "back",
       to: `/dashboard/courses/${encodeURIComponent(courseId)}`,
-      label: "Back to class",
+      label: i18n.t("pageHeader.backToClass"),
     };
   }
 
   if (segments[0] === "dashboard" && segments[1] === "courses" && segments[2] && segments.length === 3) {
-    return { kind: "back", to: "/dashboard/courses", label: "Back to My Class" };
+    return { kind: "back", to: "/dashboard/courses", label: i18n.t("pageHeader.backToMyClass") };
   }
 
   if (pathname.startsWith("/dashboard/attendance/join")) {
     return { kind: "empty" };
   }
 
-  const extraPages: { path: string; title: string }[] = [
-    { path: "/dashboard/notifications", title: "Notifications" },
-    { path: "/dashboard/assignments", title: "Assignments" },
-    { path: "/dashboard/schedule", title: "Schedule" },
-    { path: "/dashboard/progress", title: "Progress" },
+  const extraPages: { path: string; titleKey: string }[] = [
+    { path: "/dashboard/notifications", titleKey: "pageHeader.notifications" },
+    { path: "/dashboard/assignments", titleKey: "pageHeader.assignments" },
+    { path: "/dashboard/schedule", titleKey: "pageHeader.schedule" },
+    { path: "/dashboard/progress", titleKey: "pageHeader.progress" },
   ];
   const extraSorted = [...extraPages].sort((a, b) => b.path.length - a.path.length);
   for (const e of extraSorted) {
     if (pathname === e.path || pathname.startsWith(`${e.path}/`)) {
-      return { kind: "title", title: e.title };
+      return { kind: "title", title: i18n.t(e.titleKey) };
     }
   }
 
   const sorted = [...studentMenuItems].sort((a, b) => b.path.length - a.path.length);
   for (const item of sorted) {
     if (pathname === item.path) {
-      return { kind: "title", title: item.label };
+      return { kind: "title", title: i18n.t(item.labelKey) };
     }
   }
   for (const item of sorted) {
     if (pathname.startsWith(`${item.path}/`)) {
       if (item.path === "/dashboard/courses") continue;
-      return { kind: "title", title: item.label };
+      return { kind: "title", title: i18n.t(item.labelKey) };
     }
   }
 
-  return { kind: "title", title: "EduHub" };
+  return { kind: "title", title: i18n.t("pageHeader.appName") };
 }
 
 /** Sidebar-aligned page name for the sticky dashboard header bar. */
 export function resolveStudentNavLabel(pathname: string): string {
-  const extraPages: { path: string; title: string }[] = [
-    { path: "/dashboard/notifications", title: "Notifications" },
-    { path: "/dashboard/assignments", title: "Assignments" },
-    { path: "/dashboard/schedule", title: "Schedule" },
-    { path: "/dashboard/progress", title: "Progress" },
-    { path: "/dashboard/congrats-preview", title: "Congratulations" },
-    { path: "/dashboard/attendance/join", title: "Attendance check-in" },
+  const extraPages: { path: string; titleKey: string }[] = [
+    { path: "/dashboard/notifications", titleKey: "pageHeader.notifications" },
+    { path: "/dashboard/assignments", titleKey: "pageHeader.assignments" },
+    { path: "/dashboard/schedule", titleKey: "pageHeader.schedule" },
+    { path: "/dashboard/progress", titleKey: "pageHeader.progress" },
+    { path: "/dashboard/congrats-preview", titleKey: "pageHeader.congratulations" },
+    { path: "/dashboard/attendance/join", titleKey: "pageHeader.attendanceCheckIn" },
   ];
   const extraSorted = [...extraPages].sort((a, b) => b.path.length - a.path.length);
   for (const page of extraSorted) {
     if (pathname === page.path || pathname.startsWith(`${page.path}/`)) {
-      return page.title;
+      return i18n.t(page.titleKey);
     }
   }
 
   const sorted = [...studentMenuItems].sort((a, b) => b.path.length - a.path.length);
   for (const item of sorted) {
     if (pathname === item.path || pathname.startsWith(`${item.path}/`)) {
-      return item.label;
+      return i18n.t(item.labelKey);
     }
   }
 
-  return "EduHub";
+  return i18n.t("pageHeader.appName");
 }

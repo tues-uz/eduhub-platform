@@ -6,6 +6,7 @@ import { isUuid } from "@/api/utils";
 import type { CourseResponse } from "@/api/eduhubTypes";
 import { computeDiscountedPrice } from "@/features/admin/utils/adminCourseCatalog";
 import { CourseStatusBadge } from "@/features/admin/components/AdminStatusBadges";
+import { useTranslation } from "react-i18next";
 import {
   AdminActionCodeField,
   useAdminActionCodeState,
@@ -40,6 +41,7 @@ function formatMoney(amount: number, currency: string) {
 }
 
 export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenChange }: Props) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [priceInput, setPriceInput] = useState("");
   const [referralInput, setReferralInput] = useState("");
@@ -93,11 +95,11 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
 
   const reviewMutation = useMutation({
     mutationFn: async (decision: "APPROVE" | "REJECT") => {
-      if (!courseId || !isUuid(courseId)) throw new Error("Invalid class");
+      if (!courseId || !isUuid(courseId)) throw new Error(t("admin.components.courseReviewDialog.toast.invalidClass"));
       const code = validateAdminActionCodeOrThrow(adminActionCode);
       if (decision === "REJECT") {
         const rejectionReason = rejectionInput.trim();
-        if (!rejectionReason) throw new Error("Enter a reason before rejecting this class.");
+        if (!rejectionReason) throw new Error(t("admin.components.courseReviewDialog.toast.rejectionRequired"));
         const result = await eduhubAdmin.reviewCourse(courseId, { decision, rejectionReason, adminActionCode: code });
         courseReviewAuditStore.record(courseId, decision, code);
         return result;
@@ -113,11 +115,11 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
 
       const n = Number(priceInput.replace(/\s/g, ""));
       if (!Number.isFinite(n) || n < 0) {
-        throw new Error("Enter a valid catalog price (0 or greater).");
+        throw new Error(t("admin.components.courseReviewDialog.toast.invalidPrice"));
       }
       const dp = Number(String(discountInput).replace(/\s/g, ""));
       if (!Number.isFinite(dp) || dp < 0 || dp > 100) {
-        throw new Error("Discount must be between 0 and 100%.");
+        throw new Error(t("admin.referralCodes.toast.discountRange"));
       }
       const discountPercent = Math.round(dp);
       const result = await eduhubAdmin.reviewCourse(courseId, {
@@ -133,15 +135,15 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
     },
     onSuccess: (_data, decision) => {
       if (decision === "REJECT") {
-        toast.success("Class rejected", {
+        toast.success(t("admin.components.courseReviewDialog.toast.rejectedTitle"), {
           description: courseTitle ? `${courseTitle} was sent back to the lecturer.` : "The lecturer can revise and resubmit.",
         });
       } else if (isReviewable) {
-        toast.success("Class approved and published", {
+        toast.success(t("admin.components.courseReviewDialog.toast.approvedTitle"), {
           description: courseTitle ? `${courseTitle} is live for students.` : "The class is now published.",
         });
       } else {
-        toast.success("Catalog saved", {
+        toast.success(t("admin.components.courseReviewDialog.toast.catalogSaved"), {
           description: courseTitle ? `${courseTitle}` : undefined,
         });
       }
@@ -149,8 +151,8 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
       onOpenChange(false);
     },
     onError: (e: Error) => {
-      toast.error("Class review failed", {
-        description: e.message || "Try again or check API permissions.",
+      toast.error(t("admin.components.courseReviewDialog.toast.reviewFailed"), {
+        description: e.message || t("admin.components.courseReviewDialog.toast.reviewFailedDescription"),
       });
     },
   });
@@ -160,7 +162,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isReviewable ? "Review & publish class" : detail?.status === "SCHEDULE_PENDING" ? "Schedule pending" : "Review class"}
+            {isReviewable ? t("admin.components.courseReviewDialog.titleReviewPublish") : detail?.status === "SCHEDULE_PENDING" ? t("admin.components.courseReviewDialog.titleSchedulePending") : t("admin.components.courseReviewDialog.titleReview")}
           </DialogTitle>
           <DialogDescription asChild>
             <div className="space-y-3 text-sm text-muted-foreground">
@@ -194,40 +196,40 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
         </DialogHeader>
 
         {isLoading ? (
-          <p className="text-sm text-slate-600">Loading class…</p>
+          <p className="text-sm text-slate-600">{t("admin.shared.loadingClass")}</p>
         ) : detail ? (
           <div className="space-y-4 text-sm">
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3 space-y-2">
               <div className="flex justify-between gap-4">
-                <span className="text-slate-500">Title</span>
+                <span className="text-slate-500">{t("admin.shared.title")}</span>
                 <span className="font-medium text-slate-900 text-right">{detail.title}</span>
               </div>
               <div className="flex justify-between gap-4">
-                <span className="text-slate-500">Lecturer</span>
+                <span className="text-slate-500">{t("admin.shared.lecturer")}</span>
                 <span className="text-slate-800 text-right">{detail.lecturer?.fullName ?? "—"}</span>
               </div>
               <div className="flex justify-between gap-4 items-center">
-                <span className="text-slate-500">Status</span>
+                <span className="text-slate-500">{t("common.status")}</span>
                 <CourseStatusBadge status={detail.status} />
               </div>
               {detail.rejectionReason ? (
                 <div className="flex justify-between gap-4 items-start">
-                  <span className="text-slate-500 shrink-0">Last rejection</span>
+                  <span className="text-slate-500 shrink-0">{t("admin.components.courseReviewDialog.fields.lastRejection")}</span>
                   <span className="text-slate-800 text-right line-clamp-6">{detail.rejectionReason}</span>
                 </div>
               ) : null}
               {detail.scheduleRejectionNote ? (
                 <div className="flex justify-between gap-4 items-start">
-                  <span className="text-slate-500 shrink-0">Schedule rejection</span>
+                  <span className="text-slate-500 shrink-0">{t("admin.components.courseReviewDialog.fields.scheduleRejection")}</span>
                   <span className="text-slate-800 text-right line-clamp-6">{detail.scheduleRejectionNote}</span>
                 </div>
               ) : null}
               <div className="flex justify-between gap-4">
-                <span className="text-slate-500">Category</span>
+                <span className="text-slate-500">{t("admin.shared.category")}</span>
                 <span className="text-slate-800 text-right">{detail.category}</span>
               </div>
               <div className="flex justify-between gap-4 items-start">
-                <span className="text-slate-500 shrink-0">Description</span>
+                <span className="text-slate-500 shrink-0">{t("admin.courses.detail.description")}</span>
                 <span className="text-slate-800 text-right line-clamp-6">{detail.description || "—"}</span>
               </div>
             </div>
@@ -242,7 +244,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
                     id="admin-course-price"
                     type="text"
                     inputMode="decimal"
-                    placeholder="e.g. 1200000"
+                    placeholder={t("admin.components.courseReviewDialog.fields.catalogPricePlaceholder")}
                     value={priceInput}
                     onChange={(e) => setPriceInput(e.target.value)}
                     className="bg-white font-mono tabular-nums"
@@ -253,11 +255,11 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="admin-course-referral">Referral code (optional)</Label>
+                  <Label htmlFor="admin-course-referral">{t("admin.components.courseReviewDialog.fields.referralCode")}</Label>
                   <Input
                     id="admin-course-referral"
                     type="text"
-                    placeholder="e.g. SPRING2026 or PARTNER-ALI"
+                    placeholder={t("admin.components.courseReviewDialog.fields.referralPlaceholder")}
                     value={referralInput}
                     onChange={(e) => setReferralInput(e.target.value)}
                     className="bg-white font-mono text-sm"
@@ -271,7 +273,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="admin-course-discount">Referral discount (%)</Label>
+                  <Label htmlFor="admin-course-discount">{t("admin.components.courseReviewDialog.fields.discountPercent")}</Label>
                   <Input
                     id="admin-course-discount"
                     type="text"
@@ -288,9 +290,9 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
 
                 {pricePreview && pricePreview.discountPct > 0 ? (
                   <div className="rounded-lg border border-emerald-200 bg-emerald-50/90 px-3 py-3 space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900/90">Price with referral</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900/90">{t("admin.components.courseReviewDialog.pricePreview.title")}</p>
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <span className="text-sm text-emerald-900/80">Discounted price</span>
+                      <span className="text-sm text-emerald-900/80">{t("admin.courses.detail.fields.discountedPrice")}</span>
                       <span className="text-lg font-semibold tabular-nums text-emerald-950">
                         {formatMoney(pricePreview.discounted, DEFAULT_CURRENCY)}
                       </span>
@@ -326,22 +328,22 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
               <>
                 <Separator />
                 <div className="space-y-2">
-                  <Label htmlFor="admin-course-rejection">Rejection reason</Label>
+                  <Label htmlFor="admin-course-rejection">{t("admin.components.courseReviewDialog.fields.rejectionReason")}</Label>
                   <Textarea
                     id="admin-course-rejection"
                     value={rejectionInput}
                     onChange={(e) => setRejectionInput(e.target.value)}
-                    placeholder="Explain what the lecturer needs to fix before approval."
+                    placeholder={t("admin.components.courseReviewDialog.fields.rejectionPlaceholder")}
                     rows={3}
                     className="bg-white"
                   />
-                  <p className="text-xs text-slate-500">Required only when rejecting the class.</p>
+                  <p className="text-xs text-slate-500">{t("admin.components.courseReviewDialog.fields.rejectionHint")}</p>
                 </div>
               </>
             ) : null}
           </div>
         ) : (
-          <p className="text-sm text-slate-600">Could not load class details.</p>
+          <p className="text-sm text-slate-600">{t("admin.components.courseReviewDialog.loadError")}</p>
         )}
 
         {(canReject || isReviewable) && detail ? (
@@ -363,7 +365,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
               disabled={!detail || reviewMutation.isPending}
               onClick={() => reviewMutation.mutate("REJECT")}
             >
-              {reviewMutation.isPending ? "Submitting…" : "Reject class"}
+              {reviewMutation.isPending ? t("admin.shared.submitting") : t("admin.components.courseReviewDialog.rejectClass")}
             </Button>
           ) : null}
           <Button
@@ -385,7 +387,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
                 : "Saving…"
               : isReviewable
                 ? "Approve & publish"
-                : "Save catalog"}
+                : t("admin.components.courseReviewDialog.saveCatalog")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,4 +1,5 @@
 import { useMemo, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, CreditCard, FileDown, Library } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,7 @@ function findRecordForCourse(courseId: string | undefined, emailNorm: string): E
 }
 
 const StudentEnrollmentSuccessPage = () => {
+  const { t } = useTranslation();
   const { courseId: rawCourseId } = useParams<{ courseId: string }>();
   const courseId = rawCourseId ? decodeURIComponent(rawCourseId) : undefined;
   const location = useLocation();
@@ -90,7 +92,10 @@ const StudentEnrollmentSuccessPage = () => {
     [courseId, emailNorm],
   );
 
-  const statusLine = latestRecord?.status === "PENDING" ? "Pending review" : latestRecord?.status ?? "Submitted";
+  const statusLine =
+    latestRecord?.status === "PENDING"
+      ? t("enrollmentSuccess.pendingReview")
+      : latestRecord?.status ?? t("enrollmentSuccess.submittedStatus");
 
   if (!courseId) {
     return <Navigate to="/dashboard/available-courses" replace />;
@@ -121,18 +126,18 @@ const StudentEnrollmentSuccessPage = () => {
           <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/95 backdrop-blur-md">
             <div className="mx-auto flex max-w-xl items-start justify-between gap-4 px-4 py-3 sm:items-center sm:px-6 sm:py-4">
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Enrollment</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{t("enrollmentSuccess.enrollment")}</p>
                 <h1 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-zinc-900 sm:text-xl">
-                  Application sent
+                  {t("enrollmentSuccess.applicationSent")}
                 </h1>
               </div>
               <Link
                 to="/dashboard/available-courses"
-                title="Back to available classes"
+                title={t("enrollmentSuccess.backToAvailableAria")}
                 className="inline-flex shrink-0 items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
               >
                 <ArrowLeft className="h-4 w-4 shrink-0" />
-                <span className="hidden sm:inline">Catalog</span>
+                <span className="hidden sm:inline">{t("enrollmentSuccess.backToCatalog")}</span>
               </Link>
             </div>
           </header>
@@ -144,13 +149,12 @@ const StudentEnrollmentSuccessPage = () => {
                   <CheckCircle2 className="h-7 w-7 text-emerald-700" aria-hidden />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-lg font-semibold text-emerald-950">You&apos;re all set</p>
+                  <p className="text-lg font-semibold text-emerald-950">{t("enrollmentSuccess.allSet")}</p>
                   <p className="mt-1 text-sm leading-relaxed text-emerald-900/85">
-                    We received your enrollment request and attachments. An administrator will verify payment and ID,
-                    then notify you.
+                    {t("enrollmentSuccess.receivedMessage")}
                   </p>
                   <p className="mt-3 text-xs font-medium text-emerald-800/90">
-                    Submitted {submittedDate}
+                    {t("enrollmentSuccess.submitted", { date: submittedDate })}
                     {latestRecord ? (
                       <>
                         {" "}
@@ -163,26 +167,26 @@ const StudentEnrollmentSuccessPage = () => {
             </div>
 
             <div className="flex flex-col gap-5">
-              <SectionCard title="Course">
-                <Row label="Title" value={d.courseTitle} />
-                <Row label="Class reference" value={d.courseId} />
-                <Row label="Tuition (reference)" value={d.tuitionLabel} />
+              <SectionCard title={t("enrollmentSuccess.courseSection")}>
+                <Row label={t("enrollmentSuccess.title")} value={d.courseTitle} />
+                <Row label={t("enrollmentSuccess.classReference")} value={d.courseId} />
+                <Row label={t("enrollmentSuccess.tuitionReference")} value={d.tuitionLabel} />
               </SectionCard>
 
-              <SectionCard title="Your details">
-                <Row label="Full name" value={d.fullName} />
-                <Row label="Email" value={d.email} />
-                <Row label="Phone" value={d.phone} />
+              <SectionCard title={t("enrollmentSuccess.yourDetails")}>
+                <Row label={t("enrollmentSuccess.fullName")} value={d.fullName} />
+                <Row label={t("enrollmentSuccess.email")} value={d.email} />
+                <Row label={t("enrollmentSuccess.phone")} value={d.phone} />
                 {d.phoneSecondary?.trim() ? (
-                  <Row label="Additional phone" value={d.phoneSecondary.trim()} />
+                  <Row label={t("enrollmentSuccess.additionalPhone")} value={d.phoneSecondary.trim()} />
                 ) : null}
                 <div className="flex flex-col gap-0.5 border-b border-zinc-100 pb-3 last:border-0 last:pb-0">
-                  <span className="text-zinc-500">Address</span>
+                  <span className="text-zinc-500">{t("enrollmentSuccess.address")}</span>
                   <p className="mt-1 whitespace-pre-wrap font-medium text-zinc-900">{d.address.trim()}</p>
                 </div>
               </SectionCard>
 
-              <SectionCard title="Payment">
+              <SectionCard title={t("enrollmentSuccess.paymentSection")}>
                 <ul className="list-inside list-disc space-y-2 text-zinc-800">
                   {d.paymentDetailLines.map((line, i) => (
                     <li key={i}>{line}</li>
@@ -190,9 +194,9 @@ const StudentEnrollmentSuccessPage = () => {
                 </ul>
               </SectionCard>
 
-              <SectionCard title="Documents you uploaded">
-                <Row label="Payment proof" value={d.proofFileName} />
-                <Row label="Identification" value={d.idFileName} />
+              <SectionCard title={t("enrollmentSuccess.documentsSection")}>
+                <Row label={t("enrollmentSuccess.paymentProof")} value={d.proofFileName} />
+                <Row label={t("enrollmentSuccess.identification")} value={d.idFileName} />
               </SectionCard>
             </div>
 
@@ -204,18 +208,18 @@ const StudentEnrollmentSuccessPage = () => {
                 onClick={() => void downloadEnrollmentApplicationPdf(d)}
               >
                 <FileDown className="mr-2 h-4 w-4" />
-                Download submission summary
+                {t("enrollmentSuccess.downloadSummary")}
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-xl border-zinc-300 bg-white" asChild>
                 <Link to="/dashboard/payment">
                   <CreditCard className="mr-2 h-4 w-4" />
-                  Payment details
+                  {t("enrollmentSuccess.paymentDetails")}
                 </Link>
               </Button>
               <Button asChild className="h-11 rounded-xl shadow-sm" style={{ backgroundColor: "#3954d0" }}>
                 <Link to="/dashboard/available-courses">
                   <Library className="mr-2 h-4 w-4" />
-                  Browse more classes
+                  {t("enrollmentSuccess.browseMore")}
                 </Link>
               </Button>
             </div>

@@ -6,6 +6,7 @@ import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import { buildCourseScheduleSlots } from "@/features/courses/courseScheduleSlots";
+import { useTranslation } from "react-i18next";
 import {
   buildScheduleMonthTabs,
   orderSessionSlotsChronologically,
@@ -26,6 +27,7 @@ type Props = {
 };
 
 export function AdminEnrollmentPaidMonthsPanel({ record }: Props) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(Boolean(record.courseId && isUuid(record.courseId)));
   const [paidMonths, setPaidMonths] = useState<Set<TuitionPlanMonths>>(() => new Set());
   const [scheduleTabs, setScheduleTabs] = useState<ReturnType<typeof buildScheduleMonthTabs>>([]);
@@ -89,7 +91,7 @@ export function AdminEnrollmentPaidMonthsPanel({ record }: Props) {
     if (checked) next.add(month);
     else next.delete(month);
     if (!next.size) {
-      toast.error("At least one schedule month must stay paid.");
+      toast.error(t("admin.components.enrollmentPaidMonths.toast.minOneMonth"));
       return;
     }
     setPaidMonths(next);
@@ -97,7 +99,7 @@ export function AdminEnrollmentPaidMonthsPanel({ record }: Props) {
       courseId: record.courseId,
       studentEmailNorm: record.applicantEmailNorm,
     });
-    toast.success(checked ? "Schedule month marked paid" : "Schedule month marked unpaid", {
+    toast.success(checked ? t("admin.components.enrollmentPaidMonths.toast.markedPaid") : "Schedule month marked unpaid", {
       description: "Attendance QR access updates for this student immediately.",
     });
   };
@@ -168,7 +170,7 @@ export function AdminEnrollmentPaidMonthsPanel({ record }: Props) {
                       ? " · QR check-in allowed"
                       : pending
                         ? " · payment submitted — awaiting review"
-                        : " · QR check-in blocked"}
+                        : t("admin.components.enrollmentPaidMonths.qrBlocked")}
                   </span>
                 </span>
               </label>

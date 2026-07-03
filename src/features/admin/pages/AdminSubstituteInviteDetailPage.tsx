@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { SubstituteInviteRequestSummary } from "@/features/teacher/components/SubstituteInviteRequestSummary";
+import { useTranslation } from "react-i18next";
 import {
   substituteInviteWorkflowStore,
   type SubstituteInviteRecord,
@@ -79,6 +80,7 @@ function readonlyNote(rec: SubstituteInviteRecord): string {
 }
 
 export default function AdminSubstituteInviteDetailPage() {
+  const { t } = useTranslation();
   const { inviteId } = useParams<{ inviteId: string }>();
   const navigate = useNavigate();
   const [tick, setTick] = useState(0);
@@ -101,7 +103,7 @@ export default function AdminSubstituteInviteDetailPage() {
     return (
       <AdminLayout>
         <div className="container mx-auto max-w-lg px-6 py-10">
-          <p className="text-sm text-slate-600">Missing request id.</p>
+          <p className="text-sm text-slate-600">{t("admin.substituteCover.detail.missingId")}</p>
           <Button type="button" variant="outline" className="mt-4 rounded-full" onClick={goNotifications}>
             Back to notifications
           </Button>
@@ -114,7 +116,7 @@ export default function AdminSubstituteInviteDetailPage() {
     return (
       <AdminLayout>
         <div className="container mx-auto max-w-lg px-6 py-10">
-          <p className="text-sm text-slate-600">This cover request was not found. It may have been removed.</p>
+          <p className="text-sm text-slate-600">{t("admin.substituteCover.detail.notFound")}</p>
           <Button type="button" variant="outline" className="mt-4 rounded-full" onClick={goNotifications}>
             Back to notifications
           </Button>
@@ -148,17 +150,17 @@ export default function AdminSubstituteInviteDetailPage() {
           </Link>
         </div>
 
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Substitute cover request</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{t("admin.substituteCover.detail.title")}</h1>
         <p className="mt-1 text-sm text-slate-600">
           {canAdminDecide
             ? isFinalAdminStep
               ? "Both instructors have agreed. Use the buttons below to give final sign-off."
               : "The invite is still with instructors. You can still approve or reject this substitute cover below (demo: admin may decide at any time before it is finalized)."
-            : "This request is no longer open for admin approval."}
+            : t("admin.substituteCover.detail.descriptionClosed")}
         </p>
 
         <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Status</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("common.status")}</p>
           <p className="mt-1 text-sm font-semibold text-slate-900">{statusLabel(rec.status)}</p>
           <div className="mt-6 border-t border-slate-100 pt-6">
             <SubstituteInviteRequestSummary rec={rec} showInvitedSubstitute />
@@ -167,11 +169,11 @@ export default function AdminSubstituteInviteDetailPage() {
 
         {canAdminDecide ? (
           <div className="mt-6 space-y-3 rounded-xl border border-emerald-200/90 bg-emerald-50/50 p-4 sm:p-5">
-            <p className="text-sm font-semibold text-emerald-950">Admin decision</p>
+            <p className="text-sm font-semibold text-emerald-950">{t("admin.substituteCover.detail.adminDecision")}</p>
             <p className="text-sm leading-relaxed text-emerald-900/90">
               {isFinalAdminStep
                 ? "Approve to record this cover in the system after both instructors agreed, or reject to stop it."
-                : "Approve to confirm this substitute arrangement now, or reject to cancel it. In a full rollout you might wait for instructor replies first."}
+                : t("admin.substituteCover.detail.adminDecisionEarly")}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -187,12 +189,12 @@ export default function AdminSubstituteInviteDetailPage() {
                   notifySubstituteCoverFullyApproved(r.record);
                   notifyInviterSubstituteFinalizedByAdmin(r.record);
                   markAdminInviteNotificationsRead(rec.id);
-                  toast.success(isFinalAdminStep ? "Substitute cover finalized" : "Substitute cover approved");
+                  toast.success(isFinalAdminStep ? t("admin.substituteCover.toast.finalized") : "Substitute cover approved");
                   bump();
                   goNotifications();
                 }}
               >
-                {isFinalAdminStep ? "Final approve" : "Approve substitute cover"}
+                {isFinalAdminStep ? t("admin.substituteCover.detail.finalApprove") : t("admin.substituteCover.detail.approveCover")}
               </Button>
               <Button
                 type="button"
@@ -207,7 +209,7 @@ export default function AdminSubstituteInviteDetailPage() {
                   }
                   notifyAdminRejectedSubstituteCover(r.record);
                   markAdminInviteNotificationsRead(rec.id);
-                  toast.message("Substitute arrangement rejected");
+                  toast.message(t("admin.substituteCover.toast.rejected"));
                   bump();
                   goNotifications();
                 }}
@@ -222,7 +224,7 @@ export default function AdminSubstituteInviteDetailPage() {
 
         <div className="mt-8">
           <Button type="button" variant="outline" size="sm" className="rounded-full" asChild>
-            <Link to={teachersHref}>View in Teachers</Link>
+            <Link to={teachersHref}>{t("admin.substituteCover.detail.viewInTeachers")}</Link>
           </Button>
         </div>
       </div>

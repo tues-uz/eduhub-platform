@@ -59,6 +59,7 @@ import {
   useAttendanceSessionLogsTick,
 } from "@/features/teacher/components/AttendanceSessionLogsSection";
 import { AttendanceOverviewQrPicker, type ApprovedScheduleSlotOption } from "@/features/teacher/components/AttendanceOverviewQrPicker";
+import { useTranslation } from "react-i18next";
 
 function formatElapsedParts(ms: number): { h: number; m: number; s: number } {
   const sec = Math.floor(Math.max(0, ms) / 1000);
@@ -120,6 +121,7 @@ export function TeacherAttendanceSessionPanel({
   suggestedMeetingName,
   rosterAttendanceOverviewPicker,
 }: Props) {
+  const { t } = useTranslation();
   const { user } = useAuthSession();
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -648,9 +650,7 @@ export function TeacherAttendanceSessionPanel({
       <Card className="border border-gray-100 shadow-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <QrCode className="h-5 w-5 text-[#1e40af]" />
-            Class meeting check-in
-          </CardTitle>
+            <QrCode className="h-5 w-5 text-[#1e40af]" />{t("teacher.attendancePanel.title")}</CardTitle>
           <CardDescription>
             {fixedCourse
               ? "Pick the planned session from your class schedule, then generate the QR. Stopping the session marks that meeting as held for enrollment."
@@ -663,10 +663,9 @@ export function TeacherAttendanceSessionPanel({
         </CardHeader>
         <CardContent className="space-y-6">
           {loading ? (
-            <p className="text-sm text-foreground/60">Loading classes…</p>
+            <p className="text-sm text-foreground/60">{t("teacher.courses.loading")}</p>
           ) : courses.length === 0 ? (
-            <p className="text-sm text-foreground/70">
-              No classes yet.{" "}
+            <p className="text-sm text-foreground/70">{t("teacher.dashboard.classesTable.emptyPrefix")}{" "}
               <Link to="/dashboard/teacher/courses/new" className="text-[#1e40af] font-medium underline">
                 Create a class
               </Link>{" "}
@@ -676,7 +675,7 @@ export function TeacherAttendanceSessionPanel({
             <>
               {!fixedCourse ? (
                 <div className="space-y-2">
-                  <Label htmlFor={embedded ? "attendance-course-embedded" : "attendance-course"}>Class</Label>
+                  <Label htmlFor={embedded ? "attendance-course-embedded" : "attendance-course"}>{t("teacher.dashboard.classesTable.header.class")}</Label>
                   <Select value={courseId} onValueChange={setCourseId}>
                     <SelectTrigger id={embedded ? "attendance-course-embedded" : "attendance-course"} className="bg-white">
                       <SelectValue placeholder="Select class" />

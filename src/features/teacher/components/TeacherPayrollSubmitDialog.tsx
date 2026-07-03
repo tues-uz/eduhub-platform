@@ -40,6 +40,7 @@ import {
 } from "@/features/payroll/payrollMonthPayout";
 import { INSTRUCTOR_REVENUE_SHARE, PLATFORM_REVENUE_SHARE, formatMoney } from "@/features/payroll/classPayrollAggregate";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   open: boolean;
@@ -91,6 +92,7 @@ export function TeacherPayrollSubmitDialog({
   existingClassRequests,
   onSubmit,
 }: Props) {
+  const { t } = useTranslation();
   const payrollSchedule = usePayrollRequestSchedule({
     classSection,
     course,
@@ -319,7 +321,7 @@ export function TeacherPayrollSubmitDialog({
       <DialogContent className="flex max-h-[calc(100dvh-64px)] max-w-xl flex-col gap-0 overflow-hidden p-0">
         <div className="shrink-0 px-6 pt-8 pb-4">
           <DialogHeader>
-            <DialogTitle>Submit payroll for approval</DialogTitle>
+            <DialogTitle>{t("teacher.payrollSubmit.title")}</DialogTitle>
             <DialogDescription>
               {classSection} · {course}. Payroll is submitted once per schedule month from the plan admin created and you
               approved. If a month has 12 meetings, all 12 must be completed with attendance held before you can submit
@@ -653,9 +655,7 @@ export function TeacherPayrollSubmitDialog({
         </div>
 
         <DialogFooter className="sticky bottom-0 z-10 flex h-16 shrink-0 items-center gap-2 border-t border-slate-200 bg-background px-6 sm:justify-end sm:gap-2">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button>
           <Button
             type="button"
             className="bg-[#3954d0] hover:bg-[#2f46b3] disabled:opacity-50"

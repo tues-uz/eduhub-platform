@@ -27,6 +27,7 @@ import {
 } from "./teacherCourseFormHelpers";
 import { TeacherCourseFormContext, type TeacherCourseFormContextValue } from "./TeacherCourseFormContext";
 import { resolveInstructorCategory, INSTRUCTOR_CATEGORY_MISSING } from "../resolveInstructorCategory";
+import { useTranslation } from "react-i18next";
 
 /** Normalize API ISO strings to `YYYY-MM-DD` for date inputs. */
 function toDateInputValue(iso?: string): string {
@@ -36,6 +37,7 @@ function toDateInputValue(iso?: string): string {
 }
 
 const TeacherCourseFormLayout = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const newMatch = useMatch("/dashboard/teacher/courses/new/*");
   const editMatch = useMatch("/dashboard/teacher/courses/:courseId/edit/*");
@@ -619,7 +621,7 @@ const TeacherCourseFormLayout = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-red-600 hover:bg-red-700"
                 onClick={() => {
@@ -628,9 +630,7 @@ const TeacherCourseFormLayout = () => {
                     setLessonToRemoveIndex(null);
                   }
                 }}
-              >
-                Remove
-              </AlertDialogAction>
+              >{t("teacherSettings.remove")}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

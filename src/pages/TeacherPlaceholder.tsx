@@ -1,21 +1,24 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/DashboardSidebar";
 
-const SECTION_TITLES: Record<string, string> = {
-  courses: "My Class",
-  assignments: "Assignments",
-  students: "Students",
-  schedule: "Schedule",
-  settings: "Settings",
+const SECTION_TITLE_KEYS: Record<string, string> = {
+  courses: "teacher.placeholder.sections.courses",
+  assignments: "teacher.placeholder.sections.assignments",
+  students: "teacher.placeholder.sections.students",
+  schedule: "teacher.placeholder.sections.schedule",
+  settings: "teacher.placeholder.sections.settings",
 };
 
 const TeacherPlaceholder = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const segment = location.pathname.split("/").pop() ?? "";
-  const title = SECTION_TITLES[segment] ?? "Teacher";
+  const titleKey = SECTION_TITLE_KEYS[segment];
+  const title = titleKey ? t(titleKey) : t("teacher.placeholder.fallbackTitle");
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebarCollapsed");
@@ -36,15 +39,15 @@ const TeacherPlaceholder = () => {
         <div className="container mx-auto px-6">
           <Link to="/dashboard/teacher" className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6">
             <ArrowLeft className="h-4 w-4" />
-            Back to Teacher Dashboard
+            {t("teacherSettings.backToDashboard")}
           </Link>
           <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
             <h1 className="text-2xl font-bold text-foreground mb-2" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}>
               {title}
             </h1>
-            <p className="text-foreground/60 mb-6">This section is coming soon.</p>
+            <p className="text-foreground/60 mb-6">{t("teacher.placeholder.comingSoon")}</p>
             <Button asChild variant="outline" className="rounded-full">
-              <Link to="/dashboard/teacher">Back to Dashboard</Link>
+              <Link to="/dashboard/teacher">{t("teacher.placeholder.backToDashboard")}</Link>
             </Button>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { ArrowLeft, FileText } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ function resolveResumeStorageKey(courseId: string): string {
 }
 
 const StudentCourseResumePage = () => {
+  const { t } = useTranslation();
   const { courseId: rawCourseId, resumeId: rawResumeId } = useParams<{
     courseId: string;
     resumeId: string;
@@ -87,11 +89,11 @@ const StudentCourseResumePage = () => {
       >
         <div>
           <FileText className="mx-auto h-10 w-10 text-stone-400" aria-hidden />
-          <p className="mt-4 text-stone-600">This resume was not found or may have been removed.</p>
+          <p className="mt-4 text-stone-600">{t("courseResume.notFound")}</p>
           <Button asChild variant="outline" className="mt-6 rounded-full border-stone-300">
             <Link to={backHref}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to class
+              {t("courseResume.backToClass")}
             </Link>
           </Button>
         </div>
