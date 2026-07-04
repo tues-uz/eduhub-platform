@@ -13,7 +13,8 @@ import {
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
+import { eduhubAdminEnrollmentApplications } from "@/api/eduhubClient";
+import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
 import { useEnrollmentInstallmentPayments } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
 import { scheduleMonthOrdinalLabel } from "@/features/enrollment/enrollmentInstallmentPayments";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
@@ -50,12 +51,21 @@ export default function AdminFinanceDashboardPage() {
   const { t } = useTranslation();
   const { user } = useAuthSession();
   const installmentPayments = useEnrollmentInstallmentPayments();
-  const [applications, setApplications] = useState(() => enrollmentApplicationStore.list());
+  const [applications, setApplications] = useState<EnrollmentApplicationResponse[]>([]);
 
   useEffect(() => {
-    const sync = () => setApplications(enrollmentApplicationStore.list());
-    window.addEventListener("eduhub-enrollment-applications-changed", sync);
-    return () => window.removeEventListener("eduhub-enrollment-applications-changed", sync);
+    let cancelled = false;
+    eduhubAdminEnrollmentApplications
+      .listAll()
+      .then((rows) => {
+        if (!cancelled) setApplications(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setApplications([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const pendingApplications = useMemo(

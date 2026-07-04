@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, BookOpen, CalendarDays, Plus, Users } from "@/lib/icons";
+import { ArrowLeft, BookOpen, CalendarDays, Plus, UserPlus, Users } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -16,6 +16,7 @@ import { teacherCoursesStore } from "../data/teacherCoursesStore";
 import { eduhubCourses } from "@/api/eduhubClient";
 import type { TeacherCourse } from "../types";
 import { TeacherAttendanceSessionPanel } from "@/features/teacher/components/TeacherAttendanceSessionPanel";
+import { TeacherSubstituteCoverPanel } from "@/features/teacher/components/TeacherSubstituteCoverPanel";
 import { useTranslation } from "react-i18next";
 
 const TeacherCoursesPage = () => {
@@ -110,6 +111,8 @@ const TeacherCoursesPage = () => {
                 <Users className="h-4 w-4 shrink-0 opacity-70" />{t("teacher.courses.tabs.attendance")}</TabsTrigger>
               <TabsTrigger value="schedule" className="rounded-lg px-4 gap-2 data-[state=active]:shadow-sm">
                 <CalendarDays className="h-4 w-4 shrink-0 opacity-70" />{t("teacher.roster.tabs.schedule")}</TabsTrigger>
+              <TabsTrigger value="substitute" className="rounded-lg px-4 gap-2 data-[state=active]:shadow-sm">
+                <UserPlus className="h-4 w-4 shrink-0 opacity-70" />{t("teacher.courses.tabs.substitute")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="courses" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
@@ -302,6 +305,10 @@ const TeacherCoursesPage = () => {
                   })}
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="substitute" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+              <TeacherSubstituteCoverPanel embedded />
             </TabsContent>
           </Tabs>
         </div>

@@ -787,11 +787,13 @@ export default function TeacherCourseRosterPage() {
 
     let sessionNoteFromSchedule = "";
     let sessionSlotKeyToSave: string | undefined;
+    let coverageDateToSave: string | undefined;
     if (substituteSessionSlotKey.startsWith("slot-")) {
       const idx = Number.parseInt(substituteSessionSlotKey.slice("slot-".length), 10);
       if (!Number.isNaN(idx) && scheduleSlots[idx]) {
         sessionNoteFromSchedule = formatClassMeetingSlotLabel(scheduleSlots[idx], idx);
         sessionSlotKeyToSave = substituteSessionSlotKey;
+        coverageDateToSave = scheduleSlots[idx].sessionDate?.trim() || undefined;
       }
     }
 
@@ -801,6 +803,7 @@ export default function TeacherCourseRosterPage() {
         substituteEmail: email,
         sessionNote: sessionNoteFromSchedule || undefined,
         sessionSlotKey: sessionSlotKeyToSave,
+        coverageDate: coverageDateToSave,
         message: substituteMessage.trim() || undefined,
       });
       invalidateSubstituteInvites();

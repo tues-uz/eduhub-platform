@@ -470,24 +470,9 @@ const TeacherCourseFormLayout = () => {
           classEndDate: startTrim && endTrim ? `${endTrim}T00:00:00.000Z` : undefined,
         });
       } else {
-        const meetingsSixMo = parseOptionalPositiveInt(classMeetingsInSixMonths.trim()) ?? 1;
-        const meetingSlotsForSave = Array.from({ length: meetingsSixMo }, (_, i) => ({
-          title: classMeetingSlots[i]?.title ?? "",
-          sessionDate: classMeetingSlots[i]?.sessionDate ?? "",
-          sessionTime: classMeetingSlots[i]?.sessionTime ?? "",
-        }));
-        teacherCoursesStore.create({
-          title: trimmedTitle,
-          description: description.trim(),
-          category: instructorCategory.trim(),
-          instructorName,
-          lessons: validLessons,
-          classMeetingsInSixMonths: meetingsSixMo,
-          classMeetingSlots: meetingSlotsForSave,
-          thumbnailUrl: thumbnailUrl.trim() || undefined,
-          classStartDate: startTrim && endTrim ? `${startTrim}T00:00:00.000Z` : undefined,
-          classEndDate: startTrim && endTrim ? `${endTrim}T00:00:00.000Z` : undefined,
-        });
+        throw new Error(
+          "Your session could not be verified. Please refresh the page and sign in again before creating a class.",
+        );
       }
       navigate("/dashboard/teacher/courses");
     } catch (err) {

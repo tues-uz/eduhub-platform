@@ -25,7 +25,8 @@ import {
 import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock";
 import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
-import { eduhubCourses } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubSubstituteInvites } from "@/api/eduhubClient";
+import type { CourseResponse } from "@/api/eduhubTypes";
 import type { TeacherCourse } from "@/features/teacher/types";
 import {
   aggregatePaymentsByClass,
@@ -62,6 +63,46 @@ import {
 } from "@/features/payroll/payrollSubmitDemo";
 import { cn, formatThousandsInText } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+
+function coursePricingUnit(pricing?: { discountedAmount?: number; amount?: number; currency?: string }) {
+  const unit = pricing?.discountedAmount ?? pricing?.amount;
+  return unit != null && unit > 0 ? { price: unit, priceCurrency: pricing?.currency } : {};
+}
+
+function courseSummaryToTeacherCourse(c: NonNullable<Awaited<ReturnType<typeof eduhubCourses.getByLecturer>>>[number]): TeacherCourse {
+  return {
+    id: c.id,
+    title: c.title,
+    description: "",
+    instructorName: c.lecturerName,
+    thumbnailUrl: c.thumbnailUrl,
+    enrollmentCount: c.enrollmentCount,
+    classMeetingsInSixMonths: c.classMeetingsInSixMonths,
+    classMeetingSlots: c.classMeetingSlots,
+    lessons: [],
+    createdAt: c.createdAt,
+    updatedAt: c.createdAt,
+    status: c.status,
+    ...coursePricingUnit(c.pricing),
+  };
+}
+
+function courseResponseToTeacherCourse(c: CourseResponse): TeacherCourse {
+  return {
+    id: c.id,
+    title: c.title,
+    description: "",
+    instructorName: c.lecturer?.fullName,
+    thumbnailUrl: c.thumbnailUrl,
+    enrollmentCount: c.enrollmentCount,
+    classMeetingsInSixMonths: c.classMeetingsInSixMonths,
+    lessons: [],
+    createdAt: c.createdAt,
+    updatedAt: c.createdAt,
+    status: c.status,
+    ...coursePricingUnit(c.pricing),
+  };
+}
 
 function formatRelativeTime(iso: string): string {
   const t = new Date(iso).getTime();
@@ -212,27 +253,29 @@ export default function TeacherPayrollPage() {
       }
       try {
         const res = await eduhubCourses.getByLecturer(user.id);
-        const apiCourses: TeacherCourse[] = (res || []).map((c) => {
-          const unit = c.pricing?.discountedAmount ?? c.pricing?.amount;
-          return {
-            id: c.id,
-            title: c.title,
-            description: "",
-            instructorName: c.lecturerName,
-            thumbnailUrl: c.thumbnailUrl,
-            enrollmentCount: c.enrollmentCount,
-            classMeetingsInSixMonths: c.classMeetingsInSixMonths,
-            classMeetingSlots: c.classMeetingSlots,
-            lessons: [],
-            createdAt: c.createdAt,
-            updatedAt: c.createdAt,
-            status: c.status,
-            ...(unit != null && unit > 0
-              ? { price: unit, priceCurrency: c.pricing?.currency }
-              : {}),
-          };
-        });
-        const merged = [...apiCourses, ...local];
+        const apiCourses: TeacherCourse[] = (res || []).map(courseSummaryToTeacherCourse);
+
+        const ownedIds = new Set(apiCourses.map((c) => c.id));
+        let coveredCourses: TeacherCourse[] = [];
+        try {
+          const invites = await eduhubSubstituteInvites.listMine();
+          const coveredIds = Array.from(
+            new Set(
+              invites
+                .filter((r) => r.substituteId === user.id && r.status === "APPROVED")
+                .map((r) => r.courseId)
+                .filter((id) => !ownedIds.has(id)),
+            ),
+          );
+          const covered = await Promise.all(
+            coveredIds.map((id) => eduhubCourses.getById(id).catch(() => null)),
+          );
+          coveredCourses = covered.filter((c): c is NonNullable<typeof c> => c != null).map(courseResponseToTeacherCourse);
+        } catch {
+          coveredCourses = [];
+        }
+
+        const merged = [...apiCourses, ...coveredCourses, ...local];
         // Keep this page lightweight; we don't enrich via GET /courses/{id} here.
         const dedup = new Map<string, TeacherCourse>();
         merged.forEach((c) => {

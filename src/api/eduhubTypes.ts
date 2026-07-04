@@ -675,6 +675,7 @@ export interface PayrollClassSummaryResponse {
   instructorShare: number;
   pricing?: CoursePricingResponse;
   students: PayrollClassStudentResponse[];
+  substituteCoverage: boolean;
 }
 
 // Notification Types
@@ -709,6 +710,8 @@ export interface SubstituteInviteResponse {
   courseId: string;
   courseTitle: string;
   sessionSlotKey?: string;
+  /** Date of the specific session being covered; absent means whole-class (indefinite) coverage. */
+  coverageDate?: string;
   sessionNote?: string;
   message?: string;
   primaryInstructorId: string;
@@ -725,6 +728,8 @@ export interface SubstituteInviteResponse {
 export interface SubstituteInviteCreateRequest {
   substituteEmail: string;
   sessionSlotKey?: string;
+  /** ISO date of the specific session being covered; omit for whole-class (indefinite) coverage. */
+  coverageDate?: string;
   sessionNote?: string;
   message?: string;
 }
