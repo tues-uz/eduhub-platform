@@ -564,6 +564,18 @@ export default function TeacherCourseRosterPage() {
     return undefined;
   }, [isSubstituteViewer, substituteViewerSchedule, courseMeta?.title]);
 
+  /** Substitutes invited to cover specific session(s) should only see those rows in the QR meeting picker, not the whole term. */
+  const attendanceScheduleSlots = useMemo(() => {
+    const all = rosterScheduleView.slots.map((slot, index) => ({ slot, index }));
+    if (!isSubstituteViewer || substituteViewerSchedule == null) return all;
+    if (substituteViewerSchedule.kind === "rows") {
+      const allowedIndexes = new Set(substituteViewerSchedule.rows.map((r) => r.index));
+      return all.filter(({ index }) => allowedIndexes.has(index));
+    }
+    if (substituteViewerSchedule.kind === "empty") return [];
+    return all;
+  }, [isSubstituteViewer, substituteViewerSchedule, rosterScheduleView.slots]);
+
   const courseThumbnailUrl = useMemo(() => {
     const raw = scheduleSourceCourse?.thumbnailUrl;
     const t = typeof raw === "string" ? raw.trim() : "";
@@ -1809,9 +1821,9 @@ export default function TeacherCourseRosterPage() {
                       suggestedMeetingName={attendanceSuggestedMeetingName}
                       rosterAttendanceOverviewPicker={{
                         onSelectionChange: onOverviewSessionChange,
-                        approvedScheduleSlots: rosterScheduleView.slots.map((slot, i) => ({
-                          index: i,
-                          label: formatClassMeetingSlotLabel(slot, i),
+                        approvedScheduleSlots: attendanceScheduleSlots.map(({ slot, index }) => ({
+                          index,
+                          label: formatClassMeetingSlotLabel(slot, index),
                           sessionDate: slot.sessionDate?.trim() || undefined,
                           sessionTime: slot.sessionTime?.trim() || undefined,
                           title: slot.title?.trim() || undefined,
