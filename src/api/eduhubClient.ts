@@ -48,6 +48,12 @@ import type {
   PayrollRequestCreateRequest,
   PayrollRequestResponse,
   CategoryResponse,
+  SubstituteInviteResponse,
+  SubstituteInviteCreateRequest,
+  InstallmentPaymentResponse,
+  InstallmentPaymentSubmitRequest,
+  InstallmentPaymentReviewRequest,
+  InstallmentPaymentManualRequest,
 } from "./eduhubTypes";
 
 export class ApiError extends Error {
@@ -1028,5 +1034,72 @@ export async function eduhubUploadFile(file: File, folder = "materials"): Promis
 
 export const eduhubCategories = {
   getAll: () => request<CategoryResponse[]>("/categories"),
+};
+
+export const eduhubSubstituteInvites = {
+  create: (courseId: string, body: SubstituteInviteCreateRequest) =>
+    request<SubstituteInviteResponse>(`/courses/${courseId}/substitute-invites`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  listMine: () => request<SubstituteInviteResponse[]>("/substitute-invites/mine"),
+
+  getById: (id: string) => request<SubstituteInviteResponse>(`/substitute-invites/${id}`),
+
+  accept: (id: string) => request<SubstituteInviteResponse>(`/substitute-invites/${id}/accept`, { method: "POST" }),
+
+  decline: (id: string) => request<SubstituteInviteResponse>(`/substitute-invites/${id}/decline`, { method: "POST" }),
+
+  primaryApprove: (id: string) =>
+    request<SubstituteInviteResponse>(`/substitute-invites/${id}/primary-approve`, { method: "POST" }),
+
+  primaryReject: (id: string) =>
+    request<SubstituteInviteResponse>(`/substitute-invites/${id}/primary-reject`, { method: "POST" }),
+};
+
+export const eduhubAdminSubstituteInvites = {
+  listAll: () => request<SubstituteInviteResponse[]>("/admin/substitute-invites"),
+
+  approve: (id: string) =>
+    request<SubstituteInviteResponse>(`/admin/substitute-invites/${id}/approve`, { method: "POST" }),
+
+  reject: (id: string) =>
+    request<SubstituteInviteResponse>(`/admin/substitute-invites/${id}/reject`, { method: "POST" }),
+};
+
+/** Schedule-month (installment) payments (Student) */
+export const eduhubInstallmentPayments = {
+  listForApplication: (applicationId: string) =>
+    request<InstallmentPaymentResponse[]>(`/enrollment-applications/${applicationId}/installment-payments`),
+
+  submit: (applicationId: string, body: InstallmentPaymentSubmitRequest) =>
+    request<InstallmentPaymentResponse>(`/enrollment-applications/${applicationId}/installment-payments`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+};
+
+/** Schedule-month (installment) payments (Admin) */
+export const eduhubAdminInstallmentPayments = {
+  listAll: () => request<InstallmentPaymentResponse[]>("/admin/installment-payments"),
+
+  approve: (id: string, body?: InstallmentPaymentReviewRequest) =>
+    request<InstallmentPaymentResponse>(`/admin/installment-payments/${id}/approve`, {
+      method: "PATCH",
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+
+  reject: (id: string, body?: InstallmentPaymentReviewRequest) =>
+    request<InstallmentPaymentResponse>(`/admin/installment-payments/${id}/reject`, {
+      method: "PATCH",
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+
+  manualRecord: (applicationId: string, body: InstallmentPaymentManualRequest) =>
+    request<InstallmentPaymentResponse>(
+      `/admin/enrollment-applications/${applicationId}/installment-payments/manual`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
 };
 

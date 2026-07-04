@@ -202,14 +202,8 @@ export default function StudentInstallmentPaymentPage() {
         proofUrl = result.url;
       }
 
-      enrollmentInstallmentPaymentStore.submit({
-        enrollmentApplicationId: application.id,
-        courseId: application.courseId,
-        courseTitle: application.courseTitle ?? application.courseId,
-        studentEmailNorm: emailNorm,
-        studentName: application.fullName || user.name.trim(),
+      await enrollmentInstallmentPaymentStore.submit(application.id, {
         scheduleMonth: selectedRow.month,
-        scheduleMonthLabel: selectedRow.monthLine || selectedRow.tabLabel,
         amount: selectedRow.amount,
         currency: selectedRow.currency,
         paymentMethod,

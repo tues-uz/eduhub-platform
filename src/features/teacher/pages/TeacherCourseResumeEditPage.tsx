@@ -15,11 +15,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { eduhubCourses, eduhubClassResumes, eduhubUploadFile, eduhubSchedule } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubClassResumes, eduhubUploadFile, eduhubSchedule, eduhubSubstituteInvites } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
-import { substituteInviteWorkflowStore } from "@/features/teacher/data/substituteInviteWorkflowStore";
 import {
   buildCourseScheduleSlotsForPicker,
   formatClassMeetingSlotLabel,
@@ -86,18 +85,21 @@ export default function TeacherCourseResumeEditPage() {
   });
 
   const userEmailNorm = (user?.email ?? "").trim().toLowerCase();
-  const [workflowTick, setWorkflowTick] = useState(0);
-  useEffect(() => {
-    const fn = () => setWorkflowTick((t) => t + 1);
-    window.addEventListener("eduhub.substituteInviteWorkflow.changed", fn);
-    return () => window.removeEventListener("eduhub.substituteInviteWorkflow.changed", fn);
-  }, []);
+
+  const substituteInvitesQuery = useQuery({
+    queryKey: ["teacher", "substituteInvites", "mine"],
+    queryFn: () => eduhubSubstituteInvites.listMine(),
+    enabled: Boolean(courseId) && isUuid(courseId),
+  });
+
+  const courseSubstituteInvites = useMemo(
+    () => (substituteInvitesQuery.data ?? []).filter((r) => r.courseId === courseId),
+    [substituteInvitesQuery.data, courseId],
+  );
 
   const substituteCanAccess = useMemo(() => {
-    void workflowTick;
-    if (!courseId || !userEmailNorm) return false;
-    return substituteInviteWorkflowStore.isApprovedSubstituteForCourse(courseId, userEmailNorm);
-  }, [courseId, userEmailNorm, workflowTick]);
+    return courseSubstituteInvites.some((r) => r.substituteId === user.id && r.status === "APPROVED");
+  }, [courseSubstituteInvites, user.id]);
 
   const isApiCourseLecturer = Boolean(
     apiCourseQuery.data && apiCourseQuery.data.lecturer?.id === user.id,
@@ -108,16 +110,13 @@ export default function TeacherCourseResumeEditPage() {
   );
 
   const approvedSubstituteInviteRow = useMemo(() => {
-    void workflowTick;
-    if (!courseId || !userEmailNorm) return undefined;
-    return substituteInviteWorkflowStore.findApprovedInviteAsSubstitute(courseId, userEmailNorm);
-  }, [courseId, userEmailNorm, workflowTick]);
+    return courseSubstituteInvites.find((r) => r.substituteId === user.id && r.status === "APPROVED");
+  }, [courseSubstituteInvites, user.id]);
 
   const approvedCoverAsPrimaryRow = useMemo(() => {
-    void workflowTick;
-    if (!courseId || !userEmailNorm || !isApiCourseLecturer) return undefined;
-    return substituteInviteWorkflowStore.findApprovedInviteAsPrimary(courseId, userEmailNorm);
-  }, [courseId, userEmailNorm, workflowTick, isApiCourseLecturer]);
+    if (!isApiCourseLecturer) return undefined;
+    return courseSubstituteInvites.find((r) => r.primaryInstructorId === user.id && r.status === "APPROVED");
+  }, [courseSubstituteInvites, user.id, isApiCourseLecturer]);
 
   const courseLeadDisplayName = useMemo(() => {
     const apiName = apiCourseQuery.data?.lecturer?.fullName?.trim();
@@ -420,7 +419,7 @@ export default function TeacherCourseResumeEditPage() {
           {!isSubstituteViewer && approvedCoverAsPrimaryRow ? (
             <div className="mb-6 rounded-xl border border-emerald-200/90 bg-emerald-50/90 px-4 py-3 text-sm text-emerald-950 leading-relaxed">
               <span className="font-semibold">You are the course lead.</span> Substitute{" "}
-              <span className="font-mono font-medium">{approvedCoverAsPrimaryRow.substituteEmailNorm}</span> can also
+              <span className="font-mono font-medium">{approvedCoverAsPrimaryRow.substituteEmail}</span> can also
               edit resumes here.
             </div>
           ) : null}

@@ -23,6 +23,7 @@ import { formatPaymentMethodLabel } from "@/features/enrollment/enrollmentDocume
 import {
   approveInstallmentPayment,
   rejectInstallmentPayment,
+  scheduleMonthOrdinalLabel,
 } from "@/features/enrollment/enrollmentInstallmentPayments";
 import {
   useEnrollmentInstallmentPayments,
@@ -92,7 +93,9 @@ function PendingPaymentCard({
             <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Schedule month
             </p>
-            <p className="mt-0.5 text-base font-semibold text-slate-900">{payment.scheduleMonthLabel}</p>
+            <p className="mt-0.5 text-base font-semibold text-slate-900">
+              {scheduleMonthOrdinalLabel(payment.scheduleMonth)}
+            </p>
             <p className="mt-1 text-sm text-slate-600 line-clamp-2">{payment.courseTitle}</p>
           </div>
           <div className="text-right">
@@ -162,7 +165,7 @@ function HistoryPaymentRow({ payment }: { payment: EnrollmentInstallmentPayment 
           </span>
         </div>
         <p className="mt-0.5 text-xs text-slate-500 line-clamp-1">
-          {payment.courseTitle} · {payment.scheduleMonthLabel}
+          {payment.courseTitle} · {scheduleMonthOrdinalLabel(payment.scheduleMonth)}
         </p>
         <p className="mt-0.5 text-[11px] text-slate-400">{formatShortDate(payment.submittedAt)}</p>
       </div>
@@ -231,10 +234,10 @@ export default function AdminInstallmentPaymentsPage() {
     }
     setBusyId(payment.id);
     try {
-      const updated = approveInstallmentPayment(payment.id, code);
+      const updated = await approveInstallmentPayment(payment.id, code);
       if (!updated) throw new Error("Could not approve payment");
       toast.success(t("admin.installmentPayments.toast.approvedTitle"), {
-        description: `${payment.scheduleMonthLabel} unlocked for QR attendance.`,
+        description: `${scheduleMonthOrdinalLabel(payment.scheduleMonth)} unlocked for QR attendance.`,
       });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not approve");
@@ -254,7 +257,7 @@ export default function AdminInstallmentPaymentsPage() {
     }
     setBusyId(rejectTarget.id);
     try {
-      rejectInstallmentPayment(rejectTarget.id, rejectNote, code);
+      await rejectInstallmentPayment(rejectTarget.id, rejectNote, code);
       toast.message(t("admin.installmentPayments.toast.rejectedTitle"), {
         description: "The student can submit again with corrected proof.",
       });
@@ -370,7 +373,7 @@ export default function AdminInstallmentPaymentsPage() {
           </DialogHeader>
           {rejectTarget ? (
             <p className="text-sm text-slate-600">
-              {rejectTarget.studentName} · {rejectTarget.scheduleMonthLabel} ·{" "}
+              {rejectTarget.studentName} · {scheduleMonthOrdinalLabel(rejectTarget.scheduleMonth)} ·{" "}
               {formatEnrollmentMoney(rejectTarget.amount, rejectTarget.currency)}
             </p>
           ) : null}

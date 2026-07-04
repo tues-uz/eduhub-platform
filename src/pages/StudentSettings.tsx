@@ -8,14 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { eduhubAuth, eduhubUploadFile, getAccessToken } from "@/api/eduhubClient";
 import type { UserResponse } from "@/api/eduhubTypes";
-import {
-  registrationBirthCityForEmail,
-  registrationDateOfBirthForEmail,
-  registrationLatestSchoolForEmail,
-  registrationParentPhoneForEmail,
-  registrationPassportForEmail,
-  registrationPhoneForEmail,
-} from "@/features/auth/registrationPhoneStorage";
 import { setSessionUser, useAuthSession } from "@/features/auth/context";
 import { instructorProfileAvatarsStore } from "@/features/teacher/data/instructorProfileAvatarsStore";
 import { formatDisplayPersonName, profileInitials } from "@/lib/formatPersonName";
@@ -77,14 +69,12 @@ const StudentSettings = () => {
   }, []);
 
   const registrationDetails = useMemo(() => {
-    const phone =
-      (apiUser?.phoneNumber ?? user.phoneNumber ?? registrationPhoneForEmail(user.email)).trim() || notAvailable;
-    const parentPhone =
-      (apiUser?.parentPhoneNumber ?? registrationParentPhoneForEmail(user.email)).trim() || notAvailable;
-    const passport = registrationPassportForEmail(user.email).trim() || notAvailable;
-    const dateOfBirth = formatRegistrationDate(registrationDateOfBirthForEmail(user.email), notAvailable);
-    const birthCity = registrationBirthCityForEmail(user.email).trim() || notAvailable;
-    const latestSchool = registrationLatestSchoolForEmail(user.email).trim() || notAvailable;
+    const phone = (apiUser?.phoneNumber ?? user.phoneNumber ?? "").trim() || notAvailable;
+    const parentPhone = (apiUser?.parentPhoneNumber ?? "").trim() || notAvailable;
+    const passport = (apiUser?.passportNumber ?? "").trim() || notAvailable;
+    const dateOfBirth = formatRegistrationDate(apiUser?.dateOfBirth ?? "", notAvailable);
+    const birthCity = (apiUser?.birthCity ?? "").trim() || notAvailable;
+    const latestSchool = (apiUser?.latestSchool ?? "").trim() || notAvailable;
 
     return {
       fullName: formatDisplayPersonName(apiUser?.fullName ?? user.name),

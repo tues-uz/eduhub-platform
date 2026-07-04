@@ -6,38 +6,25 @@ import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
 import { SubstituteInviteRequestSummary } from "@/features/teacher/components/SubstituteInviteRequestSummary";
-import {
-  substituteInviteWorkflowStore,
-  type SubstituteInviteRecord,
-  type SubstituteInviteStatus,
-} from "@/features/teacher/data/substituteInviteWorkflowStore";
+import { eduhubSubstituteInvites, ApiError } from "@/api/eduhubClient";
+import type { SubstituteInviteResponse, SubstituteInviteStatus } from "@/api/eduhubTypes";
 import { useTranslation } from "react-i18next";
-import {
-  appNotificationStore,
-  APP_NOTIFICATIONS_CHANGE_EVENT,
-  notifyAdminSubstituteInviteDeclined,
-  notifyAfterPrimaryApprovedPendingAdmin,
-  notifySubstituteAcceptedAwaitingPrimary,
-  notifySubstituteDeclinedPrimary,
-  notifySubstituteRejectedByPrimary,
-  notifySubstituteWaitingPrimaryApproval,
-} from "@/features/notifications/appNotificationStore";
 
 function statusLabel(status: SubstituteInviteStatus): string {
   switch (status) {
-    case "pending_substitute_response":
+    case "PENDING_SUBSTITUTE_RESPONSE":
       return "Waiting for substitute";
-    case "pending_primary_approval":
+    case "PENDING_PRIMARY_APPROVAL":
       return "Waiting for primary instructor";
-    case "pending_admin_approval":
+    case "PENDING_ADMIN_APPROVAL":
       return "With admin for final approval";
-    case "approved":
+    case "APPROVED":
       return "Approved";
-    case "declined_by_substitute":
+    case "DECLINED_BY_SUBSTITUTE":
       return "Declined by substitute";
-    case "rejected_by_primary":
+    case "REJECTED_BY_PRIMARY":
       return "Rejected by primary instructor";
-    case "rejected_by_admin":
+    case "REJECTED_BY_ADMIN":
       return "Rejected by admin";
     default:
       return status;
@@ -49,18 +36,29 @@ export default function TeacherSubstituteInviteReviewPage() {
   const { inviteId } = useParams<{ inviteId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthSession();
-  const emailNorm = user.email.trim().toLowerCase();
-  const [tick, setTick] = useState(0);
+  const [rec, setRec] = useState<SubstituteInviteResponse | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     () => localStorage.getItem("sidebarCollapsed") === "true",
   );
 
-  const bump = useCallback(() => setTick((x) => x + 1), []);
+  const load = useCallback(() => {
+    if (!inviteId) return;
+    setLoading(true);
+    eduhubSubstituteInvites
+      .getById(inviteId)
+      .then((r) => {
+        setRec(r);
+        setNotFound(false);
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [inviteId]);
 
   useEffect(() => {
-    window.addEventListener(APP_NOTIFICATIONS_CHANGE_EVENT, bump);
-    return () => window.removeEventListener(APP_NOTIFICATIONS_CHANGE_EVENT, bump);
-  }, [bump]);
+    load();
+  }, [load]);
 
   useEffect(() => {
     const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
@@ -69,30 +67,36 @@ export default function TeacherSubstituteInviteReviewPage() {
     return () => clearInterval(id);
   }, []);
 
-  const rec = useMemo(() => {
-    void tick;
-    if (!inviteId) return undefined;
-    return substituteInviteWorkflowStore.get(inviteId);
-  }, [inviteId, tick]);
-
   const decision = useMemo(() => {
     if (!rec) return { kind: "missing" as const };
-    const isSubstitute = rec.substituteEmailNorm === emailNorm;
-    const isPrimary = rec.primaryInstructorEmailNorm === emailNorm;
+    const isSubstitute = rec.substituteId === user.id;
+    const isPrimary = rec.primaryInstructorId === user.id;
 
-    if (rec.status === "pending_substitute_response" && isSubstitute) {
+    if (rec.status === "PENDING_SUBSTITUTE_RESPONSE" && isSubstitute) {
       return { kind: "substitute_decide" as const, rec };
     }
-    if (rec.status === "pending_primary_approval" && isPrimary) {
+    if (rec.status === "PENDING_PRIMARY_APPROVAL" && isPrimary) {
       return { kind: "primary_decide" as const, rec };
     }
     if (isSubstitute || isPrimary) {
       return { kind: "readonly_participant" as const, rec, isSubstitute, isPrimary };
     }
     return { kind: "no_access" as const, rec };
-  }, [rec, emailNorm]);
+  }, [rec, user.id]);
 
   const goNotifications = () => navigate("/dashboard/teacher/notifications");
+
+  const runAction = async (action: () => Promise<SubstituteInviteResponse>, successMessage: string) => {
+    if (!inviteId) return;
+    try {
+      await action();
+      toast.success(successMessage);
+      goNotifications();
+    } catch (err: unknown) {
+      toast.error(err instanceof ApiError || err instanceof Error ? err.message : "Something went wrong");
+      load();
+    }
+  };
 
   if (!inviteId) {
     return (
@@ -114,7 +118,7 @@ export default function TeacherSubstituteInviteReviewPage() {
     );
   }
 
-  if (!rec) {
+  if (!loading && (notFound || !rec)) {
     return (
       <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         <DashboardSidebar />
@@ -134,14 +138,7 @@ export default function TeacherSubstituteInviteReviewPage() {
     );
   }
 
-  const markRelatedRead = (row: SubstituteInviteRecord) => {
-    const list = appNotificationStore.listForInstructor(emailNorm, user.name);
-    for (const n of list) {
-      if (n.refId === row.id && !n.read) {
-        appNotificationStore.markRead(n.id);
-      }
-    }
-  };
+  if (!rec) return null;
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -185,39 +182,15 @@ export default function TeacherSubstituteInviteReviewPage() {
                 <Button
                   type="button"
                   className="rounded-full bg-[#3954d0] hover:bg-[#2f46b3]"
-                  onClick={() => {
-                    const r = substituteInviteWorkflowStore.acceptBySubstitute(rec.id, emailNorm);
-                    if (!r.ok) {
-                      toast.error("reason" in r ? r.reason : "Could not accept invite");
-                      bump();
-                      return;
-                    }
-                    notifySubstituteAcceptedAwaitingPrimary(r.record);
-                    notifySubstituteWaitingPrimaryApproval(r.record);
-                    markRelatedRead(r.record);
-                    toast.success("You accepted the cover invite");
-                    bump();
-                    goNotifications();
-                  }}
+                  onClick={() =>
+                    runAction(() => eduhubSubstituteInvites.accept(inviteId), "You accepted the cover invite")
+                  }
                 >{t("teacher.substituteReview.acceptInvite")}</Button>
                 <Button
                   type="button"
                   variant="outline"
                   className="rounded-full"
-                  onClick={() => {
-                    const r = substituteInviteWorkflowStore.declineBySubstitute(rec.id, emailNorm);
-                    if (!r.ok) {
-                      toast.error("reason" in r ? r.reason : "Could not decline invite");
-                      bump();
-                      return;
-                    }
-                    notifySubstituteDeclinedPrimary(r.record);
-                    notifyAdminSubstituteInviteDeclined(r.record);
-                    markRelatedRead(r.record);
-                    toast.message("Invite declined");
-                    bump();
-                    goNotifications();
-                  }}
+                  onClick={() => runAction(() => eduhubSubstituteInvites.decline(inviteId), "Invite declined")}
                 >{t("teacher.substituteReview.declineInvite")}</Button>
               </div>
             </div>
@@ -232,37 +205,20 @@ export default function TeacherSubstituteInviteReviewPage() {
                 <Button
                   type="button"
                   className="rounded-full bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => {
-                    const r = substituteInviteWorkflowStore.approveByPrimary(rec.id, emailNorm);
-                    if (!r.ok) {
-                      toast.error("reason" in r ? r.reason : "Could not approve cover");
-                      bump();
-                      return;
-                    }
-                    notifyAfterPrimaryApprovedPendingAdmin(r.record);
-                    markRelatedRead(r.record);
-                    toast.success("Forwarded to admin for final approval");
-                    bump();
-                    goNotifications();
-                  }}
+                  onClick={() =>
+                    runAction(
+                      () => eduhubSubstituteInvites.primaryApprove(inviteId),
+                      "Forwarded to admin for final approval",
+                    )
+                  }
                 >{t("teacher.substituteReview.approveCover")}</Button>
                 <Button
                   type="button"
                   variant="outline"
                   className="rounded-full"
-                  onClick={() => {
-                    const r = substituteInviteWorkflowStore.rejectByPrimary(rec.id, emailNorm);
-                    if (!r.ok) {
-                      toast.error("reason" in r ? r.reason : "Could not reject cover");
-                      bump();
-                      return;
-                    }
-                    notifySubstituteRejectedByPrimary(r.record);
-                    markRelatedRead(r.record);
-                    toast.message("Cover not approved");
-                    bump();
-                    goNotifications();
-                  }}
+                  onClick={() =>
+                    runAction(() => eduhubSubstituteInvites.primaryReject(inviteId), "Cover not approved")
+                  }
                 >{t("teacher.substituteReview.reject")}</Button>
               </div>
             </div>
@@ -270,9 +226,9 @@ export default function TeacherSubstituteInviteReviewPage() {
 
           {decision.kind === "readonly_participant" ? (
             <p className="mt-6 text-sm leading-relaxed text-foreground/65">
-              {decision.rec.status === "pending_substitute_response" && decision.isPrimary
+              {decision.rec.status === "PENDING_SUBSTITUTE_RESPONSE" && decision.isPrimary
                 ? "Waiting for the substitute to respond. You will be notified when there is an update."
-                : decision.rec.status === "pending_primary_approval" && decision.isSubstitute
+                : decision.rec.status === "PENDING_PRIMARY_APPROVAL" && decision.isSubstitute
                   ? "Waiting for the primary instructor to confirm this cover."
                   : "There is nothing for you to confirm at this step. Check notifications for updates."}
             </p>

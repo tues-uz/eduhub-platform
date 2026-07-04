@@ -23,14 +23,13 @@ import {
 } from "@/components/ui/select";
 import { eduhubAdmin, eduhubCategories, ApiError } from "@/api/eduhubClient";
 import { adminTeachersStore } from "@/features/admin/data/adminTeachersStore";
-import { dummyStaffUsersStore } from "@/features/admin/data/dummyStaffUsersStore";
 import {
   isValidAdminActionCode,
   normalizeAdminCode,
   registerAdminStaffCode,
 } from "@/features/admin/adminStaffCode";
 import type { StaffRoleConfig } from "@/features/admin/adminStaffRoles";
-import { isApiCreateUserRoleSupported, usesDummyStaffUserCreate } from "@/features/admin/adminStaffRoles";
+import { isApiCreateUserRoleSupported } from "@/features/admin/adminStaffRoles";
 
 type Props = {
   config: StaffRoleConfig;
@@ -85,22 +84,6 @@ export function AdminCreateStaffUserForm({ config, onSuccessNavigate = "/dashboa
     setIsLoading(true);
     try {
       const adminCode = config.requiresAdminCode ? normalizeAdminCode(formData.adminCode) : undefined;
-
-      if (usesDummyStaffUserCreate(config.apiRole)) {
-        const res = dummyStaffUsersStore.create({
-          fullName: formData.fullName,
-          email: formData.email,
-          phoneNumber: formData.phoneNumber,
-          apiRole: config.apiRole,
-          adminCode,
-        });
-        if (adminCode) registerAdminStaffCode(formData.email, adminCode);
-        setTemporaryPassword(res.temporaryPassword);
-        setCreatedAccountEmail(res.user.email);
-        setHasCopiedPassword(false);
-        toast.success(t("admin.addUserRole.toast.demoAccountCreated", { role: t(config.titleKey) }));
-        return;
-      }
 
       const res = await eduhubAdmin.createUser({
         fullName: formData.fullName,
@@ -165,11 +148,6 @@ export function AdminCreateStaffUserForm({ config, onSuccessNavigate = "/dashboa
         className="bg-white border border-slate-200 rounded-lg shadow-sm p-6 space-y-4"
         onSubmit={handleSubmit}
       >
-        {usesDummyStaffUserCreate(config.apiRole) ? (
-          <p className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-950">
-            {t("admin.addUserRole.form.demoModeHint")}
-          </p>
-        ) : null}
         <div className="space-y-2">
           <Label htmlFor="fullName">{t("admin.addUserRole.form.fullName")}</Label>
           <div className="relative">

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "@/lib/icons";
 import { toast } from "sonner";
@@ -6,73 +6,54 @@ import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { SubstituteInviteRequestSummary } from "@/features/teacher/components/SubstituteInviteRequestSummary";
 import { useTranslation } from "react-i18next";
-import {
-  substituteInviteWorkflowStore,
-  type SubstituteInviteRecord,
-  type SubstituteInviteStatus,
-} from "@/features/teacher/data/substituteInviteWorkflowStore";
+import { eduhubAdminSubstituteInvites, ApiError } from "@/api/eduhubClient";
+import type { SubstituteInviteResponse, SubstituteInviteStatus } from "@/api/eduhubTypes";
 import {
   ADMIN_SUBSTITUTE_REQUESTS_BASE,
-  resolveAdminSubstituteInviteId,
 } from "@/features/admin/substituteCoverAdminRoutes";
-import {
-  appNotificationStore,
-  APP_NOTIFICATIONS_CHANGE_EVENT,
-  notifyInviterSubstituteFinalizedByAdmin,
-  notifySubstituteCoverFullyApproved,
-  notifyAdminRejectedSubstituteCover,
-} from "@/features/notifications/appNotificationStore";
 
 function statusLabel(status: SubstituteInviteStatus): string {
   switch (status) {
-    case "pending_substitute_response":
+    case "PENDING_SUBSTITUTE_RESPONSE":
       return "Waiting for substitute";
-    case "pending_primary_approval":
+    case "PENDING_PRIMARY_APPROVAL":
       return "Waiting for primary instructor";
-    case "pending_admin_approval":
+    case "PENDING_ADMIN_APPROVAL":
       return "Ready for your final approval";
-    case "approved":
+    case "APPROVED":
       return "Approved";
-    case "declined_by_substitute":
+    case "DECLINED_BY_SUBSTITUTE":
       return "Declined by substitute";
-    case "rejected_by_primary":
+    case "REJECTED_BY_PRIMARY":
       return "Rejected by primary instructor";
-    case "rejected_by_admin":
+    case "REJECTED_BY_ADMIN":
       return "Rejected by admin";
     default:
       return status;
   }
 }
 
-function markAdminInviteNotificationsRead(inviteId: string) {
-  for (const n of appNotificationStore.listForAdmin()) {
-    if (resolveAdminSubstituteInviteId(n) === inviteId && !n.read) {
-      appNotificationStore.markRead(n.id);
-    }
-  }
-}
-
-function adminCanDecideOnInvite(rec: SubstituteInviteRecord): boolean {
+function adminCanDecideOnInvite(rec: SubstituteInviteResponse): boolean {
   return (
-    rec.status === "pending_admin_approval" ||
-    rec.status === "pending_substitute_response" ||
-    rec.status === "pending_primary_approval"
+    rec.status === "PENDING_ADMIN_APPROVAL" ||
+    rec.status === "PENDING_SUBSTITUTE_RESPONSE" ||
+    rec.status === "PENDING_PRIMARY_APPROVAL"
   );
 }
 
-function readonlyNote(rec: SubstituteInviteRecord): string {
+function readonlyNote(rec: SubstituteInviteResponse): string {
   switch (rec.status) {
-    case "pending_admin_approval":
-    case "pending_substitute_response":
-    case "pending_primary_approval":
+    case "PENDING_ADMIN_APPROVAL":
+    case "PENDING_SUBSTITUTE_RESPONSE":
+    case "PENDING_PRIMARY_APPROVAL":
       return "";
-    case "approved":
+    case "APPROVED":
       return "This substitute cover has been finalized.";
-    case "rejected_by_admin":
+    case "REJECTED_BY_ADMIN":
       return "This request was rejected at the final admin step.";
-    case "declined_by_substitute":
+    case "DECLINED_BY_SUBSTITUTE":
       return "The substitute declined; no admin approval is needed.";
-    case "rejected_by_primary":
+    case "REJECTED_BY_PRIMARY":
       return "The primary instructor did not approve this cover.";
     default:
       return "There is nothing for you to confirm at this step.";
@@ -83,21 +64,40 @@ export default function AdminSubstituteInviteDetailPage() {
   const { t } = useTranslation();
   const { inviteId } = useParams<{ inviteId: string }>();
   const navigate = useNavigate();
-  const [tick, setTick] = useState(0);
-  const bump = useCallback(() => setTick((x) => x + 1), []);
+  const [rec, setRec] = useState<SubstituteInviteResponse | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  const load = useCallback(() => {
+    if (!inviteId) return;
+    setLoading(true);
+    eduhubAdminSubstituteInvites
+      .listAll()
+      .then((rows) => {
+        const found = rows.find((r) => r.id === inviteId);
+        setRec(found);
+        setNotFound(!found);
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [inviteId]);
 
   useEffect(() => {
-    window.addEventListener(APP_NOTIFICATIONS_CHANGE_EVENT, bump);
-    return () => window.removeEventListener(APP_NOTIFICATIONS_CHANGE_EVENT, bump);
-  }, [bump]);
-
-  const rec = useMemo(() => {
-    void tick;
-    if (!inviteId) return undefined;
-    return substituteInviteWorkflowStore.get(inviteId);
-  }, [inviteId, tick]);
+    load();
+  }, [load]);
 
   const goNotifications = () => navigate("/dashboard/admin/notifications");
+
+  const runAction = async (action: () => Promise<SubstituteInviteResponse>, successMessage: string) => {
+    try {
+      await action();
+      toast.success(successMessage);
+      goNotifications();
+    } catch (err: unknown) {
+      toast.error(err instanceof ApiError || err instanceof Error ? err.message : "Something went wrong");
+      load();
+    }
+  };
 
   if (!inviteId) {
     return (
@@ -112,7 +112,7 @@ export default function AdminSubstituteInviteDetailPage() {
     );
   }
 
-  if (!rec) {
+  if (!loading && (notFound || !rec)) {
     return (
       <AdminLayout>
         <div className="container mx-auto max-w-lg px-6 py-10">
@@ -125,9 +125,11 @@ export default function AdminSubstituteInviteDetailPage() {
     );
   }
 
+  if (!rec) return null;
+
   const canAdminDecide = adminCanDecideOnInvite(rec);
-  const isFinalAdminStep = rec.status === "pending_admin_approval";
-  const teachersHref = `/dashboard/admin/teachers?q=${encodeURIComponent(rec.substituteEmailNorm)}`;
+  const isFinalAdminStep = rec.status === "PENDING_ADMIN_APPROVAL";
+  const teachersHref = `/dashboard/admin/teachers?q=${encodeURIComponent(rec.substituteEmail)}`;
   const foot = readonlyNote(rec);
 
   return (
@@ -155,7 +157,7 @@ export default function AdminSubstituteInviteDetailPage() {
           {canAdminDecide
             ? isFinalAdminStep
               ? "Both instructors have agreed. Use the buttons below to give final sign-off."
-              : "The invite is still with instructors. You can still approve or reject this substitute cover below (demo: admin may decide at any time before it is finalized)."
+              : "The invite is still with instructors. You can still approve or reject this substitute cover below."
             : t("admin.substituteCover.detail.descriptionClosed")}
         </p>
 
@@ -179,20 +181,12 @@ export default function AdminSubstituteInviteDetailPage() {
               <Button
                 type="button"
                 className="rounded-full bg-emerald-600 hover:bg-emerald-700"
-                onClick={() => {
-                  const r = substituteInviteWorkflowStore.approveByAdmin(rec.id);
-                  if (!r.ok) {
-                    toast.error("reason" in r ? r.reason : "Could not approve substitute cover");
-                    bump();
-                    return;
-                  }
-                  notifySubstituteCoverFullyApproved(r.record);
-                  notifyInviterSubstituteFinalizedByAdmin(r.record);
-                  markAdminInviteNotificationsRead(rec.id);
-                  toast.success(isFinalAdminStep ? t("admin.substituteCover.toast.finalized") : "Substitute cover approved");
-                  bump();
-                  goNotifications();
-                }}
+                onClick={() =>
+                  runAction(
+                    () => eduhubAdminSubstituteInvites.approve(rec.id),
+                    isFinalAdminStep ? t("admin.substituteCover.toast.finalized") : "Substitute cover approved",
+                  )
+                }
               >
                 {isFinalAdminStep ? t("admin.substituteCover.detail.finalApprove") : t("admin.substituteCover.detail.approveCover")}
               </Button>
@@ -200,19 +194,9 @@ export default function AdminSubstituteInviteDetailPage() {
                 type="button"
                 variant="outline"
                 className="rounded-full border-emerald-300 bg-white hover:bg-emerald-50"
-                onClick={() => {
-                  const r = substituteInviteWorkflowStore.rejectByAdmin(rec.id);
-                  if (!r.ok) {
-                    toast.error("reason" in r ? r.reason : "Could not reject substitute cover");
-                    bump();
-                    return;
-                  }
-                  notifyAdminRejectedSubstituteCover(r.record);
-                  markAdminInviteNotificationsRead(rec.id);
-                  toast.message(t("admin.substituteCover.toast.rejected"));
-                  bump();
-                  goNotifications();
-                }}
+                onClick={() =>
+                  runAction(() => eduhubAdminSubstituteInvites.reject(rec.id), t("admin.substituteCover.toast.rejected"))
+                }
               >
                 Reject
               </Button>

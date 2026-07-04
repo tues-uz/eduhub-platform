@@ -1,19 +1,19 @@
 import { useTranslation } from "react-i18next";
-import type { SubstituteInviteRecord } from "@/features/teacher/data/substituteInviteWorkflowStore";
+import type { SubstituteInviteResponse } from "@/api/eduhubTypes";
 
 export function SubstituteInviteRequestSummary({
   rec,
   showInvitedSubstitute,
   variant = "default",
 }: {
-  rec: SubstituteInviteRecord;
+  rec: SubstituteInviteResponse;
   /** When true, shows the invited substitute email (e.g. admin notifications). */
   showInvitedSubstitute?: boolean;
   /** Tighter spacing for list cards (e.g. admin notifications). */
   variant?: "default" | "compact";
 }) {
   const { t } = useTranslation();
-  const inviterLine = `${rec.primaryInstructorName} · ${rec.primaryInstructorEmailNorm}`;
+  const inviterLine = `${rec.primaryInstructorName} · ${rec.primaryInstructorEmail}`;
   const sessionLine = rec.sessionNote?.trim() || t("common.notAvailable");
   const note = rec.message?.trim();
   const compact = variant === "compact";
@@ -49,7 +49,7 @@ export function SubstituteInviteRequestSummary({
           <p className="text-[11px] font-semibold uppercase tracking-wide text-foreground/50">
             {t("teacher.substituteSummary.invitedSubstitute")}
           </p>
-          <p className="mt-1 text-sm font-medium text-foreground/90">{rec.substituteEmailNorm}</p>
+          <p className="mt-1 text-sm font-medium text-foreground/90">{rec.substituteEmail}</p>
         </div>
       ) : null}
       {note ? (

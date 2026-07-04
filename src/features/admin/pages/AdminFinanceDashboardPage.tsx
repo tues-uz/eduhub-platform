@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import { useEnrollmentInstallmentPayments } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
+import { scheduleMonthOrdinalLabel } from "@/features/enrollment/enrollmentInstallmentPayments";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
 
 const QUICK_ACTIONS = [
@@ -197,7 +198,7 @@ export default function AdminFinanceDashboardPage() {
                   <li key={payment.id} className="px-5 py-3.5">
                     <p className="text-sm font-medium text-slate-900">{payment.studentName}</p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      {payment.courseTitle} · {payment.scheduleMonthLabel}
+                      {payment.courseTitle} · {scheduleMonthOrdinalLabel(payment.scheduleMonth)}
                     </p>
                   </li>
                 ))}

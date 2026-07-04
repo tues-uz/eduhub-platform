@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { eduhubAuth, setAuthTokens } from "@/api/eduhubClient";
-import { saveRegistrationPhones } from "@/features/auth/registrationPhoneStorage";
 import { setSessionUser, useAuthSession } from "@/features/auth/context";
 import type { UserRole } from "@/features/auth/types";
 
@@ -57,15 +56,6 @@ const SignUp = () => {
         latestSchool: formData.latestSchool,
         password: formData.password,
         role: "STUDENT",
-      });
-
-      saveRegistrationPhones(formData.email, {
-        phoneNumber: formData.phoneNumber,
-        parentPhoneNumber: formData.parentPhoneNumber,
-        passportNumber: formData.passportNumber,
-        dateOfBirth: formData.dateOfBirth,
-        birthCity: formData.birthCity,
-        latestSchool: formData.latestSchool,
       });
 
       setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);

@@ -28,11 +28,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthSession } from "@/features/auth/context";
 import {
-  registrationParentPhoneForEmail,
-  registrationPhoneForEmail,
-} from "@/features/auth/registrationPhoneStorage";
-import { eduhubCourses, eduhubSchedule, eduhubUploadFile, eduhubEnrollmentApplications } from "@/api/eduhubClient";
-import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
+  eduhubAuth,
+  eduhubCourses,
+  eduhubSchedule,
+  eduhubUploadFile,
+  eduhubEnrollmentApplications,
+  getAccessToken,
+} from "@/api/eduhubClient";
+import type { CourseResponse, ScheduleProposalResponse, UserResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import { computeDiscountedPrice, readAdminCourseCatalog } from "@/features/admin/utils/adminCourseCatalog";
 import { findActiveSpecialTuitionGrant, SPECIAL_TUITION_GRANTS_CHANGED_EVENT } from "@/features/admin/data/specialTuitionGrantsStore";
@@ -214,10 +217,26 @@ const StudentEnrollmentApplicationPage = () => {
     () => new Set([1]),
   );
   const [viewingScheduleMonth, setViewingScheduleMonth] = useState<TuitionPlanMonths>(1);
-  const [phoneSecondary, setPhoneSecondary] = useState(() =>
-    registrationParentPhoneForEmail(user.email),
-  );
+  const [apiUser, setApiUser] = useState<UserResponse | null>(null);
+  const [phoneSecondary, setPhoneSecondary] = useState("");
+  const [phoneSecondaryTouched, setPhoneSecondaryTouched] = useState(false);
   const [referralCodeInput, setReferralCodeInput] = useState("");
+
+  useEffect(() => {
+    if (!getAccessToken()) return;
+    eduhubAuth
+      .me()
+      .then(setApiUser)
+      .catch(() => {
+        // Leave prefill fields blank if profile fetch fails; user can type manually.
+      });
+  }, []);
+
+  useEffect(() => {
+    if (phoneSecondaryTouched) return;
+    const parentPhone = apiUser?.parentPhoneNumber?.trim();
+    if (parentPhone) setPhoneSecondary(parentPhone);
+  }, [apiUser, phoneSecondaryTouched]);
 
   useEffect(() => {
     const refresh = () => setGrantsTick((n) => n + 1);
@@ -242,8 +261,8 @@ const StudentEnrollmentApplicationPage = () => {
     !specialTuitionGrant && enrollmentRequiresVerificationUploads(paymentMethod);
 
   const primaryPhone = useMemo(
-    () => (user.phoneNumber ?? registrationPhoneForEmail(user.email)).trim(),
-    [user.phoneNumber, user.email],
+    () => (user.phoneNumber ?? apiUser?.phoneNumber ?? "").trim(),
+    [user.phoneNumber, apiUser],
   );
 
   const readonlyProfileClass =
@@ -992,7 +1011,10 @@ const StudentEnrollmentApplicationPage = () => {
                         type="tel"
                         className={inputEditClass}
                         value={phoneSecondary}
-                        onChange={(e) => setPhoneSecondary(e.target.value)}
+                        onChange={(e) => {
+                          setPhoneSecondaryTouched(true);
+                          setPhoneSecondary(e.target.value);
+                        }}
                         autoComplete="tel"
                       />
                     </div>

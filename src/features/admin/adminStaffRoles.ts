@@ -30,22 +30,21 @@ export type StaffRoleConfig = {
   descriptionKey: string;
 };
 
-/** Roles accepted by POST /api/v1/admin/users on the current staging API. */
-export const API_SUPPORTED_CREATE_USER_ROLES = new Set(["ADMIN", "LECTURER", "STUDENT"]);
+/** Roles accepted by POST /api/v1/admin/users. */
+export const API_SUPPORTED_CREATE_USER_ROLES = new Set([
+  "ADMIN",
+  "ADMIN_FINANCE",
+  "ADMIN_CONTENT",
+  "ADMIN_SUPPORT",
+  "ADMIN_ANALYTIC",
+  "LECTURER",
+  "STUDENT",
+]);
 
 export function isApiCreateUserRoleSupported(apiRole: string): boolean {
   return API_SUPPORTED_CREATE_USER_ROLES.has(apiRole.trim().toUpperCase());
 }
 
-export function isStaffRoleConfigCreateSupported(config: StaffRoleConfig): boolean {
-  return isApiCreateUserRoleSupported(config.apiRole);
-}
-
-/** Staff sub-roles stored locally until the API supports them. */
-export function usesDummyStaffUserCreate(apiRole: string): boolean {
-  const role = mapApiRoleToStaffRole(apiRole.trim().toUpperCase());
-  return !!role && role !== "ADMIN" && !isApiCreateUserRoleSupported(apiRole);
-}
 
 export const ADMIN_FINANCE_HOME = "/dashboard/admin/finance";
 export const ADMIN_CONTENT_HOME = "/dashboard/admin/content";

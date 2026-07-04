@@ -93,7 +93,6 @@ type TeacherCourseGradesPanelProps = {
   students: RosterStudentRow[];
   instructorEmail: string;
   instructorName?: string;
-  isSubstituteViewer?: boolean;
   isApiCourse: boolean;
   isLoading?: boolean;
   isError?: boolean;
@@ -217,29 +216,17 @@ function gradeReviewToSummary(reviews: GradeReviewSummary): StudentCourseReviewS
 }
 
 function RosterEmptyState({
-  isSubstituteViewer,
   isApiCourse,
   isLoading,
   isError,
   studentsLength,
 }: {
-  isSubstituteViewer: boolean;
   isApiCourse: boolean;
   isLoading: boolean;
   isError: boolean;
   studentsLength: number;
 }) {
   const { t } = useTranslation();
-  if (isSubstituteViewer) {
-    return (
-      <div className="rounded-xl border border-amber-200/90 bg-amber-50/90 px-4 py-4 text-sm text-amber-950 leading-relaxed">
-        <p className="font-semibold text-amber-950">{t("teacher.grades.empty.substitute")}</p>
-        <p className="mt-2 text-amber-950/90">
-          {t("teacher.grades.empty.substitute")}
-        </p>
-      </div>
-    );
-  }
   if (!isApiCourse) {
     return (
       <p className="text-sm text-foreground/70 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-8 text-center">
@@ -267,7 +254,6 @@ export function TeacherCourseGradesPanel({
   students,
   instructorEmail,
   instructorName,
-  isSubstituteViewer = false,
   isApiCourse,
   isLoading = false,
   isError = false,
@@ -292,7 +278,7 @@ export function TeacherCourseGradesPanel({
   const apiGradesQuery = useQuery({
     queryKey: ["teacher", "course-gradebook", courseId],
     queryFn: () => eduhubCompletion.gradebook(courseId),
-    enabled: isApiCourse && !isSubstituteViewer,
+    enabled: isApiCourse,
   });
 
   const saveApiGradeMutation = useMutation({
@@ -543,7 +529,6 @@ export function TeacherCourseGradesPanel({
   const apiRows = apiGradesQuery.data ?? [];
 
   const tableRows = useMemo((): GradeTableRow[] => {
-    if (isSubstituteViewer) return [];
     if (isApiCourse) {
       return apiRows.map((row) => {
         const draft = drafts[row.studentId] ?? draftFromApiRow(row);
@@ -610,7 +595,6 @@ export function TeacherCourseGradesPanel({
     courseId,
     drafts,
     isApiCourse,
-    isSubstituteViewer,
     plannedSessions,
     publishedCerts,
     reviewsTick,
@@ -620,7 +604,6 @@ export function TeacherCourseGradesPanel({
 
   const rosterGate = (
     <RosterEmptyState
-      isSubstituteViewer={isSubstituteViewer}
       isApiCourse={isApiCourse}
       isLoading={effectiveLoading}
       isError={effectiveError}
@@ -628,7 +611,7 @@ export function TeacherCourseGradesPanel({
     />
   );
 
-  const showTable = !effectiveLoading && !effectiveError && tableRows.length > 0 && !isSubstituteViewer;
+  const showTable = !effectiveLoading && !effectiveError && tableRows.length > 0;
 
   return (
     <div>

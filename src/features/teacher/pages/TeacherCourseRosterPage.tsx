@@ -62,23 +62,14 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { eduhubAttendance, eduhubCourseQuizzes, eduhubCourses, eduhubClassResumes, eduhubSchedule, type QuizResponse } from "@/api/eduhubClient";
+import { eduhubAttendance, eduhubCourseQuizzes, eduhubCourses, eduhubClassResumes, eduhubSchedule, eduhubSubstituteInvites, ApiError, type QuizResponse } from "@/api/eduhubClient";
 import {
   isLocalOnlyQuizId,
   mergeCourseQuizListsWithLocal,
   setLocalCourseQuizPublished,
 } from "@/features/teacher/data/localCourseQuizzesStorage";
-import type { CourseResponse, CourseStatus } from "@/api/eduhubTypes";
+import type { CourseResponse, CourseStatus, SubstituteInviteResponse, SubstituteInviteStatus } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
-import {
-  pushSubstituteInviteNotifications,
-} from "@/features/notifications/appNotificationStore";
-import {
-  substituteInviteWorkflowStore,
-  type SubstituteInviteRecord,
-  type SubstituteInviteStatus,
-} from "@/features/teacher/data/substituteInviteWorkflowStore";
-import { isAdminRegisteredLecturerEmail } from "@/features/teacher/data/knownLecturerEmails";
 import { useAuthSession } from "@/features/auth/context";
 import { TeacherAttendanceSessionPanel } from "@/features/teacher/components/TeacherAttendanceSessionPanel";
 import { TeacherCourseGradesPanel } from "@/features/teacher/components/TeacherCourseGradesPanel";
@@ -144,22 +135,22 @@ function dispatchAttendanceOverviewSessionSync(courseId: string, sessionId: stri
 }
 
 const ACTIVE_SUBSTITUTE_INVITE_STATUSES: SubstituteInviteStatus[] = [
-  "approved",
-  "pending_admin_approval",
-  "pending_primary_approval",
-  "pending_substitute_response",
+  "APPROVED",
+  "PENDING_ADMIN_APPROVAL",
+  "PENDING_PRIMARY_APPROVAL",
+  "PENDING_SUBSTITUTE_RESPONSE",
 ];
 
 function isActiveSubstituteInviteStatus(s: SubstituteInviteStatus): boolean {
   return ACTIVE_SUBSTITUTE_INVITE_STATUSES.includes(s);
 }
 
-function pickHighestSubstituteInvite(invites: SubstituteInviteRecord[]): SubstituteInviteRecord | undefined {
+function pickHighestSubstituteInvite(invites: SubstituteInviteResponse[]): SubstituteInviteResponse | undefined {
   const order: SubstituteInviteStatus[] = [
-    "approved",
-    "pending_admin_approval",
-    "pending_primary_approval",
-    "pending_substitute_response",
+    "APPROVED",
+    "PENDING_ADMIN_APPROVAL",
+    "PENDING_PRIMARY_APPROVAL",
+    "PENDING_SUBSTITUTE_RESPONSE",
   ];
   for (const st of order) {
     const hit = invites.find((r) => r.status === st);
@@ -170,13 +161,13 @@ function pickHighestSubstituteInvite(invites: SubstituteInviteRecord[]): Substit
 
 function substituteCoverChipLabel(status: SubstituteInviteStatus): string {
   switch (status) {
-    case "approved":
+    case "APPROVED":
       return "Substitute cover";
-    case "pending_admin_approval":
+    case "PENDING_ADMIN_APPROVAL":
       return "Cover · admin";
-    case "pending_primary_approval":
+    case "PENDING_PRIMARY_APPROVAL":
       return "Cover · instructor";
-    case "pending_substitute_response":
+    case "PENDING_SUBSTITUTE_RESPONSE":
       return "Cover · substitute";
     default:
       return "Substitute cover";
@@ -184,7 +175,7 @@ function substituteCoverChipLabel(status: SubstituteInviteStatus): string {
 }
 
 function substituteCoverChipClass(status: SubstituteInviteStatus): string {
-  if (status === "approved") {
+  if (status === "APPROVED") {
     return "border-violet-200 bg-violet-50 text-violet-950 ring-1 ring-violet-500/15";
   }
   return "border-amber-200 bg-amber-50 text-amber-950 ring-1 ring-amber-500/15";
@@ -294,18 +285,25 @@ export default function TeacherCourseRosterPage() {
   });
 
   const userEmailNorm = (user?.email ?? "").trim().toLowerCase();
-  const [workflowTick, setWorkflowTick] = useState(0);
-  useEffect(() => {
-    const fn = () => setWorkflowTick((t) => t + 1);
-    window.addEventListener("eduhub.substituteInviteWorkflow.changed", fn);
-    return () => window.removeEventListener("eduhub.substituteInviteWorkflow.changed", fn);
-  }, []);
+
+  const substituteInvitesQuery = useQuery({
+    queryKey: ["teacher", "substituteInvites", "mine"],
+    queryFn: () => eduhubSubstituteInvites.listMine(),
+    enabled: Boolean(courseId) && isUuid(courseId),
+  });
+
+  const courseSubstituteInvites = useMemo(
+    () => (substituteInvitesQuery.data ?? []).filter((r) => r.courseId === courseId),
+    [substituteInvitesQuery.data, courseId],
+  );
+
+  const invalidateSubstituteInvites = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ["teacher", "substituteInvites", "mine"] });
+  }, [queryClient]);
 
   const substituteCanAccess = useMemo(() => {
-    void workflowTick;
-    if (!courseId || !userEmailNorm) return false;
-    return substituteInviteWorkflowStore.isApprovedSubstituteForCourse(courseId, userEmailNorm);
-  }, [courseId, userEmailNorm, workflowTick]);
+    return courseSubstituteInvites.some((r) => r.substituteId === user.id && r.status === "APPROVED");
+  }, [courseSubstituteInvites, user.id]);
 
   const isApiCourseLecturer = Boolean(
     apiCourseQuery.data && apiCourseQuery.data.lecturer?.id === user.id,
@@ -316,16 +314,13 @@ export default function TeacherCourseRosterPage() {
   );
 
   const approvedSubstituteInviteRow = useMemo(() => {
-    void workflowTick;
-    if (!courseId || !userEmailNorm) return undefined;
-    return substituteInviteWorkflowStore.findApprovedInviteAsSubstitute(courseId, userEmailNorm);
-  }, [courseId, userEmailNorm, workflowTick]);
+    return courseSubstituteInvites.find((r) => r.substituteId === user.id && r.status === "APPROVED");
+  }, [courseSubstituteInvites, user.id]);
 
   const approvedCoverAsPrimaryRow = useMemo(() => {
-    void workflowTick;
-    if (!courseId || !userEmailNorm || !isApiCourseLecturer) return undefined;
-    return substituteInviteWorkflowStore.findApprovedInviteAsPrimary(courseId, userEmailNorm);
-  }, [courseId, userEmailNorm, workflowTick, isApiCourseLecturer]);
+    if (!isApiCourseLecturer) return undefined;
+    return courseSubstituteInvites.find((r) => r.primaryInstructorId === user.id && r.status === "APPROVED");
+  }, [courseSubstituteInvites, user.id, isApiCourseLecturer]);
 
   const courseLeadDisplayName = useMemo(() => {
     const apiName = apiCourseQuery.data?.lecturer?.fullName?.trim();
@@ -365,7 +360,7 @@ export default function TeacherCourseRosterPage() {
       Boolean(courseId) &&
       isUuid(courseId) &&
       apiCourseQuery.isSuccess &&
-      isApiCourseLecturer,
+      (isApiCourseLecturer || substituteCanAccess),
   });
 
   const courseQuizzesQuery = useQuery({
@@ -473,23 +468,20 @@ export default function TeacherCourseRosterPage() {
   }, [scheduleProposalQuery.data, scheduleSourceCourse, courseId]);
 
   const scheduleSubstituteCoverage = useMemo(() => {
-    void workflowTick;
     const empty = {
-      wholeClass: [] as SubstituteInviteRecord[],
-      bySlotIndex: new Map<number, SubstituteInviteRecord[]>(),
+      wholeClass: [] as SubstituteInviteResponse[],
+      bySlotIndex: new Map<number, SubstituteInviteResponse[]>(),
     };
     if (!courseId) return empty;
 
-    const rows = substituteInviteWorkflowStore
-      .listAll()
-      .filter((r) => r.courseId === courseId && isActiveSubstituteInviteStatus(r.status));
+    const rows = courseSubstituteInvites.filter((r) => isActiveSubstituteInviteStatus(r.status));
 
     const wholeClass = rows.filter((r) => !r.sessionNote?.trim());
     const keyed = rows.filter((r) => r.sessionNote?.trim());
-    const bySlotIndex = new Map<number, SubstituteInviteRecord[]>();
+    const bySlotIndex = new Map<number, SubstituteInviteResponse[]>();
     const slots = rosterScheduleView.slots;
     for (const inv of keyed) {
-      const note = inv.sessionNote.trim();
+      const note = inv.sessionNote!.trim();
       slots.forEach((slot, i) => {
         if (formatClassMeetingSlotLabel(slot, i).trim() === note) {
           const arr = bySlotIndex.get(i) ?? [];
@@ -499,7 +491,7 @@ export default function TeacherCourseRosterPage() {
       });
     }
     return { wholeClass, bySlotIndex };
-  }, [courseId, workflowTick, rosterScheduleView.slots]);
+  }, [courseId, courseSubstituteInvites, rosterScheduleView.slots]);
 
   const substituteInviteForScheduleRow = useCallback(
     (rowIndex: number) => {
@@ -514,18 +506,12 @@ export default function TeacherCourseRosterPage() {
   );
 
   /** Substitute viewers only see their own cover row(s), not the full catalog term. */
-  const substituteViewerSchedule = useMemo((): null | { kind: "empty" } | { kind: "whole"; invite: SubstituteInviteRecord } | { kind: "rows"; rows: { index: number; slot: ClassMeetingSlot }[] } => {
+  const substituteViewerSchedule = useMemo((): null | { kind: "empty" } | { kind: "whole"; invite: SubstituteInviteResponse } | { kind: "rows"; rows: { index: number; slot: ClassMeetingSlot }[] } => {
     if (!isSubstituteViewer) return null;
-    void workflowTick;
     if (!courseId || !userEmailNorm) return { kind: "empty" };
-    const invites = substituteInviteWorkflowStore
-      .listAll()
-      .filter(
-        (r) =>
-          r.courseId === courseId &&
-          r.substituteEmailNorm === userEmailNorm &&
-          isActiveSubstituteInviteStatus(r.status),
-      );
+    const invites = courseSubstituteInvites.filter(
+      (r) => r.substituteId === user.id && isActiveSubstituteInviteStatus(r.status),
+    );
     if (!invites.length) return { kind: "empty" };
 
     const sessionInvites = invites.filter(
@@ -562,7 +548,7 @@ export default function TeacherCourseRosterPage() {
       .map(([index, slot]) => ({ index, slot }));
     if (!rows.length) return { kind: "empty" };
     return { kind: "rows", rows };
-  }, [isSubstituteViewer, courseId, userEmailNorm, workflowTick, rosterScheduleView.slots]);
+  }, [isSubstituteViewer, courseId, userEmailNorm, courseSubstituteInvites, user.id, rosterScheduleView.slots]);
 
   /** Prefill attendance QR meeting name for substitutes from their cover row on the schedule tab. */
   const attendanceSuggestedMeetingName = useMemo(() => {
@@ -774,26 +760,17 @@ export default function TeacherCourseRosterPage() {
   };
 
   const inviterEmailNorm = user?.email?.trim().toLowerCase() ?? "";
+  const [submittingSubstituteInvite, setSubmittingSubstituteInvite] = useState(false);
 
-  const handleSubmitSubstituteInvite = () => {
-    if (!courseMeta) return;
+  const handleSubmitSubstituteInvite = async () => {
+    if (!courseMeta || !isUuid(courseMeta.id)) return;
     const email = substituteEmail.trim();
-    if (!inviterEmailNorm) {
-      toast.error("Your account needs an email to send this invite.");
-      return;
-    }
     if (!email) {
       toast.error("Enter the substitute lecturer's email.");
       return;
     }
     if (email.toLowerCase() === inviterEmailNorm) {
       toast.error("Use another instructor's email — not your own.");
-      return;
-    }
-    if (!isAdminRegisteredLecturerEmail(email)) {
-      toast.error("That email is not on the admin lecturer list (demo).", {
-        description: "Ask your admin to register the lecturer (Add user role), then invite using that work email.",
-      });
       return;
     }
 
@@ -818,24 +795,27 @@ export default function TeacherCourseRosterPage() {
       }
     }
 
-    const record = substituteInviteWorkflowStore.create({
-      courseId: courseMeta.id,
-      courseTitle: courseMeta.title,
-      sessionNote: sessionNoteFromSchedule,
-      sessionSlotKey: sessionSlotKeyToSave,
-      message: substituteMessage.trim(),
-      primaryInstructorName: user.name?.trim() || "Instructor",
-      primaryInstructorEmailNorm: inviterEmailNorm,
-      substituteEmailNorm: email.toLowerCase(),
-    });
-    pushSubstituteInviteNotifications(record);
-    toast.success("Substitute invite recorded", {
-      description: "The substitute must accept, then you approve. Check instructor notifications (demo).",
-    });
-    setSubstituteOpen(false);
-    setSubstituteEmail("");
-    setSubstituteSessionSlotKey("");
-    setSubstituteMessage("");
+    setSubmittingSubstituteInvite(true);
+    try {
+      await eduhubSubstituteInvites.create(courseMeta.id, {
+        substituteEmail: email,
+        sessionNote: sessionNoteFromSchedule || undefined,
+        sessionSlotKey: sessionSlotKeyToSave,
+        message: substituteMessage.trim() || undefined,
+      });
+      invalidateSubstituteInvites();
+      toast.success("Substitute invite sent", {
+        description: "The substitute must accept, then you confirm, then admin gives final approval.",
+      });
+      setSubstituteOpen(false);
+      setSubstituteEmail("");
+      setSubstituteSessionSlotKey("");
+      setSubstituteMessage("");
+    } catch (err: unknown) {
+      toast.error(err instanceof ApiError || err instanceof Error ? err.message : "Could not send invite");
+    } finally {
+      setSubmittingSubstituteInvite(false);
+    }
   };
 
   return (
@@ -985,7 +965,7 @@ export default function TeacherCourseRosterPage() {
                     {!isSubstituteViewer && approvedCoverAsPrimaryRow ? (
                       <div className="rounded-xl border border-emerald-200/90 bg-emerald-50/90 px-4 py-3 text-sm text-emerald-950 leading-relaxed">
                         <span className="font-semibold">You are the course lead.</span> Approved substitute{" "}
-                        <span className="font-mono font-medium">{approvedCoverAsPrimaryRow.substituteEmailNorm}</span>{" "}
+                        <span className="font-mono font-medium">{approvedCoverAsPrimaryRow.substituteEmail}</span>{" "}
                         has demo access to this class page for resumes and local attendance. The server enrollment list
                         stays course-lead only until the API supports substitutes. Catalog-only actions remain yours.
                       </div>
@@ -1010,7 +990,7 @@ export default function TeacherCourseRosterPage() {
                         </div>
                         <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">{courseMeta.title}</h1>
                       </div>
-                      {!isSubstituteViewer ? (
+                      {!isSubstituteViewer && isUuid(courseId) ? (
                         <Button
                           type="button"
                           variant="outline"
@@ -1021,11 +1001,10 @@ export default function TeacherCourseRosterPage() {
                       ) : null}
                     </div>
 
-                    {!isSubstituteViewer ? (
+                    {!isSubstituteViewer && isUuid(courseId) ? (
                       <p className="text-xs text-foreground/55 leading-relaxed sm:max-w-2xl">
-                        Covers a session when you&apos;re unavailable. Enter the Substitute&apos;s{" "}
-                        <span className="font-medium text-foreground/70">admin-registered lecturer email</span>. Demo:
-                        in-app notifications only.
+                        Covers a session when you&apos;re unavailable. Enter the substitute&apos;s{" "}
+                        <span className="font-medium text-foreground/70">teacher account email</span>.
                       </p>
                     ) : null}
                   </div>
@@ -1099,16 +1078,6 @@ export default function TeacherCourseRosterPage() {
                     <p className="text-sm text-foreground/70 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-8 text-center">
                       This class is stored only in your browser. Connect it to the API to load enrolled students here.
                     </p>
-                  ) : isSubstituteViewer ? (
-                    <div className="rounded-xl border border-amber-200/90 bg-amber-50/90 px-4 py-4 text-sm text-amber-950 leading-relaxed">
-                      <p className="font-semibold text-amber-950">Enrollment list is not loaded for substitutes (API).</p>
-                      <p className="mt-2 text-amber-950/90">
-                        The server only returns <span className="font-medium">/courses/…/students</span> for the catalog
-                        course lead. Your access here is from the approved substitute workflow (demo). Ask the course lead
-                        for a roster export, or use attendance below with names you already know, until the backend grants
-                        cover instructors roster read.
-                      </p>
-                    </div>
                   ) : studentsQuery.isLoading ? (
                     <p className="text-sm text-foreground/60">{t("teacher.roster.enrolled.loading")}</p>
                   ) : studentsQuery.isError ? (
@@ -1286,7 +1255,7 @@ export default function TeacherCourseRosterPage() {
                           </p>
                           <div className="mt-4 flex flex-wrap items-center gap-2">
                             <span className="font-mono text-xs font-medium text-sky-950 break-all">
-                              {substituteViewerSchedule.invite.substituteEmailNorm}
+                              {substituteViewerSchedule.invite.substituteEmail}
                             </span>
                             <span
                               className={`inline-flex max-w-full shrink-0 items-center truncate rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${substituteCoverChipClass(substituteViewerSchedule.invite.status)}`}
@@ -1336,7 +1305,7 @@ export default function TeacherCourseRosterPage() {
                                               className="font-mono text-xs font-medium text-foreground break-all"
                                               title="Your work email on this cover"
                                             >
-                                              {inv.substituteEmailNorm}
+                                              {inv.substituteEmail}
                                             </span>
                                             <span
                                               className={`inline-flex w-fit max-w-full shrink-0 items-center truncate rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${substituteCoverChipClass(inv.status)}`}
@@ -1419,7 +1388,7 @@ export default function TeacherCourseRosterPage() {
                                           className="font-mono text-xs font-medium text-foreground break-all"
                                           title="Invited substitute work email"
                                         >
-                                          {inv.substituteEmailNorm}
+                                          {inv.substituteEmail}
                                         </span>
                                         <span
                                           className={`inline-flex w-fit max-w-full shrink-0 items-center truncate rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${substituteCoverChipClass(inv.status)}`}
@@ -1811,7 +1780,6 @@ export default function TeacherCourseRosterPage() {
                     students={studentsQuery.data ?? []}
                     instructorEmail={user.email}
                     instructorName={courseLeadDisplayName}
-                    isSubstituteViewer={isSubstituteViewer}
                     isApiCourse={isUuid(courseId)}
                     isLoading={studentsQuery.isLoading}
                     isError={studentsQuery.isError}
@@ -1864,15 +1832,6 @@ export default function TeacherCourseRosterPage() {
                       <p className="text-sm text-foreground/70 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-8 text-center">
                         Connect this class to the API to align attendance tracking with enrolled students.
                       </p>
-                    ) : isSubstituteViewer ? (
-                      <div className="rounded-xl border border-amber-200/90 bg-amber-50/90 px-4 py-4 text-sm text-amber-950 leading-relaxed">
-                        <p className="font-semibold text-amber-950">Attendance overview needs the server roster.</p>
-                        <p className="mt-2 text-amber-950/90">
-                          That roster is only returned for the course lead today, so this table cannot load while you are
-                          signed in as substitute. The QR check-in section above still works; match students manually until
-                          the API supports substitute roster access.
-                        </p>
-                      </div>
                     ) : studentsQuery.isLoading ? (
                       <p className="text-sm text-foreground/60">Loading roster for attendance table…</p>
                     ) : studentsQuery.isError ? (

@@ -1,4 +1,3 @@
-import { adminEnrollmentPaidMonthsStore } from "@/features/admin/data/adminEnrollmentPaidMonthsStore";
 import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
 import {
   buildScheduleMonthTabs,
@@ -17,6 +16,17 @@ import {
   tuitionPartsForSchedule,
   type TuitionPlanMonths,
 } from "@/features/enrollment/enrollmentTuitionThirds";
+
+const SCHEDULE_MONTH_ORDINAL_LABELS: Record<TuitionPlanMonths, string> = {
+  1: "First month",
+  2: "Second month",
+  3: "Third month",
+};
+
+/** Fallback label from the schedule month number alone (no live class schedule available). */
+export function scheduleMonthOrdinalLabel(month: TuitionPlanMonths): string {
+  return SCHEDULE_MONTH_ORDINAL_LABELS[month];
+}
 
 export type PayableScheduleMonth = {
   month: TuitionPlanMonths;
@@ -100,43 +110,27 @@ export function scheduleMonthProgressLabel(
   return `${paidCount} of ${total} schedule months paid`;
 }
 
-export function approveInstallmentPayment(
+export async function approveInstallmentPayment(
   paymentId: string,
   reviewedByCode?: string,
-): EnrollmentInstallmentPayment | null {
+): Promise<EnrollmentInstallmentPayment | null> {
   const payment = enrollmentInstallmentPaymentStore.getSnapshot().find((p) => p.id === paymentId);
   if (!payment || payment.status !== "PENDING") return null;
-
-  const updated = enrollmentInstallmentPaymentStore.update(paymentId, {
-    status: "APPROVED",
-    reviewedAt: new Date().toISOString(),
-    reviewedByCode,
+  return enrollmentInstallmentPaymentStore.approve(paymentId, payment.enrollmentApplicationId, {
+    adminActionCode: reviewedByCode,
   });
-  if (!updated) return null;
-
-  const existing =
-    adminEnrollmentPaidMonthsStore.get(payment.enrollmentApplicationId) ??
-    new Set<TuitionPlanMonths>([1]);
-  const next = new Set(existing);
-  next.add(payment.scheduleMonth);
-  adminEnrollmentPaidMonthsStore.set(payment.enrollmentApplicationId, next, {
-    courseId: payment.courseId,
-    studentEmailNorm: payment.studentEmailNorm,
-  });
-
-  return updated;
 }
 
-export function rejectInstallmentPayment(
+export async function rejectInstallmentPayment(
   paymentId: string,
   adminNote?: string,
   reviewedByCode?: string,
-): EnrollmentInstallmentPayment | null {
-  return enrollmentInstallmentPaymentStore.update(paymentId, {
-    status: "REJECTED",
-    reviewedAt: new Date().toISOString(),
+): Promise<EnrollmentInstallmentPayment | null> {
+  const payment = enrollmentInstallmentPaymentStore.getSnapshot().find((p) => p.id === paymentId);
+  if (!payment) return null;
+  return enrollmentInstallmentPaymentStore.reject(paymentId, payment.enrollmentApplicationId, {
     adminNote: adminNote?.trim() || undefined,
-    reviewedByCode,
+    adminActionCode: reviewedByCode,
   });
 }
 

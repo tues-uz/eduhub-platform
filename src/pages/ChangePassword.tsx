@@ -10,7 +10,6 @@ import { eduhubAuth, setAuthTokens } from "@/api/eduhubClient";
 import { resolveAvatarFromAuthResponse, setSessionUser, useAuthSession } from "@/features/auth/context";
 import { resolveInstructorCategory } from "@/features/teacher/resolveInstructorCategory";
 import { mapApiRoleToSession } from "@/features/admin/adminStaffRoles";
-import { dummyStaffUsersStore } from "@/features/admin/data/dummyStaffUsersStore";
 import { dashboardHomeByRole } from "@/app/routes";
 
 const ChangePassword = () => {
@@ -48,32 +47,6 @@ const ChangePassword = () => {
 
     setIsLoading(true);
     try {
-      const dummyStaff = dummyStaffUsersStore.findByEmail(sessionUser.email);
-      if (dummyStaff) {
-        const ok = dummyStaffUsersStore.updatePassword(sessionUser.email, currentPassword, newPassword);
-        if (!ok) {
-          setError(t("auth.changePassword.changeFailed"));
-          return;
-        }
-        const { appRole: role, staffRole } = mapApiRoleToSession(dummyStaff.apiRole);
-        setSessionUser({
-          id: dummyStaff.id,
-          name: dummyStaff.fullName,
-          email: dummyStaff.email,
-          role,
-          staffRole,
-          phoneNumber: dummyStaff.phoneNumber,
-          adminCode: dummyStaff.adminCode,
-        });
-        refreshUser();
-        toast({
-          title: t("auth.changePassword.toastTitle"),
-          description: t("auth.changePassword.toastDescription"),
-        });
-        navigate(dashboardHomeByRole(role, staffRole));
-        return;
-      }
-
       const res = await eduhubAuth.changePassword({
         currentPassword,
         newPassword,

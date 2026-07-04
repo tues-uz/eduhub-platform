@@ -695,3 +695,79 @@ export interface CategoryResponse {
   name: string;
 }
 
+export type SubstituteInviteStatus =
+  | "PENDING_SUBSTITUTE_RESPONSE"
+  | "PENDING_PRIMARY_APPROVAL"
+  | "PENDING_ADMIN_APPROVAL"
+  | "APPROVED"
+  | "DECLINED_BY_SUBSTITUTE"
+  | "REJECTED_BY_PRIMARY"
+  | "REJECTED_BY_ADMIN";
+
+export interface SubstituteInviteResponse {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  sessionSlotKey?: string;
+  sessionNote?: string;
+  message?: string;
+  primaryInstructorId: string;
+  primaryInstructorName: string;
+  primaryInstructorEmail: string;
+  substituteId: string;
+  substituteName: string;
+  substituteEmail: string;
+  status: SubstituteInviteStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubstituteInviteCreateRequest {
+  substituteEmail: string;
+  sessionSlotKey?: string;
+  sessionNote?: string;
+  message?: string;
+}
+
+export type InstallmentPaymentStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export interface InstallmentPaymentResponse {
+  id: string;
+  enrollmentApplicationId: string;
+  courseId: string;
+  courseTitle: string;
+  studentEmailNorm: string;
+  studentName: string;
+  scheduleMonth: 1 | 2 | 3;
+  amount: number;
+  currency?: string;
+  paymentMethod: EnrollmentPaymentMethod;
+  paymentProofUrl?: string;
+  status: InstallmentPaymentStatus;
+  submittedAt: string;
+  reviewedAt?: string;
+  adminNote?: string;
+  reviewedByCode?: string;
+  reviewedByName?: string;
+}
+
+export interface InstallmentPaymentSubmitRequest {
+  scheduleMonth: 1 | 2 | 3;
+  amount: number;
+  currency?: string;
+  paymentMethod: EnrollmentPaymentMethod;
+  paymentProofUrl?: string;
+}
+
+export interface InstallmentPaymentReviewRequest {
+  adminNote?: string;
+  adminActionCode?: string;
+}
+
+export interface InstallmentPaymentManualRequest {
+  scheduleMonth: 1 | 2 | 3;
+  amount: number;
+  adminNote?: string;
+  adminActionCode?: string;
+}
+

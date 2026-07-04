@@ -1,125 +1,28 @@
-import { useSyncExternalStore } from "react";
+import { eduhubAdminInstallmentPayments } from "@/api/eduhubClient";
+import type { InstallmentPaymentManualRequest } from "@/api/eduhubTypes";
+import {
+  ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED,
+  enrollmentInstallmentPaymentStore,
+} from "@/features/enrollment/enrollmentInstallmentPaymentStore";
 import type { TuitionPlanMonths } from "@/features/enrollment/enrollmentTuitionThirds";
 
-const STORAGE_KEY = "eduhub.adminEnrollmentPaidMonths.v1";
-export const ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED = "eduhub-enrollment-paid-months-changed";
-
-export type AdminEnrollmentPaidMonthsRecord = {
-  applicationId: string;
-  courseId: string;
-  studentEmailNorm: string;
-  paidMonths: TuitionPlanMonths[];
-  updatedAt: string;
-};
-
-type Listener = () => void;
-const listeners = new Set<Listener>();
-
-function emit() {
-  listeners.forEach((l) => l());
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED));
-  }
-}
-
-let snapshot: Record<string, AdminEnrollmentPaidMonthsRecord> = {};
-
-function parseStored(raw: string | null): Record<string, AdminEnrollmentPaidMonthsRecord> {
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object") return {};
-    const out: Record<string, AdminEnrollmentPaidMonthsRecord> = {};
-    for (const [k, v] of Object.entries(parsed)) {
-      if (!v || typeof v !== "object") continue;
-      const row = v as Record<string, unknown>;
-      const paidMonths = Array.isArray(row.paidMonths)
-        ? row.paidMonths.filter((m): m is TuitionPlanMonths => m === 1 || m === 2 || m === 3)
-        : [];
-      if (!paidMonths.length) continue;
-      out[k] = {
-        applicationId: typeof row.applicationId === "string" ? row.applicationId : k,
-        courseId: typeof row.courseId === "string" ? row.courseId : "",
-        studentEmailNorm: typeof row.studentEmailNorm === "string" ? row.studentEmailNorm : "",
-        paidMonths,
-        updatedAt: typeof row.updatedAt === "string" ? row.updatedAt : new Date().toISOString(),
-      };
-    }
-    return out;
-  } catch {
-    return {};
-  }
-}
-
-function persist() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-  } catch {
-    // quota
-  }
-}
-
-function hydrate() {
-  snapshot = parseStored(
-    typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null,
-  );
-}
-
-hydrate();
+/** Paid-months overrides are now derived from real, backend-approved installment payments. */
+export const ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED = ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED;
 
 export const adminEnrollmentPaidMonthsStore = {
-  subscribe(fn: Listener): () => void {
-    listeners.add(fn);
-    return () => listeners.delete(fn);
-  },
-
-  getSnapshot(): Record<string, AdminEnrollmentPaidMonthsRecord> {
-    return snapshot;
-  },
-
+  /** Schedule months with an approved (real, reviewed) payment on file for this application. */
   get(applicationId: string): ReadonlySet<TuitionPlanMonths> | null {
-    const row = snapshot[applicationId];
-    if (!row?.paidMonths.length) return null;
-    return new Set(row.paidMonths);
+    const approvedMonths = enrollmentInstallmentPaymentStore
+      .listForApplication(applicationId)
+      .filter((p) => p.status === "APPROVED")
+      .map((p) => p.scheduleMonth);
+    if (!approvedMonths.length) return null;
+    return new Set(approvedMonths);
   },
 
-  set(
-    applicationId: string,
-    paidMonths: Iterable<TuitionPlanMonths>,
-    meta: { courseId: string; studentEmailNorm: string },
-  ): void {
-    const months = [...new Set(paidMonths)].filter((m) => m === 1 || m === 2 || m === 3).sort();
-    if (!months.length) {
-      const { [applicationId]: _, ...rest } = snapshot;
-      snapshot = rest;
-    } else {
-      snapshot = {
-        ...snapshot,
-        [applicationId]: {
-          applicationId,
-          courseId: meta.courseId,
-          studentEmailNorm: meta.studentEmailNorm,
-          paidMonths: months,
-          updatedAt: new Date().toISOString(),
-        },
-      };
-    }
-    persist();
-    emit();
-  },
-
-  remove(applicationId: string): void {
-    const { [applicationId]: _, ...rest } = snapshot;
-    snapshot = rest;
-    persist();
-    emit();
+  /** Admin records a payment collected outside the app (e.g. cash verified in person). Creates an already-approved record. */
+  async recordManual(applicationId: string, body: InstallmentPaymentManualRequest): Promise<void> {
+    await eduhubAdminInstallmentPayments.manualRecord(applicationId, body);
+    await enrollmentInstallmentPaymentStore.refreshApplication(applicationId);
   },
 };
-
-export function useAdminEnrollmentPaidMonthsMap(): Record<string, AdminEnrollmentPaidMonthsRecord> {
-  return useSyncExternalStore(
-    adminEnrollmentPaidMonthsStore.subscribe,
-    adminEnrollmentPaidMonthsStore.getSnapshot,
-    adminEnrollmentPaidMonthsStore.getSnapshot,
-  );
-}

@@ -9,7 +9,10 @@ import {
 } from "@/features/courses/classSchedulePreview";
 import { enrollmentInstallmentPaymentStore } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
 import { resolvePaidTuitionMonths } from "@/features/enrollment/enrollmentPaidMonths";
-import { tuitionAmountForScheduleMonth } from "@/features/enrollment/enrollmentInstallmentPayments";
+import {
+  scheduleMonthOrdinalLabel,
+  tuitionAmountForScheduleMonth,
+} from "@/features/enrollment/enrollmentInstallmentPayments";
 import {
   paidTuitionMonthsFromPaymentFields,
   type TuitionPlanMonths,
@@ -123,7 +126,7 @@ export function buildEnrollmentTablePaymentSummary(
   if (pendingInstallmentCount > 0) {
     const label =
       pending.length === 1
-        ? `${pending[0]!.scheduleMonthLabel} awaiting review`
+        ? `${scheduleMonthOrdinalLabel(pending[0]!.scheduleMonth)} awaiting review`
         : `${pendingInstallmentCount} follow-up payments awaiting review`;
     sublines.push(label);
   } else if (hasOutstandingTuition) {

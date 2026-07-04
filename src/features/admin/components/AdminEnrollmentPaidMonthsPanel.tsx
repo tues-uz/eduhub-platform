@@ -10,15 +10,24 @@ import { useTranslation } from "react-i18next";
 import {
   buildScheduleMonthTabs,
   orderSessionSlotsChronologically,
+  scheduleMonthSessionCounts,
   scheduleTabToPaymentMonths,
 } from "@/features/courses/classSchedulePreview";
 import { Link } from "react-router-dom";
 import { adminEnrollmentPaidMonthsStore } from "@/features/admin/data/adminEnrollmentPaidMonthsStore";
-import { enrollmentInstallmentPaymentStore } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
+import {
+  AdminActionCodeField,
+  useAdminActionCodeState,
+} from "@/features/admin/components/AdminActionCodeField";
+import { validateAdminActionCodeOrThrow } from "@/features/admin/adminStaffCode";
+import {
+  useInstallmentPaymentsForApplication,
+} from "@/features/enrollment/enrollmentInstallmentPaymentStore";
 import {
   paidMonthsSummary,
   resolvePaidTuitionMonths,
 } from "@/features/enrollment/enrollmentPaidMonths";
+import { tuitionAmountForScheduleMonth } from "@/features/enrollment/enrollmentInstallmentPayments";
 import type { TuitionPlanMonths } from "@/features/enrollment/enrollmentTuitionThirds";
 import { cn } from "@/lib/utils";
 
@@ -29,15 +38,18 @@ type Props = {
 export function AdminEnrollmentPaidMonthsPanel({ record }: Props) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(Boolean(record.courseId && isUuid(record.courseId)));
-  const [paidMonths, setPaidMonths] = useState<Set<TuitionPlanMonths>>(() => new Set());
   const [scheduleTabs, setScheduleTabs] = useState<ReturnType<typeof buildScheduleMonthTabs>>([]);
+  const [listedTuition, setListedTuition] = useState<number | undefined>();
+  const [currency, setCurrency] = useState(record.priceCurrency ?? "USD");
+  const [adminActionCode, setAdminActionCode] = useAdminActionCodeState();
+  const [busyMonth, setBusyMonth] = useState<TuitionPlanMonths | null>(null);
+
+  const installments = useInstallmentPaymentsForApplication(record.id);
 
   useEffect(() => {
     if (!record.courseId || !isUuid(record.courseId)) {
       setScheduleTabs([]);
       setLoading(false);
-      const fallback = resolvePaidTuitionMonths(record, [], record.id);
-      setPaidMonths(fallback ?? new Set());
       return;
     }
 
@@ -51,17 +63,13 @@ export function AdminEnrollmentPaidMonthsPanel({ record }: Props) {
         if (cancelled) return;
         const slots = buildCourseScheduleSlots(course, proposal, record.courseId);
         const ordered = orderSessionSlotsChronologically(slots);
-        const tabs = buildScheduleMonthTabs(ordered);
-        setScheduleTabs(tabs);
-        const resolved = resolvePaidTuitionMonths(record, ordered, record.id);
-        setPaidMonths(resolved ?? new Set());
+        setScheduleTabs(buildScheduleMonthTabs(ordered));
+        const amt = course.pricing?.discountedAmount ?? course.pricing?.amount;
+        setListedTuition(amt != null && amt > 0 ? amt : undefined);
+        setCurrency(course.pricing?.currency ?? record.priceCurrency ?? "USD");
       })
       .catch(() => {
-        if (!cancelled) {
-          const resolved = resolvePaidTuitionMonths(record, [], record.id);
-          setPaidMonths(resolved ?? new Set());
-          setScheduleTabs([]);
-        }
+        if (!cancelled) setScheduleTabs([]);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -72,36 +80,56 @@ export function AdminEnrollmentPaidMonthsPanel({ record }: Props) {
     };
   }, [record]);
 
-  useEffect(() => {
-    const sync = () => {
-      const override = adminEnrollmentPaidMonthsStore.get(record.id);
-      if (override) setPaidMonths(new Set(override));
-    };
-    window.addEventListener("eduhub-enrollment-paid-months-changed", sync);
-    return () => window.removeEventListener("eduhub-enrollment-paid-months-changed", sync);
-  }, [record.id]);
+  const orderedSlots = useMemo(
+    () => scheduleTabs.flatMap((tab) => tab.slots),
+    [scheduleTabs],
+  );
+  const scheduleMonthCounts = useMemo(
+    () => scheduleMonthSessionCounts(orderedSlots),
+    [orderedSlots],
+  );
+
+  const paidMonths = useMemo(
+    () => resolvePaidTuitionMonths(record, orderedSlots, record.id) ?? new Set<TuitionPlanMonths>(),
+    [record, orderedSlots],
+  );
 
   const hasPartialPlan = useMemo(
     () => scheduleTabs.length > 0 && paidMonths.size < scheduleTabs.length,
     [paidMonths.size, scheduleTabs.length],
   );
 
-  const toggleMonth = (month: TuitionPlanMonths, checked: boolean) => {
-    const next = new Set(paidMonths);
-    if (checked) next.add(month);
-    else next.delete(month);
-    if (!next.size) {
-      toast.error(t("admin.components.enrollmentPaidMonths.toast.minOneMonth"));
+  const recordPaid = async (month: TuitionPlanMonths) => {
+    let code: string;
+    try {
+      code = validateAdminActionCodeOrThrow(adminActionCode);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Enter your admin code");
       return;
     }
-    setPaidMonths(next);
-    adminEnrollmentPaidMonthsStore.set(record.id, next, {
-      courseId: record.courseId,
-      studentEmailNorm: record.applicantEmailNorm,
-    });
-    toast.success(checked ? t("admin.components.enrollmentPaidMonths.toast.markedPaid") : "Schedule month marked unpaid", {
-      description: "Attendance QR access updates for this student immediately.",
-    });
+    const amount = listedTuition
+      ? tuitionAmountForScheduleMonth(listedTuition, month, scheduleMonthCounts)
+      : null;
+    if (!amount || amount <= 0) {
+      toast.error("Course tuition amount is unavailable — cannot record a payment.");
+      return;
+    }
+    setBusyMonth(month);
+    try {
+      await adminEnrollmentPaidMonthsStore.recordManual(record.id, {
+        scheduleMonth: month,
+        amount,
+        adminNote: "Recorded manually by admin (verified outside the app).",
+        adminActionCode: code,
+      });
+      toast.success(t("admin.components.enrollmentPaidMonths.toast.markedPaid"), {
+        description: "Attendance QR access updates for this student immediately.",
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not record payment");
+    } finally {
+      setBusyMonth(null);
+    }
   };
 
   if (record.status !== "APPROVED") return null;
@@ -121,7 +149,7 @@ export function AdminEnrollmentPaidMonthsPanel({ record }: Props) {
           >
             Schedule month payments
           </Link>{" "}
-          — or toggle months manually here after verifying a transfer.
+          — or record a payment collected outside the app below (e.g. cash verified in person).
         </p>
       </div>
 
@@ -136,54 +164,71 @@ export function AdminEnrollmentPaidMonthsPanel({ record }: Props) {
           published.
         </p>
       ) : (
-        <div className="space-y-2">
-          {scheduleTabs.map((tab) => {
-            const month = scheduleTabToPaymentMonths(tab.value);
-            const checked = paidMonths.has(month);
-            const pending = enrollmentInstallmentPaymentStore.findPendingForMonth(record.id, month);
-            const checkboxId = `paid-month-${record.id}-${tab.value}`;
-            return (
-              <label
-                key={tab.value}
-                htmlFor={checkboxId}
-                className={cn(
-                  "flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors",
-                  checked
-                    ? "border-emerald-200 bg-emerald-50/60"
-                    : "border-amber-200 bg-amber-50/40",
-                )}
-              >
-                <Checkbox
-                  id={checkboxId}
-                  checked={checked}
-                  onCheckedChange={(value) => toggleMonth(month, value === true)}
-                  className="mt-0.5"
-                />
-                <span className="min-w-0 flex-1 text-sm">
-                  <span className="font-medium text-slate-900">{tab.tabLabel}</span>
-                  {tab.monthLine ? (
-                    <span className="mt-0.5 block text-xs text-slate-500">{tab.monthLine}</span>
-                  ) : null}
-                  <span className="mt-0.5 block text-[11px] font-medium text-slate-500">
-                    {tab.slots.length} session{tab.slots.length === 1 ? "" : "s"}
-                    {checked
-                      ? " · QR check-in allowed"
-                      : pending
-                        ? " · payment submitted — awaiting review"
-                        : t("admin.components.enrollmentPaidMonths.qrBlocked")}
+        <>
+          <div className="max-w-sm">
+            <AdminActionCodeField
+              id={`paid-months-admin-code-${record.id}`}
+              value={adminActionCode}
+              onChange={setAdminActionCode}
+            />
+          </div>
+          <div className="space-y-2">
+            {scheduleTabs.map((tab) => {
+              const month = scheduleTabToPaymentMonths(tab.value);
+              const checked = paidMonths.has(month);
+              const pending = installments.find(
+                (p) => p.scheduleMonth === month && p.status === "PENDING",
+              );
+              const checkboxId = `paid-month-${record.id}-${tab.value}`;
+              return (
+                <label
+                  key={tab.value}
+                  htmlFor={checkboxId}
+                  className={cn(
+                    "flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors",
+                    checked
+                      ? "border-emerald-200 bg-emerald-50/60"
+                      : "border-amber-200 bg-amber-50/40",
+                  )}
+                >
+                  <Checkbox
+                    id={checkboxId}
+                    checked={checked}
+                    disabled={checked || busyMonth === month}
+                    onCheckedChange={(value) => {
+                      if (value === true) void recordPaid(month);
+                    }}
+                    className="mt-0.5"
+                  />
+                  <span className="min-w-0 flex-1 text-sm">
+                    <span className="font-medium text-slate-900">{tab.tabLabel}</span>
+                    {tab.monthLine ? (
+                      <span className="mt-0.5 block text-xs text-slate-500">{tab.monthLine}</span>
+                    ) : null}
+                    <span className="mt-0.5 block text-[11px] font-medium text-slate-500">
+                      {tab.slots.length} session{tab.slots.length === 1 ? "" : "s"}
+                      {checked
+                        ? " · QR check-in allowed"
+                        : pending
+                          ? " · payment submitted — awaiting review"
+                          : t("admin.components.enrollmentPaidMonths.qrBlocked")}
+                    </span>
                   </span>
-                </span>
-              </label>
-            );
-          })}
-        </div>
+                  {!checked && busyMonth === month ? (
+                    <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-slate-400" aria-hidden />
+                  ) : null}
+                </label>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <p className="border-t border-slate-100 pt-2 text-xs text-slate-600">
         {paidMonthsSummary(paidMonths, scheduleTabs)}
         {hasPartialPlan ? (
           <span className="mt-1 block font-medium text-amber-900">
-            Unpaid months are blocked from attendance QR until you mark them paid here.
+            Unpaid months are blocked from attendance QR until paid or recorded here.
           </span>
         ) : scheduleTabs.length > 0 ? (
           <span className="mt-1 block font-medium text-emerald-800">

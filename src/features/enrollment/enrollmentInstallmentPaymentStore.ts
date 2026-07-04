@@ -1,31 +1,17 @@
-import { useSyncExternalStore } from "react";
-import type { EnrollmentPaymentMethod } from "@/features/enrollment/enrollmentDocumentConfig";
-import type { TuitionPlanMonths } from "@/features/enrollment/enrollmentTuitionThirds";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { eduhubAdminInstallmentPayments, eduhubInstallmentPayments } from "@/api/eduhubClient";
+import type {
+  InstallmentPaymentResponse,
+  InstallmentPaymentReviewRequest,
+  InstallmentPaymentSubmitRequest,
+} from "@/api/eduhubTypes";
 
-const STORAGE_KEY = "eduhub.enrollmentInstallmentPayments.v1";
 export const ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED = "eduhub-enrollment-installment-payments-changed";
 
 export type InstallmentPaymentStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type EnrollmentInstallmentPayment = InstallmentPaymentResponse;
 
-export type EnrollmentInstallmentPayment = {
-  id: string;
-  enrollmentApplicationId: string;
-  courseId: string;
-  courseTitle: string;
-  studentEmailNorm: string;
-  studentName: string;
-  scheduleMonth: TuitionPlanMonths;
-  scheduleMonthLabel: string;
-  amount: number;
-  currency: string;
-  paymentMethod: EnrollmentPaymentMethod;
-  paymentProofUrl?: string;
-  status: InstallmentPaymentStatus;
-  submittedAt: string;
-  reviewedAt?: string;
-  adminNote?: string;
-  reviewedByCode?: string;
-};
+const EMPTY: EnrollmentInstallmentPayment[] = [];
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -37,48 +23,53 @@ function emit() {
   }
 }
 
-let snapshot: EnrollmentInstallmentPayment[] = [];
+const byApplication = new Map<string, EnrollmentInstallmentPayment[]>();
+const applicationFetches = new Map<string, Promise<void>>();
+let allPayments: EnrollmentInstallmentPayment[] = EMPTY;
+let allFetch: Promise<void> | null = null;
 
-function parseStored(raw: string | null): EnrollmentInstallmentPayment[] {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((row): row is EnrollmentInstallmentPayment => {
-      if (!row || typeof row !== "object") return false;
-      const r = row as Record<string, unknown>;
-      return (
-        typeof r.id === "string" &&
-        typeof r.enrollmentApplicationId === "string" &&
-        typeof r.courseId === "string" &&
-        (r.scheduleMonth === 1 || r.scheduleMonth === 2 || r.scheduleMonth === 3) &&
-        typeof r.amount === "number" &&
-        (r.status === "PENDING" || r.status === "APPROVED" || r.status === "REJECTED")
-      );
-    });
-  } catch {
-    return [];
-  }
+function mergeIntoAll(payments: EnrollmentInstallmentPayment[]) {
+  const byId = new Map(allPayments.map((p) => [p.id, p]));
+  for (const p of payments) byId.set(p.id, p);
+  allPayments = [...byId.values()].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
 }
 
-function persist() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-  } catch {
-    // quota
-  }
+async function fetchApplication(applicationId: string): Promise<void> {
+  const payments = await eduhubInstallmentPayments.listForApplication(applicationId);
+  byApplication.set(applicationId, payments);
+  mergeIntoAll(payments);
+  emit();
 }
 
-function hydrate() {
-  snapshot = parseStored(
-    typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null,
+async function fetchAll(): Promise<void> {
+  const payments = await eduhubAdminInstallmentPayments.listAll();
+  allPayments = [...payments].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
+  for (const p of payments) {
+    const existing = byApplication.get(p.enrollmentApplicationId);
+    if (!existing) {
+      byApplication.set(p.enrollmentApplicationId, [p]);
+    } else if (!existing.some((e) => e.id === p.id)) {
+      byApplication.set(p.enrollmentApplicationId, [...existing, p]);
+    }
+  }
+  emit();
+}
+
+function ensureApplicationLoaded(applicationId: string): void {
+  if (applicationFetches.has(applicationId)) return;
+  applicationFetches.set(
+    applicationId,
+    fetchApplication(applicationId).catch(() => {
+      applicationFetches.delete(applicationId);
+    }),
   );
 }
 
-hydrate();
-
-function newId(): string {
-  return `inst_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+function ensureAllLoaded(): void {
+  if (allFetch) return;
+  allFetch = fetchAll().catch(() => {
+    allFetch = null;
+  });
 }
 
 export const enrollmentInstallmentPaymentStore = {
@@ -88,61 +79,67 @@ export const enrollmentInstallmentPaymentStore = {
   },
 
   getSnapshot(): EnrollmentInstallmentPayment[] {
-    return snapshot;
+    ensureAllLoaded();
+    return allPayments;
   },
 
   listForApplication(applicationId: string): EnrollmentInstallmentPayment[] {
-    return snapshot.filter((r) => r.enrollmentApplicationId === applicationId);
-  },
-
-  listForStudent(emailNorm: string): EnrollmentInstallmentPayment[] {
-    const norm = emailNorm.trim().toLowerCase();
-    return snapshot.filter((r) => r.studentEmailNorm === norm);
+    ensureApplicationLoaded(applicationId);
+    return byApplication.get(applicationId) ?? EMPTY;
   },
 
   findPendingForMonth(
     applicationId: string,
-    month: TuitionPlanMonths,
+    month: 1 | 2 | 3,
   ): EnrollmentInstallmentPayment | undefined {
-    return snapshot.find(
-      (r) =>
-        r.enrollmentApplicationId === applicationId &&
-        r.scheduleMonth === month &&
-        r.status === "PENDING",
-    );
+    return enrollmentInstallmentPaymentStore
+      .listForApplication(applicationId)
+      .find((r) => r.scheduleMonth === month && r.status === "PENDING");
   },
 
-  submit(input: Omit<EnrollmentInstallmentPayment, "id" | "status" | "submittedAt">): EnrollmentInstallmentPayment {
-    const existingPending = enrollmentInstallmentPaymentStore.findPendingForMonth(
-      input.enrollmentApplicationId,
-      input.scheduleMonth,
-    );
-    if (existingPending) {
-      throw new Error("A payment for this schedule month is already awaiting review.");
-    }
-    const row: EnrollmentInstallmentPayment = {
-      ...input,
-      id: newId(),
-      status: "PENDING",
-      submittedAt: new Date().toISOString(),
-    };
-    snapshot = [row, ...snapshot];
-    persist();
-    emit();
-    return row;
+  async refreshApplication(applicationId: string): Promise<void> {
+    applicationFetches.delete(applicationId);
+    await fetchApplication(applicationId);
   },
 
-  update(
+  async refreshAll(): Promise<void> {
+    allFetch = null;
+    await fetchAll();
+  },
+
+  async submit(
+    applicationId: string,
+    body: InstallmentPaymentSubmitRequest,
+  ): Promise<EnrollmentInstallmentPayment> {
+    const created = await eduhubInstallmentPayments.submit(applicationId, body);
+    await enrollmentInstallmentPaymentStore.refreshApplication(applicationId);
+    return created;
+  },
+
+  async approve(
     id: string,
-    patch: Partial<Pick<EnrollmentInstallmentPayment, "status" | "reviewedAt" | "adminNote" | "reviewedByCode">>,
-  ): EnrollmentInstallmentPayment | null {
-    const idx = snapshot.findIndex((r) => r.id === id);
-    if (idx < 0) return null;
-    const next = { ...snapshot[idx]!, ...patch };
-    snapshot = [...snapshot.slice(0, idx), next, ...snapshot.slice(idx + 1)];
-    persist();
-    emit();
-    return next;
+    applicationId: string,
+    body?: InstallmentPaymentReviewRequest,
+  ): Promise<EnrollmentInstallmentPayment> {
+    const updated = await eduhubAdminInstallmentPayments.approve(id, body);
+    await Promise.all([
+      enrollmentInstallmentPaymentStore.refreshApplication(applicationId),
+      enrollmentInstallmentPaymentStore.refreshAll(),
+    ]);
+    return updated;
+  },
+
+  async reject(
+    id: string,
+    applicationId: string,
+    body?: InstallmentPaymentReviewRequest,
+  ): Promise<EnrollmentInstallmentPayment> {
+    const updated = await eduhubAdminInstallmentPayments.reject(id, body);
+    await Promise.all([
+      enrollmentInstallmentPaymentStore.refreshApplication(applicationId),
+      enrollmentInstallmentPaymentStore.refreshAll(),
+    ]);
+    return updated;
   },
 };
 
@@ -152,4 +149,18 @@ export function useEnrollmentInstallmentPayments(): EnrollmentInstallmentPayment
     enrollmentInstallmentPaymentStore.getSnapshot,
     enrollmentInstallmentPaymentStore.getSnapshot,
   );
+}
+
+export function useInstallmentPaymentsForApplication(
+  applicationId: string | undefined,
+): EnrollmentInstallmentPayment[] {
+  useEffect(() => {
+    if (applicationId) void enrollmentInstallmentPaymentStore.refreshApplication(applicationId);
+  }, [applicationId]);
+
+  const getSnapshot = useCallback(
+    () => (applicationId ? enrollmentInstallmentPaymentStore.listForApplication(applicationId) : EMPTY),
+    [applicationId],
+  );
+  return useSyncExternalStore(enrollmentInstallmentPaymentStore.subscribe, getSnapshot, getSnapshot);
 }

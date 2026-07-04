@@ -3,7 +3,7 @@ import { ArrowLeft, ChevronRight, GraduationCap, BarChart3, Heart, CircleDollarS
 import { useTranslation } from "react-i18next";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { STAFF_ROLE_CONFIGS, usesDummyStaffUserCreate } from "@/features/admin/adminStaffRoles";
+import { STAFF_ROLE_CONFIGS } from "@/features/admin/adminStaffRoles";
 import type { LucideIcon } from "@/lib/icons";
 
 const ROLE_ICONS: Record<string, LucideIcon> = {
@@ -36,7 +36,6 @@ export default function AdminAddStaffHubPage() {
         <div className="grid gap-3">
           {STAFF_ROLE_CONFIGS.map((config) => {
             const Icon = ROLE_ICONS[config.slug] ?? GraduationCap;
-            const isDemo = usesDummyStaffUserCreate(config.apiRole);
             return (
               <Link
                 key={config.slug}
@@ -49,11 +48,6 @@ export default function AdminAddStaffHubPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-semibold text-slate-900">{t(config.titleKey)}</p>
-                    {isDemo ? (
-                      <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-900">
-                        {t("admin.addUserRole.hub.demoBadge")}
-                      </span>
-                    ) : null}
                   </div>
                   <p className="mt-0.5 text-sm text-slate-600 line-clamp-2">{t(config.descriptionKey)}</p>
                 </div>

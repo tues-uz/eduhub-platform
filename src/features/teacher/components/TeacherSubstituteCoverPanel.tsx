@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -12,28 +12,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuthSession } from "@/features/auth/context";
-import {
-  substituteInviteWorkflowStore,
-  type SubstituteInviteRecord,
-  type SubstituteInviteStatus,
-} from "@/features/teacher/data/substituteInviteWorkflowStore";
-import { APP_NOTIFICATIONS_CHANGE_EVENT } from "@/features/notifications/appNotificationStore";
+import { eduhubSubstituteInvites } from "@/api/eduhubClient";
+import type { SubstituteInviteResponse, SubstituteInviteStatus } from "@/api/eduhubTypes";
 
 function statusLabel(t: TFunction, status: SubstituteInviteStatus): string {
   switch (status) {
-    case "pending_substitute_response":
+    case "PENDING_SUBSTITUTE_RESPONSE":
       return t("teacher.substitute.status.pendingSubstitute");
-    case "pending_primary_approval":
+    case "PENDING_PRIMARY_APPROVAL":
       return t("teacher.substitute.status.pendingPrimary");
-    case "pending_admin_approval":
+    case "PENDING_ADMIN_APPROVAL":
       return t("teacher.substitute.status.pendingAdmin");
-    case "approved":
+    case "APPROVED":
       return t("teacher.substitute.status.approved");
-    case "declined_by_substitute":
+    case "DECLINED_BY_SUBSTITUTE":
       return t("teacher.substitute.status.declinedBySubstitute");
-    case "rejected_by_primary":
+    case "REJECTED_BY_PRIMARY":
       return t("teacher.substitute.status.rejectedByPrimary");
-    case "rejected_by_admin":
+    case "REJECTED_BY_ADMIN":
       return t("teacher.substitute.status.rejectedByAdmin");
     default:
       return status;
@@ -42,22 +38,22 @@ function statusLabel(t: TFunction, status: SubstituteInviteStatus): string {
 
 function statusPillClass(status: SubstituteInviteStatus, needsAction: boolean): string {
   if (needsAction) return "bg-emerald-50 text-emerald-800 ring-emerald-200";
-  if (status === "approved") return "bg-green-50 text-green-800 ring-green-200";
-  if (status === "declined_by_substitute" || status === "rejected_by_primary" || status === "rejected_by_admin") {
+  if (status === "APPROVED") return "bg-green-50 text-green-800 ring-green-200";
+  if (status === "DECLINED_BY_SUBSTITUTE" || status === "REJECTED_BY_PRIMARY" || status === "REJECTED_BY_ADMIN") {
     return "bg-amber-50 text-amber-900 ring-amber-200";
   }
   return "bg-slate-100 text-slate-700 ring-slate-200";
 }
 
-function teacherNeedsAction(rec: SubstituteInviteRecord, emailNorm: string): boolean {
-  if (rec.substituteEmailNorm === emailNorm && rec.status === "pending_substitute_response") return true;
-  if (rec.primaryInstructorEmailNorm === emailNorm && rec.status === "pending_primary_approval") return true;
+function teacherNeedsAction(rec: SubstituteInviteResponse, userId?: string): boolean {
+  if (rec.substituteId === userId && rec.status === "PENDING_SUBSTITUTE_RESPONSE") return true;
+  if (rec.primaryInstructorId === userId && rec.status === "PENDING_PRIMARY_APPROVAL") return true;
   return false;
 }
 
-function roleLabel(t: TFunction, rec: SubstituteInviteRecord, emailNorm: string): string {
-  if (rec.substituteEmailNorm === emailNorm) return t("teacher.substitutePanel.role.youAreSubstitute");
-  if (rec.primaryInstructorEmailNorm === emailNorm) return t("teacher.substitutePanel.role.youInvited");
+function roleLabel(t: TFunction, rec: SubstituteInviteResponse, userId?: string): string {
+  if (rec.substituteId === userId) return t("teacher.substitutePanel.role.youAreSubstitute");
+  if (rec.primaryInstructorId === userId) return t("teacher.substitutePanel.role.youInvited");
   return t("teacher.substitutePanel.role.participant");
 }
 
@@ -68,31 +64,24 @@ type Props = {
 export function TeacherSubstituteCoverPanel({ embedded = false }: Props) {
   const { t } = useTranslation();
   const { user } = useAuthSession();
-  const emailNorm = user.email.trim().toLowerCase();
-  const [tick, setTick] = useState(0);
-  const bump = useCallback(() => setTick((x) => x + 1), []);
+  const [rows, setRows] = useState<SubstituteInviteResponse[]>([]);
 
   useEffect(() => {
-    const onWorkflow = () => bump();
-    window.addEventListener("eduhub.substituteInviteWorkflow.changed", onWorkflow);
-    window.addEventListener(APP_NOTIFICATIONS_CHANGE_EVENT, bump);
+    let cancelled = false;
+    eduhubSubstituteInvites
+      .listMine()
+      .then((data) => {
+        if (!cancelled) setRows(data);
+      })
+      .catch(() => {
+        if (!cancelled) setRows([]);
+      });
     return () => {
-      window.removeEventListener("eduhub.substituteInviteWorkflow.changed", onWorkflow);
-      window.removeEventListener(APP_NOTIFICATIONS_CHANGE_EVENT, bump);
+      cancelled = true;
     };
-  }, [bump]);
+  }, []);
 
-  const rows = useMemo(() => {
-    void tick;
-    return substituteInviteWorkflowStore
-      .listAll()
-      .filter(
-        (r) => r.primaryInstructorEmailNorm === emailNorm || r.substituteEmailNorm === emailNorm,
-      )
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  }, [emailNorm, tick]);
-
-  const pendingCount = rows.filter((r) => teacherNeedsAction(r, emailNorm)).length;
+  const pendingCount = rows.filter((r) => teacherNeedsAction(r, user.id)).length;
 
   if (rows.length === 0) {
     return (
@@ -120,8 +109,8 @@ export function TeacherSubstituteCoverPanel({ embedded = false }: Props) {
 
       <div className="space-y-3 max-w-3xl">
         {rows.map((rec) => {
-          const needsAction = teacherNeedsAction(rec, emailNorm);
-          const isSubstitute = rec.substituteEmailNorm === emailNorm;
+          const needsAction = teacherNeedsAction(rec, user.id);
+          const isSubstitute = rec.substituteId === user.id;
           return (
             <Card key={rec.id} className="rounded-2xl border-slate-200/90 shadow-sm">
               <CardHeader className="pb-3">
@@ -138,7 +127,7 @@ export function TeacherSubstituteCoverPanel({ embedded = false }: Props) {
                         ) : (
                           <>
                             {t("teacher.substitutePanel.card.substitute")}{" "}
-                            <span className="font-mono text-xs font-medium text-slate-800">{rec.substituteEmailNorm}</span>
+                            <span className="font-mono text-xs font-medium text-slate-800">{rec.substituteEmail}</span>
                           </>
                         )}
                       </span>
@@ -146,7 +135,7 @@ export function TeacherSubstituteCoverPanel({ embedded = false }: Props) {
                         <span className="block text-xs text-slate-500">{rec.sessionNote}</span>
                       ) : null}
                       <span className="block text-xs text-slate-500">
-                        {roleLabel(t, rec, emailNorm)} ·{" "}
+                        {roleLabel(t, rec, user.id)} ·{" "}
                         {t("teacher.substitutePanel.updated", {
                           datetime: new Date(rec.updatedAt).toLocaleString(undefined, {
                             dateStyle: "medium",

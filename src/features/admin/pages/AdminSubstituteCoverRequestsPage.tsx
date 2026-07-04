@@ -1,32 +1,28 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ClipboardCheck } from "@/lib/icons";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { adminSubstituteDetailHref } from "@/features/admin/substituteCoverAdminRoutes";
 import { useTranslation } from "react-i18next";
-import {
-  substituteInviteWorkflowStore,
-  type SubstituteInviteRecord,
-  type SubstituteInviteStatus,
-} from "@/features/teacher/data/substituteInviteWorkflowStore";
-import { APP_NOTIFICATIONS_CHANGE_EVENT } from "@/features/notifications/appNotificationStore";
+import { eduhubAdminSubstituteInvites } from "@/api/eduhubClient";
+import type { SubstituteInviteResponse, SubstituteInviteStatus } from "@/api/eduhubTypes";
 
 function statusLabel(status: SubstituteInviteStatus): string {
   switch (status) {
-    case "pending_substitute_response":
+    case "PENDING_SUBSTITUTE_RESPONSE":
       return "Waiting for substitute";
-    case "pending_primary_approval":
+    case "PENDING_PRIMARY_APPROVAL":
       return "Waiting for primary";
-    case "pending_admin_approval":
+    case "PENDING_ADMIN_APPROVAL":
       return "Needs admin approval";
-    case "approved":
+    case "APPROVED":
       return "Approved";
-    case "declined_by_substitute":
+    case "DECLINED_BY_SUBSTITUTE":
       return "Declined (substitute)";
-    case "rejected_by_primary":
+    case "REJECTED_BY_PRIMARY":
       return "Rejected (primary)";
-    case "rejected_by_admin":
+    case "REJECTED_BY_ADMIN":
       return "Rejected (admin)";
     default:
       return status;
@@ -35,16 +31,16 @@ function statusLabel(status: SubstituteInviteStatus): string {
 
 function adminListCanActOnStatus(status: SubstituteInviteStatus): boolean {
   return (
-    status === "pending_admin_approval" ||
-    status === "pending_substitute_response" ||
-    status === "pending_primary_approval"
+    status === "PENDING_ADMIN_APPROVAL" ||
+    status === "PENDING_SUBSTITUTE_RESPONSE" ||
+    status === "PENDING_PRIMARY_APPROVAL"
   );
 }
 
 function statusPillClass(status: SubstituteInviteStatus): string {
   if (adminListCanActOnStatus(status)) return "bg-emerald-50 text-emerald-800 ring-emerald-200";
-  if (status === "approved") return "bg-green-50 text-green-800 ring-green-200";
-  if (status === "declined_by_substitute" || status === "rejected_by_primary" || status === "rejected_by_admin") {
+  if (status === "APPROVED") return "bg-green-50 text-green-800 ring-green-200";
+  if (status === "DECLINED_BY_SUBSTITUTE" || status === "REJECTED_BY_PRIMARY" || status === "REJECTED_BY_ADMIN") {
     return "bg-amber-50 text-amber-900 ring-amber-200";
   }
   return "bg-slate-100 text-slate-700 ring-slate-200";
@@ -52,18 +48,22 @@ function statusPillClass(status: SubstituteInviteStatus): string {
 
 export default function AdminSubstituteCoverRequestsPage() {
   const { t } = useTranslation();
-  const [tick, setTick] = useState(0);
-  const bump = useCallback(() => setTick((x) => x + 1), []);
+  const [rows, setRows] = useState<SubstituteInviteResponse[]>([]);
 
   useEffect(() => {
-    window.addEventListener(APP_NOTIFICATIONS_CHANGE_EVENT, bump);
-    return () => window.removeEventListener(APP_NOTIFICATIONS_CHANGE_EVENT, bump);
-  }, [bump]);
-
-  const rows = useMemo(() => {
-    void tick;
-    return substituteInviteWorkflowStore.listAll();
-  }, [tick]);
+    let cancelled = false;
+    eduhubAdminSubstituteInvites
+      .listAll()
+      .then((data) => {
+        if (!cancelled) setRows(data);
+      })
+      .catch(() => {
+        if (!cancelled) setRows([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <AdminLayout>
@@ -89,11 +89,10 @@ export default function AdminSubstituteCoverRequestsPage() {
         <div className="mt-8 space-y-3">
           {rows.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center text-sm text-slate-600">
-              No substitute cover requests yet. They appear here when an instructor sends a substitute invite (demo
-              data in this browser).
+              No substitute cover requests yet. They appear here when an instructor sends a substitute invite.
             </div>
           ) : (
-            rows.map((r: SubstituteInviteRecord) => (
+            rows.map((r) => (
               <div
                 key={r.id}
                 className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4"
@@ -101,7 +100,7 @@ export default function AdminSubstituteCoverRequestsPage() {
                 <div className="min-w-0">
                   <p className="font-semibold text-slate-900">{r.courseTitle}</p>
                   <p className="mt-0.5 truncate text-sm text-slate-600">
-                    {r.primaryInstructorName} → {r.substituteEmailNorm}
+                    {r.primaryInstructorName} → {r.substituteEmail}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     Updated {new Date(r.updatedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
