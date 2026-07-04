@@ -32,7 +32,6 @@ import {
   validatePayrollMonthEligibility,
   type TeacherPayrollFormFields,
 } from "@/features/payroll/payrollScheduleEligibility";
-import { isPayrollSubmitDemoCourse, PAYROLL_SUBMIT_DEMO_PRICE_PER_STUDENT } from "@/features/payroll/payrollSubmitDemo";
 import type { InstructorPayrollRequestRecord } from "@/features/teacher/data/instructorPayrollRequestStore";
 import {
   computePayrollMonthRequestedPayout,
@@ -129,9 +128,6 @@ export function TeacherPayrollSubmitDialog({
   );
 
   const scheduleSourceNote = useMemo(() => {
-    if (payrollSchedule.teacherCourse && isPayrollSubmitDemoCourse(payrollSchedule.teacherCourse)) {
-      return "Instructor-approved 3-month class schedule — submit payroll once per schedule month when every meeting is complete.";
-    }
     if (!payrollSchedule.courseId || payrollSchedule.slots.length === 0) return null;
     const isApiCourse =
       isUuid(payrollSchedule.courseId) && !payrollSchedule.courseId.startsWith("teacher_");
@@ -146,9 +142,6 @@ export function TeacherPayrollSubmitDialog({
   }, [payrollSchedule]);
 
   const listedTuitionPerStudent = useMemo(() => {
-    if (payrollSchedule.teacherCourse && isPayrollSubmitDemoCourse(payrollSchedule.teacherCourse)) {
-      return PAYROLL_SUBMIT_DEMO_PRICE_PER_STUDENT;
-    }
     const pricing = payrollSchedule.apiCourse?.pricing;
     const fromApi = pricing?.discountedAmount ?? pricing?.amount;
     if (typeof fromApi === "number" && fromApi > 0) return fromApi;

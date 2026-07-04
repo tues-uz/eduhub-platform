@@ -5,8 +5,8 @@ import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { PayrollInstructorProofPanel } from "@/features/admin/components/PayrollInstructorProofPanel";
 import { Button } from "@/components/ui/button";
-import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
-import { aggregatePaymentsByClass, buildPayrollSummaryText } from "@/features/payroll/classPayrollAggregate";
+import { useEnrollmentInstallmentPayments } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
+import { aggregateInstallmentPaymentsByClass, buildPayrollSummaryText } from "@/features/payroll/classPayrollAggregate";
 import { useTranslation } from "react-i18next";
 
 function decodeParam(v: string | null): string {
@@ -26,17 +26,17 @@ export default function AdminPayrollProofPage() {
   const instructor = decodeParam(searchParams.get("instructor"));
   const instructorEmail = decodeParam(searchParams.get("instructorEmail"));
 
-  const payments = useAdminPayments();
+  const installmentPayments = useEnrollmentInstallmentPayments();
   const valid = section.length > 0 && course.length > 0;
 
   const sectionPayments = useMemo(
-    () => payments.filter((p) => p.className === section && p.course === course),
-    [payments, section, course],
+    () => installmentPayments.filter((p) => p.courseTitle === course),
+    [installmentPayments, course],
   );
 
   const payrollSummary = useMemo(() => {
     if (!valid) return "";
-    const aggs = aggregatePaymentsByClass(sectionPayments);
+    const aggs = aggregateInstallmentPaymentsByClass(sectionPayments);
     const agg = aggs[0];
     if (!agg || agg.paymentCount === 0) {
       return "No tuition rows for this class in the current payment list.";

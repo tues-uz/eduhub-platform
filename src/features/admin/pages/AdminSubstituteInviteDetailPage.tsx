@@ -28,25 +28,25 @@ function statusLabel(status: SubstituteInviteStatus): string {
       return "Rejected by primary instructor";
     case "REJECTED_BY_ADMIN":
       return "Rejected by admin";
+    case "CANCELLED_BY_PRIMARY":
+      return "Cancelled by primary instructor";
     default:
       return status;
   }
 }
 
 function adminCanDecideOnInvite(rec: SubstituteInviteResponse): boolean {
-  return (
-    rec.status === "PENDING_ADMIN_APPROVAL" ||
-    rec.status === "PENDING_SUBSTITUTE_RESPONSE" ||
-    rec.status === "PENDING_PRIMARY_APPROVAL"
-  );
+  return rec.status === "PENDING_ADMIN_APPROVAL";
 }
 
 function readonlyNote(rec: SubstituteInviteResponse): string {
   switch (rec.status) {
     case "PENDING_ADMIN_APPROVAL":
-    case "PENDING_SUBSTITUTE_RESPONSE":
-    case "PENDING_PRIMARY_APPROVAL":
       return "";
+    case "PENDING_SUBSTITUTE_RESPONSE":
+      return "Waiting for the substitute to accept before this reaches admin approval.";
+    case "PENDING_PRIMARY_APPROVAL":
+      return "Waiting for the primary instructor to confirm before this reaches admin approval.";
     case "APPROVED":
       return "This substitute cover has been finalized.";
     case "REJECTED_BY_ADMIN":
@@ -55,6 +55,8 @@ function readonlyNote(rec: SubstituteInviteResponse): string {
       return "The substitute declined; no admin approval is needed.";
     case "REJECTED_BY_PRIMARY":
       return "The primary instructor did not approve this cover.";
+    case "CANCELLED_BY_PRIMARY":
+      return "The primary instructor cancelled this request.";
     default:
       return "There is nothing for you to confirm at this step.";
   }
@@ -128,7 +130,6 @@ export default function AdminSubstituteInviteDetailPage() {
   if (!rec) return null;
 
   const canAdminDecide = adminCanDecideOnInvite(rec);
-  const isFinalAdminStep = rec.status === "PENDING_ADMIN_APPROVAL";
   const teachersHref = `/dashboard/admin/teachers?q=${encodeURIComponent(rec.substituteEmail)}`;
   const foot = readonlyNote(rec);
 
@@ -155,9 +156,7 @@ export default function AdminSubstituteInviteDetailPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{t("admin.substituteCover.detail.title")}</h1>
         <p className="mt-1 text-sm text-slate-600">
           {canAdminDecide
-            ? isFinalAdminStep
-              ? "Both instructors have agreed. Use the buttons below to give final sign-off."
-              : "The invite is still with instructors. You can still approve or reject this substitute cover below."
+            ? "Both instructors have agreed. Use the buttons below to give final sign-off."
             : t("admin.substituteCover.detail.descriptionClosed")}
         </p>
 
@@ -173,9 +172,7 @@ export default function AdminSubstituteInviteDetailPage() {
           <div className="mt-6 space-y-3 rounded-xl border border-emerald-200/90 bg-emerald-50/50 p-4 sm:p-5">
             <p className="text-sm font-semibold text-emerald-950">{t("admin.substituteCover.detail.adminDecision")}</p>
             <p className="text-sm leading-relaxed text-emerald-900/90">
-              {isFinalAdminStep
-                ? "Approve to record this cover in the system after both instructors agreed, or reject to stop it."
-                : t("admin.substituteCover.detail.adminDecisionEarly")}
+              Approve to record this cover in the system after both instructors agreed, or reject to stop it.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -184,11 +181,11 @@ export default function AdminSubstituteInviteDetailPage() {
                 onClick={() =>
                   runAction(
                     () => eduhubAdminSubstituteInvites.approve(rec.id),
-                    isFinalAdminStep ? t("admin.substituteCover.toast.finalized") : "Substitute cover approved",
+                    t("admin.substituteCover.toast.finalized"),
                   )
                 }
               >
-                {isFinalAdminStep ? t("admin.substituteCover.detail.finalApprove") : t("admin.substituteCover.detail.approveCover")}
+                {t("admin.substituteCover.detail.finalApprove")}
               </Button>
               <Button
                 type="button"

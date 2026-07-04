@@ -4,8 +4,6 @@ import { eduhubPayroll } from "@/api/eduhubClient";
 import type { PayrollRequestResponse } from "@/api/eduhubTypes";
 import { parsePayrollPeriodYearMonth } from "@/features/payroll/payrollScheduleEligibility";
 
-const STORAGE_KEY = "eduhub.instructorPayrollRequests.v1";
-
 export const INSTRUCTOR_PAYROLL_REQUESTS_EVENT = "eduhub-instructor-payroll-requests-changed";
 
 export type InstructorPayrollRequestStatus = "pending" | "approved" | "rejected";
@@ -62,45 +60,7 @@ export function instructorPayrollRequestDedupeKey(
   return `${classSection.trim()}\t${course.trim()}\t${normalizeInstructorKey(instructorEmailNorm, instructorName)}`;
 }
 
-function load(): InstructorPayrollRequestRecord[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((x): x is InstructorPayrollRequestRecord => {
-      if (!x || typeof x !== "object") return false;
-      const r = x as InstructorPayrollRequestRecord;
-      const okStatus = r.status === "pending" || r.status === "approved" || r.status === "rejected";
-      return (
-        typeof r.id === "string" &&
-        typeof r.submittedAt === "string" &&
-        typeof r.classSection === "string" &&
-        typeof r.course === "string" &&
-        typeof r.instructorName === "string" &&
-        typeof r.instructorEmailNorm === "string" &&
-        typeof (r.periodLabel ?? "") === "string" &&
-        typeof (r.sessionsTaught ?? "") === "string" &&
-        typeof (r.requestedPayout ?? "") === "string" &&
-        typeof (r.payoutDetails ?? "") === "string" &&
-        typeof r.summary === "string" &&
-        typeof r.instructorNotes === "string" &&
-        okStatus
-      );
-    });
-  } catch {
-    return [];
-  }
-}
-
-function save(rows: InstructorPayrollRequestRecord[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
-  emit();
-}
-
-let snapshot: InstructorPayrollRequestRecord[] = load();
+let snapshot: InstructorPayrollRequestRecord[] = [];
 let loadingPromise: Promise<void> | null = null;
 
 function fromApi(r: PayrollRequestResponse): InstructorPayrollRequestRecord {
@@ -124,12 +84,6 @@ function fromApi(r: PayrollRequestResponse): InstructorPayrollRequestRecord {
     reviewedByCode: r.reviewedByCode,
   };
 }
-
-function hydrate() {
-  snapshot = load();
-}
-
-hydrate();
 
 export const instructorPayrollRequestStore = {
   subscribe(fn: Listener): () => void {

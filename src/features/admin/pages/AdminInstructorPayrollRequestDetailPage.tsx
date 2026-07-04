@@ -6,7 +6,7 @@ import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { PayrollInstructorProofPanel } from "@/features/admin/components/PayrollInstructorProofPanel";
 import { usePayrollRequestSchedule } from "@/features/admin/hooks/usePayrollRequestSchedule";
 import { buildPayrollProofPagePath } from "@/features/admin/data/adminPayrollProofStore";
-import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
+import { useEnrollmentInstallmentPayments } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
 import { ClassSchedulePreviewPanel } from "@/features/courses/ClassSchedulePreviewPanel";
 import { useTranslation } from "react-i18next";
 import {
@@ -22,7 +22,7 @@ import {
   useInstructorPayrollRequests,
 } from "@/features/teacher/data/instructorPayrollRequestStore";
 import {
-  aggregatePaymentsByClass,
+  aggregateInstallmentPaymentsByClass,
   buildPayrollSummaryText,
 } from "@/features/payroll/classPayrollAggregate";
 import {
@@ -61,7 +61,7 @@ function StatusLine({ status }: { status: "pending" | "approved" | "rejected" })
 export default function AdminInstructorPayrollRequestDetailPage() {
   const { t } = useTranslation();
   const { requestId } = useParams<{ requestId: string }>();
-  const payments = useAdminPayments();
+  const installmentPayments = useEnrollmentInstallmentPayments();
   const payrollRequests = useInstructorPayrollRequests();
   const record = useMemo(
     () => payrollRequests.find((r) => r.id === requestId),
@@ -107,14 +107,14 @@ export default function AdminInstructorPayrollRequestDetailPage() {
 
   const payrollSummary = useMemo(() => {
     if (!record) return "";
-    const rows = payments.filter((p) => p.className === record.classSection && p.course === record.course);
-    const aggs = aggregatePaymentsByClass(rows);
+    const rows = installmentPayments.filter((p) => p.courseTitle === record.course);
+    const aggs = aggregateInstallmentPaymentsByClass(rows);
     const agg = aggs[0];
     if (!agg || agg.paymentCount === 0) {
       return "No tuition rows for this class in the current payment list.";
     }
     return buildPayrollSummaryText(agg);
-  }, [payments, record]);
+  }, [installmentPayments, record]);
 
   const proofHref = useMemo(() => {
     if (!record) return "";

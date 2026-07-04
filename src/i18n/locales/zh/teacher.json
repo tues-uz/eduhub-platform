@@ -216,7 +216,8 @@
         "approved": "已批准",
         "declinedBySubstitute": "Declined by substitute",
         "rejectedByPrimary": "Rejected by primary instructor",
-        "rejectedByAdmin": "Rejected by admin"
+        "rejectedByAdmin": "Rejected by admin",
+        "cancelledByPrimary": "Cancelled"
       },
       "coverChip": {
         "substituteCover": "Substitute cover",

@@ -352,7 +352,7 @@ export default function TeacherCourseRosterPage() {
 
   const teacherChecklist = useTeacherClassChecklist(courseMeta?.id ?? courseId);
 
-  /** Server roster is lecturer-scoped today; substitutes must not call it or the API returns forbidden and shows a scary error. */
+  /** Backend allows both the primary lecturer and an approved substitute to fetch the roster. */
   const studentsQuery = useQuery({
     queryKey: ["teacher", "roster", "students", courseId],
     queryFn: () => eduhubCourses.getEnrolledStudents(courseId, 0, 100),
@@ -957,11 +957,9 @@ export default function TeacherCourseRosterPage() {
                           </span>
                         </p>
                         <p className="text-sky-950/85">
-                          You can use class resumes and local attendance (QR and this browser&apos;s check-ins). The
-                          server enrollment list is only returned for the course lead today, so the Enrolled tab explains
-                          that limitation. Catalog edits, deleting the class, and inviting another substitute stay with the
-                          course lead. Demo access is tied to your approved invite; the API still lists the course lead as
-                          lecturer until a backend assigns cover officially.
+                          As an approved substitute you can view the roster, take attendance (QR check-in), manage
+                          class resumes, and manage grades for this class. Catalog edits, deleting the class, and
+                          inviting another substitute stay with the course lead.
                         </p>
                       </div>
                     ) : null}
@@ -969,8 +967,8 @@ export default function TeacherCourseRosterPage() {
                       <div className="rounded-xl border border-emerald-200/90 bg-emerald-50/90 px-4 py-3 text-sm text-emerald-950 leading-relaxed">
                         <span className="font-semibold">You are the course lead.</span> Approved substitute{" "}
                         <span className="font-mono font-medium">{approvedCoverAsPrimaryRow.substituteEmail}</span>{" "}
-                        has demo access to this class page for resumes and local attendance. The server enrollment list
-                        stays course-lead only until the API supports substitutes. Catalog-only actions remain yours.
+                        can view the roster, take attendance, manage class resumes, and manage grades for this class.
+                        Catalog-only actions remain yours.
                       </div>
                     ) : null}
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">

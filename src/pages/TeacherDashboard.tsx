@@ -23,9 +23,8 @@ import DashboardSidebar from "@/components/DashboardSidebar";
 import { useAuthSession } from "@/features/auth/context";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import type { TeacherCourse } from "@/features/teacher/types";
-import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
-import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock";
-import { useTeacherCoursesQuery, useTeacherStatsQuery } from "@/features/teacher/hooks/useTeacherQueries";
+import type { PayrollClassSummaryResponse } from "@/api/eduhubTypes";
+import { useTeacherCoursesQuery, useTeacherStatsQuery, usePayrollClassesQuery } from "@/features/teacher/hooks/useTeacherQueries";
 
 /** Sum of (catalog tuition × enrolled students) per currency for dashboard. */
 /** Seat counts from course rows when lecturer stats API is unavailable. */
@@ -54,25 +53,18 @@ function formatEnrollmentRevenueTotal(courses: TeacherCourse[]): string {
     .join(" · ");
 }
 
-function paymentMatchesInstructor(p: AdminPaymentRow, emailNorm: string, nameNorm: string): boolean {
-  const le = (p.lecturerEmail ?? "").trim().toLowerCase();
-  const ln = (p.lecturerName ?? "").trim().toLowerCase();
-  if (emailNorm && le && le === emailNorm) return true;
-  if (nameNorm && ln && ln === nameNorm) return true;
-  return false;
-}
-
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
 }
 
-function formatCollectedPaymentsTotal(payments: AdminPaymentRow[], emailNorm: string, nameNorm: string): string {
+function formatCollectedPaymentsTotal(classes: PayrollClassSummaryResponse[]): string {
   const byCurrency = new Map<string, number>();
-  for (const p of payments) {
-    if (p.status !== "paid") continue;
-    if (!paymentMatchesInstructor(p, emailNorm, nameNorm)) continue;
-    const cur = (p.currency ?? "USD").trim() || "USD";
-    byCurrency.set(cur, (byCurrency.get(cur) ?? 0) + p.amount);
+  for (const cls of classes) {
+    for (const student of cls.students) {
+      if (student.status !== "paid" || student.amount == null) continue;
+      const cur = (student.currency ?? "USD").trim() || "USD";
+      byCurrency.set(cur, (byCurrency.get(cur) ?? 0) + student.amount);
+    }
   }
   if (byCurrency.size === 0) return "—";
   return [...byCurrency.entries()]
@@ -83,7 +75,7 @@ function formatCollectedPaymentsTotal(payments: AdminPaymentRow[], emailNorm: st
 const TeacherDashboard = () => {
   const { t } = useTranslation();
   const { user } = useAuthSession();
-  const payments = useAdminPayments();
+  const { data: payrollClasses = [] } = usePayrollClassesQuery(user.id);
   const userName = user.name || "Teacher";
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebarCollapsed");
@@ -108,8 +100,8 @@ const TeacherDashboard = () => {
 
   const courseCount = courses.length;
   const collectedPaymentsDisplay = useMemo(
-    () => formatCollectedPaymentsTotal(payments, user.email.trim().toLowerCase(), (user.name ?? "").trim().toLowerCase()),
-    [payments, user.email, user.name],
+    () => formatCollectedPaymentsTotal(payrollClasses),
+    [payrollClasses],
   );
   const seatsFromCourses = useMemo(() => sumEnrollmentSeats(courses), [courses]);
 

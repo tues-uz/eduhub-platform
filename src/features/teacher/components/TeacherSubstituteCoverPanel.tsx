@@ -31,6 +31,8 @@ function statusLabel(t: TFunction, status: SubstituteInviteStatus): string {
       return t("teacher.substitute.status.rejectedByPrimary");
     case "REJECTED_BY_ADMIN":
       return t("teacher.substitute.status.rejectedByAdmin");
+    case "CANCELLED_BY_PRIMARY":
+      return t("teacher.substitute.status.cancelledByPrimary");
     default:
       return status;
   }
@@ -39,7 +41,12 @@ function statusLabel(t: TFunction, status: SubstituteInviteStatus): string {
 function statusPillClass(status: SubstituteInviteStatus, needsAction: boolean): string {
   if (needsAction) return "bg-emerald-50 text-emerald-800 ring-emerald-200";
   if (status === "APPROVED") return "bg-green-50 text-green-800 ring-green-200";
-  if (status === "DECLINED_BY_SUBSTITUTE" || status === "REJECTED_BY_PRIMARY" || status === "REJECTED_BY_ADMIN") {
+  if (
+    status === "DECLINED_BY_SUBSTITUTE" ||
+    status === "REJECTED_BY_PRIMARY" ||
+    status === "REJECTED_BY_ADMIN" ||
+    status === "CANCELLED_BY_PRIMARY"
+  ) {
     return "bg-amber-50 text-amber-900 ring-amber-200";
   }
   return "bg-slate-100 text-slate-700 ring-slate-200";
@@ -65,16 +72,25 @@ export function TeacherSubstituteCoverPanel({ embedded = false }: Props) {
   const { t } = useTranslation();
   const { user } = useAuthSession();
   const [rows, setRows] = useState<SubstituteInviteResponse[]>([]);
+  const [loadError, setLoadError] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     eduhubSubstituteInvites
       .listMine()
       .then((data) => {
-        if (!cancelled) setRows(data);
+        if (!cancelled) {
+          setRows(data);
+          setLoadError(false);
+        }
       })
       .catch(() => {
-        if (!cancelled) setRows([]);
+        if (!cancelled) setLoadError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
@@ -83,7 +99,21 @@ export function TeacherSubstituteCoverPanel({ embedded = false }: Props) {
 
   const pendingCount = rows.filter((r) => teacherNeedsAction(r, user.id)).length;
 
-  if (rows.length === 0) {
+  if (loadError) {
+    return (
+      <Card className="border-dashed border-2 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+          <UserPlus className="h-14 w-14 text-red-300 mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-1">Could not load substitute requests</h3>
+          <p className="text-sm text-foreground/60 mb-6 max-w-sm">
+            Something went wrong while fetching your substitute requests. Please refresh the page to try again.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!loading && rows.length === 0) {
     return (
       <Card className="border-dashed border-2 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         <CardContent className="flex flex-col items-center justify-center py-16 text-center">

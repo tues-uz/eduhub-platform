@@ -1,4 +1,5 @@
 import type { AdminPaymentRow, PaymentStatus } from "@/features/admin/data/adminOperationalMock";
+import type { InstallmentPaymentResponse } from "@/api/eduhubTypes";
 
 export const INSTRUCTOR_REVENUE_SHARE = 0.6;
 export const PLATFORM_REVENUE_SHARE = 1 - INSTRUCTOR_REVENUE_SHARE;
@@ -111,6 +112,39 @@ export function aggregatePaymentsByClass(rows: AdminPaymentRow[]): ClassPayrollA
   return Array.from(map.values()).sort((a, b) =>
     a.className.localeCompare(b.className) === 0 ? a.course.localeCompare(b.course) : a.className.localeCompare(b.className),
   );
+}
+
+/** Group real schedule-month payments by course (same key as class + course, since a course has one title). */
+export function aggregateInstallmentPaymentsByClass(rows: InstallmentPaymentResponse[]): ClassPayrollAggregate[] {
+  const map = new Map<string, ClassPayrollAggregate>();
+  for (const p of rows) {
+    const key = p.courseTitle;
+    let agg = map.get(key);
+    if (!agg) {
+      agg = {
+        className: p.courseTitle,
+        course: p.courseTitle,
+        lecturerName: p.lecturerName,
+        lecturerEmail: p.lecturerEmail?.trim() || undefined,
+        paymentCount: 0,
+        paidCount: 0,
+        unpaidCount: 0,
+        paidByCurrency: new Map(),
+        outstandingByCurrency: new Map(),
+      };
+      map.set(key, agg);
+    }
+    agg.paymentCount += 1;
+    const currency = p.currency ?? "UZS";
+    if (p.status === "APPROVED") {
+      agg.paidCount += 1;
+      addToCurrencyMap(agg.paidByCurrency, currency, p.amount);
+    } else if (p.status === "PENDING") {
+      agg.unpaidCount += 1;
+      addToCurrencyMap(agg.outstandingByCurrency, currency, p.amount);
+    }
+  }
+  return Array.from(map.values());
 }
 
 /** One-line summary for requests and notifications. */

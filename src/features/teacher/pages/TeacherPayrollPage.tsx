@@ -22,20 +22,15 @@ import {
   resolvePayrollProofBundle,
   usePayrollProofMap,
 } from "@/features/admin/data/adminPayrollProofStore";
-import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock";
-import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
-import { eduhubCourses, eduhubSubstituteInvites } from "@/api/eduhubClient";
-import type { CourseResponse } from "@/api/eduhubTypes";
-import type { TeacherCourse } from "@/features/teacher/types";
+import { eduhubPayroll } from "@/api/eduhubClient";
+import type { PayrollClassStudentResponse, PayrollClassSummaryResponse } from "@/api/eduhubTypes";
 import {
-  aggregatePaymentsByClass,
+  addToCurrencyMap,
   buildPayrollSummaryText,
   currencyMapToFormattedLines,
   estimateInstructorAndPlatformSplitLines,
   formatMoney,
   INSTRUCTOR_REVENUE_SHARE,
-  mergeCurrencyMaps,
   type ClassPayrollAggregate,
 } from "@/features/payroll/classPayrollAggregate";
 import {
@@ -47,60 +42,38 @@ import {
 import { TeacherPayrollPayoutDetailsDialog } from "@/features/teacher/components/TeacherPayrollPayoutDetailsDialog";
 import { TeacherPayrollSubmitDialog } from "@/features/teacher/components/TeacherPayrollSubmitDialog";
 import {
-  buildTeacherPayrollStudentRows,
-  summarizeTeacherPayrollStudentRows,
-  useTeacherPayrollClassStudents,
-  type TeacherPayrollStudentRow,
-} from "@/features/teacher/hooks/useTeacherPayrollClassStudents";
-import {
   emptyTeacherPayrollForm,
   type TeacherPayrollFormFields,
 } from "@/features/payroll/payrollScheduleEligibility";
-import {
-  ensurePayrollSubmitDemo,
-  isPayrollSubmitDemoCourse,
-  PAYROLL_SUBMIT_DEMO_COURSE_ID,
-} from "@/features/payroll/payrollSubmitDemo";
-import { cn, formatThousandsInText } from "@/lib/utils";
+import { formatThousandsInText } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
-function coursePricingUnit(pricing?: { discountedAmount?: number; amount?: number; currency?: string }) {
-  const unit = pricing?.discountedAmount ?? pricing?.amount;
-  return unit != null && unit > 0 ? { price: unit, priceCurrency: pricing?.currency } : {};
-}
+type PayrollCourseRef = { id: string; title: string; enrollmentCount: number };
 
-function courseSummaryToTeacherCourse(c: NonNullable<Awaited<ReturnType<typeof eduhubCourses.getByLecturer>>>[number]): TeacherCourse {
+function classAggregateFromPayroll(cls: PayrollClassSummaryResponse): ClassPayrollAggregate {
+  const paidByCurrency = new Map<string, number>();
+  const outstandingByCurrency = new Map<string, number>();
+  let paidCount = 0;
+  let unpaidCount = 0;
+  for (const s of cls.students) {
+    if (s.status === "paid") {
+      paidCount += 1;
+      if (s.amount != null && s.amount > 0) addToCurrencyMap(paidByCurrency, s.currency, s.amount);
+    } else if (s.status === "pending" || s.status === "overdue") {
+      unpaidCount += 1;
+      if (s.amount != null && s.amount > 0) addToCurrencyMap(outstandingByCurrency, s.currency, s.amount);
+    }
+  }
   return {
-    id: c.id,
-    title: c.title,
-    description: "",
-    instructorName: c.lecturerName,
-    thumbnailUrl: c.thumbnailUrl,
-    enrollmentCount: c.enrollmentCount,
-    classMeetingsInSixMonths: c.classMeetingsInSixMonths,
-    classMeetingSlots: c.classMeetingSlots,
-    lessons: [],
-    createdAt: c.createdAt,
-    updatedAt: c.createdAt,
-    status: c.status,
-    ...coursePricingUnit(c.pricing),
-  };
-}
-
-function courseResponseToTeacherCourse(c: CourseResponse): TeacherCourse {
-  return {
-    id: c.id,
-    title: c.title,
-    description: "",
-    instructorName: c.lecturer?.fullName,
-    thumbnailUrl: c.thumbnailUrl,
-    enrollmentCount: c.enrollmentCount,
-    classMeetingsInSixMonths: c.classMeetingsInSixMonths,
-    lessons: [],
-    createdAt: c.createdAt,
-    updatedAt: c.createdAt,
-    status: c.status,
-    ...coursePricingUnit(c.pricing),
+    className: cls.className,
+    course: cls.course,
+    lecturerName: cls.lecturerName,
+    lecturerEmail: cls.lecturerEmail?.trim() || undefined,
+    paymentCount: cls.students.length,
+    paidCount,
+    unpaidCount,
+    paidByCurrency,
+    outstandingByCurrency,
   };
 }
 
@@ -128,7 +101,7 @@ function SubmissionStatusPill({ status }: { status: "pending" | "approved" | "re
   return <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900">Pending</span>;
 }
 
-function StudentPayrollStatusBadge({ status }: { status: TeacherPayrollStudentRow["status"] }) {
+function StudentPayrollStatusBadge({ status }: { status: PayrollClassStudentResponse["status"] }) {
   const { t } = useTranslation();
   if (status === "enrolled") {
     return (
@@ -143,23 +116,14 @@ function courseTitleMatchesClass(title: string, classSection: string, course: st
   return classSection.trim().toLowerCase() === norm || course.trim().toLowerCase() === norm;
 }
 
-function paymentAggregateMatchesCourse(title: string, agg: ClassPayrollAggregate): boolean {
-  return courseTitleMatchesClass(title, agg.className, agg.course);
-}
-
 function resolveSubmissionCourse(
   submission: InstructorPayrollRequestRecord,
-  instructorCourses: TeacherCourse[],
-): TeacherCourse | undefined {
+  instructorCourses: PayrollCourseRef[],
+): PayrollCourseRef | undefined {
   return instructorCourses.find((course) =>
     courseTitleMatchesClass(course.title, submission.classSection, submission.course),
   );
 }
-
-type TeacherPayrollClassRow = ClassPayrollAggregate & {
-  courseId: string;
-  enrollmentCount: number;
-};
 
 function payrollRequestStatusBadge(latest: InstructorPayrollRequestRecord | undefined, hasPending: boolean) {
   if (hasPending) {
@@ -178,14 +142,6 @@ function payrollRequestStatusBadge(latest: InstructorPayrollRequestRecord | unde
     };
   }
   return { label: "Ready", className: "bg-slate-100 text-slate-700 ring-slate-200/90" };
-}
-
-function paymentMatchesInstructor(p: AdminPaymentRow, emailNorm: string, nameNorm: string): boolean {
-  const le = (p.lecturerEmail ?? "").trim().toLowerCase();
-  const ln = (p.lecturerName ?? "").trim().toLowerCase();
-  if (emailNorm && le && le === emailNorm) return true;
-  if (nameNorm && ln && ln === nameNorm) return true;
-  return false;
 }
 
 function latestRequestForClass(
@@ -210,7 +166,7 @@ export default function TeacherPayrollPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   const [search, setSearch] = useState("");
   const [submissionSearch, setSubmissionSearch] = useState("");
-  const [courses, setCourses] = useState<TeacherCourse[]>([]);
+  const [payrollClasses, setPayrollClasses] = useState<PayrollClassSummaryResponse[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [openSubmitKey, setOpenSubmitKey] = useState<string | null>(null);
   const [payoutDetailsTarget, setPayoutDetailsTarget] = useState<{
@@ -240,54 +196,20 @@ export default function TeacherPayrollPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const instructorName = user.name?.trim() || "Instructor";
     async function loadClasses() {
       setCoursesLoading(true);
-      const local = teacherCoursesStore.getAll();
-      const demo = ensurePayrollSubmitDemo(instructorName);
       if (!user.id) {
-        const withDemo = [demo, ...local.filter((c) => c.id !== PAYROLL_SUBMIT_DEMO_COURSE_ID)];
-        if (!cancelled) setCourses(withDemo);
-        if (!cancelled) setCoursesLoading(false);
+        if (!cancelled) {
+          setPayrollClasses([]);
+          setCoursesLoading(false);
+        }
         return;
       }
       try {
-        const res = await eduhubCourses.getByLecturer(user.id);
-        const apiCourses: TeacherCourse[] = (res || []).map(courseSummaryToTeacherCourse);
-
-        const ownedIds = new Set(apiCourses.map((c) => c.id));
-        let coveredCourses: TeacherCourse[] = [];
-        try {
-          const invites = await eduhubSubstituteInvites.listMine();
-          const coveredIds = Array.from(
-            new Set(
-              invites
-                .filter((r) => r.substituteId === user.id && r.status === "APPROVED")
-                .map((r) => r.courseId)
-                .filter((id) => !ownedIds.has(id)),
-            ),
-          );
-          const covered = await Promise.all(
-            coveredIds.map((id) => eduhubCourses.getById(id).catch(() => null)),
-          );
-          coveredCourses = covered.filter((c): c is NonNullable<typeof c> => c != null).map(courseResponseToTeacherCourse);
-        } catch {
-          coveredCourses = [];
-        }
-
-        const merged = [...apiCourses, ...coveredCourses, ...local];
-        // Keep this page lightweight; we don't enrich via GET /courses/{id} here.
-        const dedup = new Map<string, TeacherCourse>();
-        merged.forEach((c) => {
-          if (!c?.id) return;
-          dedup.set(c.id, c);
-        });
-        const out = Array.from(dedup.values());
-        const withDemo = [demo, ...out.filter((c) => c.id !== PAYROLL_SUBMIT_DEMO_COURSE_ID)];
-        if (!cancelled) setCourses(withDemo);
+        const rows = await eduhubPayroll.getClasses();
+        if (!cancelled) setPayrollClasses(rows ?? []);
       } catch {
-        const withDemo = [demo, ...local.filter((c) => c.id !== PAYROLL_SUBMIT_DEMO_COURSE_ID)];
-        if (!cancelled) setCourses(withDemo);
+        if (!cancelled) setPayrollClasses([]);
       } finally {
         if (!cancelled) setCoursesLoading(false);
       }
@@ -296,107 +218,53 @@ export default function TeacherPayrollPage() {
     return () => {
       cancelled = true;
     };
-  }, [user.id, user.name]);
+  }, [user.id]);
 
   const emailNorm = user.email.trim().toLowerCase();
   const nameNorm = (user.name ?? "").trim().toLowerCase();
   const instructorLabel = user.name?.trim() || "Instructor";
 
-  const allPayments = useAdminPayments();
   const payrollRequests = useInstructorPayrollRequests();
   const proofMap = usePayrollProofMap();
 
-  const payments = useMemo(() => {
-    const normE = emailNorm.trim().toLowerCase();
-    const normN = nameNorm.trim().toLowerCase();
-    if (!normE && !normN) return [] as AdminPaymentRow[];
-    return allPayments.filter((p) => paymentMatchesInstructor(p, normE, normN));
-  }, [allPayments, emailNorm, nameNorm]);
-
-  const filteredPayments = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return payments;
-    return payments.filter((p) =>
-      [
-        p.studentName,
-        p.studentEmail,
-        p.className,
-        p.course,
-        p.reference,
-        p.status,
-        formatMoney(p.amount, p.currency),
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(q),
-    );
-  }, [payments, search]);
-
-  const classAggregates = useMemo(() => aggregatePaymentsByClass(payments), [payments]);
-
-  const instructorCourses = useMemo(() => {
-    if (coursesLoading) return [] as TeacherCourse[];
-    const published = courses.filter((c) => c.status === "PUBLISHED");
-    return (published.length > 0 ? published : courses).filter((c) => c.title?.trim());
-  }, [courses, coursesLoading]);
-
-  const classCardModels = useMemo((): TeacherPayrollClassRow[] => {
+  const instructorCourses = useMemo<PayrollCourseRef[]>(() => {
     if (coursesLoading) return [];
-    return instructorCourses.map((course) => {
-      const title = course.title.trim();
-      const fromPayments = classAggregates.find((agg) => paymentAggregateMatchesCourse(title, agg));
-      if (fromPayments) {
-        return {
-          ...fromPayments,
-          courseId: course.id,
-          enrollmentCount: course.enrollmentCount ?? 0,
-        };
-      }
-      return {
-        className: title,
-        course: title,
-        lecturerName: course.instructorName || instructorLabel,
-        lecturerEmail: emailNorm || undefined,
-        paymentCount: 0,
-        paidCount: 0,
-        unpaidCount: 0,
-        paidByCurrency: new Map<string, number>(),
-        outstandingByCurrency: new Map<string, number>(),
-        courseId: course.id,
-        enrollmentCount: course.enrollmentCount ?? 0,
-      };
-    });
-  }, [classAggregates, coursesLoading, emailNorm, instructorCourses, instructorLabel]);
+    return payrollClasses.map((c) => ({ id: c.courseId, title: c.className, enrollmentCount: c.enrollmentCount }));
+  }, [payrollClasses, coursesLoading]);
 
-  const { enrolledByCourseId, loading: enrolledStudentsLoading } = useTeacherPayrollClassStudents(
-    instructorCourses,
-    user.id,
-  );
+  const classCardModels = useMemo(() => {
+    if (coursesLoading) return [] as PayrollClassSummaryResponse[];
+    return payrollClasses.filter((c) => c.className?.trim());
+  }, [payrollClasses, coursesLoading]);
 
   const filteredClassCards = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return classCardModels;
-    return classCardModels.filter((agg) => {
-      if ([agg.className, agg.course].join(" ").toLowerCase().includes(q)) return true;
-      return filteredPayments.some((p) => {
-        if (p.className !== agg.className || p.course !== agg.course) return false;
-        return [p.studentName, p.studentEmail, p.reference, p.status, formatMoney(p.amount, p.currency)]
+    return classCardModels.filter((cls) => {
+      if ([cls.className, cls.course].join(" ").toLowerCase().includes(q)) return true;
+      return cls.students.some((s) =>
+        [s.fullName, s.email, s.status, formatMoney(s.amount ?? 0, s.currency)]
           .join(" ")
           .toLowerCase()
-          .includes(q);
-      });
+          .includes(q),
+      );
     });
-  }, [classCardModels, filteredPayments, search]);
+  }, [classCardModels, search]);
 
   const totals = useMemo(() => {
     const byCurrency = new Map<string, number>();
-    filteredPayments.forEach((p) => byCurrency.set(p.currency, (byCurrency.get(p.currency) ?? 0) + p.amount));
+    filteredClassCards.forEach((cls) => byCurrency.set(cls.currency, (byCurrency.get(cls.currency) ?? 0) + cls.totalTuition));
     return Array.from(byCurrency.entries()).map(([currency, amount]) => ({
       currency,
       amount,
       formatted: formatMoney(amount, currency),
     }));
-  }, [filteredPayments]);
+  }, [filteredClassCards]);
+
+  const totalPaymentRows = useMemo(
+    () => filteredClassCards.reduce((sum, cls) => sum + cls.students.length, 0),
+    [filteredClassCards],
+  );
 
   const classCardKey = (className: string, course: string) => `${className}\t${course}`;
 
@@ -529,7 +397,7 @@ export default function TeacherPayrollPage() {
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-slate-900">Your classes</p>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  {filteredPayments.length} payment row{filteredPayments.length === 1 ? "" : "s"} ·{" "}
+                  {totalPaymentRows} payment row{totalPaymentRows === 1 ? "" : "s"} ·{" "}
                   {filteredClassCards.length} class{filteredClassCards.length === 1 ? "" : "es"}
                   {totals.length > 0 ? (
                     <>
@@ -576,49 +444,25 @@ export default function TeacherPayrollPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredClassCards.map((agg) => {
-                      const ck = classCardKey(agg.className, agg.course);
-                      const course = instructorCourses.find((item) => item.id === agg.courseId);
-                      const enrolled = enrolledByCourseId.get(agg.courseId) ?? [];
-                      const studentRows = course
-                        ? buildTeacherPayrollStudentRows(course, enrolled, payments, agg.className, agg.course)
-                        : [];
-                      const rowSummary = summarizeTeacherPayrollStudentRows(studentRows);
-                      const rows = filteredPayments.filter((p) => p.className === agg.className && p.course === agg.course);
-                      const totalStudents =
-                        studentRows.length > 0 ? studentRows.length : agg.enrollmentCount;
-                      const paidCount = studentRows.length > 0 ? rowSummary.paidCount : agg.paidCount;
-                      const unpaidCount = studentRows.length > 0 ? rowSummary.unpaidCount : agg.unpaidCount;
-                      const totalEnrolledMap =
-                        studentRows.length > 0
-                          ? mergeCurrencyMaps(rowSummary.paidByCurrency, rowSummary.outstandingByCurrency)
-                          : mergeCurrencyMaps(new Map(agg.paidByCurrency), new Map(agg.outstandingByCurrency));
-                      const enrolledLines = currencyMapToFormattedLines(totalEnrolledMap);
-                      const revenueSplit = estimateInstructorAndPlatformSplitLines(totalEnrolledMap);
-                      const summaryText =
-                        studentRows.length > 0
-                          ? buildPayrollSummaryText({
-                              ...agg,
-                              paymentCount: studentRows.length,
-                              paidCount: rowSummary.paidCount,
-                              unpaidCount: rowSummary.unpaidCount,
-                              paidByCurrency: rowSummary.paidByCurrency,
-                              outstandingByCurrency: rowSummary.outstandingByCurrency,
-                            })
-                          : buildPayrollSummaryText(agg);
-                      const paidStudentCount = studentRows.filter((row) => row.status === "paid").length;
-                      const paymentCurrency =
-                        studentRows.find((row) => row.currency)?.currency ??
-                        course?.priceCurrency ??
-                        rows[0]?.currency ??
-                        "UZS";
+                    {filteredClassCards.map((cls) => {
+                      const ck = classCardKey(cls.className, cls.course);
+                      const agg = classAggregateFromPayroll(cls);
+                      const studentRows = cls.students;
+                      const totalStudents = studentRows.length > 0 ? studentRows.length : cls.enrollmentCount;
+                      const paidCount = agg.paidCount;
+                      const unpaidCount = agg.unpaidCount;
+                      const enrolledLines = currencyMapToFormattedLines(new Map([[cls.currency, cls.totalTuition]]));
+                      const revenueSplit = estimateInstructorAndPlatformSplitLines(new Map([[cls.currency, cls.totalTuition]]));
+                      const summaryText = buildPayrollSummaryText(agg);
+                      const paidStudentCount = paidCount;
+                      const paymentCurrency = cls.currency;
                       const paidPaymentAmounts = studentRows
                         .filter((row) => row.status === "paid" && row.amount != null)
                         .map((row) => row.amount as number);
                       const latest = latestRequestForClass(
                         payrollRequests,
-                        agg.className,
-                        agg.course,
+                        cls.className,
+                        cls.course,
                         emailNorm,
                         instructorLabel,
                       );
@@ -633,14 +477,14 @@ export default function TeacherPayrollPage() {
                             request.instructorName,
                           ) ===
                           instructorPayrollRequestDedupeKey(
-                            agg.className,
-                            agg.course,
+                            cls.className,
+                            cls.course,
                             emailNorm,
                             instructorLabel,
                           ),
                       );
                       const isExpanded = expandedClassKey === ck;
-                      const proofBundle = resolvePayrollProofBundle(proofMap, agg.className, agg.course);
+                      const proofBundle = resolvePayrollProofBundle(proofMap, cls.className, cls.course);
                       const canViewTransfer = canInstructorViewTransferProof(latest, proofBundle);
                       const canViewPayout =
                         latest?.status === "approved" ||
@@ -667,16 +511,13 @@ export default function TeacherPayrollPage() {
                             </TableCell>
                             <TableCell className="py-4 min-w-[160px]">
                               <p className="font-medium text-slate-900">
-                                {agg.className}
-                                {isPayrollSubmitDemoCourse({ id: agg.courseId }) ? (
-                                  <span className="ml-2 inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-800">
-                                    Demo
+                                {cls.className}
+                                {cls.substituteCoverage ? (
+                                  <span className="ml-2 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-800">
+                                    Substitute
                                   </span>
                                 ) : null}
                               </p>
-                              {isPayrollSubmitDemoCourse({ id: agg.courseId }) ? (
-                                <p className="mt-1 text-[11px] text-violet-700">3-month schedule complete — ready to submit payroll</p>
-                              ) : null}
                               {latest?.status === "rejected" && latest.adminNote ? (
                                 <p className="mt-1 text-[11px] leading-snug text-red-700 line-clamp-2" title={latest.adminNote}>
                                   Admin: {latest.adminNote}
@@ -710,10 +551,7 @@ export default function TeacherPayrollPage() {
                             </TableCell>
                             <TableCell className="py-4">
                               <span
-                                className={cn(
-                                  "inline-flex max-w-[140px] items-center rounded-full px-2.5 py-1 text-[11px] font-medium ring-1",
-                                  statusBadge.className,
-                                )}
+                                className={`inline-flex max-w-[140px] items-center rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ${statusBadge.className}`}
                               >
                                 {statusBadge.label}
                               </span>
@@ -728,8 +566,8 @@ export default function TeacherPayrollPage() {
                                     className="whitespace-nowrap border-[#3954d0]/35 text-[#3954d0] hover:bg-[#3954d0]/5"
                                     onClick={() =>
                                       setPayoutDetailsTarget({
-                                        classSection: agg.className,
-                                        course: agg.course,
+                                        classSection: cls.className,
+                                        course: cls.course,
                                       })
                                     }
                                   >
@@ -770,7 +608,7 @@ export default function TeacherPayrollPage() {
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
-                                        {enrolledStudentsLoading ? (
+                                        {coursesLoading ? (
                                           <TableRow>
                                             <TableCell colSpan={5} className="py-6 text-center text-sm text-slate-500">
                                               Loading enrolled students…
@@ -787,8 +625,8 @@ export default function TeacherPayrollPage() {
                                             <TableRow key={student.id}>
                                               <TableCell className="font-medium text-slate-900">
                                                 <div className="min-w-0 max-w-[240px]">
-                                                  <p className="truncate">{student.studentName}</p>
-                                                  <p className="text-xs text-slate-500 truncate">{student.studentEmail}</p>
+                                                  <p className="truncate">{student.fullName}</p>
+                                                  <p className="text-xs text-slate-500 truncate">{student.email}</p>
                                                 </div>
                                               </TableCell>
                                               <TableCell className="tabular-nums whitespace-nowrap">
@@ -819,8 +657,8 @@ export default function TeacherPayrollPage() {
                             key={`${ck}-dialog`}
                             open={openSubmitKey === ck}
                             onOpenChange={(open) => setOpenSubmitKey(open ? ck : null)}
-                            className={agg.className}
-                            course={agg.course}
+                            className={cls.className}
+                            course={cls.course}
                             formKey={ck}
                             form={formByClass[ck]}
                             onFormChange={(patch) => updateForm(ck, patch)}
@@ -830,7 +668,7 @@ export default function TeacherPayrollPage() {
                             paymentCurrency={paymentCurrency}
                             paidPaymentAmounts={paidPaymentAmounts}
                             existingClassRequests={classPayrollRequests}
-                            onSubmit={() => void onSubmitRequest(agg.courseId, agg.className, agg.course, summaryText)}
+                            onSubmit={() => void onSubmitRequest(cls.courseId, cls.className, cls.course, summaryText)}
                           />
                         </Fragment>
                       );
@@ -918,12 +756,7 @@ export default function TeacherPayrollPage() {
                     {sortedSubmissions.map((r) => {
                       const matchedCourse = resolveSubmissionCourse(r, instructorCourses);
                       const classTitle = matchedCourse?.title.trim() || r.classSection.trim() || r.course.trim();
-                      const classSubtitle =
-                        matchedCourse?.status === "PUBLISHED"
-                          ? `${matchedCourse.enrollmentCount ?? 0} enrolled`
-                          : matchedCourse?.status
-                            ? matchedCourse.status.replace(/_/g, " ").toLowerCase()
-                            : null;
+                      const classSubtitle = matchedCourse ? `${matchedCourse.enrollmentCount ?? 0} enrolled` : null;
                       const submissionProof = resolvePayrollProofBundle(proofMap, r.classSection, r.course);
                       const canViewTransfer = canInstructorViewTransferProof(r, submissionProof);
                       return (

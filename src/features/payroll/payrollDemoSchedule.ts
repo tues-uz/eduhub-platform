@@ -1,8 +1,4 @@
 import type { SessionSlotLike } from "@/features/courses/classSchedulePreview";
-import {
-  PAYROLL_SUBMIT_DEMO_SCHEDULE_KEY,
-  PAYROLL_SUBMIT_DEMO_SLOTS,
-} from "@/features/payroll/payrollSubmitDemo";
 
 export function payrollClassScheduleKey(classSection: string, course: string): string {
   return `${classSection.trim()}\t${course.trim()}`;
@@ -10,7 +6,6 @@ export function payrollClassScheduleKey(classSection: string, course: string): s
 
 /** Demo schedules aligned with mock payroll rows when API / local course data is missing. */
 const DEMO_PAYROLL_CLASS_SCHEDULES: Record<string, SessionSlotLike[]> = {
-  [PAYROLL_SUBMIT_DEMO_SCHEDULE_KEY]: PAYROLL_SUBMIT_DEMO_SLOTS,
   [payrollClassScheduleKey("BE-B2 Lunch cohort", "Business English B2")]: [
     { title: "Speaking & fluency", sessionDate: "2026-03-03", sessionTime: "12:00" },
     { title: "Business writing", sessionDate: "2026-03-10", sessionTime: "12:00" },

@@ -1056,6 +1056,8 @@ export const eduhubSubstituteInvites = {
 
   primaryReject: (id: string) =>
     request<SubstituteInviteResponse>(`/substitute-invites/${id}/primary-reject`, { method: "POST" }),
+
+  cancel: (id: string) => request<SubstituteInviteResponse>(`/substitute-invites/${id}/cancel`, { method: "POST" }),
 };
 
 export const eduhubAdminSubstituteInvites = {

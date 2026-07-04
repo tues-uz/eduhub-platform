@@ -26,10 +26,18 @@ function statusLabel(status: SubstituteInviteStatus): string {
       return "Rejected by primary instructor";
     case "REJECTED_BY_ADMIN":
       return "Rejected by admin";
+    case "CANCELLED_BY_PRIMARY":
+      return "Cancelled by primary instructor";
     default:
       return status;
   }
 }
+
+const CANCELLABLE_STATUSES: SubstituteInviteStatus[] = [
+  "PENDING_SUBSTITUTE_RESPONSE",
+  "PENDING_PRIMARY_APPROVAL",
+  "PENDING_ADMIN_APPROVAL",
+];
 
 export default function TeacherSubstituteInviteReviewPage() {
   const { t } = useTranslation();
@@ -225,13 +233,27 @@ export default function TeacherSubstituteInviteReviewPage() {
           ) : null}
 
           {decision.kind === "readonly_participant" ? (
-            <p className="mt-6 text-sm leading-relaxed text-foreground/65">
-              {decision.rec.status === "PENDING_SUBSTITUTE_RESPONSE" && decision.isPrimary
-                ? "Waiting for the substitute to respond. You will be notified when there is an update."
-                : decision.rec.status === "PENDING_PRIMARY_APPROVAL" && decision.isSubstitute
-                  ? "Waiting for the primary instructor to confirm this cover."
-                  : "There is nothing for you to confirm at this step. Check notifications for updates."}
-            </p>
+            <div className="mt-6 space-y-3">
+              <p className="text-sm leading-relaxed text-foreground/65">
+                {decision.rec.status === "PENDING_SUBSTITUTE_RESPONSE" && decision.isPrimary
+                  ? "Waiting for the substitute to respond. You will be notified when there is an update."
+                  : decision.rec.status === "PENDING_PRIMARY_APPROVAL" && decision.isSubstitute
+                    ? "Waiting for the primary instructor to confirm this cover."
+                    : "There is nothing for you to confirm at this step. Check notifications for updates."}
+              </p>
+              {decision.isPrimary && CANCELLABLE_STATUSES.includes(decision.rec.status) ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full text-red-700 hover:bg-red-50"
+                  onClick={() =>
+                    runAction(() => eduhubSubstituteInvites.cancel(inviteId), "Cover request cancelled")
+                  }
+                >
+                  Cancel this request
+                </Button>
+              ) : null}
+            </div>
           ) : null}
 
           {decision.kind === "no_access" ? (

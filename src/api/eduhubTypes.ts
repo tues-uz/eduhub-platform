@@ -703,7 +703,8 @@ export type SubstituteInviteStatus =
   | "APPROVED"
   | "DECLINED_BY_SUBSTITUTE"
   | "REJECTED_BY_PRIMARY"
-  | "REJECTED_BY_ADMIN";
+  | "REJECTED_BY_ADMIN"
+  | "CANCELLED_BY_PRIMARY";
 
 export interface SubstituteInviteResponse {
   id: string;
@@ -743,6 +744,8 @@ export interface InstallmentPaymentResponse {
   courseTitle: string;
   studentEmailNorm: string;
   studentName: string;
+  lecturerName: string;
+  lecturerEmail: string;
   scheduleMonth: 1 | 2 | 3;
   amount: number;
   currency?: string;

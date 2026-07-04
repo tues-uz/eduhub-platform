@@ -3,10 +3,9 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "@/lib/icons";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
-import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock";
-import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
-import { aggregatePaymentsByClass, formatMoney, sumAmountsForStatuses } from "@/features/payroll/classPayrollAggregate";
+import { useEnrollmentInstallmentPayments } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
+import { scheduleMonthOrdinalLabel } from "@/features/enrollment/enrollmentInstallmentPayments";
+import { currencyMapToFormattedLines, formatMoney } from "@/features/payroll/classPayrollAggregate";
 import { formatThousandsInText } from "@/lib/utils";
 import { useInstructorPayrollRequests } from "@/features/teacher/data/instructorPayrollRequestStore";
 import { Button } from "@/components/ui/button";
@@ -66,6 +65,28 @@ function formatSubmittedShort(iso: string): string {
   }
 }
 
+function TuitionStatusBadge({ status }: { status: "PENDING" | "APPROVED" | "REJECTED" }) {
+  if (status === "APPROVED") {
+    return (
+      <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-900">
+        Approved
+      </span>
+    );
+  }
+  if (status === "REJECTED") {
+    return (
+      <span className="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-900">
+        Rejected
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900">
+      Awaiting review
+    </span>
+  );
+}
+
 function RequestStatusBadge({ status }: { status: "pending" | "approved" | "rejected" }) {
   if (status === "approved") {
     return (
@@ -93,7 +114,7 @@ export default function AdminPayrollPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = parsePayrollTab(searchParams.get("tab"));
 
-  const payments = useAdminPayments();
+  const installmentPayments = useEnrollmentInstallmentPayments();
   const payrollRequests = useInstructorPayrollRequests();
   const proofRows = useMemo(
     () =>
@@ -123,7 +144,7 @@ export default function AdminPayrollPage() {
 
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "PENDING" | "APPROVED" | "REJECTED">("all");
   const [requestStatusFilter, setRequestStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [requestSearch, setRequestSearch] = useState("");
   const [proofSearch, setProofSearch] = useState("");
@@ -133,52 +154,61 @@ export default function AdminPayrollPage() {
   };
 
   const classOptions = useMemo(() => {
-    const names = new Set(payments.map((p) => p.className));
+    const names = new Set(installmentPayments.map((p) => p.courseTitle));
     return Array.from(names).sort((a, b) => a.localeCompare(b));
-  }, [payments]);
+  }, [installmentPayments]);
 
   const filteredPayments = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return payments.filter((p) => {
-      if (classFilter !== "all" && p.className !== classFilter) return false;
+    return installmentPayments.filter((p) => {
+      if (classFilter !== "all" && p.courseTitle !== classFilter) return false;
       if (statusFilter !== "all" && p.status !== statusFilter) return false;
       if (!q) return true;
       const haystack = [
         p.studentName,
-        p.studentEmail,
-        p.className,
-        p.course,
+        p.studentEmailNorm,
+        p.courseTitle,
         p.lecturerName,
         p.lecturerEmail,
-        p.reference,
         p.status,
-        formatMoney(p.amount, p.currency),
+        formatMoney(p.amount, p.currency ?? "UZS"),
       ]
         .join(" ")
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [payments, search, classFilter, statusFilter]);
+  }, [installmentPayments, search, classFilter, statusFilter]);
 
-  const collectedInView = useMemo(
-    () => sumAmountsForStatuses(filteredPayments, ["paid"]),
-    [filteredPayments],
-  );
-  const outstandingInView = useMemo(
-    () => sumAmountsForStatuses(filteredPayments, ["pending", "overdue"]),
-    [filteredPayments],
-  );
+  const collectedInView = useMemo(() => {
+    const map = new Map<string, number>();
+    filteredPayments.forEach((p) => {
+      if (p.status !== "APPROVED") return;
+      map.set(p.currency ?? "UZS", (map.get(p.currency ?? "UZS") ?? 0) + p.amount);
+    });
+    return currencyMapToFormattedLines(map);
+  }, [filteredPayments]);
+  const outstandingInView = useMemo(() => {
+    const map = new Map<string, number>();
+    filteredPayments.forEach((p) => {
+      if (p.status !== "PENDING") return;
+      map.set(p.currency ?? "UZS", (map.get(p.currency ?? "UZS") ?? 0) + p.amount);
+    });
+    return currencyMapToFormattedLines(map);
+  }, [filteredPayments]);
 
   const paidRowCount = useMemo(
-    () => filteredPayments.filter((p) => p.status === "paid").length,
+    () => filteredPayments.filter((p) => p.status === "APPROVED").length,
     [filteredPayments],
   );
   const unpaidRowCount = useMemo(
-    () => filteredPayments.filter((p) => p.status === "pending" || p.status === "overdue").length,
+    () => filteredPayments.filter((p) => p.status === "PENDING").length,
     [filteredPayments],
   );
 
-  const totalsByClass = useMemo(() => aggregatePaymentsByClass(filteredPayments), [filteredPayments]);
+  const classSectionsWithActivity = useMemo(
+    () => new Set(filteredPayments.map((p) => p.courseTitle)).size,
+    [filteredPayments],
+  );
 
   const instructorRequestsSorted = useMemo(
     () => [...payrollRequests].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
@@ -389,8 +419,12 @@ export default function AdminPayrollPage() {
 
           <TabsContent value="tuition" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
             <p className="mb-6 text-sm text-slate-600 max-w-2xl">
-              Student tuition rows for reference when validating instructor payroll. Use Payments & reminders to chase
-              unpaid invoices.
+              Schedule-month tuition payments for reference when validating instructor payroll. Review and approve
+              individual payments from{" "}
+              <Link to="/dashboard/admin/installment-payments" className="text-[#3954d0] hover:underline">
+                Schedule-month payments
+              </Link>
+              .
             </p>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-6">
@@ -413,15 +447,15 @@ export default function AdminPayrollPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
                 <SelectTrigger className="w-full sm:w-[160px] bg-white">
                   <SelectValue placeholder={t("common.status")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t("admin.shared.allStatuses")}</SelectItem>
-                  <SelectItem value="pending">{t("admin.shared.pending")}</SelectItem>
-                  <SelectItem value="paid">{t("admin.shared.paid")}</SelectItem>
-                  <SelectItem value="overdue">{t("admin.shared.overdue")}</SelectItem>
+                  <SelectItem value="PENDING">Awaiting review</SelectItem>
+                  <SelectItem value="APPROVED">Approved</SelectItem>
+                  <SelectItem value="REJECTED">Rejected</SelectItem>
                 </SelectContent>
               </Select>
               {hasActiveTuitionFilters ? (
@@ -446,7 +480,7 @@ export default function AdminPayrollPage() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-semibold text-slate-700">{t("admin.payroll.tuition.totalsTitle")}</CardTitle>
                   <p className="text-xs text-slate-500 font-normal mt-1">
-                    Collected counts paid tuition; outstanding is pending and overdue rows that match your filters.
+                    Collected counts approved payments; outstanding is payments awaiting review that match your filters.
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -467,7 +501,7 @@ export default function AdminPayrollPage() {
                     </div>
                   )}
                   <p className="text-xs text-slate-500 pt-1 border-t border-slate-100">
-                    {filteredPayments.length} payment row(s) total · {totalsByClass.length} class section(s) with
+                    {filteredPayments.length} payment row(s) total · {classSectionsWithActivity} class section(s) with
                     activity
                   </p>
                 </CardContent>
@@ -480,39 +514,41 @@ export default function AdminPayrollPage() {
                   <TableRow className="bg-slate-50">
                     <TableHead>{t("admin.shared.student")}</TableHead>
                     <TableHead>{t("admin.shared.class")}</TableHead>
-                    <TableHead>{t("admin.shared.course")}</TableHead>
                     <TableHead>{t("admin.shared.lecturer")}</TableHead>
                     <TableHead>{t("admin.shared.amount")}</TableHead>
                     <TableHead>{t("common.status")}</TableHead>
-                    <TableHead>Due</TableHead>
+                    <TableHead>Schedule month</TableHead>
                     <TableHead>{t("admin.shared.paid")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredPayments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-24 text-center text-slate-500">
+                      <TableCell colSpan={7} className="h-24 text-center text-slate-500">
                         No payments match your search or filters.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredPayments.map((p: AdminPaymentRow) => (
+                    filteredPayments.map((p) => (
                       <TableRow key={p.id}>
                         <TableCell className="font-medium text-slate-900">
                           <div className="min-w-0">
                             <p className="truncate">{p.studentName}</p>
-                            <p className="text-xs text-slate-500 truncate">{p.studentEmail}</p>
+                            <p className="text-xs text-slate-500 truncate">{p.studentEmailNorm}</p>
                           </div>
                         </TableCell>
-                        <TableCell className="text-slate-800">{p.className}</TableCell>
-                        <TableCell className="text-slate-700">{p.course}</TableCell>
+                        <TableCell className="text-slate-800">{p.courseTitle}</TableCell>
                         <TableCell className="text-slate-700">{p.lecturerName}</TableCell>
-                        <TableCell className="tabular-nums">{formatMoney(p.amount, p.currency)}</TableCell>
+                        <TableCell className="tabular-nums">{formatMoney(p.amount, p.currency ?? "UZS")}</TableCell>
                         <TableCell>
-                          <PaymentStatusBadge status={p.status} />
+                          <TuitionStatusBadge status={p.status} />
                         </TableCell>
-                        <TableCell className="tabular-nums text-slate-700">{p.dueDate}</TableCell>
-                        <TableCell className="tabular-nums text-slate-700">{p.paidAt ?? "—"}</TableCell>
+                        <TableCell className="tabular-nums text-slate-700">{scheduleMonthOrdinalLabel(p.scheduleMonth)}</TableCell>
+                        <TableCell className="tabular-nums text-slate-700">
+                          {p.status === "APPROVED" && p.reviewedAt
+                            ? new Date(p.reviewedAt).toLocaleDateString()
+                            : "—"}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}

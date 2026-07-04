@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { eduhubCourses, eduhubLecturer } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubLecturer, eduhubPayroll } from "@/api/eduhubClient";
 import type { TeacherCourse } from "@/features/teacher/types";
 
 export const teacherKeys = {
   all: ["teacher"] as const,
   courses: (lecturerId: string) => [...teacherKeys.all, "courses", lecturerId] as const,
   stats: () => [...teacherKeys.all, "stats"] as const,
+  payrollClasses: (lecturerId: string) => [...teacherKeys.all, "payroll-classes", lecturerId] as const,
 };
 
 function mapApiCourse(c: Awaited<ReturnType<typeof eduhubCourses.getByLecturer>>[number]): TeacherCourse {
@@ -42,5 +43,14 @@ export function useTeacherStatsQuery() {
   return useQuery({
     queryKey: teacherKeys.stats(),
     queryFn: () => eduhubLecturer.getStats(),
+  });
+}
+
+/** Lecturer's own + approved-substitute-covered classes, with real tuition/collection figures. */
+export function usePayrollClassesQuery(lecturerId: string | undefined) {
+  return useQuery({
+    queryKey: teacherKeys.payrollClasses(lecturerId ?? ""),
+    queryFn: () => eduhubPayroll.getClasses(),
+    enabled: !!lecturerId,
   });
 }

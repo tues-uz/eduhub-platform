@@ -23,7 +23,7 @@ import {
 import { useAuthSession } from "@/features/auth/context";
 import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import type { TeacherCourse } from "@/features/teacher/types";
-import { eduhubAttendance, eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
+import { eduhubAttendance, eduhubCourses, eduhubSchedule, eduhubSubstituteInvites } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import {
   buildCourseScheduleSlots,
@@ -245,8 +245,25 @@ export function TeacherAttendanceSessionPanel({
             updatedAt: c.createdAt,
             status: c.status,
           }));
+          const ownCourseIds = new Set(apiCourses.map((c) => c.id));
+          const substituteInvites = await eduhubSubstituteInvites.listMine().catch(() => []);
+          const substituteCourses: TeacherCourse[] = substituteInvites
+            .filter((inv) => inv.status === "APPROVED" && inv.substituteId === user.id && !ownCourseIds.has(inv.courseId))
+            .reduce<TeacherCourse[]>((acc, inv) => {
+              if (acc.some((c) => c.id === inv.courseId)) return acc;
+              acc.push({
+                id: inv.courseId,
+                title: `${inv.courseTitle} (substitute)`,
+                description: "",
+                instructorName: inv.primaryInstructorName,
+                lessons: [],
+                createdAt: inv.createdAt,
+                updatedAt: inv.updatedAt,
+              });
+              return acc;
+            }, []);
           if (!cancelled) {
-            const merged = [...apiCourses, ...local];
+            const merged = [...apiCourses, ...substituteCourses, ...local];
             setCourses(merged);
             setCourseId((prev) => {
               if (prev && merged.some((c) => c.id === prev)) return prev;

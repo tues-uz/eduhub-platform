@@ -24,23 +24,26 @@ function statusLabel(status: SubstituteInviteStatus): string {
       return "Rejected (primary)";
     case "REJECTED_BY_ADMIN":
       return "Rejected (admin)";
+    case "CANCELLED_BY_PRIMARY":
+      return "Cancelled (primary)";
     default:
       return status;
   }
 }
 
 function adminListCanActOnStatus(status: SubstituteInviteStatus): boolean {
-  return (
-    status === "PENDING_ADMIN_APPROVAL" ||
-    status === "PENDING_SUBSTITUTE_RESPONSE" ||
-    status === "PENDING_PRIMARY_APPROVAL"
-  );
+  return status === "PENDING_ADMIN_APPROVAL";
 }
 
 function statusPillClass(status: SubstituteInviteStatus): string {
   if (adminListCanActOnStatus(status)) return "bg-emerald-50 text-emerald-800 ring-emerald-200";
   if (status === "APPROVED") return "bg-green-50 text-green-800 ring-green-200";
-  if (status === "DECLINED_BY_SUBSTITUTE" || status === "REJECTED_BY_PRIMARY" || status === "REJECTED_BY_ADMIN") {
+  if (
+    status === "DECLINED_BY_SUBSTITUTE" ||
+    status === "REJECTED_BY_PRIMARY" ||
+    status === "REJECTED_BY_ADMIN" ||
+    status === "CANCELLED_BY_PRIMARY"
+  ) {
     return "bg-amber-50 text-amber-900 ring-amber-200";
   }
   return "bg-slate-100 text-slate-700 ring-slate-200";
