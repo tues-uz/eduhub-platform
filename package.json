@@ -3,6 +3,9 @@
     "private": true,
     "version": "0.0.0",
     "type": "module",
+    "engines": {
+        "node": "20.x"
+    },
     "scripts": {
         "dev": "vite",
         "dev:native-watch": "VITE_DEV_POLL=0 vite",
