@@ -60,7 +60,7 @@ import {
   orderSessionSlotsChronologically,
   resolveEnrollmentSessionTimingStatus,
   resolvePreviewSessionSlots,
-  scheduleMonthSessionCounts,
+  scheduleMonthRemainingSessionCounts,
   scheduleTabToPaymentMonths,
 } from "@/features/courses/classSchedulePreview";
 import { useScheduleAttendanceState } from "@/features/courses/useScheduleAttendanceState";
@@ -363,9 +363,17 @@ const StudentEnrollmentApplicationPage = () => {
     }
   }, [courseId, sessionSlotsPreview, sessionTuitionQuote?.joinFromMeeting, sessionJoin.allSessionsFinished]);
 
+  // Per-month tuition weights counting only remaining (non-finished) sessions, so a month
+  // with already-held meetings is charged for its remaining classes only — matching the
+  // session-level proration already applied in `tuitionDueTotal`.
   const scheduleMonthCounts = useMemo(
-    () => scheduleMonthSessionCounts(sessionSlotsPreview),
-    [sessionSlotsPreview],
+    () =>
+      scheduleMonthRemainingSessionCounts(
+        sessionSlotsPreview,
+        scheduleAttendance.heldSlotKeys,
+        scheduleAttendance.activeSlotKeys,
+      ),
+    [sessionSlotsPreview, scheduleAttendance],
   );
 
   const scheduleMonthTabs = useMemo(
@@ -1115,6 +1123,7 @@ const StudentEnrollmentApplicationPage = () => {
                   monthlyPaySummary={monthlyPaySummary}
                   heldSlotKeys={scheduleAttendance.heldSlotKeys}
                   activeSlotKeys={scheduleAttendance.activeSlotKeys}
+                  pricingMonthCounts={scheduleMonthCounts}
                   schedulePanelClassName="mt-5 rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3"
                 />
               </fieldset>

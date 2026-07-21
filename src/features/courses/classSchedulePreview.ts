@@ -222,6 +222,29 @@ export function scheduleMonthSessionCounts(slots: SessionSlotLike[]): [number, n
   return distributeSessionsIntoThreeMonths(slots.map(toScheduleSlotRow)).counts;
 }
 
+/**
+ * Session counts per 3-month bucket, counting only sessions that are NOT finished.
+ * Tuition weights should use these so a month with already-held meetings is charged
+ * for its remaining classes only (per-class proration), never the whole month.
+ */
+export function scheduleMonthRemainingSessionCounts(
+  slots: SessionSlotLike[],
+  heldSlotKeys: ReadonlySet<string>,
+  activeSlotKeys: ReadonlySet<string>,
+  nowMs: number = Date.now(),
+): [number, number, number] {
+  if (!slots.length) return [0, 0, 0];
+  const { buckets } = distributeSessionsIntoThreeMonths(slots.map(toScheduleSlotRow));
+  const counts = buckets.map((bucket) =>
+    bucket.reduce((n, row) => {
+      if (!slotHasContent(row)) return n;
+      const timing = resolveEnrollmentSessionTimingStatus(row, heldSlotKeys, activeSlotKeys, nowMs);
+      return timing === "finished" ? n : n + 1;
+    }, 0),
+  );
+  return [counts[0] ?? 0, counts[1] ?? 0, counts[2] ?? 0];
+}
+
 /** Same date order as `ClassSchedulePreviewPanel` meeting numbers. */
 export function orderSessionSlotsChronologically(slots: SessionSlotLike[]): SessionSlotLike[] {
   const decorated = slots.map((slot, i) => ({ slot, i, ms: sessionDateMs(slot.sessionDate) }));

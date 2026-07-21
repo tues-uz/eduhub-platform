@@ -120,6 +120,8 @@ export type EnrollmentMonthlyPaymentSelectorProps = {
   schedulePanelClassName?: string;
   heldSlotKeys?: ReadonlySet<string>;
   activeSlotKeys?: ReadonlySet<string>;
+  /** Per-month tuition weights (remaining, non-finished sessions). Falls back to all-session counts. */
+  pricingMonthCounts?: [number, number, number];
 };
 
 export function EnrollmentMonthlyPaymentSelector({
@@ -138,6 +140,7 @@ export function EnrollmentMonthlyPaymentSelector({
   schedulePanelClassName = "rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3",
   heldSlotKeys,
   activeSlotKeys,
+  pricingMonthCounts,
 }: EnrollmentMonthlyPaymentSelectorProps) {
   const enrollmentScheduleSlots = useMemo(() => {
     if (!courseId) return [] as SessionSlotLike[];
@@ -164,6 +167,11 @@ export function EnrollmentMonthlyPaymentSelector({
     () => scheduleMonthSessionCounts(enrollmentScheduleSlots),
     [enrollmentScheduleSlots],
   );
+
+  // Weights used for card pricing: remaining (non-finished) sessions per month when provided,
+  // so a partially-held month is priced for its remaining classes only. Display counts below
+  // still use the full per-month session counts.
+  const pricingCounts = pricingMonthCounts ?? scheduleMonthCounts;
 
   const scheduleMonthTabs = useMemo(
     () => buildScheduleMonthTabs(enrollmentScheduleSlots),
@@ -217,7 +225,7 @@ export function EnrollmentMonthlyPaymentSelector({
               const priceLine = planCardMonthPrice(
                 coursePriceAmount,
                 months,
-                scheduleMonthCounts,
+                pricingCounts,
                 priceCurrency,
               );
               const sessionsInMonth = monthTab.slots.length;
