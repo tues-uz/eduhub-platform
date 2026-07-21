@@ -685,10 +685,6 @@ export default function TeacherCourseRosterPage() {
     return map;
   }, [attendanceRosterQuery.data?.rows, overviewSessionId]);
 
-  useEffect(() => {
-    setAttendanceScheduleFilter("latest-qr");
-  }, [courseMeta?.id]);
-
   const applyAttendanceScheduleFilter = useCallback(
     (value: string) => {
       if (!courseMeta?.id) return;
@@ -744,6 +740,11 @@ export default function TeacherCourseRosterPage() {
     },
     [courseMeta?.id, rosterScheduleView.slots],
   );
+
+  useEffect(() => {
+    if (!courseMeta?.id) return;
+    applyAttendanceScheduleFilter("latest-qr");
+  }, [courseMeta?.id, applyAttendanceScheduleFilter]);
 
   const handleDelete = async (id: string) => {
     if (isUuid(id)) {
@@ -1919,7 +1920,9 @@ export default function TeacherCourseRosterPage() {
                             When a row matches the selected QR session, the{" "}
                             <span className="font-medium text-foreground/80">{t("teacher.roster.attendance.presentBadge")}</span> and{" "}
                             <span className="font-medium text-foreground/80">{t("teacher.roster.attendance.table.checkedIn")}</span> columns in this table use
-                            that meeting from the attendance API. If nothing matches, generate a QR for that day in Class
+                            that meeting from the attendance API. Tick{" "}
+                            <span className="font-medium text-foreground/80">{t("teacher.roster.attendance.table.instructorCheck")}</span> on each
+                            student row you confirm (including those who scanned QR). If nothing matches, generate a QR for that day in Class
                             meeting check-in, then try again.
                           </p>
                           <div
@@ -1934,13 +1937,13 @@ export default function TeacherCourseRosterPage() {
                                 <TableHead className="text-center whitespace-nowrap">{t("teacher.roster.attendance.presentBadge")}</TableHead>
                                 <TableHead className="text-right whitespace-nowrap">{t("teacher.roster.attendance.table.checkedIn")}</TableHead>
                                 <TableHead
-                                  title={t("teacher.roster.attendance.table.instructorCheck")}
+                                  title="Mark each student you verify for this meeting"
                                   className="text-center whitespace-nowrap border-l border-slate-200 bg-slate-50/70 min-w-[7.5rem] px-2"
                                 >{t("teacher.roster.attendance.table.instructorCheck")}</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {studentsQuery.data.map((s, rowIndex) => {
+                              {studentsQuery.data.map((s) => {
                                 void attendanceUiKey;
                                 const apiEntry =
                                   attendanceRosterByStudent.get(s.id) ??
@@ -1959,7 +1962,12 @@ export default function TeacherCourseRosterPage() {
                                   : localEntry
                                     ? { ...localEntry, present: true }
                                     : undefined;
-                                const rosterLen = studentsQuery.data.length;
+                                const verifyItemId = teacherChecklist.verifyItemId(
+                                  overviewSessionId ?? "no-meeting-selected",
+                                  s.id,
+                                  s.email,
+                                );
+                                const canVerify = Boolean(overviewSessionId);
                                 return (
                                   <TableRow key={s.id}>
                                     <TableCell className="font-medium text-foreground">{s.fullName}</TableCell>
@@ -1982,33 +1990,39 @@ export default function TeacherCourseRosterPage() {
                                           })
                                         : "—"}
                                     </TableCell>
-                                    {rowIndex === 0 ? (
-                                      <TableCell
-                                        rowSpan={rosterLen}
-                                        className="align-middle border-l border-slate-200 bg-slate-50/50 p-2 text-center"
-                                      >
-                                        <div className="flex justify-center py-0.5">
-                                          {teacherChecklist.ready ? (
-                                            teacherChecklist.items.map((item) => (
-                                              <Checkbox
-                                                key={item.id}
-                                                id={`teacher-class-check-${courseMeta?.id ?? courseId}-${item.id}`}
-                                                checked={Boolean(teacherChecklist.checked[item.id])}
-                                                onCheckedChange={(v) => teacherChecklist.toggle(item.id, v === true)}
-                                                className="shrink-0"
-                                                aria-label={item.label}
-                                              />
-                                            ))
-                                          ) : (
-                                            <Checkbox
-                                              disabled
-                                              className="shrink-0 opacity-40"
-                                              aria-label="Sign in to save teacher check"
-                                            />
-                                          )}
-                                        </div>
-                                      </TableCell>
-                                    ) : null}
+                                    <TableCell className="text-center border-l border-slate-200 bg-slate-50/50 p-2">
+                                      <div className="flex justify-center py-0.5">
+                                        {teacherChecklist.ready ? (
+                                          <Checkbox
+                                            id={`teacher-verify-${verifyItemId}`}
+                                            checked={Boolean(teacherChecklist.checked[verifyItemId])}
+                                            disabled={!canVerify}
+                                            onCheckedChange={(v) =>
+                                              teacherChecklist.toggle(verifyItemId, v === true)
+                                            }
+                                            className="shrink-0"
+                                            aria-label={
+                                              canVerify
+                                                ? `Mark ${s.fullName} verified for this meeting`
+                                                : `Select a meeting above to verify ${s.fullName}`
+                                            }
+                                            title={
+                                              canVerify
+                                                ? entry?.present
+                                                  ? "Student scanned QR — confirm attendance"
+                                                  : "Mark present if verified manually"
+                                                : "Pick a meeting in Jump by class schedule first"
+                                            }
+                                          />
+                                        ) : (
+                                          <Checkbox
+                                            disabled
+                                            className="shrink-0 opacity-40"
+                                            aria-label={t("teacher.roster.attendance.signInToCheck")}
+                                          />
+                                        )}
+                                      </div>
+                                    </TableCell>
                                   </TableRow>
                                 );
                               })}
