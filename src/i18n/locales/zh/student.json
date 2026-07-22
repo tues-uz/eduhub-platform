@@ -49,7 +49,6 @@
     "welcome": "你好，{{name}}，欢迎回来",
     "subtitle": "以下是您今天的课程动态",
     "statsClassesEnrolled": "已报名课程",
-    "statsAssignments": "作业",
     "statsCertificates": "证书",
     "statsProgress": "进度",
     "upcomingSchedule": "即将开始的课表",
@@ -61,18 +60,10 @@
     "noSessionsTitle": "暂无即将开始的课程",
     "noSessionsHint": "您的讲师可能会很快发布课程安排。",
     "viewMyClass": "查看我的班级",
-    "upcomingAssignments": "即将到期的作业",
-    "viewCalendar": "查看日历",
-    "due": "截止 {{date}}",
-    "overdue": "已逾期",
-    "daysLeft_one": "剩余 {{count}} 天",
-    "daysLeft_other": "剩余 {{count}} 天",
-    "continue": "继续",
-    "start": "开始",
     "quickActions": "快捷操作",
-    "myAssignments": "我的作业",
     "viewProgress": "查看进度",
     "recentActivity": "最近活动",
+    "noRecentActivity": "暂无最近活动。",
     "overallProgress": "总体进度",
     "completionRate": "完成率",
     "classesCompleted": "已完成课程",
@@ -192,7 +183,8 @@
     "overallCompletion": "总体完成度",
     "classesCompleted": "已完成课程",
     "avgScore": "平均分",
-    "byClass": "按课程"
+    "byClass": "按课程",
+    "empty": "您尚未报名任何课程。"
   },
   "notificationsPage": {
     "subtitle": "您的最近活动和更新。",
@@ -481,7 +473,8 @@
   },
   "courseResume": {
     "notFound": "未找到此回顾，或可能已被移除。",
-    "backToClass": "返回班级"
+    "backToClass": "返回班级",
+    "loading": "正在加载课堂回顾…"
   },
   "completion": {
     "preview": "预览",

@@ -1,5 +1,4 @@
 import { eduhubCourses } from "@/api/eduhubClient";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import type { StudentAvatarPreview } from "@/components/StudentAvatarGroup";
 
 const MAX_AVATARS = 4;
@@ -12,24 +11,6 @@ function dedupeByEmail(students: StudentAvatarPreview[]): StudentAvatarPreview[]
     seen.add(key);
     return true;
   });
-}
-
-export function listLocalApprovedStudents(courseId: string): StudentAvatarPreview[] {
-  const seen = new Set<string>();
-  return enrollmentApplicationStore
-    .list()
-    .filter((application) => application.courseId === courseId && application.status === "APPROVED")
-    .filter((application) => {
-      const email = application.applicantEmailNorm.trim().toLowerCase();
-      if (seen.has(email)) return false;
-      seen.add(email);
-      return true;
-    })
-    .slice(0, MAX_AVATARS)
-    .map((application) => ({
-      id: application.id,
-      name: application.fullName,
-    }));
 }
 
 export async function fetchApiEnrolledStudentPreviews(
@@ -46,15 +27,9 @@ export async function fetchApiEnrolledStudentPreviews(
 }
 
 export async function resolveEnrolledStudentPreviews(opts: {
-  linkId: string;
   apiCourseId: string;
   enrollmentCount?: number;
 }): Promise<{ students: StudentAvatarPreview[]; totalCount?: number }> {
-  if (opts.linkId.startsWith("teacher_")) {
-    const students = listLocalApprovedStudents(opts.linkId);
-    return students.length ? { students, totalCount: students.length } : { students: [] };
-  }
-
   if (opts.enrollmentCount === 0) {
     return { students: [], totalCount: 0 };
   }

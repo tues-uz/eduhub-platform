@@ -1,3 +1,5 @@
+import { eduhubAttendance } from "@/api/eduhubClient";
+
 export type MeetingModality = "online" | "in_person";
 
 export type StoredAttendanceMeeting = {
@@ -9,7 +11,7 @@ export type StoredAttendanceMeeting = {
   endReason?: string;
   /** Instructor label, e.g. "Week 3 — Tuesday" */
   name: string;
-  /** Opaque backend QR token; returned only when the session is created. */
+  /** Opaque backend QR token; only known in-memory for a session created in this tab (backend never re-exposes it). */
   token?: string;
   /** 0-based row on the approved class schedule when QR was generated from the schedule dropdown. */
   scheduleSlotIndex?: number;
@@ -20,10 +22,9 @@ export type StoredAttendanceMeeting = {
 /** Check-in stays open for this long after the QR is generated (class start). */
 export const ATTENDANCE_SESSION_MAX_MS = 2 * 60 * 60 * 1000 + 15 * 60 * 1000;
 
-const MEETINGS_STORAGE_PREFIX = "eduhub_teacher_attendance_meetings_v1:";
 export const MAX_STORED_MEETINGS = 48;
 
-/** Same-tab listeners use this; `storage` fires only for other tabs. */
+/** Same-tab: attendance sessions changed (new QR generated, session stopped) for a course. */
 export const ATTENDANCE_MEETINGS_CHANGED = "eduhub-attendance-meetings-changed";
 
 /** Same-tab: roster schedule filter asks the overview QR picker to jump to a session. */
@@ -59,67 +60,24 @@ export function pickStoredMeetingForScheduleSlot(
   return null;
 }
 
-export function meetingsStorageKey(courseId: string): string {
-  return `${MEETINGS_STORAGE_PREFIX}${courseId}`;
-}
-
-export function buildAttendanceJoinUrl(
-  courseId: string,
-  sessionId: string,
-  /** When set, embedded in the link/QR so student check-in can enforce the same time window on any device. */
-  sessionStartedAt?: string,
-): string {
-  const params = new URLSearchParams({
-    courseId,
-    session: sessionId,
-  });
-  if (sessionStartedAt) params.set("startedAt", sessionStartedAt);
-  const path = `/dashboard/attendance/join?${params.toString()}`;
-  return `${typeof window !== "undefined" ? window.location.origin : ""}${path}`;
-}
-
-export function loadStoredMeetings(courseId: string): StoredAttendanceMeeting[] {
-  if (!courseId || typeof localStorage === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(meetingsStorageKey(courseId));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter(
-        (x): x is Record<string, unknown> =>
-          !!x && typeof x === "object" && typeof (x as Record<string, unknown>).sessionId === "string",
-      )
-      .map((x) => ({
-        sessionId: String(x.sessionId),
-        createdAt: typeof x.createdAt === "string" ? x.createdAt : new Date().toISOString(),
-        modality: (x.modality === "in_person" ? "in_person" : "online") as MeetingModality,
-        status: (x.status === "CLOSED" ? "CLOSED" : x.status === "OPEN" ? "OPEN" : undefined) as
-          | StoredAttendanceMeeting["status"]
-          | undefined,
-        endedAt: typeof x.endedAt === "string" ? x.endedAt : undefined,
-        endReason: typeof x.endReason === "string" ? x.endReason : undefined,
-        name: typeof x.name === "string" ? x.name.trim() : "",
-        token: typeof x.token === "string" ? x.token.trim() : undefined,
-        scheduleSlotIndex:
-          typeof x.scheduleSlotIndex === "number" && x.scheduleSlotIndex >= 0
-            ? Math.floor(x.scheduleSlotIndex)
-            : undefined,
-        scheduleSlotKey: typeof x.scheduleSlotKey === "string" ? x.scheduleSlotKey.trim() : undefined,
-      }))
-      .slice(0, MAX_STORED_MEETINGS);
-  } catch {
-    return [];
-  }
-}
-
-export function persistMeetings(courseId: string, meetings: StoredAttendanceMeeting[]) {
-  if (!courseId || typeof localStorage === "undefined") return;
-  const trimmed = meetings.slice(0, MAX_STORED_MEETINGS);
-  localStorage.setItem(meetingsStorageKey(courseId), JSON.stringify(trimmed));
-  window.dispatchEvent(
-    new CustomEvent<{ courseId: string }>(ATTENDANCE_MEETINGS_CHANGED, { detail: { courseId } }),
-  );
+/** Live class meetings (attendance QR sessions) for a course — always fetched from the backend,
+ * never cached in localStorage. The one-time QR `token` is never included here (the backend only
+ * returns it at creation); callers that need to preserve a just-created token should merge it in
+ * from their own in-memory state. */
+export async function fetchAttendanceMeetings(courseId: string): Promise<StoredAttendanceMeeting[]> {
+  if (!courseId) return [];
+  const sessions = await eduhubAttendance.listSessions(courseId);
+  return sessions.slice(0, MAX_STORED_MEETINGS).map((s) => ({
+    sessionId: s.id,
+    createdAt: s.startedAt,
+    modality: s.modality === "IN_PERSON" ? "in_person" : "online",
+    status: s.status,
+    endedAt: s.endedAt ?? undefined,
+    endReason: s.endReason ?? undefined,
+    name: s.meetingName,
+    scheduleSlotIndex: s.scheduleSlotIndex ?? undefined,
+    scheduleSlotKey: s.scheduleSlotKey ?? undefined,
+  }));
 }
 
 export function formatMeetingOptionLabel(m: StoredAttendanceMeeting): string {
@@ -128,4 +86,28 @@ export function formatMeetingOptionLabel(m: StoredAttendanceMeeting): string {
   const where = m.modality === "online" ? "Online" : "In person";
   const label = m.name.trim() || "Unnamed meeting";
   return `${label} · ${when} · ${where}`;
+}
+
+export function formatDurationMs(ms: number): string {
+  const sec = Math.floor(Math.max(0, ms) / 1000);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+/** Backend `AttendanceSession.endReason` values (`AttendanceService.java`) → human label. */
+export function endReasonLabel(reason: string): string {
+  switch (reason) {
+    case "MAX_DURATION":
+      return "2h 15m window ended";
+    case "NEW_SESSION":
+      return "New QR / next meeting";
+    case "MANUAL_STOP":
+      return "Stopped by instructor";
+    default:
+      return reason;
+  }
 }

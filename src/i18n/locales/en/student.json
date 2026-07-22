@@ -49,7 +49,6 @@
     "welcome": "Hi {{name}}, welcome back",
     "subtitle": "Here's what's happening with your classes today",
     "statsClassesEnrolled": "Classes enrolled",
-    "statsAssignments": "Assignments",
     "statsCertificates": "Certificates",
     "statsProgress": "Progress",
     "upcomingSchedule": "Upcoming Schedule",
@@ -61,18 +60,10 @@
     "noSessionsTitle": "No upcoming sessions scheduled",
     "noSessionsHint": "Your instructor may publish the class schedule soon.",
     "viewMyClass": "View My Class",
-    "upcomingAssignments": "Upcoming Assignments",
-    "viewCalendar": "View Calendar",
-    "due": "Due {{date}}",
-    "overdue": "Overdue",
-    "daysLeft_one": "{{count}} day left",
-    "daysLeft_other": "{{count}} days left",
-    "continue": "Continue",
-    "start": "Start",
     "quickActions": "Quick Actions",
-    "myAssignments": "My Assignments",
     "viewProgress": "View Progress",
     "recentActivity": "Recent Activity",
+    "noRecentActivity": "No recent activity yet.",
     "overallProgress": "Overall Progress",
     "completionRate": "Completion Rate",
     "classesCompleted": "Classes completed",
@@ -192,7 +183,8 @@
     "overallCompletion": "Overall completion",
     "classesCompleted": "Classes completed",
     "avgScore": "Avg. score",
-    "byClass": "By class"
+    "byClass": "By class",
+    "empty": "You're not enrolled in any classes yet."
   },
   "notificationsPage": {
     "subtitle": "Your recent activity and updates.",
@@ -481,7 +473,8 @@
   },
   "courseResume": {
     "notFound": "This resume was not found or may have been removed.",
-    "backToClass": "Back to class"
+    "backToClass": "Back to class",
+    "loading": "Loading class resume…"
   },
   "completion": {
     "preview": "Preview",

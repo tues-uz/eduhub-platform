@@ -439,6 +439,10 @@ export const eduhubLessonProgress = {
       `/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/progress`,
       { method: "POST", body: JSON.stringify(body) }
     ),
+
+  /** All of the current student's lesson-completion records for a course (one call instead of one per lesson). */
+  listForCourse: (courseId: string) =>
+    request<LessonProgressResponse[]>(`/courses/${courseId}/lesson-progress`),
 };
 
 /** Quiz - course-level standalone (placement tests / quizzes not tied to a lesson) */

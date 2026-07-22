@@ -38,9 +38,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { loadStoredMeetings } from "@/features/teacher/attendance/attendanceMeetingsStorage";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
-import type { TeacherCourse } from "@/features/teacher/types";
+import {
+  fetchAttendanceMeetings,
+  type StoredAttendanceMeeting,
+} from "@/features/teacher/attendance/attendanceMeetingsStorage";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
 import {
   eduhubCourses,
@@ -48,6 +49,7 @@ import {
   eduhubCourseQuizzes,
   eduhubClassResumes,
   eduhubAttendance,
+  eduhubLessonProgress,
   type QuizResponseForStudent,
 } from "@/api/eduhubClient";
 import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
@@ -89,11 +91,6 @@ import { cn } from "@/lib/utils";
 import { useAuthSession } from "@/features/auth/context";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
-import {
-  CLASS_RESUME_CHANGED,
-  CLASS_RESUME_STORAGE_KEY,
-  listClassResumes,
-} from "@/features/courses/classResumeStorage";
 import { isCourseScheduleFinished } from "@/features/courses/courseScheduleCompletion";
 import { hasSeenCourseCongrats } from "@/features/student/courseCongratsSeenStorage";
 
@@ -396,7 +393,6 @@ function resolveStudentSessionSlots(
   apiDetail: CourseResponse | null,
   scheduleProposal: ScheduleProposalResponse | null,
   isApiCourse: boolean,
-  tc: TeacherCourse | null,
 ): SessionSlotLike[] {
   if (isApiCourse && courseId && apiDetail) {
     if (scheduleProposal?.sessions.length) {
@@ -415,7 +411,6 @@ function resolveStudentSessionSlots(
     if (apiDetail.classMeetingSlots?.length) return apiDetail.classMeetingSlots;
     return [];
   }
-  if (tc?.classMeetingSlots?.length) return tc.classMeetingSlots;
   return [];
 }
 
@@ -432,9 +427,8 @@ function parseSessionIdFromAttendanceKey(key: string, courseIdStr: string): stri
   return sessionId.length > 0 ? sessionId : null;
 }
 
-/** Instructor-named meetings live in localStorage when this browser also created the QR (same device). */
-function meetingNameForSession(courseIdStr: string, sessionId: string): string {
-  const meetings = loadStoredMeetings(courseIdStr);
+/** Instructor-named meeting for a session, looked up from an already-fetched meetings list. */
+function meetingNameForSession(meetings: StoredAttendanceMeeting[], sessionId: string): string {
   const m = meetings.find((x) => x.sessionId === sessionId);
   if (m?.name?.trim()) return m.name.trim();
   return "Class meeting";
@@ -471,8 +465,6 @@ function isScannerCameraBlocked(error: string | null): boolean {
     error.includes("not supported")
   );
 }
-
-const TEACHER_PREFIX = "teacher_";
 
 type LessonRow = { id: string; title: string; duration: string; completed: boolean; moduleId?: string };
 type QrBarcode = { rawValue?: string };
@@ -525,11 +517,8 @@ const StudentCourseDetail = () => {
   const emailNorm = user.email.trim().toLowerCase();
   const { byCourse: enrollmentAppsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
   const [enrollmentStoreTick, setEnrollmentStoreTick] = useState(0);
-  const isTeacherCourse = courseId?.startsWith(TEACHER_PREFIX);
-  const teacherCourseId = isTeacherCourse ? courseId!.slice(TEACHER_PREFIX.length) : null;
-  const teacherCourse = teacherCourseId ? teacherCoursesStore.getById(teacherCourseId) : null;
 
-  const id = courseId && !isTeacherCourse && !isUuid(courseId ?? "") ? parseInt(courseId, 10) : NaN;
+  const id = courseId && !isUuid(courseId ?? "") ? parseInt(courseId, 10) : NaN;
 
   const isEnrolled = courseId ? enrolledCourses.some((c) => c.id === courseId || c.id === courseId) : false;
 
@@ -544,6 +533,12 @@ const StudentCourseDetail = () => {
     queryFn: () => eduhubAttendance.listSessions(courseId!),
     enabled: Boolean(courseId && isUuid(courseId) && isEnrolled),
     refetchInterval: 30_000,
+  });
+
+  const attendanceMeetingNamesQuery = useQuery({
+    queryKey: ["student", "attendance-meeting-names", courseId],
+    queryFn: () => fetchAttendanceMeetings(courseId!),
+    enabled: Boolean(courseId && isUuid(courseId) && isEnrolled),
   });
 
   useEffect(() => {
@@ -605,8 +600,7 @@ const StudentCourseDetail = () => {
     );
   };
 
-  const canLoadStudentQuizzes =
-    Boolean(courseId) && isUuid(courseId ?? "") && !isTeacherCourse && isEnrolled;
+  const canLoadStudentQuizzes = Boolean(courseId) && isUuid(courseId ?? "") && isEnrolled;
 
   useEffect(() => {
     if (activeCourseTab !== "quiz" || !canLoadStudentQuizzes) return;
@@ -639,13 +633,24 @@ const StudentCourseDetail = () => {
   const classResumesQuery = useQuery({
     queryKey: ["student", "resumes", courseId],
     queryFn: () => eduhubClassResumes.list(courseId!),
-    enabled: Boolean(courseId) && isUuid(courseId) && !isTeacherCourse && isEnrolled,
+    enabled: Boolean(courseId) && isUuid(courseId) && isEnrolled,
   });
 
   const classResumeList = classResumesQuery.data ?? [];
 
+  const lessonProgressQuery = useQuery({
+    queryKey: ["student", "lesson-progress", courseId],
+    queryFn: () => eduhubLessonProgress.listForCourse(courseId!),
+    enabled: Boolean(courseId) && isUuid(courseId) && isEnrolled,
+  });
+
+  const completedApiLessonIds = useMemo(
+    () => new Set((lessonProgressQuery.data ?? []).filter((p) => p.isCompleted).map((p) => p.lessonId)),
+    [lessonProgressQuery.data],
+  );
+
   useEffect(() => {
-    if (courseId && isUuid(courseId) && !isTeacherCourse) {
+    if (courseId && isUuid(courseId)) {
       setApiLoading(true);
       setApiCourseDetail(null);
       setApiScheduleProposal(null);
@@ -692,12 +697,12 @@ const StudentCourseDetail = () => {
       setApiCourseDetail(null);
       setApiScheduleProposal(null);
     }
-  }, [courseId, isTeacherCourse]);
+  }, [courseId]);
 
   const resolvedSchedule = useMemo(() => {
     void scheduleLocalTick;
     if (!courseId) return null;
-    if (apiCourseDetail && isUuid(courseId) && !isTeacherCourse) {
+    if (apiCourseDetail && isUuid(courseId)) {
       if (apiScheduleProposal) {
         const slots = apiScheduleProposal.sessions.map((s) => ({
           title: s.title,
@@ -717,27 +722,13 @@ const StudentCourseDetail = () => {
         useLocalProposalSnapshot: useProposal,
       });
     }
-    if (teacherCourse) {
-      const slots = teacherCourse.classMeetingSlots;
-      const bounds = boundsFromMeetingSlots(slots);
-      let sessionsSixMo = teacherCourse.classMeetingsInSixMonths;
-      if (sessionsSixMo == null && slots?.length) sessionsSixMo = slots.length;
-      const titlesLen = teacherCourse.classMeetingTitles?.length ?? 0;
-      if (sessionsSixMo == null && titlesLen > 0) sessionsSixMo = titlesLen;
-      return {
-        sessionsSixMo,
-        classStartDate: teacherCourse.classStartDate?.trim() || bounds.start,
-        classEndDate: teacherCourse.classEndDate?.trim() || bounds.end,
-      };
-    }
     return null;
-  }, [courseId, apiCourseDetail, apiScheduleProposal, isTeacherCourse, teacherCourse, scheduleLocalTick]);
+  }, [courseId, apiCourseDetail, apiScheduleProposal, scheduleLocalTick]);
 
   const allSessionSlots = useMemo(() => {
     void scheduleLocalTick;
-    const isApi =
-      Boolean(apiCourseDetail && courseId && isUuid(courseId) && !isTeacherCourse);
-    const raw = resolveStudentSessionSlots(courseId, apiCourseDetail, apiScheduleProposal, isApi, teacherCourse);
+    const isApi = Boolean(apiCourseDetail && courseId && isUuid(courseId));
+    const raw = resolveStudentSessionSlots(courseId, apiCourseDetail, apiScheduleProposal, isApi);
     const decorated = raw.map((slot, i) => ({ slot, i, ms: sessionDateMs(slot.sessionDate) }));
     decorated.sort((a, b) => {
       const na = Number.isNaN(a.ms) ? Infinity : a.ms;
@@ -746,21 +737,21 @@ const StudentCourseDetail = () => {
       return a.i - b.i;
     });
     return decorated.map((x) => x.slot);
-  }, [courseId, apiCourseDetail, apiScheduleProposal, isTeacherCourse, teacherCourse, scheduleLocalTick]);
+  }, [courseId, apiCourseDetail, apiScheduleProposal, scheduleLocalTick]);
 
   const scheduleAttendance = useScheduleAttendanceState(courseId);
 
   const scheduleStatusHint = useMemo(() => {
-    const isApi = Boolean(apiCourseDetail && courseId && isUuid(courseId) && !isTeacherCourse);
+    const isApi = Boolean(apiCourseDetail && courseId && isUuid(courseId));
     return classScheduleStatusHint(courseId, isApi, apiScheduleProposal, allSessionSlots.length > 0);
-  }, [courseId, apiCourseDetail, apiScheduleProposal, isTeacherCourse, allSessionSlots.length]);
+  }, [courseId, apiCourseDetail, apiScheduleProposal, allSessionSlots.length]);
 
   /** Sum of sessions across admin month plans (`sessionCount` on propose). */
   const adminScheduleSessionTotal = useMemo(() => {
     void scheduleLocalTick;
-    if (!courseId || isTeacherCourse || !apiCourseDetail || !isUuid(courseId)) return undefined;
+    if (!courseId || !apiCourseDetail || !isUuid(courseId)) return undefined;
     return resolvedAdminScheduleSessionTotal(courseId, apiCourseDetail, apiScheduleProposal);
-  }, [courseId, apiCourseDetail, apiScheduleProposal, isTeacherCourse, scheduleLocalTick]);
+  }, [courseId, apiCourseDetail, apiScheduleProposal, scheduleLocalTick]);
 
   const adminScheduleMonthCount = useMemo(() => {
     if (allSessionSlots.length === 0) return 0;
@@ -830,16 +821,8 @@ const StudentCourseDetail = () => {
 
   const lessonsFromApi = apiLessons.map((l) => ({
     ...l,
-    completed: lessonProgressStore.isComplete(courseId ?? "", l.id),
+    completed: completedApiLessonIds.has(l.id),
   }));
-  const lessonsFromTeacher = teacherCourse
-    ? [...teacherCourse.lessons].sort((a, b) => a.order - b.order).map((l) => ({
-        id: l.id,
-        title: l.title,
-        duration: l.duration ?? "—",
-        completed: lessonProgressStore.isComplete(courseId ?? "", l.id),
-      }))
-    : [];
   const lessonsFromMock =
     id && LESSONS_BY_COURSE[id]
       ? LESSONS_BY_COURSE[id].map((l) => ({
@@ -850,7 +833,7 @@ const StudentCourseDetail = () => {
         }))
       : [];
 
-  const lessons: LessonRow[] = apiCourse ? lessonsFromApi : teacherCourse ? lessonsFromTeacher : lessonsFromMock;
+  const lessons: LessonRow[] = apiCourse ? lessonsFromApi : lessonsFromMock;
 
   const completedCount = lessons.filter((l) => l.completed).length;
   const progressPercent = lessons.length ? Math.round((completedCount / lessons.length) * 100) : 0;
@@ -865,44 +848,21 @@ const StudentCourseDetail = () => {
         status: statusFromProgress,
         nextLesson: lessons.find((l) => !l.completed)?.title ?? apiLessons[0]?.title ?? "—",
       }
-    : teacherCourse
+    : id
       ? {
-          id: courseId!,
-          title: teacherCourse.title,
-          instructor: teacherCourse.instructorName,
+          ...ENROLLED_COURSES[id],
           progress: progressPercent,
           status: statusFromProgress,
-          nextLesson:
-            lessons.find((l) => !l.completed)?.title ??
-            teacherCourse.lessons.sort((a, b) => a.order - b.order)[0]?.title ??
-            "—",
-          category: "Class",
-          duration: `${teacherCourse.lessons.length} lessons`,
-          modules: teacherCourse.lessons.length,
-          enrolledDate: teacherCourse.createdAt.slice(0, 10),
-          instructorAvatarUrl: teacherCourse.instructorAvatarUrl,
-          price: teacherCourse.price,
-          currency: "USD",
-          enrollmentCount: teacherCourse.enrollmentCount,
-          classMeetingsInSixMonths: teacherCourse.classMeetingsInSixMonths,
-          classStartDate: teacherCourse.classStartDate,
-          classEndDate: teacherCourse.classEndDate,
+          nextLesson: lessons.find((l) => !l.completed)?.title ?? ENROLLED_COURSES[id].nextLesson ?? "—",
+          instructorAvatarUrl: undefined,
+          price: undefined,
+          currency: undefined,
+          enrollmentCount: undefined,
+          classMeetingsInSixMonths: undefined,
+          classStartDate: undefined,
+          classEndDate: undefined,
         }
-      : id
-        ? {
-            ...ENROLLED_COURSES[id],
-            progress: progressPercent,
-            status: statusFromProgress,
-            nextLesson: lessons.find((l) => !l.completed)?.title ?? ENROLLED_COURSES[id].nextLesson ?? "—",
-            instructorAvatarUrl: undefined,
-            price: undefined,
-            currency: undefined,
-            enrollmentCount: undefined,
-            classMeetingsInSixMonths: undefined,
-            classStartDate: undefined,
-            classEndDate: undefined,
-          }
-        : undefined;
+      : undefined;
 
   const stopScanner = () => {
     if (scannerRafRef.current != null) {
@@ -1029,41 +989,6 @@ const StudentCourseDetail = () => {
     );
   }
 
-  const teacherEnrollmentAccess =
-    isTeacherCourse && courseId
-      ? enrollmentApplicationStore.getTeacherCourseAccess(courseId, user.email.trim().toLowerCase())
-      : "approved";
-
-  if (isTeacherCourse && teacherEnrollmentAccess !== "approved") {
-    return (
-      <div className="mx-auto max-w-lg px-6 py-16 text-center" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <BookOpen className="mx-auto mb-4 h-12 w-12 text-foreground/25" />
-        <h1 className="text-xl font-semibold text-foreground">
-          {teacherEnrollmentAccess === "pending"
-            ? "Enrollment pending review"
-            : teacherEnrollmentAccess === "rejected"
-              ? "Enrollment not approved"
-              : "Enrollment required"}
-        </h1>
-        <p className="mt-2 text-sm text-foreground/70">
-          {teacherEnrollmentAccess === "pending"
-            ? "An administrator is reviewing your application. You’ll be able to open this class after approval."
-            : teacherEnrollmentAccess === "rejected"
-              ? "You can’t access this class with your current application. Check Notifications for details, or browse Available Classes if you may submit again."
-              : "Request access from Available Classes and wait for an administrator to approve your enrollment."}
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Button asChild variant="outline" className="rounded-full">
-            <Link to="/dashboard/available-courses">Browse classes</Link>
-          </Button>
-          <Button asChild variant="outline" className="rounded-full">
-            <Link to="/dashboard/notifications">Notifications</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const nextLesson = lessons.find((l) => !l.completed) ?? lessons[0];
   const courseIdStr = String(course.id);
   const attendanceEntries =
@@ -1089,11 +1014,12 @@ const StudentCourseDetail = () => {
           .filter(({ key }) => key.includes(`:${courseIdStr}:`))
           .sort((a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime())
       : [];
+  const attendanceMeetingsForNames = attendanceMeetingNamesQuery.data ?? [];
   const localAttendanceTableRows = attendanceEntries.map((entry) => {
     const sessionId = parseSessionIdFromAttendanceKey(entry.key, courseIdStr);
     const resolved =
       entry.storedMeetingName ??
-      (sessionId ? meetingNameForSession(courseIdStr, sessionId) : null);
+      (sessionId ? meetingNameForSession(attendanceMeetingsForNames, sessionId) : null);
     return {
       ...entry,
       meetingName: resolved ?? "Class meeting",
@@ -1124,8 +1050,7 @@ const StudentCourseDetail = () => {
     totalSessionsCount != null ||
     allSessionSlots.length > 0;
 
-  const coverThumbnailUrl =
-    apiCourse?.thumbnailUrl?.trim() || teacherCourse?.thumbnailUrl?.trim() || undefined;
+  const coverThumbnailUrl = apiCourse?.thumbnailUrl?.trim() || undefined;
 
   const classEndForCompletion = resolvedSchedule?.classEndDate ?? course.classEndDate;
   const shouldRedirectToCongrats =
@@ -1410,7 +1335,7 @@ const StudentCourseDetail = () => {
               {isEnrolled && (
                 <div className="space-y-2">
                   {lessons.map((lesson, index) => {
-                  const isUnlocked = teacherCourse ? true : index === 0 || lessons[index - 1].completed;
+                  const isUnlocked = index === 0 || lessons[index - 1].completed;
                   return (
                     <div
                       key={lesson.id}
@@ -1581,17 +1506,10 @@ const StudentCourseDetail = () => {
                 </div>
               ) : !canLoadStudentQuizzes ? (
                 <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-8 text-center text-sm text-foreground/70">
-                  {isTeacherCourse ? (
-                    <p>
-                      This class is stored only in the browser. When it is connected to the platform, quizzes from your
-                      instructor will load here.
-                    </p>
-                  ) : (
-                    <p>
-                      Quizzes load for catalog classes on the server. Open a class from <span className="font-medium">My Class</span>{" "}
-                      to take instructor quizzes here.
-                    </p>
-                  )}
+                  <p>
+                    Quizzes load for catalog classes on the server. Open a class from <span className="font-medium">My Class</span>{" "}
+                    to take instructor quizzes here.
+                  </p>
                 </div>
               ) : studentQuizzesLoading ? (
                 <div className="flex items-center justify-center gap-3 rounded-xl border border-gray-200/80 bg-white py-14 text-muted-foreground">

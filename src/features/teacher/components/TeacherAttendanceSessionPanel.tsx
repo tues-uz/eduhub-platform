@@ -21,7 +21,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuthSession } from "@/features/auth/context";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import type { TeacherCourse } from "@/features/teacher/types";
 import { eduhubAttendance, eduhubCourses, eduhubSchedule, eduhubSubstituteInvites } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
@@ -30,34 +29,20 @@ import {
   toApprovedScheduleSlotOptions,
 } from "@/features/courses/courseScheduleSlots";
 import {
-  markScheduleSlotActive,
-  markScheduleSlotHeld,
+  refreshScheduleAttendanceState,
   scheduleSlotKeyFromParts,
 } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 import {
   notifyAttendanceQrGenerated,
   notifyAttendanceSessionCompleted,
-  notifyStudentAttendanceCheckInOpenFromApi,
 } from "@/features/notifications/appNotificationStore";
 import {
-  backfillCompletedSessionLog,
-  finalizeOpenSessionsForCourse,
-  finalizeSessionLog,
-  listAttendanceSessionLogsForInstructor,
-  startSessionLog,
-} from "@/features/teacher/attendance/attendanceSessionLogsStorage";
-import {
   ATTENDANCE_SESSION_MAX_MS,
-  buildAttendanceJoinUrl,
-  loadStoredMeetings,
+  fetchAttendanceMeetings,
   MAX_STORED_MEETINGS,
-  persistMeetings,
   type StoredAttendanceMeeting,
 } from "@/features/teacher/attendance/attendanceMeetingsStorage";
-import {
-  AttendanceSessionLogsSection,
-  useAttendanceSessionLogsTick,
-} from "@/features/teacher/components/AttendanceSessionLogsSection";
+import { AttendanceSessionLogsSection } from "@/features/teacher/components/AttendanceSessionLogsSection";
 import { AttendanceOverviewQrPicker, type ApprovedScheduleSlotOption } from "@/features/teacher/components/AttendanceOverviewQrPicker";
 import { useTranslation } from "react-i18next";
 
@@ -186,31 +171,6 @@ export function TeacherAttendanceSessionPanel({
     });
   }, []);
 
-  const resolveMeetingSlotKey = useCallback(
-    (m: StoredAttendanceMeeting | undefined): string | undefined => {
-      if (!m) return undefined;
-      const stored = m.scheduleSlotKey?.trim();
-      if (stored) return stored;
-      if (m.scheduleSlotIndex != null) {
-        const opt = approvedScheduleSlots.find((s) => s.index === m.scheduleSlotIndex);
-        return slotKeyForScheduleOption(opt);
-      }
-      const byName = approvedScheduleSlots.find((s) => s.label.trim() === m.name.trim());
-      return slotKeyForScheduleOption(byName);
-    },
-    [approvedScheduleSlots, slotKeyForScheduleOption],
-  );
-
-  const markHeldForEndedSession = useCallback(
-    (endedSessionId: string, meetings: StoredAttendanceMeeting[]) => {
-      if (!courseId) return;
-      const m = meetings.find((x) => x.sessionId === endedSessionId);
-      const key = resolveMeetingSlotKey(m);
-      if (key) markScheduleSlotHeld(courseId, key);
-    },
-    [courseId, resolveMeetingSlotKey],
-  );
-
   useEffect(() => {
     if (fixedCourse) {
       const synthetic: TeacherCourse = {
@@ -230,7 +190,6 @@ export function TeacherAttendanceSessionPanel({
     let cancelled = false;
     async function load() {
       setLoading(true);
-      const local = teacherCoursesStore.getAll();
       if (user.id) {
         try {
           const res = await eduhubCourses.getByLecturer(user.id);
@@ -263,7 +222,7 @@ export function TeacherAttendanceSessionPanel({
               return acc;
             }, []);
           if (!cancelled) {
-            const merged = [...apiCourses, ...substituteCourses, ...local];
+            const merged = [...apiCourses, ...substituteCourses];
             setCourses(merged);
             setCourseId((prev) => {
               if (prev && merged.some((c) => c.id === prev)) return prev;
@@ -272,19 +231,13 @@ export function TeacherAttendanceSessionPanel({
           }
         } catch {
           if (!cancelled) {
-            setCourses(local);
-            setCourseId((prev) => {
-              if (prev && local.some((c) => c.id === prev)) return prev;
-              return local[0]?.id ?? "";
-            });
+            setCourses([]);
+            setCourseId("");
           }
         }
       } else if (!cancelled) {
-        setCourses(local);
-        setCourseId((prev) => {
-          if (prev && local.some((c) => c.id === prev)) return prev;
-          return local[0]?.id ?? "";
-        });
+        setCourses([]);
+        setCourseId("");
       }
       if (!cancelled) setLoading(false);
     }
@@ -307,41 +260,23 @@ export function TeacherAttendanceSessionPanel({
       return;
     }
     let cancelled = false;
-    eduhubAttendance
-      .listSessions(courseId)
-      .then((sessions) => {
+    fetchAttendanceMeetings(courseId)
+      .then((list) => {
         if (cancelled) return;
-        const localById = new Map(loadStoredMeetings(courseId).map((m) => [m.sessionId, m]));
-        const list: StoredAttendanceMeeting[] = sessions.slice(0, MAX_STORED_MEETINGS).map((s) => ({
-          sessionId: s.id,
-          createdAt: s.startedAt,
-          modality: s.modality === "IN_PERSON" ? "in_person" : "online",
-          status: s.status,
-          endedAt: s.endedAt,
-          endReason: s.endReason,
-          name: s.meetingName,
-          token: localById.get(s.id)?.token,
-          scheduleSlotIndex: s.scheduleSlotIndex,
-          scheduleSlotKey: s.scheduleSlotKey,
-        }));
-        setStoredMeetings(list);
-        persistMeetings(courseId, list);
+        setStoredMeetings((prev) => {
+          const prevById = new Map(prev.map((m) => [m.sessionId, m]));
+          return list.map((m) => ({ ...m, token: prevById.get(m.sessionId)?.token }));
+        });
         setCurrentSessionToken(null);
         setSessionId((prev) => {
           if (prev && list.some((m) => m.sessionId === prev)) return prev;
-          const open = sessions.find((s) => s.status === "OPEN");
-          return open?.id ?? list[0]?.sessionId ?? null;
+          const open = list.find((m) => m.status === "OPEN");
+          return open?.sessionId ?? list[0]?.sessionId ?? null;
         });
       })
       .catch(() => {
         if (cancelled) return;
-        const list = loadStoredMeetings(courseId);
-        setStoredMeetings(list);
-        setCurrentSessionToken(null);
-        setSessionId((prev) => {
-          if (prev && list.some((m) => m.sessionId === prev)) return prev;
-          return list[0]?.sessionId ?? null;
-        });
+        toast.error("Could not load attendance sessions for this class.");
       });
     return () => {
       cancelled = true;
@@ -353,23 +288,8 @@ export function TeacherAttendanceSessionPanel({
     [courses, courseId],
   );
 
-  const prevCourseForLogRef = useRef<string | undefined>(undefined);
   const finalizedMaxDurationRef = useRef<Set<string>>(new Set());
   const manualStopOnceRef = useRef<Set<string>>(new Set());
-  const logTick = useAttendanceSessionLogsTick();
-
-  useEffect(() => {
-    if (!courseId) {
-      prevCourseForLogRef.current = undefined;
-      return;
-    }
-    const prev = prevCourseForLogRef.current;
-    prevCourseForLogRef.current = courseId;
-    if (prev && prev !== courseId) {
-      const ended = finalizeOpenSessionsForCourse(prev, "course_changed");
-      ended.forEach((e) => notifyAttendanceSessionCompleted(e));
-    }
-  }, [courseId]);
 
   const handleRosterScheduleSlotIntent = useCallback(
     (slot: ApprovedScheduleSlotOption | null) => {
@@ -394,17 +314,8 @@ export function TeacherAttendanceSessionPanel({
     if (!name) return;
 
     const prevSessionId = sessionId;
+    const prevMeeting = prevSessionId ? storedMeetings.find((m) => m.sessionId === prevSessionId) : undefined;
     const courseTitle = selectedCourse?.title?.trim() || "Class";
-
-    if (prevSessionId) {
-      const ended = finalizeSessionLog({
-        courseId,
-        sessionId: prevSessionId,
-        endReason: "new_session",
-      });
-      if (ended) notifyAttendanceSessionCompleted(ended);
-      markHeldForEndedSession(prevSessionId, storedMeetings);
-    }
 
     const slotIndex = scheduleSlotForGenerate?.index;
     const scheduleSlotKey = slotKeyForScheduleOption(scheduleSlotForGenerate);
@@ -422,6 +333,26 @@ export function TeacherAttendanceSessionPanel({
       });
       return;
     }
+
+    // Backend auto-closes the previous open session (reason NEW_SESSION) as part of createSession.
+    if (prevMeeting && !prevMeeting.endedAt) {
+      const startMs = new Date(prevMeeting.createdAt).getTime();
+      const endMs = new Date(created.startedAt).getTime();
+      if (Number.isFinite(startMs) && Number.isFinite(endMs)) {
+        notifyAttendanceSessionCompleted({
+          id: prevMeeting.sessionId,
+          courseTitle,
+          meetingName: prevMeeting.name,
+          endedAt: created.startedAt,
+          durationMs: Math.max(0, endMs - startMs),
+          endReason: "NEW_SESSION",
+          instructorEmail: user.email ?? "",
+          instructorName: user.name ?? "",
+        });
+      }
+    }
+    void refreshScheduleAttendanceState(courseId);
+
     const next: StoredAttendanceMeeting = {
       sessionId: created.id,
       createdAt: created.startedAt,
@@ -434,35 +365,33 @@ export function TeacherAttendanceSessionPanel({
       ...(typeof slotIndex === "number" && slotIndex >= 0 ? { scheduleSlotIndex: slotIndex } : {}),
       ...(scheduleSlotKey ? { scheduleSlotKey } : {}),
     };
-    if (scheduleSlotKey) {
-      markScheduleSlotActive(courseId, scheduleSlotKey);
-    }
     setStoredMeetings((prev) => {
-      const merged = [next, ...prev.filter((p) => p.sessionId !== next.sessionId)].slice(0, MAX_STORED_MEETINGS);
-      persistMeetings(courseId, merged);
-      return merged;
+      const withPrevClosed = prevSessionId
+        ? prev.map((m) =>
+            m.sessionId === prevSessionId
+              ? { ...m, status: "CLOSED" as const, endedAt: created.startedAt, endReason: "NEW_SESSION" }
+              : m,
+          )
+        : prev;
+      return [next, ...withPrevClosed.filter((m) => m.sessionId !== next.sessionId)].slice(0, MAX_STORED_MEETINGS);
     });
     setSessionId(next.sessionId);
     setCurrentSessionToken(created.token ?? null);
     setNextMeetingName(useSchedulePicker ? "" : (suggestedMeetingName?.trim() ?? ""));
 
-    const log = startSessionLog({
-      courseId,
+    notifyAttendanceQrGenerated({
+      id: next.sessionId,
       courseTitle,
-      sessionId: next.sessionId,
       meetingName: name,
-      instructorId: user.id,
+      startedAt: created.startedAt,
       instructorEmail: user.email ?? "",
       instructorName: user.name ?? "",
     });
-    notifyAttendanceQrGenerated(log);
-    void notifyStudentAttendanceCheckInOpenFromApi(log);
     if (useSchedulePicker) {
       setRosterScheduleSlotIntent(null);
     }
   }, [
     courseId,
-    markHeldForEndedSession,
     nextMeetingName,
     scheduleSlotForGenerate,
     slotKeyForScheduleOption,
@@ -472,7 +401,6 @@ export function TeacherAttendanceSessionPanel({
     suggestedMeetingName,
     useSchedulePicker,
     user.email,
-    user.id,
     user.name,
   ]);
 
@@ -480,11 +408,9 @@ export function TeacherAttendanceSessionPanel({
     if (!courseId || !sessionId) return "";
     const meeting = storedMeetings.find((m) => m.sessionId === sessionId);
     const token = currentSessionToken ?? meeting?.token;
-    if (token) {
-      const path = `/dashboard/attendance/join?token=${encodeURIComponent(token)}`;
-      return `${typeof window !== "undefined" ? window.location.origin : ""}${path}`;
-    }
-    return buildAttendanceJoinUrl(courseId, sessionId, meeting?.createdAt);
+    if (!token) return "";
+    const path = `/dashboard/attendance/join?token=${encodeURIComponent(token)}`;
+    return `${typeof window !== "undefined" ? window.location.origin : ""}${path}`;
   }, [courseId, currentSessionToken, sessionId, storedMeetings]);
 
   const activeMeeting = useMemo(
@@ -493,11 +419,9 @@ export function TeacherAttendanceSessionPanel({
   );
 
   useEffect(() => {
-    if (!courseId || !sessionId || !activeMeeting) return;
-    if (manuallyStoppedSessionIds.includes(sessionId)) return;
-    const key = resolveMeetingSlotKey(activeMeeting);
-    if (key) markScheduleSlotActive(courseId, key);
-  }, [courseId, sessionId, activeMeeting, manuallyStoppedSessionIds, resolveMeetingSlotKey]);
+    if (!courseId) return;
+    void refreshScheduleAttendanceState(courseId);
+  }, [courseId, sessionId]);
 
   useEffect(() => {
     if (!projectorMode) return;
@@ -544,38 +468,57 @@ export function TeacherAttendanceSessionPanel({
     (manuallyStoppedSessionIds.includes(sessionId as string) ||
       (isBackendSessionClosed && activeMeeting?.endReason === "MANUAL_STOP"));
 
+  const noTokenKnown = Boolean(activeMeeting) && !isBackendSessionClosed && !joinUrl;
+
   const checkInWindowOpen =
     Boolean(activeMeeting && Number.isFinite(sessionStartMs)) &&
     !isBackendSessionClosed &&
     !isSessionManuallyStopped &&
+    !noTokenKnown &&
     sessionElapsedMs < ATTENDANCE_SESSION_MAX_MS;
 
+  /** Confirms the 2h15m expiry with the backend instead of just hiding the QR locally, so the
+   * session actually becomes CLOSED (trigger #2) rather than waiting for someone else to poll it. */
   useEffect(() => {
     if (!courseId || !activeMeeting?.sessionId) return;
     if (isBackendSessionClosed) return;
     if (sessionElapsedMs < ATTENDANCE_SESSION_MAX_MS) return;
     const sid = activeMeeting.sessionId;
+    if (!isUuid(sid)) return;
     if (finalizedMaxDurationRef.current.has(sid)) return;
+    finalizedMaxDurationRef.current.add(sid);
     const courseTitle = selectedCourse?.title?.trim() || "Class";
-    let ended = finalizeSessionLog({ courseId, sessionId: sid, endReason: "max_duration" });
-    markHeldForEndedSession(sid, storedMeetings);
-    if (!ended) {
-      ended = backfillCompletedSessionLog({
-        courseId,
-        courseTitle,
-        sessionId: sid,
-        meetingName: activeMeeting.name.trim() || "Meeting",
-        instructorId: user.id,
-        instructorEmail: user.email ?? "",
-        instructorName: user.name ?? "",
-        sessionStartedAtIso: activeMeeting.createdAt,
-        endReason: "max_duration",
+    const meetingName = activeMeeting.name.trim() || "Meeting";
+    const startedAtIso = activeMeeting.createdAt;
+    eduhubAttendance
+      .closeSession(sid, "MAX_DURATION")
+      .then((closed) => {
+        setStoredMeetings((prev) =>
+          prev.map((m) =>
+            m.sessionId === sid
+              ? { ...m, status: closed.status, endedAt: closed.endedAt, endReason: closed.endReason }
+              : m,
+          ),
+        );
+        void refreshScheduleAttendanceState(courseId);
+        const startMs = new Date(startedAtIso).getTime();
+        const endMs = closed.endedAt ? new Date(closed.endedAt).getTime() : NaN;
+        if (Number.isFinite(startMs) && Number.isFinite(endMs)) {
+          notifyAttendanceSessionCompleted({
+            id: sid,
+            courseTitle,
+            meetingName,
+            endedAt: closed.endedAt as string,
+            durationMs: Math.max(0, endMs - startMs),
+            endReason: closed.endReason ?? "MAX_DURATION",
+            instructorEmail: user.email ?? "",
+            instructorName: user.name ?? "",
+          });
+        }
+      })
+      .catch(() => {
+        finalizedMaxDurationRef.current.delete(sid);
       });
-    }
-    if (ended) {
-      finalizedMaxDurationRef.current.add(sid);
-      notifyAttendanceSessionCompleted(ended);
-    }
   }, [
     courseId,
     activeMeeting?.sessionId,
@@ -585,9 +528,6 @@ export function TeacherAttendanceSessionPanel({
     sessionElapsedMs,
     selectedCourse?.title,
     user.email,
-    markHeldForEndedSession,
-    storedMeetings,
-    user.id,
     user.name,
   ]);
 
@@ -597,23 +537,35 @@ export function TeacherAttendanceSessionPanel({
     if (manualStopOnceRef.current.has(sessionId)) return;
     manualStopOnceRef.current.add(sessionId);
 
+    const courseTitle = selectedCourse?.title?.trim() || "Class";
+    const meetingName = activeMeeting.name.trim() || "Meeting";
+    const startedAtIso = activeMeeting.createdAt;
+
     try {
       if (isUuid(sessionId)) {
         const closed = await eduhubAttendance.closeSession(sessionId, "MANUAL_STOP");
-        setStoredMeetings((prev) => {
-          const next = prev.map((m) =>
+        setStoredMeetings((prev) =>
+          prev.map((m) =>
             m.sessionId === sessionId
-              ? {
-                  ...m,
-                  status: closed.status,
-                  endedAt: closed.endedAt,
-                  endReason: closed.endReason,
-                }
+              ? { ...m, status: closed.status, endedAt: closed.endedAt, endReason: closed.endReason }
               : m,
-          );
-          persistMeetings(courseId, next);
-          return next;
-        });
+          ),
+        );
+        void refreshScheduleAttendanceState(courseId);
+        const startMs = new Date(startedAtIso).getTime();
+        const endMs = closed.endedAt ? new Date(closed.endedAt).getTime() : NaN;
+        if (Number.isFinite(startMs) && Number.isFinite(endMs)) {
+          notifyAttendanceSessionCompleted({
+            id: sessionId,
+            courseTitle,
+            meetingName,
+            endedAt: closed.endedAt as string,
+            durationMs: Math.max(0, endMs - startMs),
+            endReason: closed.endReason ?? "MANUAL_STOP",
+            instructorEmail: user.email ?? "",
+            instructorName: user.name ?? "",
+          });
+        }
       }
     } catch (e) {
       toast.error("Could not stop attendance session", {
@@ -623,44 +575,17 @@ export function TeacherAttendanceSessionPanel({
       return;
     }
 
-    const courseTitle = selectedCourse?.title?.trim() || "Class";
-    let ended = finalizeSessionLog({ courseId, sessionId, endReason: "manual_stop" });
-    markHeldForEndedSession(sessionId, storedMeetings);
-    if (!ended) {
-      ended = backfillCompletedSessionLog({
-        courseId,
-        courseTitle,
-        sessionId,
-        meetingName: activeMeeting.name.trim() || "Meeting",
-        instructorId: user.id,
-        instructorEmail: user.email ?? "",
-        instructorName: user.name ?? "",
-        sessionStartedAtIso: activeMeeting.createdAt,
-        endReason: "manual_stop",
-      });
-    }
-    if (ended) {
-      notifyAttendanceSessionCompleted(ended);
-    }
     setCurrentSessionToken(null);
     setManuallyStoppedSessionIds((prev) => (prev.includes(sessionId) ? prev : [...prev, sessionId]));
   }, [
     courseId,
     sessionId,
     activeMeeting,
-    markHeldForEndedSession,
+    manuallyStoppedSessionIds,
     selectedCourse?.title,
-    storedMeetings,
     user.email,
-    user.id,
     user.name,
   ]);
-
-  const instructorEmailNorm = user.email.trim().toLowerCase();
-  const courseSessionLogs = useMemo(() => {
-    void logTick;
-    return listAttendanceSessionLogsForInstructor(instructorEmailNorm, user.name).filter((l) => l.courseId === courseId);
-  }, [courseId, instructorEmailNorm, logTick, user.name]);
 
   return (
     <>
@@ -859,6 +784,14 @@ export function TeacherAttendanceSessionPanel({
                         This meeting is closed on the server. Generate a new QR when you need another check-in window.
                       </p>
                     </div>
+                  ) : noTokenKnown ? (
+                    <div className="w-full max-w-md rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-5 text-center">
+                      <p className="text-sm font-semibold text-amber-950">QR not available in this tab</p>
+                      <p className="mt-2 text-sm text-amber-950/85">
+                        This meeting is still open on the server, but its one-time QR code isn&apos;t available here
+                        (e.g. after a page reload). Generate a new QR to show a scannable code again.
+                      </p>
+                    </div>
                   ) : (
                     <div className="w-full max-w-md rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-5 text-center">
                       <p className="text-sm font-semibold text-amber-950">Check-in window ended</p>
@@ -879,9 +812,9 @@ export function TeacherAttendanceSessionPanel({
 
               {courseId ? (
                 <AttendanceSessionLogsSection
-                  entries={courseSessionLogs.slice(0, 12)}
+                  meetings={storedMeetings}
                   title="Session log (this class)"
-                  description="Each QR starts a logged session; time in class is saved when you tap Stop session, hit the 2h 15m cap, start a new QR, or switch class. Same data appears under Notifications."
+                  description="Each QR starts a session; time in class is recorded when you tap Stop session, the 2h 15m cap is confirmed, or you start a new QR."
                 />
               ) : null}
             </>

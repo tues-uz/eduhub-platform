@@ -1,28 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, FileText } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
 import { ClassResumeArticleLayout } from "@/features/courses/ClassResumeArticleLayout";
-import {
-  CLASS_RESUME_CHANGED,
-  CLASS_RESUME_STORAGE_KEY,
-  getClassResumeById,
-  type ClassResumeItem,
-} from "@/features/courses/classResumeStorage";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
-
-const TEACHER_PREFIX = "teacher_";
-
-function resolveResumeStorageKey(courseId: string): string {
-  if (courseId.startsWith(TEACHER_PREFIX)) {
-    return courseId.slice(TEACHER_PREFIX.length);
-  }
-  return courseId;
-}
+import { eduhubClassResumes } from "@/api/eduhubClient";
+import { isUuid } from "@/api/utils";
 
 const StudentCourseResumePage = () => {
   const { t } = useTranslation();
@@ -35,41 +21,24 @@ const StudentCourseResumePage = () => {
   const { user } = useAuthSession();
   const emailNorm = user.email.trim().toLowerCase();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
-  const [resumeRev, setResumeRev] = useState(0);
 
-  const isTeacherCourse = courseId.startsWith(TEACHER_PREFIX);
-  const teacherCourseId = isTeacherCourse ? courseId.slice(TEACHER_PREFIX.length) : null;
-  const teacherCourse = teacherCourseId ? teacherCoursesStore.getById(teacherCourseId) : null;
+  const isApiCourse = Boolean(courseId) && isUuid(courseId);
 
-  const storageKey = courseId ? resolveResumeStorageKey(courseId) : "";
-  const resume = useMemo((): ClassResumeItem | null => {
-    void resumeRev;
-    if (!storageKey || !resumeId) return null;
-    return getClassResumeById(storageKey, resumeId);
-  }, [storageKey, resumeId, resumeRev]);
+  const apiResumeQuery = useQuery({
+    queryKey: ["student", "resume", courseId, resumeId],
+    queryFn: () => eduhubClassResumes.get(courseId, resumeId),
+    enabled: isApiCourse && Boolean(resumeId),
+    retry: false,
+  });
 
-  useEffect(() => {
-    const bump = () => setResumeRev((n) => n + 1);
-    window.addEventListener(CLASS_RESUME_CHANGED, bump);
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === CLASS_RESUME_STORAGE_KEY) bump();
-    };
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(CLASS_RESUME_CHANGED, bump);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
+  const resume = apiResumeQuery.data ?? null;
 
   const isEnrolled = enrolledCourses.some((c) => String(c.id) === courseId);
   const hasAccess =
     isEnrolled ||
     (emailNorm && enrollmentApplicationStore.isApprovedForCourse(courseId, emailNorm));
 
-  const courseTitle =
-    enrolledCourses.find((c) => String(c.id) === courseId)?.title ??
-    teacherCourse?.title ??
-    courseId;
+  const courseTitle = enrolledCourses.find((c) => String(c.id) === courseId)?.title ?? courseId;
 
   const backHref = `/dashboard/courses/${encodeURIComponent(courseId)}?tab=resume`;
 
@@ -79,6 +48,14 @@ const StudentCourseResumePage = () => {
 
   if (!hasAccess) {
     return <Navigate to={backHref} replace />;
+  }
+
+  if (isApiCourse && apiResumeQuery.isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <p className="text-stone-500">{t("courseResume.loading")}</p>
+      </div>
+    );
   }
 
   if (!resume) {

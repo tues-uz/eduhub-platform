@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { eduhubCourses } from "@/api/eduhubClient";
 import { studentKeys } from "@/api/queryKeys";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 
 export type StudentBrowseableCourse = {
@@ -15,23 +14,11 @@ export type StudentBrowseableCourse = {
 async function fetchBrowseableCourses(
   enrolledIds: Set<string>,
 ): Promise<StudentBrowseableCourse[]> {
-  const localTeacher = teacherCoursesStore.getAll();
-  const localItems: StudentBrowseableCourse[] = localTeacher.map((course) => {
-    const linkId = `teacher_${course.id}`;
-    return {
-      linkId,
-      title: course.title,
-      instructor: course.instructorName,
-      category: course.category?.trim() || "Class",
-      isEnrolled: enrolledIds.has(linkId),
-    };
-  });
-
-  const seenIds = new Set<string>();
   const apiItems: StudentBrowseableCourse[] = [];
 
   try {
     const published = await eduhubCourses.getAll({ page: 0, size: 100 });
+    const seenIds = new Set<string>();
     published.forEach((course) => {
       if (seenIds.has(course.id)) return;
       seenIds.add(course.id);
@@ -44,11 +31,10 @@ async function fetchBrowseableCourses(
       });
     });
   } catch {
-    // API unavailable — fall back to local teacher courses only.
+    // API unavailable
   }
 
-  const localOnly = localItems.filter((course) => !seenIds.has(course.linkId.replace(/^teacher_/, "")));
-  return [...apiItems, ...localOnly];
+  return apiItems;
 }
 
 export function useStudentBrowseableCourses() {

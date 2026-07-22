@@ -9,18 +9,12 @@ import {
   ChevronRight,
   CheckCircle2,
   FileText,
-  Video,
   ExternalLink,
 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
-import { eduhubCourses, eduhubLessons } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubLessons, eduhubLessonProgress } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
-import { useAuthSession } from "@/features/auth/context";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
-
-const TEACHER_PREFIX = "teacher_";
 
 const ENROLLED_COURSES: Record<number, { id: number; title: string; instructor: string }> = {
   1: { id: 1, title: "Introduction to Economics", instructor: "Dr. Dilshod Karimov" },
@@ -77,7 +71,6 @@ function toEmbedUrl(url: string): string {
 
 const StudentLessonPage = () => {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
-  const { user } = useAuthSession();
   const [searchParams] = useSearchParams();
   const moduleIdParam = searchParams.get("moduleId");
 
@@ -86,13 +79,10 @@ const StudentLessonPage = () => {
   const [apiLessons, setApiLessons] = useState<{ id: string; title: string; duration: string; moduleId?: string }[]>([]);
   const [apiLoading, setApiLoading] = useState(false);
 
-  const isTeacherCourse = courseId?.startsWith(TEACHER_PREFIX);
-  const teacherCourseId = isTeacherCourse && courseId ? courseId.slice(TEACHER_PREFIX.length) : null;
-  const teacherCourse = teacherCourseId ? teacherCoursesStore.getById(teacherCourseId) : null;
-  const teacherLessons = teacherCourse ? [...teacherCourse.lessons].sort((a, b) => a.order - b.order) : [];
-  const teacherLesson = lessonId ? teacherLessons.find((l) => l.id === lessonId) : null;
-
-  const isApiCourse = courseId && isUuid(courseId) && !isTeacherCourse;
+  const isApiCourse = courseId && isUuid(courseId);
+  const currentLessonModuleId = lessonId
+    ? apiLessons.find((l) => l.id === lessonId)?.moduleId
+    : undefined;
 
   useEffect(() => {
     if (isApiCourse && courseId && lessonId) {
@@ -156,33 +146,42 @@ const StudentLessonPage = () => {
     }
   }, [isApiCourse, courseId, lessonId, moduleIdParam]);
 
-  const cid = courseId && !isTeacherCourse && !isApiCourse ? parseInt(courseId, 10) : NaN;
-  const lid = lessonId && !isTeacherCourse && !isApiCourse ? parseInt(lessonId, 10) : NaN;
+  const cid = courseId && !isApiCourse ? parseInt(courseId, 10) : NaN;
+  const lid = lessonId && !isApiCourse ? parseInt(lessonId, 10) : NaN;
   const course = apiCourse
     ? { id: courseId!, title: apiCourse.title, instructor: apiCourse.instructor }
-    : teacherCourse
-      ? { id: courseId!, title: teacherCourse.title, instructor: teacherCourse.instructorName }
-      : cid
-        ? ENROLLED_COURSES[cid]
-        : undefined;
-  const lessons = apiLessons.length
-    ? apiLessons
-    : teacherCourse
-      ? teacherLessons.map((l) => ({ id: l.id, title: l.title, duration: l.duration ?? "—" }))
-      : (cid && LESSONS_BY_COURSE[cid]) || [];
+    : cid
+      ? ENROLLED_COURSES[cid]
+      : undefined;
+  const lessons = apiLessons.length ? apiLessons : (cid && LESSONS_BY_COURSE[cid]) || [];
   const lesson = apiLesson
     ? { id: lessonId!, title: apiLesson.title, duration: apiLesson.duration }
-    : teacherLesson
-      ? { id: teacherLesson.id, title: teacherLesson.title, duration: teacherLesson.duration ?? "—" }
-      : lessons.find((l) => l.id === lid || l.id === lessonId);
+    : lessons.find((l) => l.id === lid || l.id === lessonId);
   const lessonIndex = lesson ? lessons.findIndex((l) => l.id === lesson.id) : -1;
   const prevLesson = lessonIndex > 0 ? lessons[lessonIndex - 1] : null;
   const nextLesson = lessonIndex >= 0 && lessonIndex < lessons.length - 1 ? lessons[lessonIndex + 1] : null;
 
   const [markedComplete, setMarkedComplete] = useState(false);
   useEffect(() => {
-    if (courseId && lessonId) setMarkedComplete(lessonProgressStore.isComplete(courseId, lessonId));
-  }, [courseId, lessonId]);
+    if (!courseId || !lessonId) return;
+    if (!isApiCourse) {
+      setMarkedComplete(lessonProgressStore.isComplete(courseId, lessonId));
+      return;
+    }
+    if (!currentLessonModuleId) return;
+    let cancelled = false;
+    eduhubLessonProgress
+      .get(courseId, currentLessonModuleId, lessonId)
+      .then((res) => {
+        if (!cancelled) setMarkedComplete(res.isCompleted);
+      })
+      .catch(() => {
+        if (!cancelled) setMarkedComplete(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId, lessonId, isApiCourse, currentLessonModuleId]);
 
   if (apiLoading) {
     return (
@@ -206,43 +205,7 @@ const StudentLessonPage = () => {
     );
   }
 
-  const teacherEnrollmentAccess =
-    isTeacherCourse && courseId
-      ? enrollmentApplicationStore.getTeacherCourseAccess(courseId, user.email.trim().toLowerCase())
-      : "approved";
-
-  if (isTeacherCourse && teacherEnrollmentAccess !== "approved") {
-    return (
-      <div className="mx-auto max-w-lg px-6 py-16 text-center" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <BookOpen className="mx-auto mb-4 h-12 w-12 text-foreground/25" />
-        <h1 className="text-xl font-semibold text-foreground">
-          {teacherEnrollmentAccess === "pending"
-            ? "Enrollment pending review"
-            : teacherEnrollmentAccess === "rejected"
-              ? "Enrollment not approved"
-              : "Enrollment required"}
-        </h1>
-        <p className="mt-2 text-sm text-foreground/70">
-          {teacherEnrollmentAccess === "pending"
-            ? "An administrator is reviewing your application. Lesson content unlocks after approval."
-            : teacherEnrollmentAccess === "rejected"
-              ? "You can’t access lessons for this class. Check Notifications for details."
-              : "Request access from Available Classes first."}
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Button asChild variant="outline" className="rounded-full">
-            <Link to="/dashboard/available-courses">Browse classes</Link>
-          </Button>
-          <Button asChild variant="outline" className="rounded-full">
-            <Link to="/dashboard/notifications">Notifications</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const backToCourseUrl = `/dashboard/courses/${courseId}`;
-  const isTeacherLesson = !!teacherLesson;
   const isApiLesson = !!apiLesson;
   const lessonModuleId = (lesson as { moduleId?: string }).moduleId;
   const lessonUrl = (lid: string, mid?: string) => `/dashboard/courses/${courseId}/lessons/${lid}${mid ? `?moduleId=${mid}` : ""}`;
@@ -270,7 +233,7 @@ const StudentLessonPage = () => {
             </p>
           )}
 
-          {/* API or Teacher lesson: PDF or Video */}
+          {/* API lesson: PDF or Video */}
           {isApiLesson && apiLesson && (
             <div className="mb-6">
               {apiLesson.type === "VIDEO" && apiLesson.contentUrl ? (
@@ -295,74 +258,8 @@ const StudentLessonPage = () => {
               ) : null}
             </div>
           )}
-          {isTeacherLesson && teacherLesson && (
-            <div className="mb-6">
-              {(teacherLesson.contentType === "video" || teacherLesson.contentType === "video_upload") ? (
-                teacherLesson.contentUrl ? (
-                  <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-gray-900">
-                    {toEmbedUrl(teacherLesson.contentUrl).includes("youtube.com/embed") || toEmbedUrl(teacherLesson.contentUrl).includes("youtu.be") ? (
-                      <iframe
-                        title={teacherLesson.title}
-                        src={toEmbedUrl(teacherLesson.contentUrl)}
-                        className="absolute inset-0 w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    ) : (
-                      <video
-                        className="w-full h-full object-contain"
-                        controls
-                        src={teacherLesson.contentUrl}
-                        title={teacherLesson.title}
-                      >
-                        Your browser does not support the video tag.
-                      </video>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-gray-100 border border-gray-200">
-                    <div className="text-center text-foreground/60">
-                      <Video className="h-12 w-12 mx-auto mb-2" />
-                      <p className="text-sm">No video URL provided for this lesson.</p>
-                    </div>
-                  </div>
-                )
-              ) : (
-                teacherLesson.contentUrl ? (
-                  <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50">
-                    <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200 bg-white">
-                      <FileText className="h-4 w-4 text-red-600" />
-                      <span className="text-sm font-medium">PDF document</span>
-                      <a
-                        href={teacherLesson.contentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ml-auto inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
-                      >
-                        Open in new tab
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    </div>
-                    <iframe
-                      title={teacherLesson.title}
-                      src={teacherLesson.contentUrl}
-                      className="w-full min-h-[60vh] aspect-[8.5/11] max-h-[70vh]"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-gray-100 border border-gray-200">
-                    <div className="text-center text-foreground/60">
-                      <FileText className="h-12 w-12 mx-auto mb-2" />
-                      <p className="text-sm">No PDF URL provided for this lesson.</p>
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
-          )}
-
           {/* Mock lesson: placeholder */}
-          {!isTeacherLesson && (
+          {!isApiLesson && (
             <>
               <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-gray-900 mb-6">
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -427,6 +324,12 @@ const StudentLessonPage = () => {
                 if (!courseId || !lessonId) return;
                 const next = !markedComplete;
                 setMarkedComplete(next);
+                if (isApiCourse && currentLessonModuleId) {
+                  eduhubLessonProgress
+                    .mark(courseId, currentLessonModuleId, lessonId, { completed: next })
+                    .catch(() => setMarkedComplete(!next));
+                  return;
+                }
                 if (next) lessonProgressStore.markComplete(courseId, lessonId);
                 else lessonProgressStore.unmarkComplete(courseId, lessonId);
               }}

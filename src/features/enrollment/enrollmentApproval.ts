@@ -7,7 +7,6 @@ import {
 import { enrichEnrollmentApplication } from "@/features/enrollment/enrollmentDocuments";
 import type { SessionSlotLike } from "@/features/courses/classSchedulePreview";
 import { computeReceiptAmountPaid } from "@/features/enrollment/enrollmentReceiptTuition";
-import { notifyEnrollmentDecision } from "@/features/notifications/appNotificationStore";
 
 function mergeDocumentFields(
   app: EnrollmentApplicationResponse,
@@ -64,45 +63,12 @@ export async function approveEnrollmentApplication(
   applicationId: string,
   opts: {
     listedTuition?: number;
-    courseTitle?: string;
-    studentName?: string;
-    studentEmailNorm?: string;
-    courseId?: string;
     adminActionCode: string;
   },
 ): Promise<EnrollmentApplicationResponse> {
   const approved = await eduhubAdminEnrollmentApplications.approve(applicationId, {
     adminActionCode: opts.adminActionCode,
   });
-  const enriched = ensureEnrollmentDocuments(approved, opts.listedTuition);
-
-  const title = opts.courseTitle ?? enriched.courseTitle ?? enriched.courseId;
-  const name = opts.studentName ?? enriched.fullName;
-  const email = opts.studentEmailNorm ?? enriched.applicantEmailNorm;
-
-  notifyEnrollmentDecision({
-    courseTitle: title,
-    courseId: opts.courseId ?? enriched.courseId,
-    studentName: name,
-    studentEmailNorm: email,
-    decision: "approved",
-    applicationId: enriched.id,
-    receiptNumber: enriched.receiptNumber,
-    invoiceNumber: enriched.invoiceNumber,
-  });
-
-  return enriched;
-}
-
-export function notifyEnrollmentRejection(opts: {
-  courseTitle: string;
-  courseId: string;
-  studentName: string;
-  studentEmailNorm: string;
-  adminNote?: string;
-}): void {
-  notifyEnrollmentDecision({
-    ...opts,
-    decision: "rejected",
-  });
+  // The backend creates the student/admin "enrollment approved" notifications as part of approve().
+  return ensureEnrollmentDocuments(approved, opts.listedTuition);
 }

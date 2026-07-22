@@ -27,7 +27,6 @@ import {
   type CourseReviewTarget,
 } from "@/features/student/courseReviewsStorage";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import { resolveStudentCourseEnrollmentDisplayStatus } from "@/features/enrollment/studentCourseEnrollmentStatus";
 import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
@@ -35,7 +34,6 @@ import { formatDisplayPersonName } from "@/lib/formatPersonName";
 import { cn } from "@/lib/utils";
 import "@/features/student/courseCompletionPage.css";
 
-const TEACHER_PREFIX = "teacher_";
 const CONGRATS_PREVIEW_PATH = "/dashboard/congrats-preview";
 const COMMENT_MAX = 200;
 
@@ -408,13 +406,7 @@ const StudentCourseCompletionPage = () => {
       isEnrolledFromApi,
       enrollmentAppsByCourse.get(courseId),
     );
-    if (status === "enrolled") return true;
-    if (courseId.startsWith(TEACHER_PREFIX)) {
-      return (
-        enrollmentApplicationStore.getTeacherCourseAccess(courseId, emailNorm) === "approved"
-      );
-    }
-    return false;
+    return status === "enrolled";
   }, [isPreview, courseId, emailNorm, enrolledCourses, enrollmentAppsByCourse]);
 
   const meta = useMemo(() => {
@@ -442,15 +434,6 @@ const StudentCourseCompletionPage = () => {
         title: enrolled.title,
         instructor: formatDisplayPersonName(enrolled.instructor),
       };
-    }
-    if (courseId.startsWith(TEACHER_PREFIX)) {
-      const tc = teacherCoursesStore.getById(courseId.slice(TEACHER_PREFIX.length));
-      if (tc) {
-        return {
-          title: tc.title,
-          instructor: formatDisplayPersonName(tc.instructorName),
-        };
-      }
     }
     const app = enrollmentApplicationStore
       .list()

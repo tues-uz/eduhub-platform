@@ -17,10 +17,7 @@ import { Label } from "@/components/ui/label";
 import { eduhubAdminEnrollmentApplications, eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import { buildCourseScheduleSlots } from "@/features/courses/courseScheduleSlots";
 import { buildScheduleMonthTabs, orderSessionSlotsChronologically } from "@/features/courses/classSchedulePreview";
-import {
-  approveEnrollmentApplication,
-  notifyEnrollmentRejection,
-} from "@/features/enrollment/enrollmentApproval";
+import { approveEnrollmentApplication } from "@/features/enrollment/enrollmentApproval";
 import { enrichEnrollmentApplication } from "@/features/enrollment/enrollmentDocuments";
 import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
@@ -129,10 +126,6 @@ export default function AdminEnrollmentApplicationDetailPage() {
     try {
       await approveEnrollmentApplication(record.id, {
         listedTuition: listedTuition ?? undefined,
-        courseTitle: record.courseTitle,
-        studentName: record.fullName,
-        studentEmailNorm: record.applicantEmailNorm,
-        courseId: record.courseId,
         adminActionCode: code,
       });
       toast.success(t("admin.shared.approved"), {
@@ -161,13 +154,6 @@ export default function AdminEnrollmentApplicationDetailPage() {
       await eduhubAdminEnrollmentApplications.reject(record.id, {
         adminNote: rejectNote.trim() || undefined,
         adminActionCode: code,
-      });
-      notifyEnrollmentRejection({
-        courseTitle: record.courseTitle ?? record.courseId,
-        courseId: record.courseId,
-        studentName: record.fullName,
-        studentEmailNorm: record.applicantEmailNorm,
-        adminNote: rejectNote.trim() || undefined,
       });
       toast.message(t("admin.enrollmentApplications.detail.toast.rejectedTitle"), {
         description: "The student can submit again if needed.",

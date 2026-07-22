@@ -55,9 +55,6 @@ import { resolvePaidTuitionMonths } from "@/features/enrollment/enrollmentPaidMo
 import { resolvedMonthsPaidLabel } from "@/features/enrollment/enrollmentPaymentHistory";
 import { cn } from "@/lib/utils";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
-
-const TEACHER_PREFIX = "teacher_";
 
 function formatDetailDate(iso: string): string {
   try {
@@ -303,18 +300,6 @@ function PaymentDetailDialogBody({
     const courseId = enriched.courseId;
 
     async function loadInstructor() {
-      if (courseId.startsWith(TEACHER_PREFIX)) {
-        const tc = teacherCoursesStore.getById(courseId.slice(TEACHER_PREFIX.length));
-        if (!cancelled) {
-          setInstructor(
-            tc?.instructorName?.trim()
-              ? { name: tc.instructorName.trim(), avatarUrl: tc.instructorAvatarUrl?.trim() || undefined }
-              : null,
-          );
-        }
-        return;
-      }
-
       if (!isUuid(courseId)) {
         if (!cancelled) setInstructor(null);
         return;

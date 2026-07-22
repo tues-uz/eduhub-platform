@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
   BookOpen,
-  FileText,
   Award,
   TrendingUp,
   Calendar,
@@ -21,7 +20,11 @@ import { InstructorAvatar } from "@/components/InstructorAvatar";
 import { useAuthSession } from "@/features/auth/context";
 import { useLayoutContext } from "@/features/layout/context";
 import { studentStats } from "@/features/student/data/dashboardData";
-import { useStudentCoursesQuery, useStudentOverviewQuery } from "@/features/student/hooks/useStudentQueries";
+import {
+  useStudentCertificatesQuery,
+  useStudentCoursesQuery,
+  useStudentOverviewQuery,
+} from "@/features/student/hooks/useStudentQueries";
 import { useStudentUpcomingScheduleQuery } from "@/features/student/hooks/useStudentUpcomingSchedule";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
 import { cn } from "@/lib/utils";
@@ -33,7 +36,6 @@ import type { UpcomingScheduleItem } from "@/features/student/upcomingSchedule";
 
 const STAT_LABEL_KEYS: Record<string, string> = {
   "/dashboard/courses": "dashboard.statsClassesEnrolled",
-  "/dashboard/assignments": "dashboard.statsAssignments",
   "/dashboard/certificates": "dashboard.statsCertificates",
   "/dashboard/progress": "dashboard.statsProgress",
 };
@@ -65,12 +67,19 @@ function formatScheduleCountdownShort(
   return rtf.format(days, "day");
 }
 
-function priorityLabel(priority: string, t: (key: string) => string): string {
-  const normalized = priority.toUpperCase();
-  if (normalized === "HIGH") return t("assignments.priorityHigh");
-  if (normalized === "MEDIUM") return t("assignments.priorityMedium");
-  if (normalized === "LOW") return t("assignments.priorityLow");
-  return priority;
+function formatRelativeTime(dateString: string, locale: string): string {
+  const t = new Date(dateString).getTime();
+  if (Number.isNaN(t)) return dateString;
+  const diffMs = Date.now() - t;
+  const mins = Math.floor(diffMs / 60_000);
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "always", style: "long" });
+  if (mins < 1) return rtf.format(0, "minute");
+  if (mins < 60) return rtf.format(-mins, "minute");
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return rtf.format(-hours, "hour");
+  const days = Math.floor(hours / 24);
+  if (days < 30) return rtf.format(-days, "day");
+  return new Date(dateString).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" });
 }
 
 function UpcomingScheduleCard({ item }: { item: UpcomingScheduleItem }) {
@@ -247,51 +256,44 @@ const StudentDashboard = () => {
   const { isSidebarCollapsed } = useLayoutContext();
   const { data } = useStudentOverviewQuery();
   const { data: enrolledCourses = [], isLoading: coursesLoading } = useStudentCoursesQuery();
+  const { data: certificates = [] } = useStudentCertificatesQuery();
   const { data: upcomingSchedule = [], isLoading: scheduleLoading } = useStudentUpcomingScheduleQuery(5);
   const displayName = formatDisplayPersonName(user.name);
 
+  const courseCount = enrolledCourses.length;
+  const completedCourseCount = enrolledCourses.filter((c) => c.progress >= 100).length;
+  const avgProgress =
+    courseCount > 0
+      ? Math.round(
+          enrolledCourses.reduce((sum, c) => sum + (typeof c.progress === "number" ? c.progress : 0), 0) /
+            courseCount,
+        )
+      : null;
+  const avgCertificateScore =
+    certificates.length > 0
+      ? Math.round(
+          certificates.reduce((sum, cert) => sum + (cert.totalFinalScore ?? 0), 0) / certificates.length,
+        )
+      : null;
+
   const statCards = useMemo(() => {
     const base = (data?.stats ?? [...studentStats]).map((s) => ({ ...s }));
-    const assignmentCount = data?.assignments?.length ?? 0;
-    const courseCount = enrolledCourses.length;
-    const avgProgress =
-      courseCount > 0
-        ? Math.round(
-            enrolledCourses.reduce((sum, c) => sum + (typeof c.progress === "number" ? c.progress : 0), 0) /
-              courseCount,
-          )
-        : null;
 
     return base.map((stat) => {
       const href = "href" in stat && typeof stat.href === "string" ? stat.href : "/dashboard";
       if (href === "/dashboard/courses") {
         return { ...stat, value: String(courseCount) };
       }
-      if (href === "/dashboard/assignments") {
-        return { ...stat, value: String(assignmentCount) };
+      if (href === "/dashboard/certificates") {
+        return { ...stat, value: String(certificates.length) };
       }
       if (href === "/dashboard/progress" && avgProgress != null) {
         return { ...stat, value: `${avgProgress}%` };
       }
       return stat;
     });
-  }, [data?.stats, data?.assignments?.length, enrolledCourses]);
-
-  const assignments = data?.assignments ?? [];
+  }, [data?.stats, courseCount, certificates.length, avgProgress]);
   const recentActivity = data?.recentActivity ?? [];
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(i18n.language, { month: "short", day: "numeric", year: "numeric" });
-  };
-
-  const getDaysUntilDue = (dateString: string) => {
-    const today = new Date();
-    const dueDate = new Date(dateString);
-    const diffTime = dueDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
 
   return (
     <div className="min-h-dvh bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -384,70 +386,6 @@ const StudentDashboard = () => {
                 </div>
               </div>
 
-              {/* Upcoming Assignments */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 px-4 py-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("dashboard.upcomingAssignments")}</h2>
-                  <Button variant="ghost" className="h-auto px-0 py-0 text-sm text-zinc-400 hover:bg-transparent hover:text-zinc-500">
-                    {t("dashboard.viewCalendar")}
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  {assignments.map((assignment) => {
-                    const daysUntil = getDaysUntilDue(assignment.dueDate);
-                    const isOverdue = daysUntil < 0;
-                    const isDueSoon = !isOverdue && daysUntil <= 3;
-                    return (
-                      <div
-                        key={assignment.id}
-                        className={cn(
-                          "rounded-2xl border p-4 transition-all hover:shadow-sm",
-                          isDueSoon
-                            ? "border-amber-200/80 bg-amber-50/30 hover:border-amber-300/80"
-                            : "border-zinc-200/80 bg-white hover:border-zinc-300",
-                        )}
-                      >
-                        <div className="mb-2 flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <h3 className="mb-1 font-semibold text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                              {assignment.title}
-                            </h3>
-                            <p className="text-sm text-foreground/60">{assignment.course}</p>
-                          </div>
-                          <span
-                            className={cn(
-                              "shrink-0 rounded-full px-3 py-1 text-xs font-medium",
-                              assignment.priority === "high"
-                                ? "bg-zinc-100 text-zinc-700"
-                                : assignment.priority === "medium"
-                                  ? "bg-zinc-100 text-zinc-600"
-                                  : "bg-zinc-50 text-zinc-500",
-                            )}
-                          >
-                            {priorityLabel(assignment.priority, t)}
-                          </span>
-                        </div>
-                        <div className="mt-3 flex items-center justify-between gap-3">
-                          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground/70">
-                            <Calendar className="h-4 w-4 shrink-0" />
-                            <span>{t("dashboard.due", { date: formatDate(assignment.dueDate) })}</span>
-                            {isOverdue ? (
-                              <span className="font-medium text-zinc-500">· {t("dashboard.overdue")}</span>
-                            ) : isDueSoon ? (
-                              <span className="font-medium text-amber-800">
-                                · {t("dashboard.daysLeft", { count: daysUntil })}
-                              </span>
-                            ) : null}
-                          </div>
-                          <Button size="sm" variant="outline" className="shrink-0 rounded-full">
-                            {assignment.status === "in-progress" ? t("dashboard.continue") : t("dashboard.start")}
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
             </div>
 
             {/* Sidebar */}
@@ -456,44 +394,49 @@ const StudentDashboard = () => {
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 px-4 py-6">
                 <h2 className="mb-4 text-xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("dashboard.quickActions")}</h2>
                 <div className="space-y-2">
-                  <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    {t("dashboard.browseClasses")}
-                  </Button>
-                  <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
-                    <FileText className="h-4 w-4 mr-2" />
-                    {t("dashboard.myAssignments")}
-                  </Button>
-                  <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
-                    <Award className="h-4 w-4 mr-2" />
-                    {t("dashboard.statsCertificates")}
-                  </Button>
-                  <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    {t("dashboard.viewProgress")}
-                  </Button>
+                  <Link to="/dashboard/available-courses">
+                    <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      {t("dashboard.browseClasses")}
+                    </Button>
+                  </Link>
+                  <Link to="/dashboard/certificates">
+                    <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
+                      <Award className="h-4 w-4 mr-2" />
+                      {t("dashboard.statsCertificates")}
+                    </Button>
+                  </Link>
+                  <Link to="/dashboard/progress">
+                    <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      {t("dashboard.viewProgress")}
+                    </Button>
+                  </Link>
                 </div>
               </div>
 
               {/* Recent Activity */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-6">
                 <h2 className="mb-4 text-xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("dashboard.recentActivity")}</h2>
-                <div className="space-y-4">
-                  {recentActivity.map((activity, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        {activity.type === "completed" && <CheckCircle2 className="h-4 w-4 text-blue-600" />}
-                        {activity.type === "assignment" && <FileText className="h-4 w-4 text-purple-600" />}
-                        {activity.type === "certificate" && <Award className="h-4 w-4 text-orange-600" />}
-                        {activity.type === "enrolled" && <BookOpen className="h-4 w-4 text-green-600" />}
+                {recentActivity.length === 0 ? (
+                  <p className="text-sm text-foreground/50">{t("dashboard.noRecentActivity")}</p>
+                ) : (
+                  <div className="space-y-4">
+                    {recentActivity.map((activity, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                          {activity.type === "completed" && <CheckCircle2 className="h-4 w-4 text-blue-600" />}
+                          {activity.type === "certificate" && <Award className="h-4 w-4 text-orange-600" />}
+                          {activity.type === "enrolled" && <BookOpen className="h-4 w-4 text-green-600" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground">{activity.text}</p>
+                          <p className="text-xs text-foreground/60 mt-1">{formatRelativeTime(activity.time, i18n.language)}</p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground">{activity.text}</p>
-                        <p className="text-xs text-foreground/60 mt-1">{activity.time}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Progress Overview */}
@@ -505,18 +448,18 @@ const StudentDashboard = () => {
                 <div className="mb-4">
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span>{t("dashboard.completionRate")}</span>
-                    <span className="text-2xl font-bold">78%</span>
+                    <span className="text-2xl font-bold">{avgProgress ?? 0}%</span>
                   </div>
-                  <Progress value={78} className="h-3 bg-white/20" />
+                  <Progress value={avgProgress ?? 0} className="h-3 bg-white/20" />
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <div>
                     <p className="text-sm opacity-90">{t("dashboard.classesCompleted")}</p>
-                    <p className="text-2xl font-bold">9/12</p>
+                    <p className="text-2xl font-bold">{completedCourseCount}/{courseCount}</p>
                   </div>
                   <div>
                     <p className="text-sm opacity-90">{t("dashboard.avgScore")}</p>
-                    <p className="text-2xl font-bold">92%</p>
+                    <p className="text-2xl font-bold">{avgCertificateScore != null ? `${avgCertificateScore}%` : "—"}</p>
                   </div>
                 </div>
               </div>

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { coursesApi, dashboardApi } from "@/api/client";
 import { studentKeys } from "@/api/queryKeys";
-import { eduhubEnrollments } from "@/api/eduhubClient";
+import { eduhubEnrollments, eduhubCompletion } from "@/api/eduhubClient";
 
 export function useStudentOverviewQuery() {
   return useQuery({
@@ -15,6 +15,13 @@ export function useStudentCoursesQuery() {
   return useQuery({
     queryKey: studentKeys.courses(),
     queryFn: coursesApi.getStudentCourses,
+  });
+}
+
+export function useStudentCertificatesQuery() {
+  return useQuery({
+    queryKey: studentKeys.certificates(),
+    queryFn: eduhubCompletion.myCertificates,
   });
 }
 

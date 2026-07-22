@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { useAuthSession } from "@/features/auth/context";
-import { teacherCoursesStore, createEmptyLesson } from "../data/teacherCoursesStore";
+import { createEmptyLesson } from "../data/teacherLessonDefaults";
 import { eduhubCourses, eduhubModules, eduhubLessons, eduhubUploadFile } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import type { ClassMeetingSlot, TeacherLesson } from "../types";
@@ -145,24 +145,7 @@ const TeacherCourseFormLayout = () => {
           })
           .catch(() => setError("Class not found."));
       } else {
-        const course = teacherCoursesStore.getById(courseId);
-        if (course) {
-          setTitle(course.title);
-          setDescription(course.description ?? "");
-          setThumbnailUrl(course.thumbnailUrl ?? "");
-          {
-            const { meetingsSixMonthsStr, slots } = resolveClassScheduleFormState(course, courseId);
-            setClassMeetingsInSixMonths(meetingsSixMonthsStr);
-            setClassMeetingSlots(slots);
-          }
-          setClassStartDate(toDateInputValue(course.classStartDate));
-          setClassEndDate(toDateInputValue(course.classEndDate));
-          setLessons(
-            course.lessons.length > 0 ? [...course.lessons].sort((a, b) => a.order - b.order) : [createEmptyLesson(0)]
-          );
-        } else {
-          setError("Class not found.");
-        }
+        setError("Class not found.");
       }
     } else if (isNewFlow) {
       setLessons([createEmptyLesson(0)]);
@@ -450,31 +433,9 @@ const TeacherCourseFormLayout = () => {
         return;
       }
 
-      if (isEdit && courseId) {
-        const meetingsSixMo = parseOptionalPositiveInt(classMeetingsInSixMonths.trim()) ?? 1;
-        const meetingSlotsForSave = Array.from({ length: meetingsSixMo }, (_, i) => ({
-          title: classMeetingSlots[i]?.title ?? "",
-          sessionDate: classMeetingSlots[i]?.sessionDate ?? "",
-          sessionTime: classMeetingSlots[i]?.sessionTime ?? "",
-        }));
-        teacherCoursesStore.update(courseId, {
-          title: trimmedTitle,
-          description: description.trim(),
-          category: instructorCategory.trim(),
-          instructorName,
-          lessons: validLessons,
-          classMeetingsInSixMonths: meetingsSixMo,
-          classMeetingSlots: meetingSlotsForSave,
-          thumbnailUrl: thumbnailUrl.trim() || undefined,
-          classStartDate: startTrim && endTrim ? `${startTrim}T00:00:00.000Z` : undefined,
-          classEndDate: startTrim && endTrim ? `${endTrim}T00:00:00.000Z` : undefined,
-        });
-      } else {
-        throw new Error(
-          "Your session could not be verified. Please refresh the page and sign in again before creating a class.",
-        );
-      }
-      navigate("/dashboard/teacher/courses");
+      throw new Error(
+        "Your session could not be verified. Please refresh the page and sign in again before creating a class.",
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save. Please try again.");
     } finally {

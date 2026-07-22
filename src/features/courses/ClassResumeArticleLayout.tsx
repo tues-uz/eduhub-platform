@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Calendar, GraduationCap } from "@/lib/icons";
-import type { ClassResumeItem } from "@/features/courses/classResumeStorage";
+import type { ClassResumeResponse } from "@/api/eduhubTypes";
 import { cn } from "@/lib/utils";
 
 const FONT_BODY = "'Source Serif 4', Georgia, 'Times New Roman', serif";
@@ -33,7 +33,7 @@ function formatPublished(iso?: string): { long: string; short: string } | null {
 }
 
 type ClassResumeArticleLayoutProps = {
-  resume: ClassResumeItem;
+  resume: ClassResumeResponse;
   courseTitle: string;
   backHref: string;
 };

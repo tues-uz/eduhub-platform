@@ -1,36 +1,23 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  getScheduleAttendanceState,
-  HELD_SCHEDULE_MEETINGS_CHANGED,
-} from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
+import { useQuery } from "@tanstack/react-query";
+import { refreshScheduleAttendanceState } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 
-/** Live held/active schedule slot keys for a course (attendance QR). */
+const REFRESH_INTERVAL_MS = 30_000;
+
+/** Live held/active schedule slot keys for a course, derived from real attendance QR sessions
+ * (never cached in localStorage) — a row is "held" once its QR session is CLOSED (instructor
+ * stopped it or the check-in window elapsed) and "active" while its QR session is OPEN. */
 export function useScheduleAttendanceState(courseId: string | undefined) {
-  const [tick, setTick] = useState(0);
+  const query = useQuery({
+    queryKey: ["schedule-attendance-state", courseId],
+    queryFn: () => refreshScheduleAttendanceState(courseId as string),
+    enabled: Boolean(courseId),
+    refetchInterval: REFRESH_INTERVAL_MS,
+    refetchOnWindowFocus: true,
+    staleTime: 5_000,
+  });
 
-  useEffect(() => {
-    if (!courseId) return;
-    const bump = () => setTick((t) => t + 1);
-    const onHeld = (e: Event) => {
-      const ce = e as CustomEvent<{ courseId?: string }>;
-      if (!ce.detail?.courseId || ce.detail.courseId === courseId) bump();
-    };
-    const onStorage = (e: StorageEvent) => {
-      if (e.key?.includes(courseId)) bump();
-    };
-    window.addEventListener(HELD_SCHEDULE_MEETINGS_CHANGED, onHeld);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(HELD_SCHEDULE_MEETINGS_CHANGED, onHeld);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, [courseId]);
-
-  return useMemo(() => {
-    void tick;
-    if (!courseId) {
-      return { heldSlotKeys: new Set<string>(), activeSlotKeys: new Set<string>() };
-    }
-    return getScheduleAttendanceState(courseId);
-  }, [courseId, tick]);
+  return {
+    heldSlotKeys: query.data?.heldSlotKeys ?? new Set<string>(),
+    activeSlotKeys: query.data?.activeSlotKeys ?? new Set<string>(),
+  };
 }

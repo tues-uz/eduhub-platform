@@ -1,33 +1,26 @@
 import {
-  AlertCircle,
   Award,
   BookOpen,
-  FileText,
   TrendingUp,
 } from "@/lib/icons";
 
-/** Overview stat tiles — `value` is default placeholder; dashboard can override from live data. */
+/**
+ * Overview stat tiles — `value` is the pre-auth/offline placeholder only; `dashboardApi.getStudentOverview`
+ * overrides these with live counts whenever a session is available.
+ */
 export const studentStats = [
   {
     icon: BookOpen,
     label: "Classes enrolled",
-    value: "12",
+    value: "0",
     color: "text-blue-500",
     bgColor: "bg-blue-50",
     href: "/dashboard/courses",
   },
   {
-    icon: FileText,
-    label: "Assignments",
-    value: "8",
-    color: "text-purple-500",
-    bgColor: "bg-purple-50",
-    href: "/dashboard/assignments",
-  },
-  {
     icon: Award,
     label: "Certificates",
-    value: "5",
+    value: "0",
     color: "text-orange-500",
     bgColor: "bg-orange-50",
     href: "/dashboard/certificates",
@@ -35,127 +28,15 @@ export const studentStats = [
   {
     icon: TrendingUp,
     label: "Progress",
-    value: "78%",
+    value: "0%",
     color: "text-green-500",
     bgColor: "bg-green-50",
     href: "/dashboard/progress",
   },
 ] as const;
 
-export const studentCourses = [
-  {
-    id: 1,
-    title: "Introduction to Economics",
-    instructor: "Dr. Dilshod Karimov",
-    progress: 75,
-    thumbnail: "/api/placeholder/300/200",
-    status: "In Progress",
-    nextLesson: "Market Structures",
-  },
-  {
-    id: 2,
-    title: "Business Management Fundamentals",
-    instructor: "Prof. Sarah Johnson",
-    progress: 45,
-    thumbnail: "/api/placeholder/300/200",
-    status: "In Progress",
-    nextLesson: "Strategic Planning",
-  },
-  {
-    id: 3,
-    title: "Digital Marketing Essentials",
-    instructor: "Dr. Ahmed Hassan",
-    progress: 90,
-    thumbnail: "/api/placeholder/300/200",
-    status: "Almost Complete",
-    nextLesson: "Final Project",
-  },
-  {
-    id: 4,
-    title: "Financial Accounting",
-    instructor: "Prof. Maria Garcia",
-    progress: 30,
-    thumbnail: "/api/placeholder/300/200",
-    status: "In Progress",
-    nextLesson: "Balance Sheets",
-  },
-];
-
-export const studentAssignments = [
-  {
-    id: 1,
-    title: "Economic Analysis Essay",
-    course: "Introduction to Economics",
-    dueDate: "2024-01-15",
-    status: "pending",
-    priority: "high",
-  },
-  {
-    id: 2,
-    title: "Marketing Campaign Proposal",
-    course: "Digital Marketing Essentials",
-    dueDate: "2024-01-18",
-    status: "in-progress",
-    priority: "medium",
-  },
-  {
-    id: 3,
-    title: "Financial Report Review",
-    course: "Financial Accounting",
-    dueDate: "2024-01-20",
-    status: "pending",
-    priority: "low",
-  },
-];
-
-export const studentRecentActivity = [
-  { type: "completed", text: "Completed lesson: Market Structures", time: "2 hours ago" },
-  { type: "assignment", text: "Submitted: Economic Analysis Essay", time: "1 day ago" },
-  { type: "certificate", text: "Earned certificate: Business Fundamentals", time: "3 days ago" },
-  { type: "enrolled", text: "Enrolled in: Financial Accounting", time: "5 days ago" },
-];
-
-export const studentNotifications = [
-  {
-    id: 1,
-    type: "assignment",
-    title: "New Assignment Posted",
-    message: "Economic Analysis Essay due in 3 days",
-    time: "2 hours ago",
-    unread: true,
-  },
-  {
-    id: 2,
-    type: "class",
-    title: "Class update",
-    message: "New lesson available: Market Structures",
-    time: "5 hours ago",
-    unread: true,
-  },
-  {
-    id: 3,
-    type: "certificate",
-    title: "Certificate Earned",
-    message: "You've earned a certificate for Business Fundamentals",
-    time: "1 day ago",
-    unread: false,
-  },
-  {
-    id: 4,
-    type: "announcement",
-    title: "System Maintenance",
-    message: "Scheduled maintenance on Jan 20, 2:00 AM",
-    time: "2 days ago",
-    unread: false,
-  },
-];
-
-export const notificationTypeIcons = {
-  assignment: FileText,
-  class: BookOpen,
-  certificate: Award,
-  announcement: AlertCircle,
-} as const;
+/** Pre-auth/offline fallback only — `dashboardApi.getStudentOverview` replaces this with real activity. */
+export const studentRecentActivity: { type: "completed" | "certificate" | "enrolled"; text: string; time: string }[] = [];
 
 export const enrolledCourses = [
   {

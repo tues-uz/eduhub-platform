@@ -1,3 +1,6 @@
+import { eduhubAttendance } from "@/api/eduhubClient";
+import type { AttendanceSessionResponse } from "@/api/eduhubTypes";
+
 /** Matches a class schedule row across attendance QR and enrollment (date + time + title). */
 export function scheduleSlotKeyFromParts(parts: {
   sessionDate?: string;
@@ -10,18 +13,20 @@ export function scheduleSlotKeyFromParts(parts: {
   return `${date}|${time}|${title}`;
 }
 
-type StoredState = {
-  held: string[];
-  active: string[];
-};
-
-const STORAGE_PREFIX = "eduhub_held_schedule_meetings_v2:";
-
 export const HELD_SCHEDULE_MEETINGS_CHANGED = "eduhub-held-schedule-meetings-changed";
 
-function storageKey(courseId: string): string {
-  return `${STORAGE_PREFIX}${courseId}`;
-}
+type CachedState = {
+  heldSlotKeys: Set<string>;
+  activeSlotKeys: Set<string>;
+};
+
+const EMPTY_STATE: CachedState = { heldSlotKeys: new Set(), activeSlotKeys: new Set() };
+
+/** Backend attendance sessions are the source of truth: a schedule row is "held" once its QR
+ * session is CLOSED (instructor stopped it, or the check-in window elapsed) and "active" while
+ * its QR session is still OPEN. Cache is in-memory only — refreshed from the API, never localStorage. */
+const cache = new Map<string, CachedState>();
+const inflight = new Map<string, Promise<CachedState>>();
 
 function emitChanged(courseId: string) {
   if (typeof window === "undefined") return;
@@ -30,66 +35,56 @@ function emitChanged(courseId: string) {
   );
 }
 
-function loadState(courseId: string): StoredState {
-  if (!courseId || typeof localStorage === "undefined") {
-    return { held: [], active: [] };
-  }
-  try {
-    const raw = localStorage.getItem(storageKey(courseId));
-    if (!raw) return { held: [], active: [] };
-    const parsed = JSON.parse(raw) as unknown;
-    if (Array.isArray(parsed)) {
-      return { held: [], active: [] };
+function computeState(sessions: AttendanceSessionResponse[]): CachedState {
+  const held = new Set<string>();
+  const active = new Set<string>();
+  for (const session of sessions) {
+    const key = session.scheduleSlotKey?.trim();
+    if (!key) continue;
+    if (session.status === "CLOSED") {
+      held.add(key);
+      active.delete(key);
+    } else if (session.status === "OPEN" && !held.has(key)) {
+      active.add(key);
     }
-    if (!parsed || typeof parsed !== "object") return { held: [], active: [] };
-    const o = parsed as Record<string, unknown>;
-    const held = Array.isArray(o.held)
-      ? o.held.filter((x): x is string => typeof x === "string" && x.length > 0)
-      : [];
-    const active = Array.isArray(o.active)
-      ? o.active.filter((x): x is string => typeof x === "string" && x.length > 0)
-      : [];
-    return { held, active };
-  } catch {
-    return { held: [], active: [] };
   }
+  return { heldSlotKeys: held, activeSlotKeys: active };
 }
 
-function saveState(courseId: string, state: StoredState) {
-  if (!courseId || typeof localStorage === "undefined") return;
-  localStorage.setItem(storageKey(courseId), JSON.stringify(state));
-  emitChanged(courseId);
-}
-
+/** Synchronous read of the last-fetched state; empty until `refreshScheduleAttendanceState` resolves once. */
 export function getScheduleAttendanceState(courseId: string): {
   heldSlotKeys: Set<string>;
   activeSlotKeys: Set<string>;
 } {
-  const { held, active } = loadState(courseId);
-  return { heldSlotKeys: new Set(held), activeSlotKeys: new Set(active) };
+  if (!courseId) return EMPTY_STATE;
+  return cache.get(courseId) ?? EMPTY_STATE;
 }
 
-/** QR is live for this schedule row — enrollment shows In progress. */
-export function markScheduleSlotActive(courseId: string, slotKey: string): void {
-  const key = slotKey.trim();
-  if (!key || key === "||") return;
-  const state = loadState(courseId);
-  const active = state.active.includes(key) ? state.active : [...state.active, key];
-  saveState(courseId, { held: state.held, active });
-}
+/** Fetches live attendance sessions for the course and refreshes the cache. Safe to call repeatedly;
+ * concurrent calls for the same course share one in-flight request. Never rejects — on a network/API
+ * failure it falls back to whatever was last cached (or empty sets), the same graceful degradation
+ * the old localStorage-backed version had by construction, since callers (dashboard fetches, render
+ * paths) must not break just because the attendance API is briefly unavailable. */
+export async function refreshScheduleAttendanceState(courseId: string): Promise<{
+  heldSlotKeys: Set<string>;
+  activeSlotKeys: Set<string>;
+}> {
+  if (!courseId) return EMPTY_STATE;
+  const existing = inflight.get(courseId);
+  if (existing) return existing;
 
-/** Instructor ended QR — row is held (Finished for enrollment). */
-export function markScheduleSlotHeld(courseId: string, slotKey: string): void {
-  const key = slotKey.trim();
-  if (!key || key === "||") return;
-  const state = loadState(courseId);
-  const held = state.held.includes(key) ? state.held : [...state.held, key];
-  const active = state.active.filter((k) => k !== key);
-  saveState(courseId, { held, active });
-}
-
-/** @deprecated Use slot keys; kept for callers that only have 1-based index. */
-export function markScheduleMeetingHeld(courseId: string, meetingNumber: number): void {
-  void courseId;
-  void meetingNumber;
+  const request = eduhubAttendance
+    .listSessions(courseId)
+    .then((sessions) => {
+      const state = computeState(sessions);
+      cache.set(courseId, state);
+      emitChanged(courseId);
+      return state;
+    })
+    .catch(() => cache.get(courseId) ?? EMPTY_STATE)
+    .finally(() => {
+      inflight.delete(courseId);
+    });
+  inflight.set(courseId, request);
+  return request;
 }

@@ -11,10 +11,7 @@ import {
   boundsFromMeetingSlots,
   resolvedAdminScheduleSessionTotal,
 } from "@/features/admin/utils/adminCourseScheduleDisplay";
-import { getScheduleAttendanceState } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
-
-const TEACHER_PREFIX = "teacher_";
+import { refreshScheduleAttendanceState } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 
 export type CourseScheduleSummary = {
   /** Sessions finished or currently in progress (by calendar time or attendance QR). */
@@ -31,14 +28,14 @@ export type CourseScheduleSummary = {
   classEndDate?: string;
 };
 
-function buildSummary(
+async function buildSummary(
   slots: SessionSlotLike[],
   courseId: string,
   total: number,
   explicitDates?: { classStartDate?: string; classEndDate?: string },
-): CourseScheduleSummary | null {
+): Promise<CourseScheduleSummary | null> {
   if (total <= 0) return null;
-  const { heldSlotKeys, activeSlotKeys } = getScheduleAttendanceState(courseId);
+  const { heldSlotKeys, activeSlotKeys } = await refreshScheduleAttendanceState(courseId);
   const timings = slots.map((slot) =>
     resolveEnrollmentSessionTimingStatus(slot, heldSlotKeys, activeSlotKeys),
   );
@@ -64,17 +61,6 @@ export async function fetchCourseScheduleSummary(
 ): Promise<CourseScheduleSummary | null> {
   const id = String(courseId);
 
-  if (id.startsWith(TEACHER_PREFIX)) {
-    const teacherCourse = teacherCoursesStore.getById(id.slice(TEACHER_PREFIX.length));
-    if (!teacherCourse) return null;
-
-    const slots = buildCourseScheduleSlots(teacherCourse, null, id);
-    return buildSummary(slots, id, slots.length, {
-      classStartDate: teacherCourse.classStartDate,
-      classEndDate: teacherCourse.classEndDate,
-    });
-  }
-
   if (!isUuid(id)) return null;
 
   try {
@@ -88,7 +74,7 @@ export async function fetchCourseScheduleSummary(
       (proposal?.sessionCount && proposal.sessionCount > 0 ? proposal.sessionCount : undefined) ??
       slots.length;
 
-    return buildSummary(slots, id, total ?? 0, {
+    return await buildSummary(slots, id, total ?? 0, {
       classStartDate: detail.classStartDate,
       classEndDate: detail.classEndDate,
     });

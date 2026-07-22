@@ -1,20 +1,23 @@
 import { useTranslation } from "react-i18next";
 import { BarChart3, Target, BookOpen, Award } from "@/lib/icons";
 import { Progress } from "@/components/ui/progress";
-
-const COURSE_PROGRESS = [
-  { title: "Introduction to Economics", progress: 75 },
-  { title: "Business Management Fundamentals", progress: 45 },
-  { title: "Digital Marketing Essentials", progress: 90 },
-  { title: "Financial Accounting", progress: 30 },
-  { title: "English for Business", progress: 60 },
-  { title: "Data Analysis with Excel", progress: 100 },
-];
+import {
+  useStudentCertificatesQuery,
+  useStudentCoursesQuery,
+} from "@/features/student/hooks/useStudentQueries";
 
 const StudentProgress = () => {
   const { t } = useTranslation();
-  const overallProgress = Math.round(COURSE_PROGRESS.reduce((s, c) => s + c.progress, 0) / COURSE_PROGRESS.length);
-  const completedCount = COURSE_PROGRESS.filter((c) => c.progress === 100).length;
+  const { data: courses = [] } = useStudentCoursesQuery();
+  const { data: certificates = [] } = useStudentCertificatesQuery();
+
+  const overallProgress = courses.length
+    ? Math.round(courses.reduce((sum, c) => sum + (typeof c.progress === "number" ? c.progress : 0), 0) / courses.length)
+    : 0;
+  const completedCount = courses.filter((c) => c.progress >= 100).length;
+  const avgScore = certificates.length
+    ? Math.round(certificates.reduce((sum, cert) => sum + (cert.totalFinalScore ?? 0), 0) / certificates.length)
+    : null;
 
   return (
     <div className="container mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -37,7 +40,7 @@ const StudentProgress = () => {
                 <span className="text-sm font-medium text-foreground/70">{t("progressPage.classesCompleted")}</span>
               </div>
               <p className="text-3xl font-bold text-foreground">
-                {completedCount} <span className="text-lg font-normal text-foreground/60">/ {COURSE_PROGRESS.length}</span>
+                {completedCount} <span className="text-lg font-normal text-foreground/60">/ {courses.length}</span>
               </p>
             </div>
             <div className="rounded-xl border border-gray-200/50 bg-white/80 p-5 shadow-sm">
@@ -45,7 +48,7 @@ const StudentProgress = () => {
                 <Award className="h-5 w-5 text-foreground/60" />
                 <span className="text-sm font-medium text-foreground/70">{t("progressPage.avgScore")}</span>
               </div>
-              <p className="text-3xl font-bold text-foreground">91%</p>
+              <p className="text-3xl font-bold text-foreground">{avgScore != null ? `${avgScore}%` : "—"}</p>
             </div>
           </div>
 
@@ -55,17 +58,21 @@ const StudentProgress = () => {
               <BarChart3 className="h-5 w-5" />
               {t("progressPage.byClass")}
             </h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {COURSE_PROGRESS.map((c) => (
-                <div key={c.title} className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
-                  <p className="mb-2 text-sm font-medium text-foreground truncate" title={c.title}>{c.title}</p>
-                  <div className="flex items-center justify-between gap-2">
-                    <Progress value={c.progress} className="h-2 flex-1 bg-gray-200" />
-                    <span className="text-sm font-semibold text-foreground tabular-nums">{c.progress}%</span>
+            {courses.length === 0 ? (
+              <p className="text-sm text-foreground/50">{t("progressPage.empty")}</p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {courses.map((c) => (
+                  <div key={c.id} className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+                    <p className="mb-2 text-sm font-medium text-foreground truncate" title={c.title}>{c.title}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <Progress value={c.progress} className="h-2 flex-1 bg-gray-200" />
+                      <span className="text-sm font-semibold text-foreground tabular-nums">{c.progress}%</span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
     </div>
   );

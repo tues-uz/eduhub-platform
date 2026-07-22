@@ -251,16 +251,10 @@ export default function AdminInstructorPayrollRequestDetailPage() {
             ) : !payrollSchedule.courseId ? (
               <p className="text-sm leading-relaxed text-slate-600">
                 Could not match this class to a course schedule. Check that the class section and course title align
-                with an admin course or teacher course in the demo.
+                with a course in the catalog.
               </p>
             ) : (
               <>
-                {payrollSchedule.usingDemoSchedule ? (
-                  <p className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
-                    Showing the demo schedule for this class so you can verify sessions before approving payroll. When
-                    the API returns live course data, this panel updates automatically.
-                  </p>
-                ) : null}
                 {payrollSchedule.monthCompletion.periodLabel ? (
                   <div
                     className={cn(
@@ -335,7 +329,6 @@ export default function AdminInstructorPayrollRequestDetailPage() {
                   courseId={payrollSchedule.courseId}
                   apiCourse={payrollSchedule.apiCourse}
                   scheduleProposal={payrollSchedule.scheduleProposal}
-                  teacherCourse={payrollSchedule.teacherCourse}
                   viewingMonth={viewingScheduleMonth}
                   onViewingMonthChange={setViewingScheduleMonth}
                   heldSlotKeys={scheduleAttendance.heldSlotKeys}

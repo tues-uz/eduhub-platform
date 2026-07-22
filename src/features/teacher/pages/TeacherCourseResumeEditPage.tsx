@@ -18,7 +18,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { eduhubCourses, eduhubClassResumes, eduhubUploadFile, eduhubSchedule, eduhubSubstituteInvites } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import {
   buildCourseScheduleSlotsForPicker,
   formatClassMeetingSlotLabel,
@@ -126,9 +125,6 @@ export default function TeacherCourseResumeEditPage() {
 
   const courseLeadEmail = apiCourseQuery.data?.lecturer?.email?.trim();
 
-  const localCourse =
-    !isUuid(courseId) && courseId ? teacherCoursesStore.getById(courseId) : undefined;
-
   const courseMeta =
     apiCourseQuery.data != null
       ? {
@@ -136,13 +132,7 @@ export default function TeacherCourseResumeEditPage() {
           title: apiCourseQuery.data.title,
           allowed: isApiCourseLecturer || substituteCanAccess,
         }
-      : localCourse
-        ? {
-            id: localCourse.id,
-            title: localCourse.title,
-            allowed: true,
-          }
-        : null;
+      : null;
 
   const loadingCourse = isUuid(courseId) && apiCourseQuery.isLoading;
   const forbidden =
@@ -151,7 +141,6 @@ export default function TeacherCourseResumeEditPage() {
   const scheduleSourceCourse = useMemo(() => {
     if (!courseId) return undefined;
     if (apiCourseQuery.data) return apiCourseQuery.data;
-    if (!isUuid(courseId)) return teacherCoursesStore.getById(courseId);
     return undefined;
   }, [courseId, apiCourseQuery.data]);
 

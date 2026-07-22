@@ -39,7 +39,6 @@ import type { CourseResponse, ScheduleProposalResponse, UserResponse } from "@/a
 import { isUuid } from "@/api/utils";
 import { computeDiscountedPrice, readAdminCourseCatalog } from "@/features/admin/utils/adminCourseCatalog";
 import { findActiveSpecialTuitionGrant, SPECIAL_TUITION_GRANTS_CHANGED_EVENT } from "@/features/admin/data/specialTuitionGrantsStore";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import {
   enrollmentRecordToPdfData,
   type EnrollmentApplicationPdfData,
@@ -65,7 +64,6 @@ import {
 } from "@/features/courses/classSchedulePreview";
 import { useScheduleAttendanceState } from "@/features/courses/useScheduleAttendanceState";
 import type { SessionSlotLike } from "@/features/courses/classSchedulePreview";
-import type { TeacherCourse } from "@/features/teacher/types";
 import type { TuitionPlanMonths } from "@/features/enrollment/enrollmentTuitionThirds";
 import {
   EnrollmentMonthlyPaymentSelector,
@@ -168,49 +166,19 @@ function validateProofFile(f: File): string | null {
   return null;
 }
 
-function resolveCourseTitle(courseId: string | undefined): string | undefined {
-  if (!courseId) return undefined;
-  if (courseId.startsWith("teacher_")) {
-    const c = teacherCoursesStore.getById(courseId.slice("teacher_".length));
-    return c?.title;
-  }
-  return undefined;
-}
-
-function resolveCourseThumbnail(courseId: string | undefined): string | undefined {
-  if (!courseId?.startsWith("teacher_")) return undefined;
-  const c = teacherCoursesStore.getById(courseId.slice("teacher_".length));
-  return c?.thumbnailUrl?.trim() || undefined;
-}
-
 const StudentEnrollmentApplicationPage = () => {
   const { courseId: rawCourseId } = useParams<{ courseId: string }>();
   const courseId = rawCourseId ? decodeURIComponent(rawCourseId) : undefined;
   const { user } = useAuthSession();
 
-  const [courseTitle, setCourseTitle] = useState<string | undefined>(() => resolveCourseTitle(courseId));
-  const [priceDisplay, setPriceDisplay] = useState<string>(() => {
-    if (!courseId?.startsWith("teacher_")) return "";
-    const c = teacherCoursesStore.getById(courseId.slice("teacher_".length));
-    return formatPrice(c?.price, "USD");
-  });
+  const [courseTitle, setCourseTitle] = useState<string | undefined>(undefined);
+  const [priceDisplay, setPriceDisplay] = useState<string>("");
   const [priceCurrency, setPriceCurrency] = useState("USD");
-  const [coursePriceAmount, setCoursePriceAmount] = useState<number | undefined>(() => {
-    if (!courseId?.startsWith("teacher_")) return undefined;
-    const c = teacherCoursesStore.getById(courseId.slice("teacher_".length));
-    const p = c?.price;
-    return p != null && p > 0 ? p : undefined;
-  });
+  const [coursePriceAmount, setCoursePriceAmount] = useState<number | undefined>(undefined);
   const [loadingCourse, setLoadingCourse] = useState(false);
   const [apiCourse, setApiCourse] = useState<CourseResponse | null>(null);
   const [scheduleProposal, setScheduleProposal] = useState<ScheduleProposalResponse | null>(null);
-  const [teacherCourse, setTeacherCourse] = useState<TeacherCourse | null>(() => {
-    if (!courseId?.startsWith("teacher_")) return null;
-    return teacherCoursesStore.getById(courseId.slice("teacher_".length)) ?? null;
-  });
-  const [courseThumbnailUrl, setCourseThumbnailUrl] = useState<string | undefined>(() =>
-    resolveCourseThumbnail(courseId),
-  );
+  const [courseThumbnailUrl, setCourseThumbnailUrl] = useState<string | undefined>(undefined);
   const [paymentMethod, setPaymentMethod] = useState<EnrollmentPaymentMethod>("BANK_TRANSFER");
   const [grantsTick, setGrantsTick] = useState(0);
   const [selectedPaymentMonths, setSelectedPaymentMonths] = useState<Set<MonthlyPlanMonthCount>>(
@@ -268,15 +236,14 @@ const StudentEnrollmentApplicationPage = () => {
   const readonlyProfileClass =
     "rounded-xl border-zinc-200 bg-zinc-50 text-zinc-900 cursor-not-allowed selection:bg-zinc-100 focus-visible:ring-0 focus-visible:ring-offset-0";
 
-  const isTeacherCourse = Boolean(courseId?.startsWith("teacher_"));
-  const isApiCourse = Boolean(courseId && isUuid(courseId) && !isTeacherCourse);
+  const isApiCourse = Boolean(courseId && isUuid(courseId));
 
   const sessionSlotsPreview = useMemo((): SessionSlotLike[] => {
     if (!courseId) return [];
     return orderSessionSlotsChronologically(
-      resolvePreviewSessionSlots(courseId, apiCourse, scheduleProposal, isApiCourse, teacherCourse),
+      resolvePreviewSessionSlots(courseId, apiCourse, scheduleProposal, isApiCourse, null),
     );
-  }, [courseId, apiCourse, scheduleProposal, teacherCourse, isApiCourse]);
+  }, [courseId, apiCourse, scheduleProposal, isApiCourse]);
 
   const scheduleAttendance = useScheduleAttendanceState(courseId);
 
@@ -464,7 +431,7 @@ const StudentEnrollmentApplicationPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!courseId) {
+    if (!courseId || !isUuid(courseId)) {
       setCourseTitle(undefined);
       setPriceDisplay("");
       setPriceCurrency("USD");
@@ -472,34 +439,8 @@ const StudentEnrollmentApplicationPage = () => {
       setCourseThumbnailUrl(undefined);
       setApiCourse(null);
       setScheduleProposal(null);
-      setTeacherCourse(null);
       return;
     }
-    if (courseId.startsWith("teacher_")) {
-      const c = teacherCoursesStore.getById(courseId.slice("teacher_".length)) ?? null;
-      setTeacherCourse(c);
-      setApiCourse(null);
-      setScheduleProposal(null);
-      setCourseTitle(c?.title);
-      setPriceDisplay(formatPrice(c?.price, "USD"));
-      setPriceCurrency("USD");
-      const p = c?.price;
-      setCoursePriceAmount(p != null && p > 0 ? p : undefined);
-      setCourseThumbnailUrl(c?.thumbnailUrl?.trim() || undefined);
-      return;
-    }
-    if (!isUuid(courseId)) {
-      setCourseTitle(undefined);
-      setPriceDisplay("");
-      setPriceCurrency("USD");
-      setCoursePriceAmount(undefined);
-      setCourseThumbnailUrl(undefined);
-      setApiCourse(null);
-      setScheduleProposal(null);
-      setTeacherCourse(null);
-      return;
-    }
-    setTeacherCourse(null);
     setPriceDisplay("");
     setCourseThumbnailUrl(undefined);
     setLoadingCourse(true);
@@ -1112,7 +1053,6 @@ const StudentEnrollmentApplicationPage = () => {
                   courseId={courseId}
                   apiCourse={apiCourse}
                   scheduleProposal={scheduleProposal}
-                  teacherCourse={teacherCourse}
                   coursePriceAmount={tuitionDueTotal}
                   priceCurrency={priceCurrency}
                   loadingCourse={loadingCourse}

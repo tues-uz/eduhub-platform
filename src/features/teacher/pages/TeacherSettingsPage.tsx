@@ -11,7 +11,6 @@ import { Switch } from "@/components/ui/switch";
 import { eduhubAuth, eduhubUploadFile, getAccessToken } from "@/api/eduhubClient";
 import type { UserResponse } from "@/api/eduhubTypes";
 import { setSessionUser, useAuthSession } from "@/features/auth/context";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { useTeacherCoursesQuery } from "@/features/teacher/hooks/useTeacherQueries";
 import { resolveInstructorCategory } from "@/features/teacher/resolveInstructorCategory";
 import { syncInstructorProfileAvatar } from "@/features/teacher/syncInstructorProfileAvatar";
@@ -78,9 +77,8 @@ export default function TeacherSettingsPage() {
   }, [user.name, user.avatarUrl]);
 
   const publishedClassCount = useMemo(() => {
-    const local = teacherCoursesStore.getAll();
     const byId = new Map<string, (typeof apiCourses)[number]>();
-    for (const course of [...apiCourses, ...local]) {
+    for (const course of apiCourses) {
       if (course?.id) byId.set(course.id, course);
     }
     return Array.from(byId.values()).filter((course) => course.status === "PUBLISHED").length;

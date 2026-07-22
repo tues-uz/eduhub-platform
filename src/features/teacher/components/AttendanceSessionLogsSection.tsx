@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ClipboardList } from "@/lib/icons";
-import { useTranslation } from "react-i18next";
 import {
-  ATTENDANCE_SESSION_LOGS_CHANGED,
   endReasonLabel,
   formatDurationMs,
-  type AttendanceSessionLogEntry,
-} from "@/features/teacher/attendance/attendanceSessionLogsStorage";
+  type StoredAttendanceMeeting,
+} from "@/features/teacher/attendance/attendanceMeetingsStorage";
 
 function formatShort(iso: string): string {
   const d = new Date(iso);
@@ -14,23 +12,29 @@ function formatShort(iso: string): string {
   return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
+function durationMsFor(meeting: StoredAttendanceMeeting): number | null {
+  if (!meeting.endedAt) return null;
+  const start = new Date(meeting.createdAt).getTime();
+  const end = new Date(meeting.endedAt).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  return Math.max(0, end - start);
+}
+
 type Props = {
-  entries: AttendanceSessionLogEntry[];
+  meetings: StoredAttendanceMeeting[];
   title?: string;
   description?: string;
-  showInstructorColumn?: boolean;
 };
 
+/** Session history, straight from the backend attendance sessions for this course — no local log. */
 export function AttendanceSessionLogsSection({
-  entries,
+  meetings,
   title = "Attendance QR session log",
-  description = "Each QR generation starts a session; duration is recorded when the session ends (new QR, 2h 15m cap, or switching class). Stored in this browser.",
-  showInstructorColumn = false,
+  description = "Each QR generation starts a session; duration is recorded when the session ends (new QR, 2h 15m cap, or manual stop).",
 }: Props) {
-  const { t } = useTranslation();
   const sorted = useMemo(
-    () => [...entries].sort((a, b) => b.startedAt.localeCompare(a.startedAt)),
-    [entries],
+    () => [...meetings].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [meetings],
   );
 
   return (
@@ -57,49 +61,37 @@ export function AttendanceSessionLogsSection({
                 <th className="px-3 py-2.5">Started</th>
                 <th className="px-3 py-2.5">Ended</th>
                 <th className="px-3 py-2.5">Time in class</th>
-                <th className="px-3 py-2.5">{t("teacher.dashboard.classesTable.header.class")}</th>
                 <th className="px-3 py-2.5">Meeting</th>
-                {showInstructorColumn ? <th className="px-3 py-2.5">Instructor</th> : null}
+                <th className="px-3 py-2.5">Modality</th>
                 <th className="px-3 py-2.5">How it ended</th>
               </tr>
             </thead>
             <tbody>
-              {sorted.map((row) => (
-                <tr key={row.id} className="border-b border-slate-50 last:border-0">
-                  <td className="px-3 py-2.5 text-slate-800 tabular-nums">{formatShort(row.startedAt)}</td>
-                  <td className="px-3 py-2.5 text-slate-700 tabular-nums">
-                    {row.endedAt ? formatShort(row.endedAt) : "—"}
-                  </td>
-                  <td className="px-3 py-2.5 font-medium text-slate-900">
-                    {row.durationMs != null ? formatDurationMs(row.durationMs) : "—"}
-                  </td>
-                  <td className="px-3 py-2.5 text-slate-800">{row.courseTitle}</td>
-                  <td className="px-3 py-2.5 text-slate-700">{row.meetingName.trim() || "—"}</td>
-                  {showInstructorColumn ? (
-                    <td className="px-3 py-2.5 text-slate-700">
-                      {row.instructorName.trim() || row.instructorEmail.trim() || "—"}
+              {sorted.map((row) => {
+                const duration = durationMsFor(row);
+                return (
+                  <tr key={row.sessionId} className="border-b border-slate-50 last:border-0">
+                    <td className="px-3 py-2.5 text-slate-800 tabular-nums">{formatShort(row.createdAt)}</td>
+                    <td className="px-3 py-2.5 text-slate-700 tabular-nums">
+                      {row.endedAt ? formatShort(row.endedAt) : "—"}
                     </td>
-                  ) : null}
-                  <td className="px-3 py-2.5 text-slate-600">
-                    {row.endReason ? endReasonLabel(row.endReason) : "In progress"}
-                  </td>
-                </tr>
-              ))}
+                    <td className="px-3 py-2.5 font-medium text-slate-900">
+                      {duration != null ? formatDurationMs(duration) : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-slate-700">{row.name.trim() || "—"}</td>
+                    <td className="px-3 py-2.5 text-slate-600">
+                      {row.modality === "online" ? "Online" : "In person"}
+                    </td>
+                    <td className="px-3 py-2.5 text-slate-600">
+                      {row.status === "CLOSED" ? endReasonLabel(row.endReason ?? "") : "In progress"}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
     </section>
   );
-}
-
-/** Subscribe to log storage updates (same-tab). */
-export function useAttendanceSessionLogsTick(): number {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const bump = () => setTick((x) => x + 1);
-    window.addEventListener(ATTENDANCE_SESSION_LOGS_CHANGED, bump);
-    return () => window.removeEventListener(ATTENDANCE_SESSION_LOGS_CHANGED, bump);
-  }, []);
-  return tick;
 }

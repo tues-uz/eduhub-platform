@@ -10,10 +10,7 @@ import {
   type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
 import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
-import { getDemoPayrollScheduleSlots } from "@/features/payroll/payrollDemoSchedule";
 import { getScheduleAttendanceState } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
-import type { TeacherCourse } from "@/features/teacher/types";
 
 const MONTH_ALIASES: Record<string, number> = {
   jan: 1,
@@ -84,15 +81,6 @@ export function formatPayrollYearMonthLabel(yearMonth: string): string {
   return new Date(year, month - 1, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
-export function resolvePayrollCourseLinkId(classSection: string, courseTitle: string): string | undefined {
-  const section = classSection.trim();
-  const title = courseTitle.trim();
-  const local = teacherCoursesStore.getAll().find((c) => courseMatchesPayrollClass(c.title, section, title));
-  if (local) return `teacher_${local.id}`;
-
-  return undefined;
-}
-
 function normalizePayrollMatchText(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
@@ -136,43 +124,13 @@ export function pickBestPayrollCourseMatch(
   return bestScore >= 45 ? best : null;
 }
 
-function courseMatchesPayrollClass(courseName: string, classSection: string, courseTitle: string): boolean {
-  return scorePayrollCourseMatch({ title: courseName }, classSection, courseTitle) >= 75;
-}
-
-export function buildDemoPayrollTeacherCourse(classSection: string, courseTitle: string): TeacherCourse | null {
-  const slots = getDemoPayrollScheduleSlots(classSection, courseTitle);
-  if (!slots?.length) return null;
-  const id = `payroll-demo-${classSection.trim().toLowerCase().replace(/\s+/g, "-")}`;
-  return {
-    id,
-    title: courseTitle.trim() || classSection.trim(),
-    description: "",
-    instructorName: "",
-    classMeetingsInSixMonths: slots.length,
-    classMeetingSlots: slots.map((s) => ({
-      title: s.title ?? "",
-      sessionDate: s.sessionDate ?? "",
-      sessionTime: s.sessionTime ?? "",
-    })),
-    lessons: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-}
-
 export function resolvePayrollScheduleSlots(
   courseId: string,
   apiCourse: CourseResponse | null,
   scheduleProposal: ScheduleProposalResponse | null,
-  options?: { demoFallback?: SessionSlotLike[] | null; teacherCourse?: TeacherCourse | null },
 ): SessionSlotLike[] {
-  const isTeacher = courseId.startsWith("teacher_");
-  const isApiCourse = isUuid(courseId) && !isTeacher;
-  const teacherCourse =
-    options?.teacherCourse ??
-    (isTeacher ? teacherCoursesStore.getById(courseId.slice("teacher_".length)) ?? null : null);
-  const raw = resolvePreviewSessionSlots(courseId, apiCourse, scheduleProposal, isApiCourse, teacherCourse);
+  const isApiCourse = isUuid(courseId);
+  const raw = resolvePreviewSessionSlots(courseId, apiCourse, scheduleProposal, isApiCourse, null);
   const ordered = orderSessionSlotsChronologically(raw);
   if (ordered.length > 0) return ordered;
 
@@ -189,7 +147,6 @@ export function resolvePayrollScheduleSlots(
     }
   }
 
-  if (options?.demoFallback?.length) return orderSessionSlotsChronologically(options.demoFallback);
   return [];
 }
 
@@ -355,7 +312,6 @@ export type PayrollResolvedCourse = {
   courseId: string;
   apiCourse: CourseResponse | null;
   scheduleProposal: ScheduleProposalResponse | null;
-  teacherCourse: TeacherCourse | null;
 };
 
 export function buildPayrollResolvedCourse(
@@ -363,9 +319,5 @@ export function buildPayrollResolvedCourse(
   apiCourse: CourseResponse | null,
   scheduleProposal: ScheduleProposalResponse | null,
 ): PayrollResolvedCourse {
-  const isTeacher = courseId.startsWith("teacher_");
-  const teacherCourse = isTeacher
-    ? teacherCoursesStore.getById(courseId.slice("teacher_".length)) ?? null
-    : null;
-  return { courseId, apiCourse, scheduleProposal, teacherCourse };
+  return { courseId, apiCourse, scheduleProposal };
 }

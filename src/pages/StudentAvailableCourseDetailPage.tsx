@@ -20,14 +20,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLayoutContext } from "@/features/layout/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { cn } from "@/lib/utils";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { instructorProfileAvatarsStore } from "@/features/teacher/data/instructorProfileAvatarsStore";
-import type { TeacherCourse } from "@/features/teacher/types";
 import { eduhubCompletion, eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import type { CourseResponse, CourseReviewResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import {
-  boundsFromMeetingSlots,
   mergeScheduleDisplayForAdminReview,
   resolvedSessionsSixMonths,
   useAdminCourseLocalDataVersion,
@@ -44,7 +41,6 @@ import {
 } from "@/features/student/courseReviewsStorage";
 import { formatDisplayPersonName, formatDisplayTitle, profileInitials } from "@/lib/formatPersonName";
 
-const TEACHER_PREFIX = "teacher_";
 const MAX_CLASS_PHOTOS = 8;
 
 function nameInitials(name: string, max = 2): string {
@@ -91,7 +87,6 @@ function resolvePreviewSessionSlots(
   apiDetail: CourseResponse | null,
   scheduleProposal: ScheduleProposalResponse | null,
   isApiCourse: boolean,
-  tc: TeacherCourse | null,
 ): SessionSlotLike[] {
   if (isApiCourse && apiDetail) {
     if (scheduleProposal?.sessions.length) {
@@ -110,7 +105,6 @@ function resolvePreviewSessionSlots(
     if (apiDetail.classMeetingSlots?.length) return apiDetail.classMeetingSlots;
     return [];
   }
-  if (tc?.classMeetingSlots?.length) return tc.classMeetingSlots;
   return [];
 }
 
@@ -181,15 +175,11 @@ const StudentAvailableCourseDetailPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [teacherCourse, setTeacherCourse] = useState<TeacherCourse | null>(null);
   const [apiCourse, setApiCourse] = useState<CourseResponse | null>(null);
   const [lessonRows, setLessonRows] = useState<LessonPreview[]>([]);
   const [scheduleProposal, setScheduleProposal] = useState<ScheduleProposalResponse | null>(null);
   const [studentReviews, setStudentReviews] = useState<CourseReviewResponse[]>([]);
   const [reviewsError, setReviewsError] = useState(false);
-
-  const isTeacher = linkId.startsWith(TEACHER_PREFIX);
-  const teacherId = isTeacher ? linkId.slice(TEACHER_PREFIX.length) : null;
 
   useEffect(() => {
     const bump = () => setEnrollmentStoreTick((n) => n + 1);
@@ -236,34 +226,11 @@ const StudentAvailableCourseDetailPage = () => {
     let cancelled = false;
     setLoading(true);
     setNotFound(false);
-    setTeacherCourse(null);
     setApiCourse(null);
     setLessonRows([]);
     setScheduleProposal(null);
     setStudentReviews([]);
     setReviewsError(false);
-
-    if (isTeacher && teacherId) {
-      const tc = teacherCoursesStore.getById(teacherId);
-      if (!tc) {
-        if (!cancelled) {
-          setNotFound(true);
-          setLoading(false);
-        }
-        return () => {
-          cancelled = true;
-        };
-      }
-      const sorted = [...tc.lessons].sort((a, b) => a.order - b.order);
-      if (!cancelled) {
-        setTeacherCourse(tc);
-        setLessonRows(sorted.map((l) => ({ id: l.id, title: l.title })));
-        setLoading(false);
-      }
-      return () => {
-        cancelled = true;
-      };
-    }
 
     if (isUuid(linkId)) {
       Promise.all([
@@ -300,33 +267,31 @@ const StudentAvailableCourseDetailPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [linkId, isTeacher, teacherId]);
+  }, [linkId]);
 
-  const title = apiCourse?.title ?? teacherCourse?.title ?? "";
-  const instructor =
-    apiCourse?.lecturer?.fullName ?? teacherCourse?.instructorName ?? "—";
+  const title = apiCourse?.title ?? "";
+  const instructor = apiCourse?.lecturer?.fullName ?? "—";
   const instructorAvatarUrl =
     apiCourse?.lecturer?.avatarUrl?.trim() ||
-    teacherCourse?.instructorAvatarUrl?.trim() ||
     instructorProfileAvatarsStore.getByEmail(apiCourse?.lecturer?.email ?? "") ||
     instructorProfileAvatarsStore.getByName(instructor) ||
     undefined;
   const category = apiCourse?.category ?? "Class";
-  const description = apiCourse?.description ?? teacherCourse?.description ?? "";
-  const thumbnailUrl = apiCourse?.thumbnailUrl?.trim() || teacherCourse?.thumbnailUrl?.trim();
+  const description = apiCourse?.description ?? "";
+  const thumbnailUrl = apiCourse?.thumbnailUrl?.trim();
   const scheduleMerged = useMemo(() => {
     void scheduleLocalTick;
-    if (!apiCourse || !isUuid(linkId) || isTeacher) return null;
+    if (!apiCourse || !isUuid(linkId)) return null;
     const wf = courseScheduleWorkflowStore.get(linkId);
     return mergeScheduleDisplayForAdminReview(linkId, apiCourse, {
       useLocalProposalSnapshot: wf?.status === "approved",
     });
-  }, [apiCourse, linkId, isTeacher, scheduleLocalTick]);
+  }, [apiCourse, linkId, scheduleLocalTick]);
 
   const sessionSlotsPreview = useMemo(() => {
     void scheduleLocalTick;
-    const isApiCourse = Boolean(apiCourse && linkId && isUuid(linkId) && !isTeacher);
-    const raw = resolvePreviewSessionSlots(linkId, apiCourse, scheduleProposal, isApiCourse, teacherCourse);
+    const isApiCourse = Boolean(apiCourse && linkId && isUuid(linkId));
+    const raw = resolvePreviewSessionSlots(linkId, apiCourse, scheduleProposal, isApiCourse);
     const decorated = raw.map((slot, i) => ({ slot, i, ms: sessionDateMs(slot.sessionDate) }));
     decorated.sort((a, b) => {
       const na = Number.isNaN(a.ms) ? Infinity : a.ms;
@@ -335,7 +300,7 @@ const StudentAvailableCourseDetailPage = () => {
       return a.i - b.i;
     });
     return decorated.map((x) => x.slot);
-  }, [apiCourse, linkId, isTeacher, scheduleProposal, teacherCourse, scheduleLocalTick]);
+  }, [apiCourse, linkId, scheduleProposal, scheduleLocalTick]);
 
   const scheduleMonthTabs = useMemo(
     () => buildScheduleMonthTabs(sessionSlotsPreview),
@@ -344,7 +309,7 @@ const StudentAvailableCourseDetailPage = () => {
 
   const scheduleStatusHint = useMemo(() => {
     void scheduleLocalTick;
-    if (!linkId || !isUuid(linkId) || isTeacher || !apiCourse) return null;
+    if (!linkId || !isUuid(linkId) || !apiCourse) return null;
     if (scheduleProposal?.sessions.length) {
       return "Published class schedule from the school.";
     }
@@ -359,14 +324,7 @@ const StudentAvailableCourseDetailPage = () => {
       return "Instructor-approved plan (shown here for preview before you enroll).";
     }
     return null;
-  }, [
-    apiCourse,
-    linkId,
-    isTeacher,
-    scheduleProposal,
-    sessionSlotsPreview.length,
-    scheduleLocalTick,
-  ]);
+  }, [apiCourse, linkId, scheduleProposal, sessionSlotsPreview.length, scheduleLocalTick]);
 
   const instructorReviews = useMemo(() => {
     void reviewsTick;
@@ -386,35 +344,24 @@ const StudentAvailableCourseDetailPage = () => {
   const meetings =
     apiCourse?.classMeetingsInSixMonths ??
     (apiCourse ? resolvedSessionsSixMonths(apiCourse) : undefined) ??
-    scheduleMerged?.sessionsSixMo ??
-    teacherCourse?.classMeetingsInSixMonths ??
-    (teacherCourse?.classMeetingSlots?.length ? teacherCourse.classMeetingSlots.length : undefined);
-  const enrollmentCount = apiCourse?.enrollmentCount ?? teacherCourse?.enrollmentCount;
+    scheduleMerged?.sessionsSixMo;
+  const enrollmentCount = apiCourse?.enrollmentCount;
 
-  const price =
-    apiCourse?.pricing?.discountedAmount ?? apiCourse?.pricing?.amount ?? teacherCourse?.price;
+  const price = apiCourse?.pricing?.discountedAmount ?? apiCourse?.pricing?.amount;
   const currency = apiCourse?.pricing?.currency ?? "USD";
 
-  const teacherSlotBounds = teacherCourse ? boundsFromMeetingSlots(teacherCourse.classMeetingSlots) : {};
   const resolvedClassStartIso =
-    scheduleMerged?.classStartDate ||
-    apiCourse?.classStartDate?.trim() ||
-    teacherCourse?.classStartDate?.trim() ||
-    teacherSlotBounds.start;
-  const resolvedClassEndIso =
-    scheduleMerged?.classEndDate ||
-    apiCourse?.classEndDate?.trim() ||
-    teacherCourse?.classEndDate?.trim() ||
-    teacherSlotBounds.end;
+    scheduleMerged?.classStartDate || apiCourse?.classStartDate?.trim();
+  const resolvedClassEndIso = scheduleMerged?.classEndDate || apiCourse?.classEndDate?.trim();
   const classStartLabel = formatClassDateLabel(resolvedClassStartIso);
   const classEndLabel = formatClassDateLabel(resolvedClassEndIso);
 
   const enrollPath = `/dashboard/available-courses/enroll/${encodeURIComponent(linkId)}`;
   const workspacePath = `/dashboard/courses/${linkId}`;
 
-  const classPhotoUrls = (
-    apiCourse?.classPhotoUrls ?? teacherCourse?.classPhotoUrls ?? []
-  ).filter((u) => typeof u === "string" && u.trim().length > 0);
+  const classPhotoUrls = (apiCourse?.classPhotoUrls ?? []).filter(
+    (u) => typeof u === "string" && u.trim().length > 0,
+  );
   const displayedClassPhotoUrls = classPhotoUrls.slice(0, MAX_CLASS_PHOTOS);
   const hasMoreClassPhotos = classPhotoUrls.length > MAX_CLASS_PHOTOS;
 

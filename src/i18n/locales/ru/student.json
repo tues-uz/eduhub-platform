@@ -49,7 +49,6 @@
     "welcome": "Здравствуйте, {{name}}! С возвращением",
     "subtitle": "Вот что происходит с вашими классами сегодня",
     "statsClassesEnrolled": "Записанных классов",
-    "statsAssignments": "Задания",
     "statsCertificates": "Сертификаты",
     "statsProgress": "Прогресс",
     "upcomingSchedule": "Предстоящее расписание",
@@ -61,18 +60,10 @@
     "noSessionsTitle": "Нет запланированных занятий",
     "noSessionsHint": "Преподаватель может опубликовать расписание класса в ближайшее время.",
     "viewMyClass": "Открыть «Мой класс»",
-    "upcomingAssignments": "Предстоящие задания",
-    "viewCalendar": "Открыть календарь",
-    "due": "Срок: {{date}}",
-    "overdue": "Просрочено",
-    "daysLeft_one": "Остался {{count}} день",
-    "daysLeft_other": "Осталось {{count}} дн.",
-    "continue": "Продолжить",
-    "start": "Начать",
     "quickActions": "Быстрые действия",
-    "myAssignments": "Мои задания",
     "viewProgress": "Посмотреть прогресс",
     "recentActivity": "Недавняя активность",
+    "noRecentActivity": "Пока нет недавней активности.",
     "overallProgress": "Общий прогресс",
     "completionRate": "Процент завершения",
     "classesCompleted": "Завершённых классов",
@@ -192,7 +183,8 @@
     "overallCompletion": "Общее завершение",
     "classesCompleted": "Завершённых классов",
     "avgScore": "Средний балл",
-    "byClass": "По классам"
+    "byClass": "По классам",
+    "empty": "Вы пока не записаны ни на один класс."
   },
   "notificationsPage": {
     "subtitle": "Недавняя активность и обновления.",
@@ -481,7 +473,8 @@
   },
   "courseResume": {
     "notFound": "Этот обзор не найден или был удалён.",
-    "backToClass": "Вернуться к классу"
+    "backToClass": "Вернуться к классу",
+    "loading": "Загрузка обзора класса…"
   },
   "completion": {
     "preview": "Предпросмотр",
