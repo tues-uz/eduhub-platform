@@ -469,16 +469,14 @@ export function TeacherCourseGradesPanel({
     try {
       for (const s of students) {
         const saved = savedGrades[s.id];
-        const total =
-          saved?.totalFinalScore ??
-          computeTotalFinalScore(
-            saved?.attendanceScore ??
-              computeAttendanceScore(
-                countSessionsStudentAttended(courseId, s.id, s.email),
-                plannedSessions,
-              ),
-            readInstructorScore(saved) ?? null,
-          );
+        const total = computeTotalFinalScore(
+          saved?.attendanceScore ??
+            computeAttendanceScore(
+              countSessionsStudentAttended(courseId, s.id, s.email),
+              plannedSessions,
+            ),
+          readInstructorScore(saved) ?? null,
+        );
         if (total == null || publishedCerts.has(s.id)) continue;
         issueCourseCertificate({
           courseId,
@@ -564,12 +562,10 @@ export function TeacherCourseGradesPanel({
       const attended = countSessionsStudentAttended(courseId, s.id, s.email);
       const attendanceScore = computeAttendanceScore(attended, plannedSessions);
       const draftInstructor = parseFinalScoreInput(draft.score);
-      const savedTotal =
-        saved?.totalFinalScore ??
-        computeTotalFinalScore(
-          saved?.attendanceScore ?? attendanceScore,
-          savedInstructor ?? null,
-        );
+      const savedTotal = computeTotalFinalScore(
+        saved?.attendanceScore ?? attendanceScore,
+        savedInstructor ?? null,
+      );
       const published = publishedCerts.get(s.id);
       return {
         studentId: s.id,
@@ -618,9 +614,8 @@ export function TeacherCourseGradesPanel({
       <h2 className="text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
         <GraduationCap className="h-5 w-5 text-[#1e40af]" />{t("teacher.grades.title")}</h2>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-foreground/60 min-w-0 flex-1 max-w-2xl">
-          <span className="font-medium text-foreground/80">Total</span> = average of attendance % and instructor
-          score. Save scores, then publish a certificate so the student sees it under{" "}
+          <p className="text-sm text-foreground/60 min-w-0 flex-1 max-w-2xl">
+            <span className="font-medium text-foreground/80">Total</span> = instructor score. Save scores, then publish a certificate so the student sees it under{" "}
           <span className="font-medium text-foreground/80">Certificates</span>
           {isApiCourse ? "." : " (demo: this browser until an API exists)."}
         </p>
@@ -909,8 +904,8 @@ export function TeacherCourseGradesPanel({
           </div>
           <p className="text-xs text-muted-foreground px-0.5 leading-relaxed">
             <span className="font-medium text-foreground/80">Attend. %</span> = sessions checked in via QR ÷
-            planned schedule meetings. <span className="font-medium text-foreground/80">Total</span> = average of
-            attendance % and instructor score.{" "}
+            planned schedule meetings. <span className="font-medium text-foreground/80">Total</span> = instructor
+            score (attendance is informational).{" "}
             <span className="font-medium text-foreground/80">Feedback</span> shows the student&apos;s
             instructor rating after they complete the class survey
             {isApiCourse ? "." : " (demo: this browser)."}

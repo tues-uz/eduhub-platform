@@ -22,16 +22,12 @@ export function computeAttendanceScore(
   return Math.min(100, Math.round((attended / plannedSessions) * 100));
 }
 
-/** Combined final: 50% attendance + 50% instructor when both exist. */
+/** Total equals the instructor score — attendance is informational only. */
 export function computeTotalFinalScore(
-  attendanceScore: number | null,
+  _attendanceScore: number | null,
   instructorScore: number | null,
 ): number | null {
-  if (attendanceScore != null && instructorScore != null) {
-    return Math.round(((attendanceScore + instructorScore) / 2) * 10) / 10;
-  }
   if (instructorScore != null) return instructorScore;
-  if (attendanceScore != null) return attendanceScore;
   return null;
 }
 
