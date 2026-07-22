@@ -1,4 +1,5 @@
 import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
+import { ATTENDANCE_SESSION_MAX_MS } from "@/features/teacher/attendance/attendanceMeetingsStorage";
 import { scheduleSlotKeyFromParts } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 import type { TeacherCourse } from "@/features/teacher/types";
 import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
@@ -19,7 +20,9 @@ export type SessionSlotLike = {
 
 export type SessionTimingStatus = "upcoming" | "ongoing" | "finished" | "unknown";
 
-const DEFAULT_SESSION_DURATION_MS = 90 * 60 * 1000;
+/** Matches the attendance QR check-in window (`AttendanceService.CHECK_IN_WINDOW`, 2h15m) so a
+ * class with no QR session yet still "finishes" at the same time a QR-tracked one would. */
+const DEFAULT_SESSION_DURATION_MS = ATTENDANCE_SESSION_MAX_MS;
 
 function parseSessionStartMs(sessionDate: string, sessionTime?: string): number | null {
   const dateStr = sessionDate.trim().slice(0, 10);

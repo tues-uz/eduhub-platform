@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { useAuthSession } from "@/features/auth/context";
-import { teacherCoursesStore } from "../data/teacherCoursesStore";
 import { eduhubCourses } from "@/api/eduhubClient";
 import type { TeacherCourse } from "../types";
 import { TeacherAttendanceSessionPanel } from "@/features/teacher/components/TeacherAttendanceSessionPanel";
@@ -40,7 +39,6 @@ const TeacherCoursesPage = () => {
     let cancelled = false;
     async function load() {
       setLoading(true);
-      const local = teacherCoursesStore.getAll();
       if (user.id) {
         try {
           const res = await eduhubCourses.getByLecturer(user.id);
@@ -56,13 +54,12 @@ const TeacherCoursesPage = () => {
             updatedAt: c.createdAt,
             status: c.status,
           }));
-          const merged = [...apiCourses, ...local];
-          if (!cancelled) setCourses(merged);
+          if (!cancelled) setCourses(apiCourses);
         } catch {
-          if (!cancelled) setCourses(local);
+          if (!cancelled) setCourses([]);
         }
       } else {
-        if (!cancelled) setCourses(local);
+        if (!cancelled) setCourses([]);
       }
       if (!cancelled) setLoading(false);
     }

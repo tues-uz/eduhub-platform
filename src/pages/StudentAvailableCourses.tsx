@@ -18,7 +18,6 @@ import {
 import { useAuthSession } from "@/features/auth/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { useStudentCourseScheduleSummaries } from "@/features/student/hooks/useStudentCourseScheduleSummaries";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { eduhubCourses, eduhubCategories } from "@/api/eduhubClient";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
 import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
@@ -97,7 +96,6 @@ async function enrichWithEnrolledStudents(items: AvailableCourseItem[]): Promise
   return Promise.all(
     items.map(async (item) => {
       const { students, totalCount } = await resolveEnrolledStudentPreviews({
-        linkId: item.linkId,
         apiCourseId: item.id,
         enrollmentCount: item.enrollmentCount,
       });
@@ -118,7 +116,6 @@ async function enrichWithInstructorAvatars(items: AvailableCourseItem[]): Promis
         instructorName: item.instructor,
         existingUrl: item.instructorAvatarUrl,
         courseId: item.id,
-        linkId: item.linkId,
       });
       return instructorAvatarUrl ? { ...item, instructorAvatarUrl } : item;
     }),
@@ -193,31 +190,6 @@ const StudentAvailableCourses = () => {
 
     async function load() {
       setLoading(true);
-      const localTeacher = teacherCoursesStore.getAll();
-      const localItems: AvailableCourseItem[] = localTeacher.map((c) => {
-        const linkId = `teacher_${c.id}`;
-        const enrolledData = enrolledByLinkId.get(linkId);
-        const moduleCount = c.lessons?.length ?? 0;
-        const duration = moduleCount
-          ? `${moduleCount} ${t("courses.lesson", { count: moduleCount })}`
-          : "—";
-        return {
-          id: c.id,
-          linkId,
-          title: c.title,
-          instructor: c.instructorName,
-          instructorAvatarUrl: c.instructorAvatarUrl?.trim() || undefined,
-          category: c.category?.trim() || t("availableCourses.defaultCategory"),
-          duration,
-          modules: moduleCount,
-          price: c.price,
-          thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
-          enrollmentStatus: enrollmentStatusFor(linkId),
-          progress: enrolledData?.progress,
-          status: enrolledData?.status,
-          nextLesson: enrolledData?.nextLesson,
-        };
-      });
 
       const mapApiToItem = (c: CourseSummaryResponse) => {
         const enrolledData = enrolledByLinkId.get(c.id);
@@ -259,13 +231,12 @@ const StudentAvailableCourses = () => {
           // API down or auth issue
         }
 
-        const localOnly = localItems.filter((c) => !seenIds.has(c.id));
-        const merged = await enrichWithInstructorAvatars(await enrichWithEnrolledStudents([...apiItems, ...localOnly]));
+        const merged = await enrichWithInstructorAvatars(await enrichWithEnrolledStudents(apiItems));
         if (!cancelled) {
           setCourses(merged);
         }
       } catch {
-        if (!cancelled) setCourses(localItems);
+        if (!cancelled) setCourses([]);
       }
       if (!cancelled) setLoading(false);
     }

@@ -73,7 +73,6 @@ import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
 import { TeacherAttendanceSessionPanel } from "@/features/teacher/components/TeacherAttendanceSessionPanel";
 import { TeacherCourseGradesPanel } from "@/features/teacher/components/TeacherCourseGradesPanel";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import {
   buildCourseScheduleSlotsForPicker,
   padMeetingSlotsForCourse,
@@ -83,9 +82,8 @@ import {
 import {
   ATTENDANCE_MEETINGS_CHANGED,
   ATTENDANCE_OVERVIEW_SESSION_SYNC,
+  fetchAttendanceMeetings,
   formatMeetingOptionLabel,
-  loadStoredMeetings,
-  meetingsStorageKey,
   pickStoredMeetingForScheduleSlot,
 } from "@/features/teacher/attendance/attendanceMeetingsStorage";
 import {
@@ -330,9 +328,6 @@ export default function TeacherCourseRosterPage() {
 
   const courseLeadEmail = apiCourseQuery.data?.lecturer?.email?.trim();
 
-  const localCourse =
-    !isUuid(courseId) && courseId ? teacherCoursesStore.getById(courseId) : undefined;
-
   const courseMeta =
     apiCourseQuery.data != null
       ? {
@@ -341,14 +336,7 @@ export default function TeacherCourseRosterPage() {
           status: apiCourseQuery.data.status,
           allowed: isApiCourseLecturer || substituteCanAccess,
         }
-      : localCourse
-        ? {
-            id: localCourse.id,
-            title: localCourse.title,
-            status: localCourse.status,
-            allowed: true,
-          }
-        : null;
+      : null;
 
   const teacherChecklist = useTeacherClassChecklist(courseMeta?.id ?? courseId);
 
@@ -417,7 +405,6 @@ export default function TeacherCourseRosterPage() {
   const scheduleSourceCourse = useMemo(() => {
     if (!courseId) return undefined;
     if (apiCourseQuery.data) return apiCourseQuery.data;
-    if (!isUuid(courseId)) return teacherCoursesStore.getById(courseId);
     return undefined;
   }, [courseId, apiCourseQuery.data]);
 
@@ -608,7 +595,6 @@ export default function TeacherCourseRosterPage() {
     const onStorage = (e: StorageEvent) => {
       if (!e.key) return;
       if (e.key === ATTENDANCE_ROLL_STORAGE_KEY) bump();
-      if (courseMeta?.id && e.key === meetingsStorageKey(courseMeta.id)) bump();
     };
     const onFocus = () => bump();
     const onVis = () => {
@@ -662,12 +648,22 @@ export default function TeacherCourseRosterPage() {
 
   const classResumes = classResumesQuery.data ?? [];
 
+  const attendanceMeetingsQuery = useQuery({
+    queryKey: ["teacher", "attendance-meetings", courseMeta?.id, attendanceUiKey],
+    queryFn: () => fetchAttendanceMeetings(courseMeta!.id),
+    enabled: Boolean(courseMeta?.id) && isUuid(courseMeta.id),
+  });
+
+  const attendanceMeetings = useMemo(
+    () => attendanceMeetingsQuery.data ?? [],
+    [attendanceMeetingsQuery.data],
+  );
+
   const overviewMeetingLabel = useMemo(() => {
     if (!courseMeta?.id || !overviewSessionId) return null;
-    void attendanceUiKey;
-    const m = loadStoredMeetings(courseMeta.id).find((x) => x.sessionId === overviewSessionId);
+    const m = attendanceMeetings.find((x) => x.sessionId === overviewSessionId);
     return m ? formatMeetingOptionLabel(m) : null;
-  }, [courseMeta?.id, overviewSessionId, attendanceUiKey]);
+  }, [courseMeta?.id, overviewSessionId, attendanceMeetings]);
 
   const attendanceRosterQuery = useQuery({
     queryKey: ["teacher", "attendance-roster", courseMeta?.id, overviewSessionId, attendanceUiKey],
@@ -689,7 +685,7 @@ export default function TeacherCourseRosterPage() {
     (value: string) => {
       if (!courseMeta?.id) return;
       const cid = courseMeta.id;
-      const meetings = loadStoredMeetings(cid);
+      const meetings = attendanceMeetings;
       const slots = rosterScheduleView.slots;
 
       let picked = null as ReturnType<typeof pickStoredMeetingForScheduleSlot>;
@@ -738,7 +734,7 @@ export default function TeacherCourseRosterPage() {
         );
       }
     },
-    [courseMeta?.id, rosterScheduleView.slots],
+    [courseMeta?.id, rosterScheduleView.slots, attendanceMeetings],
   );
 
   useEffect(() => {
@@ -747,14 +743,11 @@ export default function TeacherCourseRosterPage() {
   }, [courseMeta?.id, applyAttendanceScheduleFilter]);
 
   const handleDelete = async (id: string) => {
-    if (isUuid(id)) {
-      try {
-        await eduhubCourses.delete(id);
-      } catch {
-        return;
-      }
-    } else {
-      teacherCoursesStore.delete(id);
+    if (!isUuid(id)) return;
+    try {
+      await eduhubCourses.delete(id);
+    } catch {
+      return;
     }
     setDeleteId(null);
     navigate("/dashboard/teacher/courses");

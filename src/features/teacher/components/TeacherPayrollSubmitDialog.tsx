@@ -129,8 +129,7 @@ export function TeacherPayrollSubmitDialog({
 
   const scheduleSourceNote = useMemo(() => {
     if (!payrollSchedule.courseId || payrollSchedule.slots.length === 0) return null;
-    const isApiCourse =
-      isUuid(payrollSchedule.courseId) && !payrollSchedule.courseId.startsWith("teacher_");
+    const isApiCourse = isUuid(payrollSchedule.courseId);
     return (
       classScheduleStatusHint(
         payrollSchedule.courseId,
@@ -145,15 +144,8 @@ export function TeacherPayrollSubmitDialog({
     const pricing = payrollSchedule.apiCourse?.pricing;
     const fromApi = pricing?.discountedAmount ?? pricing?.amount;
     if (typeof fromApi === "number" && fromApi > 0) return fromApi;
-    const fromTeacher = payrollSchedule.teacherCourse?.price;
-    if (typeof fromTeacher === "number" && fromTeacher > 0) return fromTeacher;
     return inferListedTuitionPerStudent(payrollSchedule.slots, paidPaymentAmounts);
-  }, [
-    payrollSchedule.teacherCourse,
-    payrollSchedule.apiCourse?.pricing,
-    payrollSchedule.slots,
-    paidPaymentAmounts,
-  ]);
+  }, [payrollSchedule.apiCourse?.pricing, payrollSchedule.slots, paidPaymentAmounts]);
 
   const classPriceCurrency = payrollSchedule.apiCourse?.pricing?.currency ?? paymentCurrency;
 

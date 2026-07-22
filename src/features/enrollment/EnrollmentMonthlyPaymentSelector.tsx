@@ -13,7 +13,6 @@ import {
   type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
 import type { CourseResponse, ScheduleProposalResponse, EnrollmentInstallmentCount } from "@/api/eduhubTypes";
-import type { TeacherCourse } from "@/features/teacher/types";
 import { isUuid } from "@/api/utils";
 import {
   activeScheduleMonthCount,
@@ -108,7 +107,6 @@ export type EnrollmentMonthlyPaymentSelectorProps = {
   courseId: string | undefined;
   apiCourse: CourseResponse | null;
   scheduleProposal: ScheduleProposalResponse | null;
-  teacherCourse: TeacherCourse | null;
   coursePriceAmount: number | undefined;
   priceCurrency: string;
   loadingCourse: boolean;
@@ -128,7 +126,6 @@ export function EnrollmentMonthlyPaymentSelector({
   courseId,
   apiCourse,
   scheduleProposal,
-  teacherCourse,
   coursePriceAmount,
   priceCurrency,
   loadingCourse,
@@ -144,14 +141,13 @@ export function EnrollmentMonthlyPaymentSelector({
 }: EnrollmentMonthlyPaymentSelectorProps) {
   const enrollmentScheduleSlots = useMemo(() => {
     if (!courseId) return [] as SessionSlotLike[];
-    const isTeacher = courseId.startsWith("teacher_");
-    const isApiCourse = Boolean(isUuid(courseId) && !isTeacher);
+    const isApiCourse = Boolean(isUuid(courseId));
     const raw = resolvePreviewSessionSlots(
       courseId,
       apiCourse,
       scheduleProposal,
       isApiCourse,
-      teacherCourse,
+      null,
     );
     const decorated = raw.map((slot, i) => ({ slot, i, ms: sessionDateMs(slot.sessionDate) }));
     decorated.sort((a, b) => {
@@ -161,7 +157,7 @@ export function EnrollmentMonthlyPaymentSelector({
       return a.i - b.i;
     });
     return decorated.map((x) => x.slot);
-  }, [courseId, apiCourse, scheduleProposal, teacherCourse]);
+  }, [courseId, apiCourse, scheduleProposal]);
 
   const scheduleMonthCounts = useMemo(
     () => scheduleMonthSessionCounts(enrollmentScheduleSlots),
@@ -290,7 +286,6 @@ export function EnrollmentMonthlyPaymentSelector({
           courseId={courseId}
           apiCourse={apiCourse}
           scheduleProposal={scheduleProposal}
-          teacherCourse={teacherCourse}
           viewingMonth={viewingScheduleMonth}
           onViewingMonthChange={onViewingScheduleMonthChange}
           selectedPaymentMonths={selectedPaymentMonths}

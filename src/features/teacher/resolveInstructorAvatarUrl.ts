@@ -1,6 +1,5 @@
 import { eduhubCourses } from "@/api/eduhubClient";
 import { instructorProfileAvatarsStore } from "@/features/teacher/data/instructorProfileAvatarsStore";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 
 function lookupStoredAvatar(instructorName?: string, instructorEmail?: string): string | undefined {
   if (instructorEmail) {
@@ -19,21 +18,14 @@ export async function resolveInstructorAvatarUrl(opts: {
   instructorEmail?: string;
   existingUrl?: string;
   courseId?: string;
-  linkId?: string;
 }): Promise<string | undefined> {
   const existing = opts.existingUrl?.trim();
   if (existing) return existing;
 
-  if (opts.linkId?.startsWith("teacher_")) {
-    const localId = opts.linkId.slice("teacher_".length);
-    const localUrl = teacherCoursesStore.getById(localId)?.instructorAvatarUrl?.trim();
-    if (localUrl) return localUrl;
-  }
-
   const stored = lookupStoredAvatar(opts.instructorName, opts.instructorEmail);
   if (stored) return stored;
 
-  if (opts.courseId && !opts.linkId?.startsWith("teacher_")) {
+  if (opts.courseId) {
     try {
       const detail = await eduhubCourses.getById(opts.courseId);
       const apiUrl = detail.lecturer?.avatarUrl?.trim();

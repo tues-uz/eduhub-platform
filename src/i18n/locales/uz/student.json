@@ -49,7 +49,6 @@
     "welcome": "Salom {{name}}, xush kelibsiz",
     "subtitle": "Bugun darslaringizda nima bo'layotgani",
     "statsClassesEnrolled": "Yozilgan darslar",
-    "statsAssignments": "Topshiriqlar",
     "statsCertificates": "Sertifikatlar",
     "statsProgress": "Progress",
     "upcomingSchedule": "Yaqinlashayotgan jadval",
@@ -61,18 +60,10 @@
     "noSessionsTitle": "Rejalashtirilgan darslar yo'q",
     "noSessionsHint": "O'qituvchingiz tez orada dars jadvalini e'lon qilishi mumkin.",
     "viewMyClass": "Mening darsim",
-    "upcomingAssignments": "Yaqinlashayotgan topshiriqlar",
-    "viewCalendar": "Kalendarni ko'rish",
-    "due": "Muddat: {{date}}",
-    "overdue": "Muddati o'tgan",
-    "daysLeft_one": "{{count}} kun qoldi",
-    "daysLeft_other": "{{count}} kun qoldi",
-    "continue": "Davom etish",
-    "start": "Boshlash",
     "quickActions": "Tezkor harakatlar",
-    "myAssignments": "Mening topshiriqlarim",
     "viewProgress": "Progressni ko'rish",
     "recentActivity": "So'nggi faoliyat",
+    "noRecentActivity": "Hozircha faoliyat yo'q.",
     "overallProgress": "Umumiy progress",
     "completionRate": "Tugatish darajasi",
     "classesCompleted": "Tugatilgan darslar",
@@ -192,7 +183,8 @@
     "overallCompletion": "Umumiy tugatish",
     "classesCompleted": "Tugatilgan darslar",
     "avgScore": "O'rtacha ball",
-    "byClass": "Dars bo'yicha"
+    "byClass": "Dars bo'yicha",
+    "empty": "Siz hali hech qanday darsga yozilmagansiz."
   },
   "notificationsPage": {
     "subtitle": "So'nggi faoliyatingiz va yangilanishlar.",
@@ -481,7 +473,8 @@
   },
   "courseResume": {
     "notFound": "Bu resume topilmadi yoki olib tashlangan bo'lishi mumkin.",
-    "backToClass": "Darsga qaytish"
+    "backToClass": "Darsga qaytish",
+    "loading": "Dars xulosasi yuklanmoqda…"
   },
   "completion": {
     "preview": "Ko'rib chiqish",

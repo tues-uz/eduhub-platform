@@ -1,7 +1,4 @@
 import {
-  studentAssignments,
-  studentCourses,
-  studentNotifications,
   studentRecentActivity,
   studentStats,
   enrolledCourses,
@@ -13,9 +10,8 @@ import {
 } from "@/features/admin/data/dashboardData";
 import type { LucideIcon } from "@/lib/icons";
 import { Users, GraduationCap, BookOpen, TrendingUp } from "@/lib/icons";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
-import { getAccessToken, eduhubAdmin, eduhubEnrollments } from "./eduhubClient";
+import { getAccessToken, eduhubAdmin, eduhubEnrollments, eduhubCompletion } from "./eduhubClient";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import { resolveInstructorAvatarUrl } from "@/features/teacher/resolveInstructorAvatarUrl";
 
@@ -277,43 +273,63 @@ function normalizeStoredStudentEmail(): string | null {
   return e?.trim().toLowerCase() ?? null;
 }
 
-function getTeacherCoursesAsStudentList(): StudentCourseListItem[] {
-  const teacherCourses = teacherCoursesStore.getAll();
-  return teacherCourses.map((c) => {
-    const courseId = `teacher_${c.id}`;
-    const sortedLessons = [...c.lessons].sort((a, b) => a.order - b.order);
-    const completedIds = lessonProgressStore.getCompletedIds(courseId);
-    const totalLessons = sortedLessons.length;
-    const completedCount = totalLessons ? sortedLessons.filter((l) => completedIds.includes(l.id)).length : 0;
-    const progressPercent = totalLessons ? Math.round((completedCount / totalLessons) * 100) : 0;
-    const status =
-      progressPercent >= 100 ? "Completed" : progressPercent >= 75 ? "Almost Complete" : "In Progress";
-    const nextLesson = sortedLessons.find((l) => !completedIds.includes(l.id))?.title ?? sortedLessons[0]?.title ?? "—";
-    return {
-      id: courseId,
-      title: c.title,
-      instructor: c.instructorName,
-      progress: progressPercent,
-      status,
-      nextLesson,
-      category: "Class",
-      duration: totalLessons ? `${totalLessons} lessons` : "—",
-      modules: totalLessons,
-      enrolledDate: c.createdAt.slice(0, 10),
-      thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
-      instructorAvatarUrl: c.instructorAvatarUrl?.trim() || undefined,
-    };
+type StudentDashboardStat = Omit<(typeof studentStats)[number], "value"> & { value: string };
+
+function withStatOverrides(
+  courseCount: number,
+  certificateCount: number,
+  avgProgress: number,
+): StudentDashboardStat[] {
+  return studentStats.map((stat) => {
+    if (stat.href === "/dashboard/courses") return { ...stat, value: String(courseCount) };
+    if (stat.href === "/dashboard/certificates") return { ...stat, value: String(certificateCount) };
+    if (stat.href === "/dashboard/progress") return { ...stat, value: `${avgProgress}%` };
+    return stat;
   });
 }
 
 export const dashboardApi = {
-  getStudentOverview: async () => ({
-    stats: studentStats,
-    courses: studentCourses,
-    assignments: studentAssignments,
-    recentActivity: studentRecentActivity,
-    notifications: studentNotifications,
-  }),
+  getStudentOverview: async () => {
+    const fallback = {
+      stats: studentStats,
+      recentActivity: studentRecentActivity,
+    };
+    if (!getAccessToken()) return fallback;
+
+    try {
+      const [courses, certificates] = await Promise.all([
+        coursesApi.getStudentCourses(),
+        eduhubCompletion.myCertificates().catch(() => []),
+      ]);
+
+      const courseCount = courses.length;
+      const avgProgress = courseCount
+        ? Math.round(courses.reduce((sum, c) => sum + (c.progress ?? 0), 0) / courseCount)
+        : 0;
+
+      const enrollmentActivity = courses.map((c) => ({
+        type: "enrolled" as const,
+        text: `Enrolled in: ${c.title}`,
+        time: c.enrolledDate,
+      }));
+      const certificateActivity = certificates.map((cert) => ({
+        type: "certificate" as const,
+        text: `Earned certificate: ${cert.courseTitle}`,
+        time: cert.issuedAt,
+      }));
+      const recentActivity = [...enrollmentActivity, ...certificateActivity]
+        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+        .slice(0, 6);
+
+      return {
+        stats: withStatOverrides(courseCount, certificates.length, avgProgress),
+        recentActivity,
+      };
+    } catch (e) {
+      console.error("Failed to fetch student overview, falling back to mock data", e);
+      return fallback;
+    }
+  },
   getAdminOverview: async () => {
     const fallback = {
       stats: cloneDefaultAdminStats(),
@@ -357,8 +373,7 @@ async function enrichStudentCourseInstructorAvatar(item: StudentCourseListItem):
   const instructorAvatarUrl = await resolveInstructorAvatarUrl({
     instructorName: item.instructor,
     existingUrl: item.instructorAvatarUrl,
-    courseId: String(item.id).startsWith("teacher_") ? String(item.id).slice("teacher_".length) : String(item.id),
-    linkId: String(item.id),
+    courseId: String(item.id),
   });
   return instructorAvatarUrl ? { ...item, instructorAvatarUrl } : item;
 }
@@ -372,13 +387,6 @@ async function enrichStudentCoursesInstructorAvatars(
 export const coursesApi = {
   getStudentCourses: async (): Promise<StudentCourseListItem[]> => {
     const emailNorm = normalizeStoredStudentEmail();
-    const allTeacher = getTeacherCoursesAsStudentList();
-    const localTeacher =
-      emailNorm != null
-        ? allTeacher.filter((item) =>
-            enrollmentApplicationStore.isApprovedForCourse(String(item.id), emailNorm),
-          )
-        : allTeacher;
     if (getAccessToken()) {
       try {
         const enrollments = await eduhubEnrollments.getMy();
@@ -407,7 +415,6 @@ export const coursesApi = {
                   (r) =>
                     r.applicantEmailNorm === emailNorm &&
                     r.status === "APPROVED" &&
-                    !String(r.courseId).startsWith("teacher_") &&
                     !apiIds.has(String(r.courseId)),
                 )
                 .map((r) => ({
@@ -424,11 +431,11 @@ export const coursesApi = {
                 }))
             : [];
 
-        return [...apiList, ...localApprovedApi, ...localTeacher];
+        return [...apiList, ...localApprovedApi];
       } catch {
-        return [...enrolledCourses.map(enrichMockCourseProgress), ...localTeacher];
+        return enrolledCourses.map(enrichMockCourseProgress);
       }
     }
-    return [...enrolledCourses.map(enrichMockCourseProgress), ...localTeacher];
+    return enrolledCourses.map(enrichMockCourseProgress);
   },
 };

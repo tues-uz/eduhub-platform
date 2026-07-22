@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { CalendarDays, Clock } from "@/lib/icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CourseResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
-import type { TeacherCourse } from "@/features/teacher/types";
 import { isUuid } from "@/api/utils";
 import { cn } from "@/lib/utils";
 import {
@@ -27,7 +26,6 @@ type Props = {
   courseId: string | undefined;
   apiCourse: CourseResponse | null;
   scheduleProposal: ScheduleProposalResponse | null;
-  teacherCourse: TeacherCourse | null;
   /** Which schedule month tab is open (m1 / m2 / m3). */
   viewingMonth?: PaymentMonth;
   onViewingMonthChange?: (month: PaymentMonth) => void;
@@ -46,7 +44,6 @@ export function ClassSchedulePreviewPanel({
   courseId,
   apiCourse,
   scheduleProposal,
-  teacherCourse,
   viewingMonth,
   onViewingMonthChange,
   selectedPaymentMonths,
@@ -55,8 +52,7 @@ export function ClassSchedulePreviewPanel({
   activeSlotKeys,
   className,
 }: Props) {
-  const isTeacher = Boolean(courseId?.startsWith("teacher_"));
-  const isApiCourse = Boolean(courseId && isUuid(courseId) && !isTeacher);
+  const isApiCourse = Boolean(courseId && isUuid(courseId));
   const attendanceFromHook = useScheduleAttendanceState(courseId);
   const effectiveHeldSlotKeys = heldSlotKeys ?? attendanceFromHook.heldSlotKeys;
   const effectiveActiveSlotKeys = activeSlotKeys ?? attendanceFromHook.activeSlotKeys;
@@ -68,10 +64,10 @@ export function ClassSchedulePreviewPanel({
       apiCourse,
       scheduleProposal,
       isApiCourse,
-      teacherCourse,
+      null,
     );
     return orderSessionSlotsChronologically(raw);
-  }, [courseId, apiCourse, scheduleProposal, teacherCourse, isApiCourse]);
+  }, [courseId, apiCourse, scheduleProposal, isApiCourse]);
 
   const scheduleMonthTabs = useMemo(
     () => buildScheduleMonthTabs(sessionSlotsPreview),

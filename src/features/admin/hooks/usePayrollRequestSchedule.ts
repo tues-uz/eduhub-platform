@@ -2,14 +2,11 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import {
-  buildDemoPayrollTeacherCourse,
   buildPayrollResolvedCourse,
   evaluatePayrollMonthCompletion,
   pickBestPayrollCourseMatch,
-  resolvePayrollCourseLinkId,
   resolvePayrollScheduleSlots,
 } from "@/features/payroll/payrollScheduleEligibility";
-import { getDemoPayrollScheduleSlots } from "@/features/payroll/payrollDemoSchedule";
 
 type Args = {
   classSection: string;
@@ -24,20 +21,6 @@ export function usePayrollRequestSchedule({
   periodLabel,
   submittedAt,
 }: Args) {
-  const demoFallback = useMemo(
-    () => getDemoPayrollScheduleSlots(classSection, course),
-    [classSection, course],
-  );
-  const demoTeacherCourse = useMemo(
-    () => buildDemoPayrollTeacherCourse(classSection, course),
-    [classSection, course],
-  );
-
-  const localCourseId = useMemo(
-    () => resolvePayrollCourseLinkId(classSection, course),
-    [classSection, course],
-  );
-
   const apiMatchQuery = useQuery({
     queryKey: ["admin", "payroll-course-match", classSection, course],
     queryFn: async () => {
@@ -58,25 +41,15 @@ export function usePayrollRequestSchedule({
         return null;
       }
     },
-    enabled: !localCourseId,
     staleTime: 5 * 60 * 1000,
   });
 
-  const courseId =
-    localCourseId ?? apiMatchQuery.data?.id ?? (demoTeacherCourse ? `teacher_${demoTeacherCourse.id}` : undefined);
+  const courseId = apiMatchQuery.data?.id;
 
   const scheduleQuery = useQuery({
     queryKey: ["admin", "payroll-course-schedule", courseId],
     queryFn: async () => {
       if (!courseId) return null;
-      if (courseId.startsWith("teacher_")) {
-        const fromStore = buildPayrollResolvedCourse(courseId, null, null);
-        if (fromStore.teacherCourse) return fromStore;
-        if (demoTeacherCourse) {
-          return buildPayrollResolvedCourse(courseId, null, null);
-        }
-        return fromStore;
-      }
       const [detail, proposal] = await Promise.all([
         eduhubCourses.getById(courseId),
         eduhubSchedule.getProposal(courseId).catch(() => null),
@@ -88,15 +61,11 @@ export function usePayrollRequestSchedule({
   });
 
   const resolved = scheduleQuery.data;
-  const teacherCourse = resolved?.teacherCourse ?? demoTeacherCourse;
 
   const slots = useMemo(() => {
     if (!courseId) return [];
-    return resolvePayrollScheduleSlots(resolved?.courseId ?? courseId, resolved?.apiCourse ?? null, resolved?.scheduleProposal ?? null, {
-      demoFallback,
-      teacherCourse,
-    });
-  }, [courseId, resolved, demoFallback, teacherCourse]);
+    return resolvePayrollScheduleSlots(resolved?.courseId ?? courseId, resolved?.apiCourse ?? null, resolved?.scheduleProposal ?? null);
+  }, [courseId, resolved]);
 
   const monthCompletion = useMemo(() => {
     if (!courseId) {
@@ -105,20 +74,12 @@ export function usePayrollRequestSchedule({
     return evaluatePayrollMonthCompletion(slots, periodLabel, submittedAt, courseId);
   }, [courseId, slots, periodLabel, submittedAt]);
 
-  const usingDemoSchedule = Boolean(
-    demoFallback?.length && !localCourseId && !apiMatchQuery.data?.id && slots.length > 0,
-  );
-
   return {
     courseId,
-    loading:
-      !demoTeacherCourse &&
-      ((!localCourseId && apiMatchQuery.isLoading) || (Boolean(courseId) && scheduleQuery.isLoading)),
+    loading: apiMatchQuery.isLoading || (Boolean(courseId) && scheduleQuery.isLoading),
     slots,
     monthCompletion,
     apiCourse: resolved?.apiCourse ?? null,
     scheduleProposal: resolved?.scheduleProposal ?? null,
-    teacherCourse,
-    usingDemoSchedule,
   };
 }

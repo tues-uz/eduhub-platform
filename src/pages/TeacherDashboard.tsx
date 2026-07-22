@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { useAuthSession } from "@/features/auth/context";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
 import type { TeacherCourse } from "@/features/teacher/types";
 import type { PayrollClassSummaryResponse } from "@/api/eduhubTypes";
 import { useTeacherCoursesQuery, useTeacherStatsQuery, usePayrollClassesQuery } from "@/features/teacher/hooks/useTeacherQueries";
@@ -85,10 +84,7 @@ const TeacherDashboard = () => {
   const { data: apiCourses = [], isLoading: apiCoursesLoading } = useTeacherCoursesQuery(user.id);
   const { data: lecturerStats } = useTeacherStatsQuery();
 
-  const courses = useMemo(() => {
-    const local = teacherCoursesStore.getAll();
-    return [...apiCourses, ...local];
-  }, [apiCourses]);
+  const courses = apiCourses;
   const coursesLoading = apiCoursesLoading && apiCourses.length === 0;
 
   useEffect(() => {

@@ -55,8 +55,8 @@ const PLACEHOLDER_ID = "local://eduhub-enrollment/id-document";
 const DUMMY_ENROLLMENT_APPLICATIONS: EnrollmentApplicationRecord[] = [
   {
     id: "00000000-0000-4000-8000-000000000001",
-    courseId: "teacher_dummy_seed",
-    courseTitle: "Demo: Local teacher class",
+    courseId: "00000000-0000-0000-0000-00000000aa00",
+    courseTitle: "Demo: Server course (pending review)",
     applicantEmailNorm: "alex.demo@example.com",
     fullName: "Alex Demo",
     email: "alex.demo@example.com",
@@ -169,8 +169,6 @@ function save(items: EnrollmentApplicationRecord[]) {
   emitChanged();
 }
 
-export type TeacherEnrollmentAccess = "none" | "pending" | "approved" | "rejected";
-
 function findLatestForCourseAndEmailInner(
   courseId: string,
   emailNorm: string,
@@ -205,17 +203,9 @@ export const enrollmentApplicationStore = {
     return findLatestForCourseAndEmailInner(courseId, emailNorm);
   },
 
-  /** Latest application must be APPROVED for local (teacher_) course access. */
+  /** Latest application must be APPROVED — local fallback while backend admin-approval sync lags. */
   isApprovedForCourse(courseId: string, emailNorm: string): boolean {
     return findLatestForCourseAndEmailInner(courseId, emailNorm)?.status === "APPROVED";
-  },
-
-  getTeacherCourseAccess(courseId: string, emailNorm: string): TeacherEnrollmentAccess {
-    const latest = findLatestForCourseAndEmailInner(courseId, emailNorm);
-    if (!latest) return "none";
-    if (latest.status === "APPROVED") return "approved";
-    if (latest.status === "REJECTED") return "rejected";
-    return "pending";
   },
 
   /** Dev-only: reset store and re-seed dummy applications (empty admin table → refresh after calling). */

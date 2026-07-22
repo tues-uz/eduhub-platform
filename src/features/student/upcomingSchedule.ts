@@ -10,10 +10,7 @@ import {
   sessionStartMs,
   type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
-import { getScheduleAttendanceState } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
-import { teacherCoursesStore } from "@/features/teacher/data/teacherCoursesStore";
-
-const TEACHER_PREFIX = "teacher_";
+import { refreshScheduleAttendanceState } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 
 export type UpcomingScheduleItem = {
   courseId: string;
@@ -29,12 +26,6 @@ export type UpcomingScheduleItem = {
 
 async function fetchSessionSlotsForCourse(course: StudentCourseListItem): Promise<SessionSlotLike[]> {
   const id = String(course.id);
-
-  if (id.startsWith(TEACHER_PREFIX)) {
-    const teacherCourseId = id.slice(TEACHER_PREFIX.length);
-    const tc = teacherCoursesStore.getById(teacherCourseId);
-    return resolvePreviewSessionSlots(id, null, null, false, tc);
-  }
 
   if (isUuid(id)) {
     try {
@@ -62,7 +53,7 @@ export async function fetchStudentUpcomingSchedule(
     courses.map(async (course) => {
       const slots = orderSessionSlotsChronologically(await fetchSessionSlotsForCourse(course));
       const courseId = String(course.id);
-      const { heldSlotKeys, activeSlotKeys } = getScheduleAttendanceState(courseId);
+      const { heldSlotKeys, activeSlotKeys } = await refreshScheduleAttendanceState(courseId);
       for (const slot of slots) {
         const timingStatus = resolveEnrollmentSessionTimingStatus(
           slot,

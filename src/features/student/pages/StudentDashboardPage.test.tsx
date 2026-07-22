@@ -15,7 +15,7 @@ describe("StudentDashboardPage", () => {
     );
 
     expect(screen.getByRole("heading", { name: /upcoming schedule/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /upcoming assignments/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /quick actions/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /recent activity/i })).toBeInTheDocument();
   });
 });

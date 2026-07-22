@@ -12,9 +12,8 @@ import {
 import {
   ATTENDANCE_MEETINGS_CHANGED,
   ATTENDANCE_OVERVIEW_SESSION_SYNC,
+  fetchAttendanceMeetings,
   formatMeetingOptionLabel,
-  loadStoredMeetings,
-  meetingsStorageKey,
   pickStoredMeetingForScheduleSlot,
   type StoredAttendanceMeeting,
 } from "@/features/teacher/attendance/attendanceMeetingsStorage";
@@ -80,6 +79,10 @@ export function AttendanceOverviewQrPicker({
   const [rollTick, setRollTick] = useState(0);
   /** Previous meetings list head — used to detect “Generate QR” prepending a new session. */
   const prevListHeadRef = useRef<string | null>(null);
+  /** Bumped on every refresh() call so a stale in-flight fetch (e.g. courseId changed mid-flight) is ignored. */
+  const refreshSeqRef = useRef(0);
+  /** Latest courseId, readable from async callbacks without re-subscribing effects. */
+  const courseIdRef = useRef(courseId);
 
   const scheduleSlots = approvedScheduleSlots ?? [];
   const hasScheduleOptions = scheduleSlots.length > 0;
@@ -89,12 +92,24 @@ export function AttendanceOverviewQrPicker({
   const selectValue = (selectedSessionId ?? pendingScheduleSelectValue) || undefined;
 
   useEffect(() => {
+    courseIdRef.current = courseId;
+  }, [courseId]);
+
+  useEffect(() => {
     prevListHeadRef.current = null;
     setPendingScheduleSelectValue(null);
   }, [courseId]);
 
-  const refresh = useCallback(() => {
-    const list = loadStoredMeetings(courseId);
+  const refresh = useCallback(async () => {
+    const seq = ++refreshSeqRef.current;
+    let list;
+    try {
+      list = await fetchAttendanceMeetings(courseId);
+    } catch {
+      return; // leave existing meetings in place rather than clearing them on a transient failure
+    }
+    if (seq !== refreshSeqRef.current) return; // a newer refresh (or courseId change) superseded this one
+
     const newHead = list[0]?.sessionId ?? null;
     const prevHead = prevListHeadRef.current;
     const newQrPrepended = newHead !== null && prevHead !== null && newHead !== prevHead;
@@ -128,17 +143,16 @@ export function AttendanceOverviewQrPicker({
   }, [courseId, deferAutoSelectFirstMeeting, onScheduleSlotIntent]);
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [refresh]);
 
   useEffect(() => {
     const onChanged = (e: Event) => {
       const ce = e as CustomEvent<{ courseId?: string }>;
-      if (ce.detail?.courseId === courseId) refresh();
+      if (ce.detail?.courseId === courseId) void refresh();
     };
     const bumpRoll = () => setRollTick((t) => t + 1);
     const onStorage = (e: StorageEvent) => {
-      if (e.key === meetingsStorageKey(courseId)) refresh();
       if (e.key === ATTENDANCE_ROLL_STORAGE_KEY) bumpRoll();
     };
     window.addEventListener(ATTENDANCE_MEETINGS_CHANGED, onChanged);
@@ -167,13 +181,24 @@ export function AttendanceOverviewQrPicker({
       const ce = e as CustomEvent<{ courseId?: string; sessionId?: string }>;
       if (ce.detail?.courseId !== courseId || !ce.detail?.sessionId) return;
       const sid = ce.detail.sessionId;
-      const list = loadStoredMeetings(courseId);
-      setMeetings(list);
-      if (list.some((m) => m.sessionId === sid)) {
-        setPendingScheduleSelectValue(null);
-        onScheduleSlotIntent?.(null);
-        setSelectedSessionId(sid);
-      }
+      // This fires right after a QR is generated elsewhere, so the newly created session may not
+      // be in `meetings` state yet (that update relies on the separate ATTENDANCE_MEETINGS_CHANGED
+      // refresh). Fetch fresh here instead of trusting current state.
+      void (async () => {
+        let list;
+        try {
+          list = await fetchAttendanceMeetings(courseId);
+        } catch {
+          return;
+        }
+        if (courseIdRef.current !== courseId) return; // courseId changed while this fetch was in flight
+        setMeetings(list);
+        if (list.some((m) => m.sessionId === sid)) {
+          setPendingScheduleSelectValue(null);
+          onScheduleSlotIntent?.(null);
+          setSelectedSessionId(sid);
+        }
+      })();
     };
     window.addEventListener(ATTENDANCE_OVERVIEW_SESSION_SYNC, onSync);
     return () => window.removeEventListener(ATTENDANCE_OVERVIEW_SESSION_SYNC, onSync);
@@ -189,9 +214,7 @@ export function AttendanceOverviewQrPicker({
         const idx = Number.parseInt(v.slice("schedule-slot-".length), 10);
         const slot = scheduleSlots.find((s) => s.index === idx);
         if (!slot) return;
-        const list = loadStoredMeetings(courseId);
-        setMeetings(list);
-        const picked = pickStoredMeetingForScheduleSlot(list, slot.label, slot.sessionDate);
+        const picked = pickStoredMeetingForScheduleSlot(meetings, slot.label, slot.sessionDate);
         if (picked) {
           setPendingScheduleSelectValue(null);
           onScheduleSlotIntent?.(null);
@@ -207,7 +230,7 @@ export function AttendanceOverviewQrPicker({
       onScheduleSlotIntent?.(null);
       setSelectedSessionId(v);
     },
-    [courseId, onScheduleSlotIntent, scheduleSlots],
+    [meetings, onScheduleSlotIntent, scheduleSlots],
   );
 
   if (!courseId) return null;

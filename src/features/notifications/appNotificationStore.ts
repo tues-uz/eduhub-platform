@@ -1,9 +1,4 @@
-import { eduhubCourses } from "@/api/eduhubClient";
-import { isUuid } from "@/api/utils";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
-import type { AttendanceSessionLogEntry } from "@/features/teacher/attendance/attendanceSessionLogsStorage";
-import { endReasonLabel, formatDurationMs } from "@/features/teacher/attendance/attendanceSessionLogsStorage";
-import { buildAttendanceJoinUrl } from "@/features/teacher/attendance/attendanceMeetingsStorage";
+import { endReasonLabel, formatDurationMs } from "@/features/teacher/attendance/attendanceMeetingsStorage";
 
 const STORAGE_KEY = "eduhub_app_notifications_v1";
 
@@ -85,70 +80,6 @@ function pushNotification(n: AppNotification) {
   const all = load();
   all.unshift(n);
   save(all.slice(0, 200));
-}
-
-/**
- * Called when an admin approves or rejects an enrollment application.
- * Creates one in-app notification for the student (matched by email) and one for admins.
- */
-export function notifyEnrollmentDecision(opts: {
-  courseTitle: string;
-  courseId: string;
-  studentName: string;
-  studentEmailNorm: string;
-  decision: "approved" | "rejected";
-  adminNote?: string;
-  applicationId?: string;
-  receiptNumber?: string;
-  invoiceNumber?: string;
-}): void {
-  const now = new Date().toISOString();
-  const norm = opts.studentEmailNorm.trim().toLowerCase();
-  const paymentHref = opts.applicationId
-    ? `/dashboard/payment?applicationId=${encodeURIComponent(opts.applicationId)}`
-    : "/dashboard/payment";
-
-  const studentTitle =
-    opts.decision === "approved" ? "Enrollment approved — receipt ready" : "Enrollment not approved";
-  const studentBody =
-    opts.decision === "approved"
-      ? [
-          `You can now access "${opts.courseTitle}".`,
-          opts.receiptNumber && opts.invoiceNumber
-            ? `Receipt ${opts.receiptNumber} (invoice ${opts.invoiceNumber}).`
-            : opts.receiptNumber
-              ? `Receipt ${opts.receiptNumber}.`
-              : null,
-          "Download your invoice and receipt from Payment history.",
-        ]
-          .filter(Boolean)
-          .join("\n")
-      : `Your enrollment request for "${opts.courseTitle}" was not approved.${opts.adminNote ? ` Note: ${opts.adminNote}` : ""}`;
-
-  pushNotification({
-    id: crypto.randomUUID(),
-    kind: opts.decision === "approved" ? "enrollment_receipt_ready" : "enrollment_rejected",
-    audience: "student",
-    studentEmailNorm: norm,
-    title: studentTitle,
-    body: studentBody,
-    createdAt: now,
-    read: false,
-    href: opts.decision === "approved" ? paymentHref : undefined,
-  });
-
-  pushNotification({
-    id: crypto.randomUUID(),
-    kind: "admin_enrollment_action",
-    audience: "admin",
-    title: opts.decision === "approved" ? "Enrollment approved" : "Enrollment rejected",
-    body:
-      opts.decision === "approved"
-        ? `You approved ${opts.studentName} for "${opts.courseTitle}".`
-        : `You rejected ${opts.studentName}'s application for "${opts.courseTitle}".`,
-    createdAt: now,
-    read: false,
-  });
 }
 
 /** After admin submits instructor payout proof (local demo — replace with server push). */
@@ -261,75 +192,28 @@ export function notifyInstructorPayrollRequestDecision(opts: {
   });
 }
 
-function listLocalApprovedStudentEmails(courseId: string): string[] {
-  const seen = new Set<string>();
-  return enrollmentApplicationStore
-    .list()
-    .filter((application) => application.courseId === courseId && application.status === "APPROVED")
-    .map((application) => application.applicantEmailNorm.trim().toLowerCase())
-    .filter((email) => {
-      if (!email || seen.has(email)) return false;
-      seen.add(email);
-      return true;
-    });
-}
+export type AttendanceQrGeneratedNotice = {
+  id: string;
+  courseTitle: string;
+  meetingName: string;
+  startedAt: string;
+  instructorEmail: string;
+  instructorName: string;
+};
 
-function pushStudentAttendanceCheckInNotification(
-  entry: AttendanceSessionLogEntry,
-  studentEmailNorm: string,
-): void {
-  const email = studentEmailNorm.trim().toLowerCase();
-  if (!email) return;
+export type AttendanceSessionCompletedNotice = {
+  id: string;
+  courseTitle: string;
+  meetingName: string;
+  endedAt: string;
+  durationMs: number;
+  endReason?: string;
+  instructorEmail: string;
+  instructorName: string;
+};
 
-  const meetingLabel = entry.meetingName.trim() || "Class session";
-  const instructor = entry.instructorName.trim() || "Your instructor";
-  const now = new Date().toISOString();
-
-  pushNotification({
-    id: crypto.randomUUID(),
-    kind: "student_attendance_check_in_open",
-    audience: "student",
-    studentEmailNorm: email,
-    title: "Class check-in is open",
-    body: `${instructor} started attendance for "${entry.courseTitle}" — ${meetingLabel}. Scan the QR or open this notification to check in before the window closes.`,
-    createdAt: now,
-    read: false,
-    href: buildAttendanceJoinUrl(entry.courseId, entry.sessionId, entry.startedAt),
-    refId: entry.sessionId,
-  });
-}
-
-/** Notifies enrolled students when an instructor generates a check-in QR (local demo store). */
-export function notifyStudentAttendanceCheckInOpen(entry: AttendanceSessionLogEntry): void {
-  for (const email of listLocalApprovedStudentEmails(entry.courseId)) {
-    pushStudentAttendanceCheckInNotification(entry, email);
-  }
-}
-
-/** Local enrollments plus API roster when the course id is a server UUID. */
-export async function notifyStudentAttendanceCheckInOpenFromApi(
-  entry: AttendanceSessionLogEntry,
-): Promise<void> {
-  notifyStudentAttendanceCheckInOpen(entry);
-
-  if (!isUuid(entry.courseId)) return;
-
-  try {
-    const students = await eduhubCourses.getEnrolledStudents(entry.courseId, 0, 200);
-    const seen = new Set(listLocalApprovedStudentEmails(entry.courseId));
-    for (const student of students) {
-      const email = student.email.trim().toLowerCase();
-      if (!email || seen.has(email)) continue;
-      seen.add(email);
-      pushStudentAttendanceCheckInNotification(entry, email);
-    }
-  } catch {
-    /* API roster unavailable — local enrollments only */
-  }
-}
-
-/** Logged when an instructor generates a check-in QR (local demo; same browser storage). */
-export function notifyAttendanceQrGenerated(entry: AttendanceSessionLogEntry): void {
+/** Fired with the backend's own response when an instructor generates a check-in QR. */
+export function notifyAttendanceQrGenerated(entry: AttendanceQrGeneratedNotice): void {
   const now = new Date().toISOString();
   const targets = instructorNotificationTargets(entry.instructorEmail, entry.instructorName);
   const who = entry.instructorName.trim() || entry.instructorEmail.trim() || "Instructor";
@@ -363,9 +247,8 @@ export function notifyAttendanceQrGenerated(entry: AttendanceSessionLogEntry): v
   });
 }
 
-/** Logged when a session ends (new QR, max duration, or switched class); includes time in class. */
-export function notifyAttendanceSessionCompleted(entry: AttendanceSessionLogEntry): void {
-  if (entry.endedAt == null || entry.durationMs == null) return;
+/** Fired with the backend's own response when an attendance session ends (manual stop or 2h15m cap). */
+export function notifyAttendanceSessionCompleted(entry: AttendanceSessionCompletedNotice): void {
   const now = new Date().toISOString();
   const targets = instructorNotificationTargets(entry.instructorEmail, entry.instructorName);
   const who = entry.instructorName.trim() || entry.instructorEmail.trim() || "Instructor";
