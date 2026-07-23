@@ -123,6 +123,8 @@ export function readStudentPromosWithDefaults(): StudentPromo[] {
   return stored.length > 0 ? stored : [...DEFAULT_PROMOS];
 }
 
+import { eduhubPromos } from "@/api/eduhubClient";
+
 export function writeStudentPromos(promos: StudentPromo[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(promos));
   notifyPromosChanged();
@@ -154,13 +156,21 @@ export function upsertStudentPromo(input: StudentPromoInput): StudentPromo {
     all.push(next);
   }
   writeStudentPromos(all);
+
+  // Sync to eduhub-api backend
+  void eduhubPromos.createPromo({ code: next.title, active: next.active }).catch((e) => {
+    console.warn("[Promos] API sync failed, relying on local storage", e);
+  });
+
   return next;
 }
 
 export function deleteStudentPromo(id: string) {
   const all = readStudentPromos().filter((p) => p.id !== id);
   writeStudentPromos(all);
+  void eduhubPromos.deletePromo(id).catch(() => {});
 }
+
 
 export function resetStudentPromosToDefaults() {
   writeStudentPromos(DEFAULT_PROMOS.map((p) => ({ ...p, updatedAt: new Date().toISOString() })));

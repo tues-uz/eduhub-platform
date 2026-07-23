@@ -154,7 +154,7 @@ const CONTENT_PATHS = new Set([
 ]);
 
 const SUPPORT_PATHS = new Set([
-  appRoutes.dashboardAdmin,
+  "/dashboard/admin",
   "/dashboard/admin/notifications",
   "/dashboard/admin/students",
   "/dashboard/admin/support-sessions",

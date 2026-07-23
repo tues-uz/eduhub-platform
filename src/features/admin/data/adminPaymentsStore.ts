@@ -1,4 +1,6 @@
 import { useSyncExternalStore } from "react";
+import { eduhubAdminInstallmentPayments } from "@/api/eduhubClient";
+
 import {
   mockAdminPayments,
   type AdminPaymentRow,
@@ -103,6 +105,7 @@ export const adminPaymentsStore = {
   },
 
   updatePayment(id: string, patch: Partial<AdminPaymentRow>): void {
+
     cachedSnapshot = cachedSnapshot.map((p) => (p.id === id ? { ...p, ...patch } : p));
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedSnapshot));
@@ -110,7 +113,15 @@ export const adminPaymentsStore = {
       //
     }
     emit();
+
+    if (patch.status === "paid") {
+      void eduhubAdminInstallmentPayments.approve(id).catch(() => {});
+    } else if (patch.status === "overdue") {
+      void eduhubAdminInstallmentPayments.reject(id).catch(() => {});
+    }
+
   },
+
 
   resetToMock(): void {
     seedFromMock();

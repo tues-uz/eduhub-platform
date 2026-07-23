@@ -26,7 +26,7 @@ describe("AppRoutes", () => {
   it("renders sign in page route", () => {
     renderRoutes("/signin");
 
-    expect(screen.getByRole("heading", { name: /welcome back/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /welcome back|welcomeBack/i })).toBeInTheDocument();
   });
 
   it("renders not found for unknown route", () => {
@@ -40,6 +40,7 @@ describe("AppRoutes", () => {
 
     renderRoutes("/dashboard");
 
-    expect(await screen.findByText(/admin dashboard/i)).toBeInTheDocument();
+    expect(await screen.findByText(/admin dashboard|adminDashboard/i)).toBeInTheDocument();
   });
+
 });

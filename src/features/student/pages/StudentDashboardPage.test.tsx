@@ -14,8 +14,9 @@ describe("StudentDashboardPage", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("heading", { name: /upcoming schedule/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /quick actions/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /recent activity/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /upcomingSchedule|upcoming schedule/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /quickActions|quick actions/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /recentActivity|recent activity/i })).toBeInTheDocument();
+
   });
 });

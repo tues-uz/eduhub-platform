@@ -54,7 +54,13 @@ import type {
   InstallmentPaymentSubmitRequest,
   InstallmentPaymentReviewRequest,
   InstallmentPaymentManualRequest,
+  QuizAttemptResponse,
+  AssignmentSubmissionResponse,
+  PromoCodeResponse,
+  LandingPageContentResponse,
 } from "./eduhubTypes";
+
+
 
 export class ApiError extends Error {
   status: number;
@@ -504,8 +510,27 @@ export const eduhubCourseQuizzes = {
 
 /** Quiz - tied to lessons (legacy) */
 export const eduhubQuizzes = {
+  listByCourse: (courseId: string) =>
+    request<ApiResponse<QuizResponse[]>>(`/courses/${courseId}/quizzes`),
+
+  createQuiz: (courseId: string, body: Partial<QuizResponse>) =>
+    request<ApiResponse<QuizResponse>>(`/courses/${courseId}/quizzes`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  submitAttempt: (quizId: string, body: { studentId: string; score: number; answersJson?: string }) =>
+    request<ApiResponse<QuizAttemptResponse>>(`/quizzes/${quizId}/attempts`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  getAttempts: (quizId: string) =>
+    request<ApiResponse<QuizAttemptResponse[]>>(`/quizzes/${quizId}/attempts`),
+
   get: (courseId: string, moduleId: string, lessonId: string) =>
     request<QuizResponse>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz`),
+
 
   getResults: (courseId: string, moduleId: string, lessonId: string) =>
     request<QuizResultResponse[]>(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/results`),
@@ -1108,4 +1133,37 @@ export const eduhubAdminInstallmentPayments = {
       { method: "POST", body: JSON.stringify(body) },
     ),
 };
+
+/** Promo Codes API */
+export const eduhubPromos = {
+  listAll: () => request<ApiResponse<PromoCodeResponse[]>>("/admin/promos"),
+
+  createPromo: (body: Partial<PromoCodeResponse>) =>
+    request<ApiResponse<PromoCodeResponse>>("/admin/promos", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  validatePromo: (code: string) =>
+    request<ApiResponse<PromoCodeResponse>>("/promos/validate", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+
+  deletePromo: (id: string) =>
+    request<ApiResponse<void>>(`/admin/promos/${id}`, { method: "DELETE" }),
+};
+
+/** Landing Page CMS API */
+export const eduhubLandingPage = {
+  getContent: () => request<ApiResponse<LandingPageContentResponse[]>>("/landing-page"),
+
+  updateSection: (sectionKey: string, contentJson: string) =>
+    request<ApiResponse<LandingPageContentResponse>>(`/admin/landing-page/${sectionKey}`, {
+      method: "PUT",
+      body: JSON.stringify({ contentJson }),
+    }),
+};
+
+
 

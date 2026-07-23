@@ -97,17 +97,25 @@ export function readLandingPageContent(): LandingPageContent | null {
   }
 }
 
+import { eduhubLandingPage } from "@/api/eduhubClient";
+
 export function writeLandingPageContent(content: LandingPageContent) {
   const next = normalizeContent({ ...content, updatedAt: new Date().toISOString() });
   if (!next) return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   notifyChanged();
+
+  // Async sync to backend REST API
+  void eduhubLandingPage.updateSection("landing_main", JSON.stringify(next)).catch((e) => {
+    console.warn("[LandingPageCMS] API sync failed, relying on local storage", e);
+  });
 }
 
 export function resetLandingPageContent() {
   localStorage.removeItem(STORAGE_KEY);
   notifyChanged();
 }
+
 
 export function parseHeroWordsInput(input: string): string[] {
   return input

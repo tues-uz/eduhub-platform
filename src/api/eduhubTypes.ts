@@ -779,3 +779,78 @@ export interface InstallmentPaymentManualRequest {
   adminActionCode?: string;
 }
 
+// Quiz & Placement Test Types
+export interface QuizQuestionResponse {
+  id: string;
+  questionText: string;
+  questionType: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "ESSAY";
+  optionsJson?: string;
+  correctAnswer?: string;
+  points: number;
+}
+
+export interface QuizResponse {
+  id: string;
+  title: string;
+  description?: string;
+  courseId: string;
+  timeLimitMinutes?: number;
+  passingScore?: number;
+  isPlacementTest?: boolean;
+  isPublished?: boolean;
+  questions?: QuizQuestionResponse[];
+}
+
+export interface QuizAttemptResponse {
+  id: string;
+  quizId: string;
+  studentId: string;
+  score: number;
+  passed: boolean;
+  answersJson?: string;
+  completedAt: string;
+}
+
+// Assignment Types
+export interface AssignmentResponse {
+  id: string;
+  title: string;
+  description?: string;
+  courseId: string;
+  dueDate?: string;
+  maxScore?: number;
+  attachmentUrl?: string;
+}
+
+export interface AssignmentSubmissionResponse {
+  id: string;
+  assignmentId: string;
+  studentId: string;
+  submissionText?: string;
+  fileUrl?: string;
+  submittedAt: string;
+  grade?: number;
+  feedback?: string;
+  status: "SUBMITTED" | "GRADED";
+}
+
+// Promo Code Types
+export interface PromoCodeResponse {
+  id: string;
+  code: string;
+  discountPercent?: number;
+  discountAmount?: number;
+  maxUses?: number;
+  usedCount: number;
+  validUntil?: string;
+  active: boolean;
+}
+
+// Landing Page Content Types
+export interface LandingPageContentResponse {
+  id: string;
+  sectionKey: string;
+  contentJson: string;
+}
+
+

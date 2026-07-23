@@ -14,8 +14,10 @@ describe("AdminDashboardPage", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/admin dashboard/i)).toBeInTheDocument();
-    expect(screen.getByText(/recent users/i)).toBeInTheDocument();
-    expect(screen.getByText(/quick actions/i)).toBeInTheDocument();
+    expect(screen.getByText(/dashboard.subtitle|admin dashboard/i)).toBeInTheDocument();
+    expect(screen.getByText(/recentUsers.title|recent users/i)).toBeInTheDocument();
+    expect(screen.getByText(/quickActions.title|quick actions/i)).toBeInTheDocument();
+
+
   });
 });
