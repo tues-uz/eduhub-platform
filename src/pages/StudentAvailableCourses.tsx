@@ -92,12 +92,16 @@ function resolveCardTuition(
   };
 }
 
-async function enrichWithEnrolledStudents(items: AvailableCourseItem[]): Promise<AvailableCourseItem[]> {
+async function enrichWithEnrolledStudents(items: AvailableCourseItem[], role?: string): Promise<AvailableCourseItem[]> {
+  if (role === "STUDENT") {
+    return items;
+  }
   return Promise.all(
     items.map(async (item) => {
       const { students, totalCount } = await resolveEnrolledStudentPreviews({
         apiCourseId: item.id,
         enrollmentCount: item.enrollmentCount,
+        role,
       });
       if (students.length === 0) return item;
       return {
@@ -231,7 +235,7 @@ const StudentAvailableCourses = () => {
           // API down or auth issue
         }
 
-        const merged = await enrichWithInstructorAvatars(await enrichWithEnrolledStudents(apiItems));
+        const merged = await enrichWithInstructorAvatars(await enrichWithEnrolledStudents(apiItems, user.role));
         if (!cancelled) {
           setCourses(merged);
         }

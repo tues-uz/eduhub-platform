@@ -29,9 +29,10 @@ export async function fetchApiEnrolledStudentPreviews(
 export async function resolveEnrolledStudentPreviews(opts: {
   apiCourseId: string;
   enrollmentCount?: number;
+  role?: string;
 }): Promise<{ students: StudentAvatarPreview[]; totalCount?: number }> {
-  if (opts.enrollmentCount === 0) {
-    return { students: [], totalCount: 0 };
+  if (opts.enrollmentCount === 0 || opts.role === "STUDENT") {
+    return { students: [], totalCount: opts.enrollmentCount ?? 0 };
   }
 
   try {
