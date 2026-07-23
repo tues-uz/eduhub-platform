@@ -31,7 +31,8 @@ export async function resolveEnrolledStudentPreviews(opts: {
   enrollmentCount?: number;
   role?: string;
 }): Promise<{ students: StudentAvatarPreview[]; totalCount?: number }> {
-  if (opts.enrollmentCount === 0 || opts.role === "STUDENT") {
+  const normRole = opts.role?.trim().toUpperCase();
+  if (opts.enrollmentCount === 0 || normRole === "STUDENT") {
     return { students: [], totalCount: opts.enrollmentCount ?? 0 };
   }
 

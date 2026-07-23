@@ -93,7 +93,8 @@ function resolveCardTuition(
 }
 
 async function enrichWithEnrolledStudents(items: AvailableCourseItem[], role?: string): Promise<AvailableCourseItem[]> {
-  if (role === "STUDENT") {
+  const normRole = role?.trim().toUpperCase();
+  if (normRole === "STUDENT") {
     return items;
   }
   return Promise.all(
