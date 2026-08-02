@@ -9,10 +9,11 @@
  * (`/api/v1/...`) so Vite can proxy to the real API — same-origin requests work better
  * with strict privacy browsers than cross-origin `fetch` to another host.
  */
-const fromEnv =
-  typeof import.meta !== "undefined" && import.meta.env?.VITE_EDUHUB_API_BASE_URL
-    ? String(import.meta.env.VITE_EDUHUB_API_BASE_URL).trim()
+const envUrl =
+  typeof import.meta !== "undefined"
+    ? import.meta.env?.VITE_API_BASE_URL || import.meta.env?.VITE_EDUHUB_API_BASE_URL
     : "";
+const fromEnv = envUrl ? String(envUrl).trim() : "";
 
 export const EDUHUB_API_BASE_URL =
   fromEnv !== ""
