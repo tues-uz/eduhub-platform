@@ -1,5 +1,39 @@
 import { endReasonLabel, formatDurationMs } from "@/features/teacher/attendance/attendanceMeetingsStorage";
 
+export const APP_NOTIFICATIONS_CHANGE_EVENT = "eduhub-app-notifications-changed";
+
+export type AppNotificationKind =
+  | "enrollment_approved"
+  | "enrollment_rejected"
+  | "payment_reminder"
+  | "payroll_submitted"
+  | "attendance_completed"
+  | "instructor_payroll_paid"
+  | "admin_instructor_payroll_request"
+  | "instructor_payroll_request_approved"
+  | "instructor_payroll_request_rejected"
+  | "instructor_attendance_qr_generated"
+  | "admin_attendance_qr_generated"
+  | "instructor_attendance_session_completed"
+  | "admin_attendance_session_completed"
+  | "general";
+
+export type AppNotification = {
+  id: string;
+  kind: AppNotificationKind;
+  audience: "student" | "admin" | "instructor";
+  title: string;
+  body: string;
+  createdAt: string;
+  read: boolean;
+  href?: string;
+  refId?: string;
+  studentEmailNorm?: string;
+  instructorEmailNorm?: string;
+  instructorNameNorm?: string;
+};
+
+
 let memoryNotifications: AppNotification[] = [];
 
 function emitChanged() {

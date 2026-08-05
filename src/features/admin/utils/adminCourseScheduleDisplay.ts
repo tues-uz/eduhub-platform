@@ -4,10 +4,7 @@ import {
   COURSE_SCHEDULE_PROPOSAL_STORAGE_KEY,
   courseScheduleProposalStore,
 } from "@/features/courses/courseScheduleProposalStore";
-import {
-  COURSE_SCHEDULE_WORKFLOW_STORAGE_KEY,
-  courseScheduleWorkflowStore,
-} from "@/features/courses/courseScheduleWorkflowStore";
+import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
 
 /** API sometimes omits `classMeetingsInSixMonths` but returns slots or titles arrays. */
 export function resolvedSessionsSixMonths(c: CourseResponse): number | undefined {
@@ -131,7 +128,7 @@ export function useAdminCourseLocalDataVersion() {
     window.addEventListener("eduhub-schedule-workflow-updated", bump);
     window.addEventListener("eduhub-schedule-proposal-saved", bump);
     const onStorage = (e: StorageEvent) => {
-      if (e.key === COURSE_SCHEDULE_WORKFLOW_STORAGE_KEY || e.key === COURSE_SCHEDULE_PROPOSAL_STORAGE_KEY) {
+      if (e.key === COURSE_SCHEDULE_PROPOSAL_STORAGE_KEY) {
         bump();
       }
     };

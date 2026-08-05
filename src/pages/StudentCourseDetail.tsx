@@ -83,7 +83,7 @@ import {
   resolvePaidTuitionMonths,
 } from "@/features/enrollment/enrollmentPaidMonths";
 import { installmentPaymentPath } from "@/features/enrollment/enrollmentInstallmentPayments";
-import type { TuitionPlanMonths } from "@/features/enrollment/enrollmentTuitionThirds";
+import type { EnrollmentPaymentFields, TuitionPlanMonths } from "@/features/enrollment/enrollmentTuitionThirds";
 import { ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED } from "@/features/admin/data/adminEnrollmentPaidMonthsStore";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { formatDisplayPersonName, formatDisplayTitle } from "@/lib/formatPersonName";
@@ -744,7 +744,7 @@ const StudentCourseDetail = () => {
     void enrollmentStoreTick;
     if (scheduleMonthAccess !== "full" || !courseId) return null;
     if (approvedEnrollment) {
-      return resolvePaidTuitionMonths(approvedEnrollment, allSessionSlots, approvedEnrollment.id);
+      return resolvePaidTuitionMonths(approvedEnrollment as EnrollmentPaymentFields, allSessionSlots, approvedEnrollment.id);
     }
     if (
       isEnrolled ||

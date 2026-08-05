@@ -16,6 +16,53 @@
  */
 
 import { eduhubEnrollmentApplications, eduhubAdminEnrollmentApplications, getAccessToken } from "@/api/eduhubClient";
+import type {
+  EnrollmentPaymentMethod,
+  EnrollmentApplicationResponse,
+  EnrollmentPaymentPlan as ApiEnrollmentPaymentPlan,
+  EnrollmentInstallmentCount as ApiEnrollmentInstallmentCount,
+} from "@/api/eduhubTypes";
+
+export type EnrollmentPaymentPlan = "FULL" | "DOWN_PAYMENT" | "INSTALLMENT";
+export type EnrollmentInstallmentCount = 2 | 3 | 4 | 6 | 12;
+
+export type EnrollmentApplicationRecord = {
+  id: string;
+  courseId: string;
+  courseTitle?: string;
+  applicantUserId?: string;
+  applicantEmailNorm: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  phoneSecondary?: string;
+  address: string;
+  paymentProofUrl?: string;
+  idCardUrl?: string;
+  paymentMethod?: string;
+  paymentPlan: EnrollmentPaymentPlan;
+  downPaymentAmount?: number;
+  priceCurrency?: string;
+  installmentCount?: EnrollmentInstallmentCount;
+  referralCode?: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  submittedAt: string;
+  reviewedAt?: string;
+  adminNote?: string;
+  invoiceNumber?: string;
+  receiptNumber?: string;
+  invoiceIssuedAt?: string;
+  receiptIssuedAt?: string;
+  amountPaid?: number;
+  _localOnly?: boolean;
+};
+
+function emitChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("eduhub-enrollment-applications-changed"));
+  }
+}
+
 
 let memoryApplications: EnrollmentApplicationRecord[] = [];
 
@@ -125,15 +172,15 @@ export const enrollmentApplicationStore = {
           address: input.address,
           paymentProofUrl: input.paymentProofUrl,
           idCardUrl: input.idCardUrl,
-          paymentMethod: input.paymentMethod as any,
-          paymentPlan: input.paymentPlan,
+          paymentMethod: input.paymentMethod as EnrollmentPaymentMethod,
+          paymentPlan: input.paymentPlan as unknown as ApiEnrollmentPaymentPlan,
           downPaymentAmount: input.downPaymentAmount,
-          installmentCount: input.installmentCount,
+          installmentCount: input.installmentCount as unknown as ApiEnrollmentInstallmentCount,
         });
         // API succeeded — use the API-generated ID and store as confirmed
         const confirmed: EnrollmentApplicationRecord = {
           ...localRec,
-          id: (apiResult as any)?.id ?? localRec.id,
+          id: (apiResult as EnrollmentApplicationResponse)?.id ?? localRec.id,
           _localOnly: false,
         };
         const all = readStorage();

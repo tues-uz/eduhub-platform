@@ -1,4 +1,4 @@
-let memorySeenSet = new Set<string>();
+const memorySeenSet = new Set<string>();
 
 function key(courseId: string, emailNorm: string): string {
   return `${courseId.trim()}__${emailNorm.trim().toLowerCase()}`;

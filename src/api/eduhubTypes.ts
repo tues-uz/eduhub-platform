@@ -956,6 +956,7 @@ export interface AdminPaymentRowResponse {
   dueDate: string;
   status: PaymentStatus;
   proofSubmitted: boolean;
+  paymentProofUrl?: string;
   reference: string;
   paymentMethod: string;
   createdAt: string;

@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { eduhubAdmin } from "@/api/eduhubClient";
+import type { UserResponse } from "@/api/eduhubTypes";
 import { useToast } from "@/hooks/use-toast";
 
 interface UserItem {
@@ -44,7 +45,7 @@ export default function AdminUsersPage() {
       setIsLoading(true);
       try {
         const res = await eduhubAdmin.listUsers({ size: 100 });
-        const mapped: UserItem[] = (res.content || []).map((u: any) => ({
+        const mapped: UserItem[] = (res.content || []).map((u: UserResponse) => ({
           id: u.id,
           name: u.fullName,
           email: u.email,
@@ -52,8 +53,8 @@ export default function AdminUsersPage() {
           status: u.enabled ? "Active" : "Inactive",
         }));
         setUsers(mapped);
-      } catch (err: any) {
-        toast({ title: t("admin.users.toast.loadFailedTitle"), description: err.message || t("admin.users.toast.loadFailed"), variant: "destructive" });
+      } catch (err: unknown) {
+        toast({ title: t("admin.users.toast.loadFailedTitle"), description: (err as Error).message || t("admin.users.toast.loadFailed"), variant: "destructive" });
       } finally {
         setIsLoading(false);
       }

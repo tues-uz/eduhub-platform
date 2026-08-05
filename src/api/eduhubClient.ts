@@ -139,13 +139,14 @@ function isTokenExpiringSoon(): boolean {
   return Date.now() + TOKEN_REFRESH_BUFFER_MS > inMemoryTokens.expiresAt;
 }
 
-function toCamel(o: any): any {
+function toCamel(o: unknown): unknown {
   if (o === null || typeof o !== "object") return o;
   if (Array.isArray(o)) return o.map(toCamel);
-  const newObj: any = {};
-  for (const key in o) {
+  const newObj: Record<string, unknown> = {};
+  const sourceObj = o as Record<string, unknown>;
+  for (const key in sourceObj) {
     const newKey = key.replace(/(_\w)/g, (m) => m[1].toUpperCase());
-    newObj[newKey] = toCamel(o[key]);
+    newObj[newKey] = toCamel(sourceObj[key]);
   }
   return newObj;
 }
@@ -153,15 +154,16 @@ function toCamel(o: any): any {
 /** API fields that stay camelCase in JSON (CreateUserRequest.adminCode per Swagger). */
 const SNAKE_CASE_KEY_EXCEPTIONS = new Set(["adminCode"]);
 
-function toSnake(o: any): any {
+function toSnake(o: unknown): unknown {
   if (o === null || typeof o !== "object") return o;
   if (Array.isArray(o)) return o.map(toSnake);
-  const newObj: any = {};
-  for (const key in o) {
+  const newObj: Record<string, unknown> = {};
+  const sourceObj = o as Record<string, unknown>;
+  for (const key in sourceObj) {
     const newKey = SNAKE_CASE_KEY_EXCEPTIONS.has(key)
       ? key
       : key.replace(/([A-Z])/g, "_$1").toLowerCase().replace(/^_/, "");
-    newObj[newKey] = toSnake(o[key]);
+    newObj[newKey] = toSnake(sourceObj[key]);
   }
   return newObj;
 }
@@ -243,7 +245,7 @@ async function request<T>(
 
   if (res.status === 204) return undefined as T;
 
-  let json: any;
+  let json: Record<string, unknown> | undefined;
   try {
     json = JSON.parse(text);
   } catch {
@@ -252,11 +254,11 @@ async function request<T>(
 
   if (!res.ok) {
     let message = res.statusText;
-    if (json && !json.success && json.errors && json.errors.length > 0) {
+    if (json && !json.success && Array.isArray(json.errors) && json.errors.length > 0) {
       const firstError = json.errors[0];
-      message = typeof firstError === "string" ? firstError : firstError.message;
+      message = typeof firstError === "string" ? firstError : (firstError as Record<string, unknown>).message as string;
     } else if (json && json.message) {
-      message = json.message;
+      message = json.message as string;
     } else if (text) {
       message = text;
     }
@@ -763,7 +765,7 @@ export const eduhubLecturer = {
 
 /** Admin */
 export const eduhubAdmin = {
-  getOverview: () => request<any>("/admin/overview"),
+  getOverview: () => request<unknown>("/admin/overview"),
 
   reviewCourse: (id: string, body: {
     decision: "APPROVE" | "REJECT";

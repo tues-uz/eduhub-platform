@@ -1708,11 +1708,7 @@ export default function TeacherCourseRosterPage() {
                                     : localEntry
                                       ? { checkedAt: localEntry.checkedAt, present: true }
                                       : undefined;
-                                  const verifyItemId = teacherChecklist.verifyItemId(
-                                    overviewSessionId ?? "no-meeting-selected",
-                                    s.id,
-                                    s.email,
-                                  );
+                                  const verifyItemId = `${teacherChecklist.verifyItemId}-${s.id}`;
                                   const canVerify = Boolean(overviewSessionId);
                                   const displayName = formatDisplayPersonName(s.fullName);
                                   return (

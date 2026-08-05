@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { eduhubAssignments, type AssignmentResponse, type SubmissionResponse } from "@/api/eduhubClient";
+import { eduhubAssignments, type AssignmentRequest, type AssignmentResponse, type SubmissionResponse } from "@/api/eduhubClient";
 import { eduhubCourses } from "@/api/eduhubClient";
 import { useAuthSession } from "@/features/auth/context";
 import { useTranslation } from "react-i18next";
@@ -91,7 +91,7 @@ const TeacherAssignmentsPage = () => {
   const handlePublish = async (id: string) => {
     try {
       setPublishingId(id);
-      await eduhubAssignments.update(id, { status: "PUBLISHED" } as any);
+      await eduhubAssignments.update(id, { status: "PUBLISHED" } as AssignmentRequest);
       setAssignments((prev) =>
         prev.map((a) => (a.id === id ? { ...a, status: "PUBLISHED" } : a))
       );

@@ -6,6 +6,8 @@
 
 import type { ClassMeetingSlot } from "@/features/teacher/types";
 
+export const COURSE_SCHEDULE_PROPOSAL_STORAGE_KEY = "eduhub-schedule-proposal";
+
 export type CourseScheduleProposal = {
   classMeetingsInSixMonths: number;
   classMeetingSlots: ClassMeetingSlot[];

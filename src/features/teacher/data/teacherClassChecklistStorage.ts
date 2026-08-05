@@ -4,10 +4,29 @@
  */
 
 export const TEACHER_CLASS_CHECKLIST_CHANGED = "eduhub-teacher-class-checklist-changed";
+export const TEACHER_CLASS_CHECKLIST_STORAGE_KEY = "eduhub-teacher-class-checklist";
+
+export type ChecklistItem = {
+  id: string;
+  label: string;
+};
+
+/** Shape: { [userKey]: { [courseId]: { [itemId]: true } } } */
+export type ChecklistRoot = Record<string, Record<string, Record<string, true>>>;
+
+export const instructorVerifyItemId = "instructor-verify";
+
+export const DEFAULT_TEACHER_CLASS_CHECKLIST_ITEMS: ChecklistItem[] = [
+  { id: instructorVerifyItemId, label: "Verify attendance" },
+  { id: "share-materials", label: "Share class materials" },
+  { id: "post-recap", label: "Post session recap" },
+  { id: "grade-quiz", label: "Grade quiz / assignment" },
+];
 
 let memoryChecklistRoot: ChecklistRoot = {};
 
 function readRoot(): ChecklistRoot {
+
   return memoryChecklistRoot;
 }
 

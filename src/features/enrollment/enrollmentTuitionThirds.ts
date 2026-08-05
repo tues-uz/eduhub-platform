@@ -32,7 +32,7 @@ export function splitTuitionByMonthWeights(
 
   const raw = [w0, w1, w2].map((w) => (total * w) / sum);
   const floors = raw.map((x) => Math.floor(x)) as [number, number, number];
-  let remainder = total - floors[0] - floors[1] - floors[2];
+  const remainder = total - floors[0] - floors[1] - floors[2];
   const order = raw
     .map((x, i) => ({ i, frac: x - floors[i] }))
     .sort((a, b) => b.frac - a.frac);

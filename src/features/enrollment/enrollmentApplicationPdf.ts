@@ -13,7 +13,7 @@ import {
   getReceiptPdfCopy,
   type ReceiptPdfLocale,
 } from "@/features/enrollment/enrollmentReceiptPdfI18n";
-import { enrollmentMonthsPaidLabel } from "@/features/enrollment/enrollmentTuitionThirds";
+import { enrollmentMonthsPaidLabel, type EnrollmentPaymentFields } from "@/features/enrollment/enrollmentTuitionThirds";
 
 export type EnrollmentScheduleSessionSummary = {
   title?: string;
@@ -150,7 +150,7 @@ function applicationPdfDataToReceiptInput(
 export function enrollmentRecordToPdfData(record: EnrollmentApplicationRecord): EnrollmentApplicationPdfData {
   const cur = record.priceCurrency ?? "UZS";
   const lines: string[] = [];
-  lines.push(`Months paid: ${enrollmentMonthsPaidLabel(record)}`);
+  lines.push(`Months paid: ${enrollmentMonthsPaidLabel(record as EnrollmentPaymentFields)}`);
   if (record.paymentPlan === "DOWN_PAYMENT") {
     if (record.installmentCount != null) {
       lines.push(`Further instalments: ${record.installmentCount}`);

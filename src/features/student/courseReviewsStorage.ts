@@ -1,4 +1,23 @@
+export const COURSE_REVIEWS_CHANGED = "eduhub-course-reviews-changed";
+
+export type StudentCourseReviewSummary = {
+  instructorRating: number | null;
+  platformRating: number | null;
+  instructorComment?: string;
+  platformComment?: string;
+  instructorSubmittedAt?: string;
+  platformSubmittedAt?: string;
+};
+
+export type CourseInstructorReviewListItem = {
+  emailNorm: string;
+  rating: number;
+  comment?: string;
+  submittedAt: string;
+};
+
 export type CourseReviewTarget = "INSTRUCTOR" | "PLATFORM";
+
 
 export type CourseReviewRecord = {
   target: CourseReviewTarget;
@@ -12,7 +31,7 @@ type StoredReviews = {
   platform?: CourseReviewRecord;
 };
 
-let memoryReviewsMap: Record<string, StoredReviews> = {};
+const memoryReviewsMap: Record<string, StoredReviews> = {};
 
 function storageKey(courseId: string, emailNorm: string): string {
   return `${encodeURIComponent(courseId)}__${emailNorm.trim().toLowerCase()}`;

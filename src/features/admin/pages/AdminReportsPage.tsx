@@ -11,12 +11,13 @@ export default function AdminReportsPage() {
 
   useEffect(() => {
     eduhubAdmin.getOverview()
-      .then((res: any) => {
-        if (res) {
+      .then((res) => {
+        const data = res as Record<string, unknown>;
+        if (data) {
           setMetrics({
-            activeEnrollments: res.totalStudents ?? res.activeEnrollments ?? 0,
-            overduePayments: res.overduePayments ?? 0,
-            certificates30d: res.certificatesIssued ?? res.certificates30d ?? 0,
+            activeEnrollments: (data.totalStudents ?? data.activeEnrollments ?? 0) as number,
+            overduePayments: (data.overduePayments ?? 0) as number,
+            certificates30d: (data.certificatesIssued ?? data.certificates30d ?? 0) as number,
           });
         }
       })

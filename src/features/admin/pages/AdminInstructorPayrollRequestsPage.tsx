@@ -167,12 +167,7 @@ export default function AdminInstructorPayrollRequestsPage() {
                       </Button>
                       <Button type="button" size="sm" variant="secondary" asChild>
                         <Link
-                          to={buildPayrollProofPagePath(
-                            r.classSection,
-                            r.course,
-                            r.instructorName,
-                            r.instructorEmailNorm,
-                          )}
+                          to={buildPayrollProofPagePath(r.id)}
                         >
                           Record transfer proof
                         </Link>

@@ -58,8 +58,8 @@ export function TeacherPayrollPayoutDetailsDialog({
   proof,
 }: TeacherPayrollPayoutDetailsDialogProps) {
   const { t } = useTranslation();
-  const canShowTransferFile = canInstructorViewTransferProof(submission, proof);
-  const releasedTransfer = isReleasedInstructorTransferProof(proof);
+  const canShowTransferFile = submission ? canInstructorViewTransferProof(submission, proof) : false;
+  const releasedTransfer = submission ? isReleasedInstructorTransferProof(submission, proof) : false;
   const maybeWrongFile =
     canShowTransferFile && looksLikeCourseCertificateFileName(proof?.fileName ?? "");
   const isPdf = proof?.mimeType?.toLowerCase().includes("pdf");

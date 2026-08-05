@@ -29,7 +29,14 @@ import {
   eduhubAdminTransactions,
   eduhubAdminEnrollmentApplications,
 } from "@/api/eduhubClient";
-import type { AdminPaymentRow } from "@/api/eduhubTypes";
+import type {
+  AdminPaymentRow,
+  AdminAttendanceRowResponse,
+  AdminTransactionRowResponse,
+  EnrollmentApplicationResponse,
+  TeacherResponse,
+  UserResponse,
+} from "@/api/eduhubTypes";
 import { useInstructorPayrollRequests } from "@/features/teacher/data/instructorPayrollRequestStore";
 import {
   INSTRUCTOR_REVENUE_SHARE,
@@ -214,11 +221,11 @@ export default function AdminAnalyticDashboardPage() {
   const payrollRequests = useInstructorPayrollRequests();
   const isStaffAnalytic = user.staffRole === "ADMIN_ANALYTIC";
 
-  const [liveStudents, setLiveStudents] = useState<any[]>([]);
-  const [liveTeachers, setLiveTeachers] = useState<any[]>([]);
-  const [liveAttendance, setLiveAttendance] = useState<any[]>([]);
-  const [liveTransactions, setLiveTransactions] = useState<any[]>([]);
-  const [liveApplications, setLiveApplications] = useState<any[]>([]);
+  const [liveStudents, setLiveStudents] = useState<UserResponse[]>([]);
+  const [liveTeachers, setLiveTeachers] = useState<TeacherResponse[]>([]);
+  const [liveAttendance, setLiveAttendance] = useState<AdminAttendanceRowResponse[]>([]);
+  const [liveTransactions, setLiveTransactions] = useState<AdminTransactionRowResponse[]>([]);
+  const [liveApplications, setLiveApplications] = useState<EnrollmentApplicationResponse[]>([]);
 
   useEffect(() => {
     void eduhubAdmin.listUsers({ role: "STUDENT", size: 100 }).then((res) => setLiveStudents(res.content || [])).catch(() => {});
@@ -255,7 +262,7 @@ export default function AdminAnalyticDashboardPage() {
   }, [overview?.stats]);
 
   const activeEnrollments = useMemo(
-    () => liveApplications.filter((e: any) => e.status === "APPROVED" || e.status === "enrolled").length,
+    () => liveApplications.filter((e: EnrollmentApplicationResponse) => e.status === "APPROVED" || (e.status as string) === "enrolled").length,
     [liveApplications],
   );
 
@@ -323,11 +330,11 @@ export default function AdminAnalyticDashboardPage() {
       payrollCounts.set(key, current);
     }
 
-    return liveTeachers.map((teacher: any) => {
+    return liveTeachers.map((teacher: TeacherResponse) => {
       const currency = payments[0]?.currency ?? "UZS";
       let tuitionCollected = 0;
       let tuitionOutstanding = 0;
-      const tName = teacher.fullName || teacher.name || "—";
+      const tName = teacher.fullName || "—";
       const tEmail = teacher.email || "";
 
       for (const payment of payments) {
@@ -366,12 +373,12 @@ export default function AdminAnalyticDashboardPage() {
   );
 
   const atRiskCount = useMemo(
-    () => liveAttendance.filter((row: any) => row.atRisk).length,
+    () => liveAttendance.filter((row: AdminAttendanceRowResponse) => row.atRisk).length,
     [liveAttendance],
   );
 
   const atRiskRows = useMemo(
-    () => liveAttendance.filter((row: any) => row.atRisk).slice(0, 5),
+    () => liveAttendance.filter((row: AdminAttendanceRowResponse) => row.atRisk).slice(0, 5),
     [liveAttendance],
   );
 
@@ -514,7 +521,7 @@ export default function AdminAnalyticDashboardPage() {
       t("admin.transactions.table.method"),
       t("admin.transactions.table.recorded"),
     ];
-    const transactionRows = liveTransactions.map((txn: any) => [
+    const transactionRows = liveTransactions.map((txn: AdminTransactionRowResponse) => [
       txn.ref || txn.id,
       txn.studentName || "—",
       txn.type || "Tuition",
@@ -530,8 +537,8 @@ export default function AdminAnalyticDashboardPage() {
       t("admin.students.table.classes"),
       t("admin.students.table.registered"),
     ];
-    const studentRows = liveStudents.map((s: any) => [
-      s.fullName || s.name || "—",
+    const studentRows = liveStudents.map((s: UserResponse) => [
+      s.fullName || "—",
       s.email || "—",
       s.enabled ? "Active" : "Inactive",
       s.coursesCount || 0,
@@ -544,9 +551,9 @@ export default function AdminAnalyticDashboardPage() {
       t("admin.enrollments.table.enrollment"),
       t("admin.enrollments.table.payment"),
     ];
-    const enrollmentRows = liveApplications.map((e: any) => [
-      e.fullName || e.studentName || "—",
-      e.courseTitle || e.course || "—",
+    const enrollmentRows = liveApplications.map((e: EnrollmentApplicationResponse) => [
+      e.fullName || "—",
+      e.courseTitle || "—",
       e.status || "PENDING",
       e.paymentPlan || "FULL",
     ]);
@@ -838,10 +845,10 @@ export default function AdminAnalyticDashboardPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    liveApplications.map((row: any) => (
+                    liveApplications.map((row: EnrollmentApplicationResponse) => (
                       <TableRow key={row.id}>
-                        <TableCell className="font-medium text-slate-900">{row.fullName || row.studentName || "—"}</TableCell>
-                        <TableCell>{row.courseTitle || row.course || "—"}</TableCell>
+                        <TableCell className="font-medium text-slate-900">{row.fullName || "—"}</TableCell>
+                        <TableCell>{row.courseTitle || "—"}</TableCell>
                         <TableCell className="capitalize">{row.status?.toLowerCase() || "pending"}</TableCell>
                         <TableCell className="capitalize">{row.paymentPlan?.toLowerCase() || "full"}</TableCell>
                       </TableRow>
@@ -869,7 +876,7 @@ export default function AdminAnalyticDashboardPage() {
                 </p>
               ) : (
                 <ul className="divide-y divide-slate-100">
-                  {atRiskRows.map((row: any) => (
+                  {atRiskRows.map((row: AdminAttendanceRowResponse) => (
                     <li key={row.id} className="px-5 py-3.5">
                       <p className="text-sm font-medium text-slate-900">{row.studentName}</p>
                       <p className="text-xs text-slate-500 mt-0.5">

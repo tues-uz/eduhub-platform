@@ -500,21 +500,6 @@ export default function AdminPaymentsPage() {
           </DialogContent>
         </Dialog>
 
-        <Dialog
-          open={proofPaymentId !== null}
-          onOpenChange={(open) => {
-            if (!open) setProofPaymentId(null);
-          }}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t("admin.payments.proofDialog.title")}</DialogTitle>
-              {proofPayment ? (
-                <DialogDescription>
-                  {proofPayment.studentName} · {proofPayment.reference}
-                </DialogDescription>
-              ) : null}
-            </DialogHeader>
         <Dialog open={!!proofPaymentId} onOpenChange={(open) => !open && setProofPaymentId(null)}>
           <DialogContent className="sm:max-w-[480px]">
             <DialogHeader>

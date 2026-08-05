@@ -1,6 +1,74 @@
 import { useSyncExternalStore } from "react";
 import { useEffect } from "react";
 import { eduhubPayroll, eduhubUploadFile } from "@/api/eduhubClient";
+import type { InstructorPayrollRequestRecord } from "@/features/teacher/data/instructorPayrollRequestStore";
+
+export type PayrollProofRecord = {
+  requestId?: string;
+  informationNotes?: string;
+  fileName?: string;
+  mimeType?: string;
+  uploadedAt?: string;
+  dataUrl?: string;
+  approvedAt?: string;
+};
+
+type Listener = () => void;
+
+export const PAYROLL_INFORMATION_MAX_CHARS = 2000;
+export const PAYROLL_PROOF_MAX_FILE_BYTES = 8 * 1024 * 1024; // 8 MB
+
+export function payrollProofKey(className: string, course: string): string {
+  return `${encodeURIComponent(className.trim())}__${encodeURIComponent(course.trim())}`;
+}
+
+export function hasPayrollProofFile(record?: PayrollProofRecord | null): boolean {
+  return Boolean(record?.fileName?.trim() || record?.dataUrl?.trim());
+}
+
+export function looksLikeCourseCertificateFileName(name: string): boolean {
+  const lower = name.toLowerCase();
+  return lower.includes("certificate") || lower.includes("sertifikat");
+}
+
+const listeners = new Set<Listener>();
+
+function emit() {
+  listeners.forEach((fn) => fn());
+}
+
+/** Page path for the proof/payout detail page for a given instructor request. */
+export function buildPayrollProofPagePath(requestId: string): string {
+  return `/dashboard/admin/payroll/requests/${requestId}`;
+}
+
+/**
+ * Whether an instructor is allowed to see the transfer proof for a given request.
+ * Visible once approved or if the proof has a released dataUrl.
+ */
+export function canInstructorViewTransferProof(
+  request: InstructorPayrollRequestRecord,
+  proof?: PayrollProofRecord | null,
+): boolean {
+  if (request.status === "approved") return true;
+  return isReleasedInstructorTransferProof(request, proof);
+}
+
+export function isReleasedInstructorTransferProof(
+  request: InstructorPayrollRequestRecord,
+  proof?: PayrollProofRecord | null,
+): boolean {
+  return request.status === "approved" && hasPayrollProofFile(proof);
+}
+
+/** Resolve the PayrollProofRecord for a given class+course from the snapshot map. */
+export function resolvePayrollProofBundle(
+  proofMap: Record<string, PayrollProofRecord>,
+  className: string,
+  course: string,
+): PayrollProofRecord | undefined {
+  return proofMap[payrollProofKey(className, course)];
+}
 
 let snapshot: Record<string, PayrollProofRecord> = {};
 let loadingPromise: Promise<void> | null = null;

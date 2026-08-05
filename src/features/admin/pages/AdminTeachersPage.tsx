@@ -47,8 +47,8 @@ export default function AdminTeachersPage() {
       try {
         const res = await eduhubAdmin.listTeachers();
         setTeachers(Array.isArray(res) ? res : []);
-      } catch (err: any) {
-        toast.error(err.message || t("admin.teachers.toast.loadFailed"));
+      } catch (err: unknown) {
+        toast.error((err as Error).message || t("admin.teachers.toast.loadFailed"));
       } finally {
         setIsLoading(false);
       }

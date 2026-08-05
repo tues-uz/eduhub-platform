@@ -38,7 +38,7 @@ export function readInstructorScore(record?: CourseFinalGradeRecord): number | u
   return undefined;
 }
 
-let memoryFinalGradesMap: Record<string, Record<string, CourseFinalGradeRecord>> = {};
+const memoryFinalGradesMap: Record<string, Record<string, CourseFinalGradeRecord>> = {};
 
 export const COURSE_FINAL_GRADES_CHANGED = "eduhub-course-final-grades-changed";
 

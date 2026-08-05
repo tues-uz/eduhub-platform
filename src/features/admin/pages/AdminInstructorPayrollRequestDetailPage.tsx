@@ -117,12 +117,7 @@ export default function AdminInstructorPayrollRequestDetailPage() {
 
   const proofHref = useMemo(() => {
     if (!record) return "";
-    return buildPayrollProofPagePath(
-      record.classSection,
-      record.course,
-      record.instructorName,
-      record.instructorEmailNorm,
-    );
+    return buildPayrollProofPagePath(record.id);
   }, [record]);
 
   if (!requestId) {

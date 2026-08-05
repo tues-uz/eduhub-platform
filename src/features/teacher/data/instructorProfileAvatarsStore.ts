@@ -3,7 +3,7 @@ type AvatarStore = {
   byName: Record<string, string>;
 };
 
-let memoryAvatars: AvatarStore = { byEmail: {}, byName: {} };
+const memoryAvatars: AvatarStore = { byEmail: {}, byName: {} };
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();

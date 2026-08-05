@@ -25,7 +25,7 @@ export type ManualQuizScoresCourseData = {
   scores: ManualQuizScoreMap;
 };
 
-let memoryDataMap: Record<string, ManualQuizScoresCourseData> = {};
+const memoryDataMap: Record<string, ManualQuizScoresCourseData> = {};
 
 export const MANUAL_QUIZ_SCORES_CHANGED = "eduhub-manual-quiz-scores-changed";
 

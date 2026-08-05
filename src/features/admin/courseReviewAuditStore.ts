@@ -5,7 +5,7 @@ export type CourseReviewAuditRecord = {
   reviewedAt: string;
 };
 
-let inMemoryAudits: Record<string, CourseReviewAuditRecord> = {};
+const inMemoryAudits: Record<string, CourseReviewAuditRecord> = {};
 
 export const courseReviewAuditStore = {
   get(courseId: string): CourseReviewAuditRecord | null {

@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { eduhubAdmin } from "@/api/eduhubClient";
-import type { StudentStatus } from "@/api/eduhubTypes";
+import type { StudentStatus, UserResponse } from "@/api/eduhubTypes";
 
 interface StudentRow {
   id: string;
@@ -55,7 +55,7 @@ export default function AdminStudentsPage() {
       setIsLoading(true);
       try {
         const res = await eduhubAdmin.listUsers({ role: "STUDENT", size: 100 });
-        const mapped: StudentRow[] = (res.content || []).map((u: any) => ({
+        const mapped: StudentRow[] = (res.content || []).map((u: UserResponse) => ({
           id: u.id,
           name: u.fullName,
           email: u.email,
@@ -65,8 +65,8 @@ export default function AdminStudentsPage() {
           registeredAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—",
         }));
         setStudents(mapped);
-      } catch (err: any) {
-        toast.error(err.message || t("admin.students.toast.loadFailed"));
+      } catch (err: unknown) {
+        toast.error((err as Error).message || t("admin.students.toast.loadFailed"));
       } finally {
         setIsLoading(false);
       }
@@ -85,8 +85,8 @@ export default function AdminStudentsPage() {
         )
       );
       toast.success(currentEnabled ? t("admin.students.toast.deactivated") : "Student activated");
-    } catch (err: any) {
-      toast.error(err.message || t("admin.students.toast.updateFailed"));
+    } catch (err: unknown) {
+      toast.error((err as Error).message || t("admin.students.toast.updateFailed"));
     }
   };
 

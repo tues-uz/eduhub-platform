@@ -10,7 +10,7 @@ export interface QuizAttempt {
   completedAt: string;
 }
 
-let memoryAttempts: QuizAttempt[] = [];
+const memoryAttempts: QuizAttempt[] = [];
 
 function randomId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
