@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "@/lib/icons";
 import { toast } from "sonner";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
 import { SubstituteInviteRequestSummary } from "@/features/teacher/components/SubstituteInviteRequestSummary";
@@ -47,9 +46,6 @@ export default function TeacherSubstituteInviteReviewPage() {
   const [rec, setRec] = useState<SubstituteInviteResponse | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
-    () => localStorage.getItem("sidebarCollapsed") === "true",
-  );
 
   const load = useCallback(() => {
     if (!inviteId) return;
@@ -67,13 +63,6 @@ export default function TeacherSubstituteInviteReviewPage() {
   useEffect(() => {
     load();
   }, [load]);
-
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    check();
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
 
   const decision = useMemo(() => {
     if (!rec) return { kind: "missing" as const };
@@ -108,40 +97,22 @@ export default function TeacherSubstituteInviteReviewPage() {
 
   if (!inviteId) {
     return (
-      <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <DashboardSidebar />
-        <main
-          className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${
-            isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"
-          }`}
-        >
-          <div className="mx-auto max-w-lg px-6 py-10">
-            <p className="text-sm text-foreground/70">Missing request id.</p>
-            <Button type="button" variant="outline" className="mt-4 rounded-full" asChild>
-              <Link to="/dashboard/teacher/notifications">{t("teacher.substituteReview.backToNotifications")}</Link>
-            </Button>
-          </div>
-        </main>
+      <div className="flex w-full min-w-0 max-w-xl flex-1 flex-col gap-3 px-4 py-4 text-left lg:px-6 md:py-6">
+        <p className="text-sm text-muted-foreground">Missing request id.</p>
+        <Button type="button" variant="outline" size="sm" className="w-fit" asChild>
+          <Link to="/dashboard/teacher/notifications">{t("teacher.substituteReview.backToNotifications")}</Link>
+        </Button>
       </div>
     );
   }
 
   if (!loading && (notFound || !rec)) {
     return (
-      <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <DashboardSidebar />
-        <main
-          className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${
-            isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"
-          }`}
-        >
-          <div className="mx-auto max-w-lg px-6 py-10">
-            <p className="text-sm text-foreground/70">This cover request could not be found. It may have been removed.</p>
-            <Button type="button" variant="outline" className="mt-4 rounded-full" asChild>
-              <Link to="/dashboard/teacher/notifications">{t("teacher.substituteReview.backToNotifications")}</Link>
-            </Button>
-          </div>
-        </main>
+      <div className="flex w-full min-w-0 max-w-xl flex-1 flex-col gap-3 px-4 py-4 text-left lg:px-6 md:py-6">
+        <p className="text-sm text-muted-foreground">This cover request could not be found. It may have been removed.</p>
+        <Button type="button" variant="outline" size="sm" className="w-fit" asChild>
+          <Link to="/dashboard/teacher/notifications">{t("teacher.substituteReview.backToNotifications")}</Link>
+        </Button>
       </div>
     );
   }
@@ -149,40 +120,35 @@ export default function TeacherSubstituteInviteReviewPage() {
   if (!rec) return null;
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <DashboardSidebar />
-      <main
-        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${
-          isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"
-        }`}
-      >
-        <div
-          className="mx-auto box-border w-full max-w-xl px-6 pb-12"
-          style={{
-            paddingLeft: "clamp(1rem, 4vw, 1.75rem)",
-            paddingRight: "clamp(1rem, 4vw, 1.75rem)",
-          }}
-        >
+    <div className="flex w-full min-w-0 max-w-xl flex-1 flex-col gap-4 px-4 py-4 pb-12 text-left lg:px-6 md:py-6">
           <button
             type="button"
             onClick={goNotifications}
-            className="mb-6 inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground"
+            className="inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="h-4 w-4" aria-hidden />{t("common.notifications")}</button>
+            <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+            {t("common.notifications")}
+          </button>
 
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("teacher.substituteReview.title")}</h1>
-          <p className="mt-1 text-sm text-foreground/65">Review details and respond when you are ready.</p>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              {t("teacher.substituteReview.title")}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {t("teacher.substituteReview.subtitle")}
+            </p>
+          </div>
 
-          <div className="mt-6 rounded-xl border border-slate-200/80 bg-slate-50/40 p-5 shadow-sm sm:p-6">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-foreground/45">{t("common.status")}</p>
+          <div className="rounded-xl border border-border bg-card p-5 sm:p-6">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("common.status")}</p>
             <p className="mt-1 text-sm font-medium text-foreground">{statusLabel(rec.status)}</p>
-            <div className="mt-6 border-t border-foreground/10 pt-6">
+            <div className="mt-5 border-t border-border pt-5">
               <SubstituteInviteRequestSummary rec={rec} />
             </div>
           </div>
 
           {decision.kind === "substitute_decide" ? (
-            <div className="mt-6 space-y-3">
+            <div className="space-y-3">
               <p className="text-sm leading-relaxed text-foreground/70">
                 If you accept, the primary instructor will be asked to confirm before admin gives final approval.
               </p>
@@ -205,7 +171,7 @@ export default function TeacherSubstituteInviteReviewPage() {
           ) : null}
 
           {decision.kind === "primary_decide" ? (
-            <div className="mt-6 space-y-3">
+            <div className="space-y-3">
               <p className="text-sm leading-relaxed text-foreground/70">
                 The substitute has accepted. Approve to send this to admin for final sign-off, or reject to stop the request.
               </p>
@@ -233,7 +199,7 @@ export default function TeacherSubstituteInviteReviewPage() {
           ) : null}
 
           {decision.kind === "readonly_participant" ? (
-            <div className="mt-6 space-y-3">
+            <div className="space-y-3">
               <p className="text-sm leading-relaxed text-foreground/65">
                 {decision.rec.status === "PENDING_SUBSTITUTE_RESPONSE" && decision.isPrimary
                   ? "Waiting for the substitute to respond. You will be notified when there is an update."
@@ -257,13 +223,11 @@ export default function TeacherSubstituteInviteReviewPage() {
           ) : null}
 
           {decision.kind === "no_access" ? (
-            <p className="mt-6 text-sm text-amber-800/90">
+            <p className="text-sm text-amber-800/90">
               This cover request is not linked to your instructor account. If you think this is a mistake, open it from
               your latest notification.
             </p>
           ) : null}
-        </div>
-      </main>
     </div>
   );
 }

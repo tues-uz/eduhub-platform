@@ -31,15 +31,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import { useAuthSession } from "@/features/auth/context";
-import { useLayoutContext } from "@/features/layout/context";
 import { useAdminOverviewQuery } from "@/features/admin/hooks/useAdminQueries";
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
   const { user } = useAuthSession();
-  const { isSidebarCollapsed } = useLayoutContext();
   const { data, isPending, isError, error } = useAdminOverviewQuery();
   const userName = user.name;
 
@@ -72,25 +69,17 @@ const AdminDashboard = () => {
     userSearch.trim() !== "" || userRoleFilter !== "all" || userStatusFilter !== "all";
 
   return (
-    <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <DashboardSidebar />
-      <main className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <div className="container mx-auto px-6">
+    <div className="container mx-auto px-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           {/* Professional Header */}
-          <div className="mb-8 pb-6 border-b border-slate-200">
+          <div className="mb-8 pb-6 border-b border-border">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-semibold text-slate-900 mb-1.5 tracking-tight">
+                <h1 className="text-3xl font-semibold text-foreground mb-1.5 tracking-tight">
                   {userName}
                 </h1>
-                <p className="text-slate-600 text-sm font-medium">
+                <p className="text-muted-foreground text-sm font-medium">
                   {t("admin.dashboard.subtitle")}
                 </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md uppercase tracking-wide">
-                  {t("admin.shared.roleBadge")}
-                </span>
               </div>
             </div>
           </div>
@@ -291,10 +280,10 @@ const AdminDashboard = () => {
                       <span className="text-sm font-medium">{t("adminNav.studentsRegistrations")}</span>
                     </Button>
                   </Link>
-                  <Link to="/dashboard/admin/enrollments">
+                  <Link to="/dashboard/admin/enrollment-applications">
                     <Button variant="ghost" className="w-full justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-9">
                       <ClipboardList className="h-4 w-4 mr-2.5" />
-                      <span className="text-sm font-medium">{t("adminNav.enrollmentsWaitlist")}</span>
+                      <span className="text-sm font-medium">{t("adminNav.enrollmentApplications")}</span>
                     </Button>
                   </Link>
                   <Link to="/dashboard/admin/payments">
@@ -351,8 +340,6 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-        </div>
-      </main>
     </div>
   );
 };

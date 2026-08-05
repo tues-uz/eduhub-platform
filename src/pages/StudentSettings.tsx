@@ -72,6 +72,10 @@ const StudentSettings = () => {
     const phone = (apiUser?.phoneNumber ?? user.phoneNumber ?? "").trim() || notAvailable;
     const parentPhone = (apiUser?.parentPhoneNumber ?? "").trim() || notAvailable;
     const passport = (apiUser?.passportNumber ?? "").trim() || notAvailable;
+    const passportInternational =
+      (apiUser?.internationalPassportNumber ?? "").trim() || notAvailable;
+    const passportImageUrl = (apiUser?.passportImageUrl ?? "").trim();
+    const internationalPassportImageUrl = (apiUser?.internationalPassportImageUrl ?? "").trim();
     const dateOfBirth = formatRegistrationDate(apiUser?.dateOfBirth ?? "", notAvailable);
     const birthCity = (apiUser?.birthCity ?? "").trim() || notAvailable;
     const latestSchool = (apiUser?.latestSchool ?? "").trim() || notAvailable;
@@ -82,6 +86,9 @@ const StudentSettings = () => {
       phone,
       parentPhone,
       passport,
+      passportInternational,
+      passportImageUrl,
+      internationalPassportImageUrl,
       dateOfBirth,
       birthCity,
       latestSchool,
@@ -260,6 +267,31 @@ const StudentSettings = () => {
                 <RegistrationDetail icon={Phone} label={t("settings.yourPhone")} value={registrationDetails.phone} notAvailable={notAvailable} />
                 <RegistrationDetail icon={Phone} label={t("settings.parentPhone")} value={registrationDetails.parentPhone} notAvailable={notAvailable} />
                 <RegistrationDetail icon={IdCard} label={t("settings.passportNumber")} value={registrationDetails.passport} notAvailable={notAvailable} />
+                <RegistrationDetail icon={IdCard} label={t("settings.passportInternational")} value={registrationDetails.passportInternational} notAvailable={notAvailable} />
+                {registrationDetails.passportImageUrl ? (
+                  <div className="rounded-lg border border-gray-100 bg-zinc-50/70 px-4 py-3 sm:col-span-2">
+                    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-foreground/50">
+                      {t("settings.passportLocalImage")}
+                    </p>
+                    <img
+                      src={registrationDetails.passportImageUrl}
+                      alt=""
+                      className="h-28 max-w-full rounded-md border border-gray-200 object-contain"
+                    />
+                  </div>
+                ) : null}
+                {registrationDetails.internationalPassportImageUrl ? (
+                  <div className="rounded-lg border border-gray-100 bg-zinc-50/70 px-4 py-3 sm:col-span-2">
+                    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-foreground/50">
+                      {t("settings.passportInternationalImage")}
+                    </p>
+                    <img
+                      src={registrationDetails.internationalPassportImageUrl}
+                      alt=""
+                      className="h-28 max-w-full rounded-md border border-gray-200 object-contain"
+                    />
+                  </div>
+                ) : null}
                 <RegistrationDetail icon={Calendar} label={t("settings.dateOfBirth")} value={registrationDetails.dateOfBirth} notAvailable={notAvailable} />
                 <RegistrationDetail icon={MapPin} label={t("settings.bornCity")} value={registrationDetails.birthCity} notAvailable={notAvailable} />
                 <RegistrationDetail icon={GraduationCap} label={t("settings.latestSchool")} value={registrationDetails.latestSchool} notAvailable={notAvailable} />

@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import StudentDashboardLayout from "@/layouts/StudentDashboardLayout";
+import TeacherDashboardLayout from "@/layouts/TeacherDashboardLayout";
 import EduHub from "@/pages/EduHub";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
@@ -30,7 +31,6 @@ import AdminNotificationsPage from "@/features/admin/pages/AdminNotificationsPag
 import AdminSubstituteCoverRequestsPage from "@/features/admin/pages/AdminSubstituteCoverRequestsPage";
 import AdminSubstituteInviteDetailPage from "@/features/admin/pages/AdminSubstituteInviteDetailPage";
 import AdminStudentsPage from "@/features/admin/pages/AdminStudentsPage";
-import AdminEnrollmentsPage from "@/features/admin/pages/AdminEnrollmentsPage";
 import AdminEnrollmentApplicationsPage from "@/features/admin/pages/AdminEnrollmentApplicationsPage";
 import AdminEnrollmentApplicationDetailPage from "@/features/admin/pages/AdminEnrollmentApplicationDetailPage";
 import AdminClassesPage from "@/features/admin/pages/AdminClassesPage";
@@ -62,6 +62,7 @@ import AdminPromosPage from "@/features/admin/pages/AdminPromosPage";
 import AdminReferralCodesPage from "@/features/admin/pages/AdminReferralCodesPage";
 import AdminSpecialTuitionPage from "@/features/admin/pages/AdminSpecialTuitionPage";
 import { AdminRouteGuard } from "@/features/admin/components/AdminRouteGuard";
+import AdminLayout from "@/features/admin/components/AdminLayout";
 import TeacherDashboard from "@/pages/TeacherDashboard";
 import TeacherCoursesPage from "@/features/teacher/pages/TeacherCoursesPage";
 import TeacherCourseFormLayout from "@/features/teacher/pages/TeacherCourseFormLayout";
@@ -103,94 +104,101 @@ export function AppRoutes() {
       <Route path={appRoutes.dashboard} element={<DashboardRedirect />} />
 
       <Route element={<AdminRouteGuard />}>
-        <Route path={appRoutes.dashboardAdmin} element={<AdminDashboardPage />} />
-        <Route path={appRoutes.dashboardAdminFinance} element={<AdminFinanceDashboardPage />} />
-        <Route path={appRoutes.dashboardAdminAnalytic} element={<AdminAnalyticDashboardPage />} />
-        <Route path="/dashboard/admin/notifications" element={<AdminNotificationsPage />} />
-        <Route path="/dashboard/admin/substitute-requests" element={<AdminSubstituteCoverRequestsPage />} />
-        <Route path="/dashboard/admin/substitute-requests/:inviteId" element={<AdminSubstituteInviteDetailPage />} />
-        <Route path="/dashboard/admin/students" element={<AdminStudentsPage />} />
-        <Route path="/dashboard/admin/enrollments" element={<AdminEnrollmentsPage />} />
-        <Route
-          path="/dashboard/admin/enrollment-applications/:applicationId"
-          element={<AdminEnrollmentApplicationDetailPage />}
-        />
-        <Route path="/dashboard/admin/enrollment-applications" element={<AdminEnrollmentApplicationsPage />} />
-        <Route path="/dashboard/admin/classes" element={<AdminClassesPage />} />
-        <Route path="/dashboard/admin/attendance" element={<AdminAttendancePage />} />
-        <Route path="/dashboard/admin/payments" element={<AdminPaymentsPage />} />
-        <Route path="/dashboard/admin/installment-payments" element={<AdminInstallmentPaymentsPage />} />
-        <Route path="/dashboard/admin/payroll" element={<AdminPayrollPage />} />
-        <Route path="/dashboard/admin/payroll/instructor-request/:requestId" element={<AdminInstructorPayrollRequestDetailPage />} />
-        <Route
-          path="/dashboard/admin/payroll/instructor-requests"
-          element={<Navigate to="/dashboard/admin/payroll?tab=requests" replace />}
-        />
-        <Route path="/dashboard/admin/payroll/proof" element={<AdminPayrollProofPage />} />
-        <Route
-          path="/dashboard/admin/payroll/submissions"
-          element={<Navigate to="/dashboard/admin/payroll?tab=proof" replace />}
-        />
-        <Route path="/dashboard/admin/placement-tests" element={<AdminPlacementTestsPage />} />
-        <Route path="/dashboard/admin/certifications" element={<AdminCertificationsPage />} />
-        <Route path="/dashboard/admin/calendar" element={<AdminCalendarPage />} />
-        <Route path="/dashboard/admin/support-sessions" element={<AdminSupportSessionsPage />} />
-        <Route path="/dashboard/admin/integrations" element={<AdminIntegrationsPage />} />
-        <Route path="/dashboard/admin/teachers" element={<AdminTeachersPage />} />
-        <Route path="/dashboard/admin/staff" element={<AdminStaffPage />} />
-        <Route path="/dashboard/admin/courses" element={<AdminCoursesListPage />} />
-        <Route path="/dashboard/admin/courses/:courseId/schedule" element={<AdminCourseSchedulePage />} />
-        <Route path="/dashboard/admin/courses/:courseId" element={<AdminCourseDetailPage />} />
-        <Route path="/dashboard/admin/add-user" element={<AdminAddStaffHubPage />} />
-        <Route path="/dashboard/admin/add-user/:roleSlug" element={<AdminAddStaffUserPage />} />
-        <Route path="/dashboard/admin/add-user-role" element={<Navigate to="/dashboard/admin/add-user" replace />} />
-        <Route path="/dashboard/admin/content" element={<AdminContentHubPage />} />
-        <Route path="/dashboard/admin/landing-page" element={<AdminLandingPagePage />} />
-        <Route path="/dashboard/admin/transactions" element={<AdminTransactionsPage />} />
-        <Route path="/dashboard/admin/reports" element={<AdminReportsPage />} />
-        <Route path="/dashboard/admin/users" element={<AdminUsersPage />} />
-        <Route path="/dashboard/admin/settings" element={<AdminSettingsPage />} />
-        <Route path="/dashboard/admin/promos" element={<AdminPromosPage />} />
-        <Route path="/dashboard/admin/referral-codes" element={<AdminReferralCodesPage />} />
-        <Route path="/dashboard/admin/special-tuition" element={<AdminSpecialTuitionPage />} />
+        <Route element={<AdminLayout />}>
+          <Route path={appRoutes.dashboardAdmin} element={<AdminDashboardPage />} />
+          <Route path={appRoutes.dashboardAdminFinance} element={<AdminFinanceDashboardPage />} />
+          <Route path={appRoutes.dashboardAdminAnalytic} element={<AdminAnalyticDashboardPage />} />
+          <Route path="/dashboard/admin/notifications" element={<AdminNotificationsPage />} />
+          <Route path="/dashboard/admin/substitute-requests" element={<AdminSubstituteCoverRequestsPage />} />
+          <Route path="/dashboard/admin/substitute-requests/:inviteId" element={<AdminSubstituteInviteDetailPage />} />
+          <Route path="/dashboard/admin/students" element={<AdminStudentsPage />} />
+          <Route
+            path="/dashboard/admin/enrollments"
+            element={<Navigate to="/dashboard/admin/enrollment-applications" replace />}
+          />
+          <Route
+            path="/dashboard/admin/enrollment-applications/:applicationId"
+            element={<AdminEnrollmentApplicationDetailPage />}
+          />
+          <Route path="/dashboard/admin/enrollment-applications" element={<AdminEnrollmentApplicationsPage />} />
+          <Route path="/dashboard/admin/classes" element={<AdminClassesPage />} />
+          <Route path="/dashboard/admin/attendance" element={<AdminAttendancePage />} />
+          <Route path="/dashboard/admin/payments" element={<AdminPaymentsPage />} />
+          <Route path="/dashboard/admin/installment-payments" element={<AdminInstallmentPaymentsPage />} />
+          <Route path="/dashboard/admin/payroll" element={<AdminPayrollPage />} />
+          <Route path="/dashboard/admin/payroll/instructor-request/:requestId" element={<AdminInstructorPayrollRequestDetailPage />} />
+          <Route
+            path="/dashboard/admin/payroll/instructor-requests"
+            element={<Navigate to="/dashboard/admin/payroll?tab=requests" replace />}
+          />
+          <Route path="/dashboard/admin/payroll/proof" element={<AdminPayrollProofPage />} />
+          <Route
+            path="/dashboard/admin/payroll/submissions"
+            element={<Navigate to="/dashboard/admin/payroll?tab=proof" replace />}
+          />
+          <Route path="/dashboard/admin/placement-tests" element={<AdminPlacementTestsPage />} />
+          <Route path="/dashboard/admin/certifications" element={<AdminCertificationsPage />} />
+          <Route path="/dashboard/admin/calendar" element={<AdminCalendarPage />} />
+          <Route path="/dashboard/admin/support-sessions" element={<AdminSupportSessionsPage />} />
+          <Route path="/dashboard/admin/integrations" element={<AdminIntegrationsPage />} />
+          <Route path="/dashboard/admin/teachers" element={<AdminTeachersPage />} />
+          <Route path="/dashboard/admin/staff" element={<AdminStaffPage />} />
+          <Route path="/dashboard/admin/courses" element={<AdminCoursesListPage />} />
+          <Route path="/dashboard/admin/courses/:courseId/schedule" element={<AdminCourseSchedulePage />} />
+          <Route path="/dashboard/admin/courses/:courseId" element={<AdminCourseDetailPage />} />
+          <Route path="/dashboard/admin/add-user" element={<AdminAddStaffHubPage />} />
+          <Route path="/dashboard/admin/add-user/:roleSlug" element={<AdminAddStaffUserPage />} />
+          <Route path="/dashboard/admin/add-user-role" element={<Navigate to="/dashboard/admin/add-user" replace />} />
+          <Route path="/dashboard/admin/content" element={<AdminContentHubPage />} />
+          <Route path="/dashboard/admin/landing-page" element={<AdminLandingPagePage />} />
+          <Route path="/dashboard/admin/transactions" element={<AdminTransactionsPage />} />
+          <Route path="/dashboard/admin/reports" element={<AdminReportsPage />} />
+          <Route path="/dashboard/admin/users" element={<AdminUsersPage />} />
+          <Route path="/dashboard/admin/settings" element={<AdminSettingsPage />} />
+          <Route path="/dashboard/admin/promos" element={<AdminPromosPage />} />
+          <Route path="/dashboard/admin/referral-codes" element={<AdminReferralCodesPage />} />
+          <Route path="/dashboard/admin/special-tuition" element={<AdminSpecialTuitionPage />} />
+        </Route>
       </Route>
 
-      <Route path={appRoutes.dashboardTeacher} element={<TeacherDashboard />} />
-      <Route path="/dashboard/teacher/courses" element={<TeacherCoursesPage />} />
-      <Route path="/dashboard/teacher/courses/new" element={<TeacherCourseFormLayout />}>
-        <Route index element={<Navigate to="details" replace />} />
-        <Route path="details" element={<TeacherCourseFormDetailsPage />} />
-        <Route path="schedule" element={<TeacherCourseFormSchedulePage />} />
-        <Route path="lessons" element={<TeacherCourseFormLessonsPage />} />
+      <Route element={<TeacherDashboardLayout />}>
+        <Route path={appRoutes.dashboardTeacher} element={<TeacherDashboard />} />
+        <Route path="/dashboard/teacher/courses" element={<TeacherCoursesPage />} />
+        <Route path="/dashboard/teacher/courses/new" element={<TeacherCourseFormLayout />}>
+          <Route index element={<Navigate to="details" replace />} />
+          <Route path="details" element={<TeacherCourseFormDetailsPage />} />
+          <Route path="schedule" element={<TeacherCourseFormSchedulePage />} />
+          <Route path="lessons" element={<TeacherCourseFormLessonsPage />} />
+        </Route>
+        <Route path="/dashboard/teacher/courses/:courseId/edit" element={<TeacherCourseFormLayout />}>
+          <Route index element={<Navigate to="details" replace />} />
+          <Route path="details" element={<TeacherCourseFormDetailsPage />} />
+          <Route path="schedule" element={<TeacherCourseFormSchedulePage />} />
+          <Route path="lessons" element={<TeacherCourseFormLessonsPage />} />
+        </Route>
+        {/** Static `new` must be its own path so it always wins over `:courseId`-only routes in the matcher. */}
+        <Route
+          path="/dashboard/teacher/courses/:courseId/resume/new"
+          element={<TeacherCourseResumeEditPage />}
+        />
+        <Route
+          path="/dashboard/teacher/courses/:courseId/resume/:resumeId"
+          element={<TeacherCourseResumeEditPage />}
+        />
+        <Route path="/dashboard/teacher/courses/:courseId" element={<TeacherCourseRosterPage />} />
+        <Route path="/dashboard/teacher/placement-test" element={<TeacherQuizPage />} />
+        <Route path="/dashboard/teacher/placement-test/:courseId/:quizId/results" element={<TeacherQuizResultsPage />} />
+        <Route path="/dashboard/teacher/placement-test/:courseId/:moduleId/:lessonId/results" element={<TeacherQuizResultsPage />} />
+        <Route path="/dashboard/teacher/assignments" element={<TeacherAssignmentsPage />} />
+        <Route path="/dashboard/teacher/students" element={<TeacherStudentsPage />} />
+        <Route path="/dashboard/teacher/attendance" element={<TeacherAttendanceQrPage />} />
+        <Route path="/dashboard/teacher/schedule" element={<TeacherScheduleApprovalsPage />} />
+        <Route path="/dashboard/teacher/notifications" element={<TeacherNotifications />} />
+        <Route path="/dashboard/teacher/substitute-requests/:inviteId" element={<TeacherSubstituteInviteReviewPage />} />
+        <Route path="/dashboard/teacher/payroll" element={<TeacherPayrollPage />} />
+        <Route path="/dashboard/teacher/payroll/submissions" element={<Navigate to="/dashboard/teacher/payroll" replace />} />
+        <Route path="/dashboard/teacher/settings" element={<TeacherSettingsPage />} />
       </Route>
-      <Route path="/dashboard/teacher/courses/:courseId/edit" element={<TeacherCourseFormLayout />}>
-        <Route index element={<Navigate to="details" replace />} />
-        <Route path="details" element={<TeacherCourseFormDetailsPage />} />
-        <Route path="schedule" element={<TeacherCourseFormSchedulePage />} />
-        <Route path="lessons" element={<TeacherCourseFormLessonsPage />} />
-      </Route>
-      {/** Static `new` must be its own path so it always wins over `:courseId`-only routes in the matcher. */}
-      <Route
-        path="/dashboard/teacher/courses/:courseId/resume/new"
-        element={<TeacherCourseResumeEditPage />}
-      />
-      <Route
-        path="/dashboard/teacher/courses/:courseId/resume/:resumeId"
-        element={<TeacherCourseResumeEditPage />}
-      />
-      <Route path="/dashboard/teacher/courses/:courseId" element={<TeacherCourseRosterPage />} />
-      <Route path="/dashboard/teacher/placement-test" element={<TeacherQuizPage />} />
-      <Route path="/dashboard/teacher/placement-test/:courseId/:quizId/results" element={<TeacherQuizResultsPage />} />
-      <Route path="/dashboard/teacher/placement-test/:courseId/:moduleId/:lessonId/results" element={<TeacherQuizResultsPage />} />
-      <Route path="/dashboard/teacher/assignments" element={<TeacherAssignmentsPage />} />
-      <Route path="/dashboard/teacher/students" element={<TeacherStudentsPage />} />
-      <Route path="/dashboard/teacher/attendance" element={<TeacherAttendanceQrPage />} />
-      <Route path="/dashboard/teacher/schedule" element={<TeacherScheduleApprovalsPage />} />
-      <Route path="/dashboard/teacher/notifications" element={<TeacherNotifications />} />
-      <Route path="/dashboard/teacher/substitute-requests/:inviteId" element={<TeacherSubstituteInviteReviewPage />} />
-      <Route path="/dashboard/teacher/payroll" element={<TeacherPayrollPage />} />
-      <Route path="/dashboard/teacher/payroll/submissions" element={<Navigate to="/dashboard/teacher/payroll" replace />} />
-      <Route path="/dashboard/teacher/settings" element={<TeacherSettingsPage />} />
 
       <Route path="/dashboard/available-courses/enroll/:courseId/success" element={<StudentEnrollmentSuccessPage />} />
       <Route path="/dashboard/available-courses/enroll/:courseId" element={<StudentEnrollmentApplicationPage />} />

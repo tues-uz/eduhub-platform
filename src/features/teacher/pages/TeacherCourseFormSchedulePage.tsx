@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -18,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useTeacherCourseForm } from "./TeacherCourseFormContext";
+import { TeacherCourseFormStickyFooter } from "./TeacherCourseFormStickyFooter";
 import { parseOptionalPositiveInt } from "./teacherCourseFormHelpers";
 import { isUuid } from "@/api/utils";
 import type { ScheduleProposalResponse } from "@/api/eduhubTypes";
@@ -50,20 +50,27 @@ function ReadOnlySessionRow({
   sessionNum: number;
   slot: { title?: string; sessionDate?: string; sessionTime?: string };
 }) {
+  const { t } = useTranslation();
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-3 sm:flex-row sm:items-end sm:gap-3">
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/20 p-3 sm:flex-row sm:items-end sm:gap-3">
       <div className="min-w-0 flex-1 space-y-1.5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Session {sessionNum}</p>
-        <Input readOnly value={slot.title ?? ""} placeholder="—" className="h-11 rounded-xl bg-white" />
+        <p className="text-xs font-medium text-muted-foreground">
+          {t("teacher.courseForm.schedule.sessionLabel", { num: sessionNum })}
+        </p>
+        <Input readOnly value={slot.title ?? ""} placeholder="—" className="h-11 bg-background" />
       </div>
       <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-end sm:gap-2">
         <div className="w-full space-y-1.5 sm:w-[10.5rem]">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Date</p>
-          <Input readOnly type="date" value={slot.sessionDate ?? ""} className="h-11 rounded-xl bg-white" />
+          <p className="text-xs font-medium text-muted-foreground">
+            {t("teacher.courseForm.schedule.dateLabel")}
+          </p>
+          <Input readOnly type="date" value={slot.sessionDate ?? ""} className="h-11 bg-background" />
         </div>
         <div className="w-full space-y-1.5 sm:w-[8.5rem]">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Time</p>
-          <Input readOnly type="time" value={slot.sessionTime ?? ""} className="h-11 rounded-xl bg-white" />
+          <p className="text-xs font-medium text-muted-foreground">
+            {t("teacher.courseForm.schedule.timeLabel")}
+          </p>
+          <Input readOnly type="time" value={slot.sessionTime ?? ""} className="h-11 bg-background" />
         </div>
       </div>
     </div>
@@ -196,25 +203,26 @@ export default function TeacherCourseFormSchedulePage() {
 
   return (
     <>
-      <div className="mx-auto w-full max-w-2xl">
+      <div className="flex w-full max-w-5xl flex-col pb-24 text-left">
+        <div className="space-y-6">
         {showGlobalBanner ? (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+            {error}
+          </div>
         ) : null}
 
         {!isEdit ? (
-          <Card className="w-full overflow-hidden rounded-2xl border-slate-200/90 shadow-sm">
-            <CardContent className="space-y-4 p-6">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{t("teacher.roster.tabs.schedule")}</p>
-              <p className="text-sm leading-relaxed text-slate-700">
-                After you create this class, an <span className="font-medium text-slate-900">administrator</span> will
-                propose the session schedule (how many sessions in six months and optional dates/times). You will{" "}
-                <span className="font-medium text-slate-900">review and approve</span> it here when you edit the class.
-              </p>
-              <p className="text-xs text-slate-500">
-                Your new class is saved with a minimal placeholder session count until the schedule is finalized.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="flex min-h-[16rem] flex-col justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-left">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">
+              {t("teacher.courseForm.schedule.sectionTitle")}
+            </h2>
+            <p className="mt-2 max-w-md text-sm text-muted-foreground">
+              {t("teacher.courseForm.schedule.newClassInfo")}
+            </p>
+            <p className="mt-1 max-w-md text-xs text-muted-foreground">
+              {t("teacher.courseForm.schedule.newClassNote")}
+            </p>
+          </div>
         ) : null}
 
         {isEdit && apiCourse ? (
@@ -235,29 +243,24 @@ export default function TeacherCourseFormSchedulePage() {
             {loading ? (
               <p className="text-sm text-slate-600">Loading schedule…</p>
             ) : !proposal ? (
-              <Card className="w-full overflow-hidden rounded-2xl border-slate-200/90 shadow-sm">
-                <CardContent className="p-6">
-                  <p className="text-sm text-slate-600">
-                    When an admin proposes a schedule for this class, it will appear here for your approval.
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-10 text-left">
+                <p className="text-sm text-muted-foreground">
+                  {t("teacher.courseForm.schedule.noProposal")}
+                </p>
+              </div>
             ) : (
               <div className="space-y-4">
-                <Card className="w-full overflow-hidden rounded-2xl border-slate-200/90 shadow-sm">
-                  <CardContent className="space-y-2 p-0 px-4 pb-4 pt-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-                      Sessions in 6 months
-                    </p>
-                    <p className="text-2xl font-semibold tabular-nums text-slate-900">
-                      {sessionsCount != null ? sessionsCount : "—"}
-                    </p>
-                    <p className="max-w-lg text-xs leading-relaxed text-slate-500">
-                      Proposed by {proposal.proposedByName}. Student attendance expectations are based on this plan.
-                      Sessions below are grouped into the first three months, matching how admin entered the schedule.
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="rounded-xl border border-border bg-card px-4 py-4 sm:px-5">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("teacher.courseForm.schedule.sessionsInSixMonths")}
+                  </p>
+                  <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                    {sessionsCount != null ? sessionsCount : "—"}
+                  </p>
+                  <p className="mt-1 max-w-lg text-xs text-muted-foreground">
+                    {t("teacher.courseForm.schedule.proposedBy", { name: proposal.proposedByName })}
+                  </p>
+                </div>
 
                 {threeMonthPlan && threeMonthPlan.counts.some((c) => c > 0) ? (
                   TEACHER_SCHEDULE_MONTH_SECTIONS.map((section, monthIdx) => {
@@ -270,18 +273,17 @@ export default function TeacherCourseFormSchedulePage() {
                     if (monthCount < 1) return null;
 
                     return (
-                      <Card key={section.heading} className="w-full overflow-hidden rounded-2xl border-slate-200/90 shadow-sm">
-                        <CardContent className="space-y-4 p-0 px-4 pb-4 pt-4">
+                      <div key={section.heading} className="rounded-xl border border-border bg-card px-4 py-4 sm:px-5">
                           <section className="space-y-2">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                               {section.heading}
                             </p>
-                            <p className="text-2xl font-semibold tabular-nums text-slate-900">{monthCount}</p>
-                            <p className="max-w-lg text-xs leading-relaxed text-slate-500">{section.blurb}</p>
+                            <p className="text-2xl font-semibold tabular-nums text-foreground">{monthCount}</p>
+                            <p className="max-w-lg text-xs text-muted-foreground">{section.blurb}</p>
 
-                            <div className="mt-5 space-y-3 border-t border-slate-100 pt-5">
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-                                Per-session details
+                            <div className="mt-5 space-y-3 border-t border-border pt-5">
+                              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                {t("teacher.courseForm.schedule.perSessionDetails")}
                               </p>
                               <div className="space-y-3">
                                 {Array.from({ length: monthCount }, (_, i) => {
@@ -301,49 +303,56 @@ export default function TeacherCourseFormSchedulePage() {
                               </div>
                             </div>
                           </section>
-                        </CardContent>
-                      </Card>
+                      </div>
                     );
                   })
                 ) : (
-                  <Card className="w-full overflow-hidden rounded-2xl border-slate-200/90 shadow-sm">
-                    <CardContent className="p-6">
-                      <p className="text-sm text-slate-500">No session rows yet — waiting for admin.</p>
-                    </CardContent>
-                  </Card>
+                  <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-8 text-left">
+                    <p className="text-sm text-muted-foreground">
+                      {t("teacher.courseForm.schedule.noSessionRows")}
+                    </p>
+                  </div>
                 )}
 
-                <Card className="w-full overflow-hidden rounded-2xl border-slate-200/90 shadow-sm">
-                  <CardContent className="p-0 px-4 pb-4 pt-4">
+                <div className="rounded-xl border border-border bg-card px-4 py-4 sm:px-5">
                     {courseStatus === "SCHEDULE_PENDING" ? (
-                      <div className="flex flex-wrap gap-3 pt-2">
+                      <div className="flex flex-wrap gap-3">
                         <Button
                           type="button"
-                          className="rounded-full bg-emerald-700 hover:bg-emerald-800"
+                          className="bg-teal-700 hover:bg-teal-800"
                           disabled={approveSaving}
                           onClick={() => void handleApprove()}
                         >
-                          {approveSaving ? "Saving…" : "Approve schedule"}
+                          {approveSaving
+                            ? t("teacher.courseForm.schedule.saving")
+                            : t("teacher.courseForm.schedule.approveSchedule")}
                         </Button>
-                        <Button type="button" variant="outline" className="rounded-full" onClick={() => setRejectOpen(true)}>{t("teacher.courseForm.schedule.requestChanges")}</Button>
+                        <Button type="button" variant="outline" onClick={() => setRejectOpen(true)}>
+                          {t("teacher.courseForm.schedule.requestChanges")}
+                        </Button>
                       </div>
                     ) : null}
                     {courseStatus === "SCHEDULE_APPROVED" ? (
-                      <p className="pt-2 text-xs text-slate-600">
-                        Schedule approved. The admin can now set pricing and publish the class.
+                      <p className="text-sm text-muted-foreground">
+                        {t("teacher.courseForm.schedule.approvedNote")}
                       </p>
                     ) : null}
-                  </CardContent>
-                </Card>
+                </div>
               </div>
             )}
           </>
         ) : null}
 
-        <div className="mt-6 flex w-full flex-wrap items-center justify-between gap-3">
-          <Button type="button" variant="outline" className="rounded-full" onClick={() => navigate(`${basePath}/details`)}>{t("common.back")}</Button>
-          <Button type="button" onClick={continueToLessons} className="rounded-full" style={{ backgroundColor: "#1e40af" }}>{t("teacher.courseForm.schedule.continueToLessons")}</Button>
         </div>
+
+        <TeacherCourseFormStickyFooter>
+          <Button type="button" variant="outline" onClick={() => navigate(`${basePath}/details`)}>
+            {t("common.back")}
+          </Button>
+          <Button type="button" className="bg-teal-700 hover:bg-teal-800" onClick={continueToLessons}>
+            {t("teacher.courseForm.schedule.continueToLessons")}
+          </Button>
+        </TeacherCourseFormStickyFooter>
       </div>
 
       <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>

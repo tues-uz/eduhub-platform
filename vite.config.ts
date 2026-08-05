@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
     /** When the SPA uses a relative API base in dev, the browser calls same-origin `/api/...` and Vite forwards here (avoids CORS / aggressive third-party blocking in some browsers). */
     const devApiProxyTarget =
         (env.VITE_API_BASE_URL || env.VITE_EDUHUB_API_BASE_URL || "").replace(/\/+$/, "") ||
-        "https://hqhp7j.kubeletto.app";
+        "https://eduhub.kubeletto.app";
 
     return {
         server: {

@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useMatch, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, CalendarDays, FileText, Image as ImageIcon, Loader2, X } from "@/lib/icons";
+import { ArrowLeft, Image as ImageIcon, Loader2, X } from "@/lib/icons";
 import { toast } from "sonner";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -47,22 +45,13 @@ export default function TeacherCourseResumeEditPage() {
   const { user } = useAuthSession();
   const isNew = Boolean(matchNewResume);
   const editingResumeId = isNew ? undefined : resumeId;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    return localStorage.getItem("sidebarCollapsed") === "true";
-  });
   const [bodyDraft, setBodyDraft] = useState("");
   const [sessionKeyDraft, setSessionKeyDraft] = useState("");
   const [thumbnailDraft, setThumbnailDraft] = useState<string>("");
   const [loaded, setLoaded] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    check();
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
 
   /** Same key as `TeacherCourseRosterPage` so navigating here reuses cached course data. */
   const apiCourseQuery = useQuery({
@@ -82,8 +71,6 @@ export default function TeacherCourseResumeEditPage() {
     },
     enabled: Boolean(courseId) && isUuid(courseId),
   });
-
-  const userEmailNorm = (user?.email ?? "").trim().toLowerCase();
 
   const substituteInvitesQuery = useQuery({
     queryKey: ["teacher", "substituteInvites", "mine"],
@@ -230,10 +217,10 @@ export default function TeacherCourseResumeEditPage() {
       setThumbnailDraft(existingResumeQuery.data.thumbnailUrl ?? "");
       setLoaded(true);
     } else if (existingResumeQuery.isError) {
-      toast.error("Resume not found");
+      toast.error(t("teacher.resumeEdit.toast.notFound"));
       void navigate(`/dashboard/teacher/courses/${courseId}?tab=resume`, { replace: true });
     }
-  }, [isNew, existingResumeQuery.data, existingResumeQuery.isError, courseId, navigate]);
+  }, [isNew, existingResumeQuery.data, existingResumeQuery.isError, courseId, navigate, t]);
 
   const backHref = `/dashboard/teacher/courses/${courseId}?tab=resume`;
 
@@ -245,10 +232,12 @@ export default function TeacherCourseResumeEditPage() {
       eduhubClassResumes.create(courseId, body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: resumeQueryKey });
-      toast.success("Resume created", { description: "Students can read it on the class Resume tab." });
+      toast.success(t("teacher.resumeEdit.toast.created"), {
+        description: t("teacher.resumeEdit.toast.createdDescription"),
+      });
       void navigate(backHref, { replace: true });
     },
-    onError: () => toast.error("Could not save."),
+    onError: () => toast.error(t("teacher.resumeEdit.toast.saveFailed")),
   });
 
   const updateResumeMutation = useMutation({
@@ -256,10 +245,12 @@ export default function TeacherCourseResumeEditPage() {
       eduhubClassResumes.update(courseId, editingResumeId!, body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: resumeQueryKey });
-      toast.success("Resume updated", { description: "Students can read it on the class Resume tab." });
+      toast.success(t("teacher.resumeEdit.toast.updated"), {
+        description: t("teacher.resumeEdit.toast.updatedDescription"),
+      });
       void navigate(backHref, { replace: true });
     },
-    onError: () => toast.error("Could not save."),
+    onError: () => toast.error(t("teacher.resumeEdit.toast.saveFailed")),
   });
 
   const deleteResumeMutation = useMutation({
@@ -267,16 +258,18 @@ export default function TeacherCourseResumeEditPage() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: resumeQueryKey });
       setDeleteOpen(false);
-      toast.message("Resume deleted");
+      toast.message(t("teacher.resumeEdit.toast.deleted"));
       void navigate(backHref, { replace: true });
     },
-    onError: () => toast.error("Could not delete resume."),
+    onError: () => toast.error(t("teacher.resumeEdit.toast.deleteFailed")),
   });
+
+  const isSaving = createResumeMutation.isPending || updateResumeMutation.isPending;
 
   const handleSave = () => {
     const trimmed = bodyDraft.trim();
     if (!trimmed) {
-      toast.error("Write something before saving.");
+      toast.error(t("teacher.resumeEdit.errors.emptyBody"));
       return;
     }
     let sessionSlotKey: string | undefined;
@@ -314,7 +307,7 @@ export default function TeacherCourseResumeEditPage() {
   const onThumbnailPicked = async (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Please pick an image file.");
+      toast.error(t("teacher.resumeEdit.toast.invalidImage"));
       return;
     }
     setUploadingThumbnail(true);
@@ -322,9 +315,10 @@ export default function TeacherCourseResumeEditPage() {
       const { url } = await eduhubUploadFile(file, "resumes");
       setThumbnailDraft(url);
     } catch {
-      toast.error("Could not upload image.");
+      toast.error(t("teacher.resumeEdit.toast.uploadFailed"));
     } finally {
       setUploadingThumbnail(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -335,274 +329,280 @@ export default function TeacherCourseResumeEditPage() {
 
   if (!courseId) {
     return (
-      <div className="min-h-screen bg-white p-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <p className="text-sm text-red-600">{t("teacher.roster.errors.missingClass")}</p>
+      <div className="px-4 py-6 lg:px-6">
+        <p className="text-sm text-red-600">{t("teacher.resumeEdit.errors.missingClass")}</p>
       </div>
     );
   }
 
-  if (loadingCourse) {
+  if (loadingCourse || !loaded) {
     return (
-      <div className="min-h-screen bg-white p-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <p className="text-sm text-foreground/60">{t("common.loading")}</p>
+      <div className="px-4 py-6 lg:px-6">
+        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
       </div>
     );
   }
 
   if (forbidden || !courseMeta) {
     return (
-      <div className="min-h-screen bg-white p-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-6 text-sm text-amber-900">
-          {forbidden ? "You don't have access to this class." : "Class not found."}
+      <div className="px-4 py-6 lg:px-6">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-5 text-sm text-amber-900">
+          {forbidden ? t("teacher.resumeEdit.errors.noAccess") : t("teacher.resumeEdit.errors.classNotFound")}
         </div>
-        <Link to="/dashboard/teacher/courses" className="mt-4 inline-block text-sm text-[#3954d0]">{t("teacher.resumeEdit.backToClasses")}</Link>
-      </div>
-    );
-  }
-
-  if (!loaded) {
-    return (
-      <div className="min-h-screen bg-white p-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <p className="text-sm text-foreground/60">{t("common.loading")}</p>
+        <Link
+          to="/dashboard/teacher/courses"
+          className="mt-4 inline-flex text-sm font-medium text-teal-800 hover:text-teal-900"
+        >
+          {t("teacher.resumeEdit.backToClasses")}
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <DashboardSidebar />
-      <main
-        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-0 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
-      >
-        <header
-          className={`fixed z-40 flex min-h-[4.5625rem] items-center border-b border-gray-100 bg-white transition-all duration-300 ${
-            isSidebarCollapsed ? "lg:left-20" : "lg:left-64"
-          } left-0 right-0 top-16 lg:top-0`}
-        >
-          <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-6">
-            <Link
-              to={backHref}
-              className="inline-flex shrink-0 items-center gap-2 text-sm font-medium text-foreground/75 hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4 shrink-0" />{t("teacher.resumeEdit.backToResumes")}</Link>
+    <div className="px-4 py-6 lg:px-6">
+      <div className="mx-auto w-full max-w-2xl space-y-6">
+        <div className="space-y-3">
+          <Link
+            to={backHref}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4 shrink-0" />
+            {t("teacher.resumeEdit.backToResumes")}
+          </Link>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              {isNew ? t("teacher.resumeEdit.title.new") : t("teacher.resumeEdit.title.edit")}
+            </h1>
+            <p className="text-sm text-muted-foreground">{courseMeta.title}</p>
+            <p className="text-sm text-muted-foreground">{t("teacher.resumeEdit.intro")}</p>
           </div>
-        </header>
+        </div>
 
-        <div className="container mx-auto max-w-4xl px-6 pt-[calc(4.5625rem+1rem)]">
-          {isSubstituteViewer ? (
-            <div className="mb-6 rounded-xl border border-sky-200/90 bg-sky-50/90 px-4 py-3 text-sm text-sky-950 leading-relaxed space-y-2">
-              <p>
-                <span className="font-semibold">You are editing as substitute.</span>{" "}
-                <span className="text-sky-950/90">
-                  Course lead: <span className="font-semibold text-sky-950">{courseLeadDisplayName}</span>
-                  {courseLeadEmail ? (
-                    <span className="font-normal text-sky-950/80"> ({courseLeadEmail})</span>
-                  ) : null}
+        {isSubstituteViewer ? (
+          <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-foreground">
+            <p className="font-medium">{t("teacher.resumeEdit.substituteBanner.viewingAs")}</p>
+            <p className="mt-1 text-muted-foreground">
+              {t("teacher.resumeEdit.substituteBanner.courseLead")}{" "}
+              <span className="font-medium text-foreground">{courseLeadDisplayName}</span>
+              {courseLeadEmail ? (
+                <span className="text-muted-foreground"> ({courseLeadEmail})</span>
+              ) : null}
+            </p>
+            <p className="mt-1 text-muted-foreground">{t("teacher.resumeEdit.substituteBanner.hint")}</p>
+          </div>
+        ) : null}
+
+        {!isSubstituteViewer && approvedCoverAsPrimaryRow ? (
+          <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+            {t("teacher.resumeEdit.primaryBanner")}
+            {approvedCoverAsPrimaryRow.substituteEmail ? (
+              <>
+                {" "}
+                <span className="font-medium text-foreground">
+                  ({approvedCoverAsPrimaryRow.substituteEmail})
                 </span>
-              </p>
-              <p className="text-sky-950/85">
-                You can add or edit resumes for students. Deleting an existing resume stays with the course lead.
-              </p>
-            </div>
-          ) : null}
-          {!isSubstituteViewer && approvedCoverAsPrimaryRow ? (
-            <div className="mb-6 rounded-xl border border-emerald-200/90 bg-emerald-50/90 px-4 py-3 text-sm text-emerald-950 leading-relaxed">
-              <span className="font-semibold">You are the course lead.</span> Substitute{" "}
-              <span className="font-mono font-medium">{approvedCoverAsPrimaryRow.substituteEmail}</span> can also
-              edit resumes here.
-            </div>
-          ) : null}
-          <div className="mb-6 flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1e40af]/10 ring-1 ring-[#1e40af]/15">
-              <FileText className="h-5 w-5 text-[#1e40af]" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground">
-                {isNew ? "New class resume" : "Edit class resume"}
-              </h1>
-              <p className="mt-1 text-sm text-foreground/60">{courseMeta.title}</p>
-            </div>
+              </>
+            ) : null}
           </div>
+        ) : null}
 
-          <Card className="overflow-hidden rounded-xl border border-gray-100 bg-white">
-            <CardContent className="space-y-5 pt-6">
-              <p className="text-sm text-foreground/60">
-                Recaps and reminders appear on students&apos; class page under the Resume tab.
-              </p>
+        <div className="space-y-6 rounded-xl border border-border bg-card p-5 sm:p-6">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <Label className="text-sm font-medium text-foreground">
+                {t("teacher.resumeEdit.thumbnail.label")}
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                {t("teacher.resumeEdit.thumbnail.optional")}
+              </span>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="resume-thumb" className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <ImageIcon className="h-4 w-4 shrink-0 text-[#1e40af]/80" aria-hidden />
-                  Thumbnail image (optional)
-                </Label>
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    id="resume-thumb"
-                    type="file"
-                    accept="image/*"
-                    disabled={uploadingThumbnail}
-                    className="block w-full max-w-md text-sm file:mr-4 file:rounded-full file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-900 hover:file:bg-slate-200 disabled:opacity-50"
-                    onChange={(e) => void onThumbnailPicked(e.target.files?.[0] ?? null)}
-                  />
-                  {uploadingThumbnail ? (
-                    <span className="inline-flex items-center gap-1.5 text-xs text-foreground/60">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />{t("teacherSettings.uploading")}</span>
-                  ) : null}
-                  {thumbnailDraft ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="rounded-full"
-                      onClick={() => setThumbnailDraft("")}
-                      title="Remove image"
-                    >
-                      <X className="h-4 w-4" />{t("teacherSettings.remove")}</Button>
-                  ) : null}
-                </div>
-                {thumbnailDraft ? (
-                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                    <img
-                      src={thumbnailDraft}
-                      alt="Resume thumbnail preview"
-                      className="h-48 w-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Shows on the resume cards as a cover image.
-                  </p>
-                )}
-              </div>
+            <input
+              ref={fileInputRef}
+              id="resume-thumb"
+              type="file"
+              accept="image/*"
+              disabled={uploadingThumbnail}
+              className="sr-only"
+              onChange={(e) => void onThumbnailPicked(e.target.files?.[0] ?? null)}
+            />
 
-              <div className="space-y-2">
-                <Label
-                  htmlFor="resume-session"
-                  className="flex items-center gap-2 text-sm font-medium text-foreground"
-                >
-                  <CalendarDays className="h-4 w-4 shrink-0 text-[#1e40af]/80" aria-hidden />
-                  Link to a scheduled session
-                </Label>
-                {!isSubstituteViewer ? (
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Sessions come from the class schedule (admin proposal and dates you approved on the Schedule tab).
-                    Pick one session or leave as a whole-class recap.
-                  </p>
-                ) : null}
-                {isUuid(courseId) && scheduleProposalQuery.isLoading && isSubstituteViewer ? (
-                  <p className="text-xs text-muted-foreground">Loading assigned session…</p>
-                ) : null}
-                {substituteSessionLocked ? (
-                  <>
-                    <p className="text-xs text-sky-900/80 leading-relaxed">
-                      Locked to the session requested by{" "}
-                      <span className="font-medium text-sky-950">{courseLeadDisplayName}</span>
-                      {courseLeadEmail ? (
-                        <span className="text-sky-950/85"> ({courseLeadEmail})</span>
-                      ) : null}
-                      . Substitute instructors cannot choose a different session.
-                    </p>
-                    <div
-                      id="resume-session"
-                      className="max-w-xl rounded-md border border-sky-200/90 bg-sky-50/50 px-3 py-2.5"
-                      aria-readonly="true"
-                    >
-                      <p className="text-sm font-medium text-sky-950">{substituteAssignedSession.label}</p>
-                    </div>
-                  </>
-                ) : substituteWholeClassCover ? (
-                  <>
-                    <p className="text-xs text-amber-900/90 leading-relaxed">
-                      Your approved substitute invite from{" "}
-                      <span className="font-medium text-amber-950">{courseLeadDisplayName}</span>
-                      {courseLeadEmail ? (
-                        <span className="text-amber-950/85"> ({courseLeadEmail})</span>
-                      ) : null}{" "}
-                      did not name a specific session. Ask them to send a new invite and pick a session on the
-                      schedule, or use a whole-class recap below.
-                    </p>
-                    <div
-                      id="resume-session"
-                      className="max-w-xl rounded-md border border-sky-200/90 bg-sky-50/50 px-3 py-2.5 text-sm font-medium text-sky-950"
-                      aria-readonly="true"
-                    >
-                      Whole class — general recap
-                    </div>
-                  </>
-                ) : showResumeSessionSelect ? (
-                  <Select
-                    value={resumeSessionSelectValue}
-                    onValueChange={(v) => setSessionKeyDraft(v)}
-                  >
-                    <SelectTrigger id="resume-session" className="max-w-xl bg-white">
-                      <SelectValue placeholder="Whole class or one session…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={CLASS_RESUME_SESSION_ALL}>Whole class — general recap</SelectItem>
-                      {resumeSessionSelectOptions.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm text-muted-foreground rounded-md border border-dashed border-amber-200/90 bg-amber-50/60 px-3 py-2.5 leading-relaxed">
-                    No sessions on the schedule yet. Ask your admin to propose a schedule, then approve it on the class
-                    Schedule tab. You can still save a whole-class recap now.
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="resume-body">Resume text</Label>
-                <Textarea
-                  id="resume-body"
-                  value={bodyDraft}
-                  onChange={(e) => setBodyDraft(e.target.value)}
-                  placeholder="Key points, homework, what to review before next class…"
-                  rows={12}
-                  className="min-h-[240px] resize-y text-sm"
+            {thumbnailDraft ? (
+              <div className="overflow-hidden rounded-xl border border-border">
+                <img
+                  src={thumbnailDraft}
+                  alt={t("teacher.resumeEdit.thumbnail.previewAlt")}
+                  className="h-40 w-full object-cover sm:h-48"
+                  loading="lazy"
                 />
-              </div>
-
-              <div className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 pt-5">
-                {!isNew && !isSubstituteViewer ? (
+                <div className="flex flex-wrap gap-2 border-t border-border bg-muted/20 px-3 py-2.5">
                   <Button
                     type="button"
                     variant="outline"
-                    className="mr-auto border-red-200 text-red-700 hover:bg-red-50"
-                    onClick={() => setDeleteOpen(true)}
-                  >{t("common.delete")}</Button>
-                ) : null}
-                <Button type="button" variant="outline" asChild>
-                  <Link to={backHref}>{t("common.cancel")}</Link>
-                </Button>
-                <Button type="button" className="bg-[#3954d0] hover:bg-[#2f46b3]" onClick={handleSave}>
-                  Save for students
-                </Button>
+                    size="sm"
+                    disabled={uploadingThumbnail}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {uploadingThumbnail ? (
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    ) : null}
+                    {t("teacher.resumeEdit.thumbnail.change")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={() => setThumbnailDraft("")}
+                  >
+                    <X className="mr-1.5 h-3.5 w-3.5" />
+                    {t("teacher.resumeEdit.thumbnail.remove")}
+                  </Button>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              <button
+                type="button"
+                disabled={uploadingThumbnail}
+                onClick={() => fileInputRef.current?.click()}
+                className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center transition-colors hover:bg-muted/40 disabled:opacity-50"
+              >
+                {uploadingThumbnail ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                ) : (
+                  <ImageIcon className="h-5 w-5 text-muted-foreground" aria-hidden />
+                )}
+                <span className="text-sm font-medium text-foreground">
+                  {uploadingThumbnail
+                    ? t("teacherSettings.uploading")
+                    : t("teacher.resumeEdit.thumbnail.add")}
+                </span>
+                <span className="max-w-xs text-xs text-muted-foreground">
+                  {t("teacher.resumeEdit.thumbnail.hint")}
+                </span>
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="resume-session" className="text-sm font-medium text-foreground">
+              {t("teacher.resumeEdit.sessionLabel")}
+            </Label>
+            {!isSubstituteViewer ? (
+              <p className="text-xs text-muted-foreground">{t("teacher.resumeEdit.sessionHints.primary")}</p>
+            ) : null}
+
+            {isUuid(courseId) && scheduleProposalQuery.isLoading && isSubstituteViewer ? (
+              <p className="text-xs text-muted-foreground">{t("teacher.resumeEdit.session.loadingAssigned")}</p>
+            ) : null}
+
+            {substituteSessionLocked ? (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {t("teacher.resumeEdit.sessionHints.substituteLocked")}
+                </p>
+                <div
+                  id="resume-session"
+                  className="rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-sm font-medium text-foreground"
+                  aria-readonly="true"
+                >
+                  {substituteAssignedSession.label}
+                </div>
+              </>
+            ) : substituteWholeClassCover ? (
+              <div
+                id="resume-session"
+                className="rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-sm font-medium text-foreground"
+                aria-readonly="true"
+              >
+                {t("teacher.resumeEdit.session.wholeClass")}
+              </div>
+            ) : showResumeSessionSelect ? (
+              <Select value={resumeSessionSelectValue} onValueChange={(v) => setSessionKeyDraft(v)}>
+                <SelectTrigger id="resume-session" className="bg-background">
+                  <SelectValue placeholder={t("teacher.resumeEdit.session.placeholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={CLASS_RESUME_SESSION_ALL}>
+                    {t("teacher.resumeEdit.session.wholeClass")}
+                  </SelectItem>
+                  {resumeSessionSelectOptions.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="rounded-lg border border-dashed border-border bg-muted/20 px-3 py-2.5 text-sm text-muted-foreground">
+                {t("teacher.resumeEdit.sessionHints.noSessions")}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="resume-body" className="text-sm font-medium text-foreground">
+              {t("teacher.resumeEdit.bodyLabel")}
+            </Label>
+            <Textarea
+              id="resume-body"
+              value={bodyDraft}
+              onChange={(e) => setBodyDraft(e.target.value)}
+              placeholder={t("teacher.resumeEdit.bodyPlaceholder")}
+              rows={12}
+              className="min-h-[220px] resize-y text-sm"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border pt-5">
+            {!isNew && !isSubstituteViewer ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mr-auto border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                onClick={() => setDeleteOpen(true)}
+              >
+                {t("common.delete")}
+              </Button>
+            ) : null}
+            <Button type="button" variant="outline" size="sm" asChild>
+              <Link to={backHref}>{t("common.cancel")}</Link>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="bg-teal-700 hover:bg-teal-800"
+              disabled={isSaving}
+              onClick={handleSave}
+            >
+              {isSaving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+              {t("teacher.resumeEdit.actions.saveForStudents")}
+            </Button>
+          </div>
         </div>
-      </main>
+      </div>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this resume?</AlertDialogTitle>
+            <AlertDialogTitle>{t("teacher.resumeEdit.deleteDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Students will no longer see it on their class page. This cannot be undone.
+              {t("teacher.resumeEdit.deleteDialog.description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
+              disabled={deleteResumeMutation.isPending}
               onClick={() => {
                 handleDelete();
               }}
-            >{t("common.delete")}</AlertDialogAction>
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

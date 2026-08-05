@@ -12,13 +12,17 @@ import {
   ChevronUp,
   CalendarClock,
   Loader2,
+  Image as ImageIcon,
+  X,
+  CircleHelp,
 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -36,14 +40,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import DashboardSidebar from "@/components/DashboardSidebar";
-import { eduhubCourseQuizzes, eduhubCourses, type QuizResponse, type QuizCreateRequest } from "@/api/eduhubClient";
+import {
+  eduhubCourseQuizzes,
+  eduhubCourses,
+  eduhubUploadFile,
+  type QuizResponse,
+  type QuizCreateRequest,
+} from "@/api/eduhubClient";
 import {
   buildClientOnlyQuizResponse,
   getLocalCourseQuiz,
   upsertLocalCourseQuiz,
 } from "@/features/teacher/data/localCourseQuizzesStorage";
 import { useTranslation } from "react-i18next";
+import { useLayoutContext } from "@/features/layout/context";
 import {
   type QuizQuestion,
   type QuizType,
@@ -72,9 +82,10 @@ type MediaUploadBoxProps = {
   questionIndex: number;
   image: string | undefined;
   onImageChange: (url: string | undefined) => void;
+  className?: string;
 };
 
-function MediaUploadBox({ questionIndex, image, onImageChange }: MediaUploadBoxProps) {
+function MediaUploadBox({ questionIndex, image, onImageChange, className }: MediaUploadBoxProps) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -124,34 +135,35 @@ function MediaUploadBox({ questionIndex, image, onImageChange }: MediaUploadBoxP
 
   if (image?.trim()) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-gray-50/50 overflow-hidden">
-        <div className="relative aspect-video w-full max-h-48 bg-gray-100">
+      <div
+        className={cn(
+          "flex min-h-0 flex-col overflow-hidden rounded-xl border border-border",
+          className,
+        )}
+      >
+        <div className="relative min-h-0 flex-1 bg-muted/30">
           <img
             src={image}
-            alt="Question"
-            className="w-full h-full object-contain"
+            alt={t("teacher.quiz.form.questionImageAlt")}
+            className="absolute inset-0 h-full w-full object-contain"
             onError={({ currentTarget }) => {
               currentTarget.style.display = "none";
             }}
           />
-          <div className="absolute inset-x-0 bottom-0 flex justify-end gap-2 p-2 bg-gradient-to-t from-black/60 to-transparent">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="rounded-lg h-8 text-white bg-white/20 hover:bg-white/30 border-0"
-              onClick={handleZoneClick}
-            >
-              Change
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="rounded-lg h-8 text-white bg-white/20 hover:bg-white/30 border-0"
-              onClick={() => onImageChange(undefined)}
-            >{t("teacherSettings.remove")}</Button>
-          </div>
+        </div>
+        <div className="flex shrink-0 flex-wrap gap-2 border-t border-border bg-muted/20 px-3 py-2.5">
+          <Button type="button" variant="outline" size="sm" onClick={handleZoneClick}>
+            {t("teacher.quiz.form.changeImage")}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={() => onImageChange(undefined)}
+          >
+            {t("teacherSettings.remove")}
+          </Button>
         </div>
         <input
           ref={inputRef}
@@ -169,7 +181,7 @@ function MediaUploadBox({ questionIndex, image, onImageChange }: MediaUploadBoxP
     <div
       tabIndex={0}
       role="button"
-      aria-label="Add image to the current question."
+      aria-label={t("teacher.quiz.form.addImageAriaLabel")}
       onClick={handleZoneClick}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -180,10 +192,13 @@ function MediaUploadBox({ questionIndex, image, onImageChange }: MediaUploadBoxP
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
-      className={`rounded-lg border-2 border-dashed p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors min-h-[140px] ${isDragging
-        ? "border-[#1e40af] bg-[#1e40af]/5"
-        : "border-gray-300 bg-gray-50/50 hover:border-gray-400 hover:bg-gray-100/50"
-        }`}
+      className={cn(
+        "flex min-h-[8rem] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-4 py-6 text-center transition-colors",
+        isDragging
+          ? "border-teal-600 bg-teal-50/50"
+          : "border-border bg-muted/20 hover:bg-muted/40",
+        className,
+      )}
     >
       <input
         ref={inputRef}
@@ -193,46 +208,47 @@ function MediaUploadBox({ questionIndex, image, onImageChange }: MediaUploadBoxP
         onChange={handleFileChange}
         aria-hidden
       />
-      <div className="flex flex-col items-center gap-2">
-        <div className="rounded-full bg-gray-200/80 p-3 text-gray-600">
-          <Plus className="h-8 w-8" strokeWidth={2} />
-        </div>
-        <p id={`add-media-instructions-${questionIndex}`} className="text-sm font-medium text-gray-700">
-          Find and insert media
-        </p>
-      </div>
-      <div className="mt-4 text-xs text-muted-foreground">
-        <p>
-          <button
-            type="button"
-            className="underline font-medium text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:ring-offset-1 rounded"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleZoneClick();
-            }}
-          >
-            Upload file
-          </button>{" "}
-          or drag here to upload
-        </p>
-      </div>
+      <Plus className="mb-2 h-5 w-5 text-muted-foreground" strokeWidth={2} aria-hidden />
+      <p
+        id={`add-media-instructions-${questionIndex}`}
+        className="text-sm font-medium text-foreground"
+      >
+        {t("teacher.quiz.form.findAndInsertMedia")}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        <button
+          type="button"
+          className="font-medium text-teal-800 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-700/40 rounded"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleZoneClick();
+          }}
+        >
+          {t("teacher.quiz.form.uploadFile")}
+        </button>{" "}
+        {t("teacher.quiz.form.dragHere")}
+      </p>
     </div>
   );
 }
 
+const QUIZ_FORM_ID = "teacher-quiz-form";
+
 const TeacherQuizPage = () => {
   const { t } = useTranslation();
+  const { isSidebarCollapsed } = useLayoutContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
   const [editingSourceCourseId, setEditingSourceCourseId] = useState("");
   const [title, setTitle] = useState("");
   const [quizType, setQuizType] = useState<QuizType>("quiz");
+  const [thumbnailDraft, setThumbnailDraft] = useState("");
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [releaseDate, setReleaseDate] = useState("");
   const [releaseTime, setReleaseTime] = useState("");
   const [releaseDatePickerOpen, setReleaseDatePickerOpen] = useState(false);
@@ -247,6 +263,7 @@ const TeacherQuizPage = () => {
 
   const createQuizFromQueryRef = useRef(false);
   const editQuizFromQueryRef = useRef(false);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   const goBackToClassQuizTab = useCallback(() => {
     const cid = courseId.trim();
@@ -259,6 +276,7 @@ const TeacherQuizPage = () => {
     setEditingSourceCourseId("");
     setTitle("");
     setQuizType("quiz");
+    setThumbnailDraft("");
     setReleaseDate("");
     setReleaseTime("");
     setQuestions([createEmptyQuestion(randomId())]);
@@ -271,6 +289,7 @@ const TeacherQuizPage = () => {
     setTitle(quiz.title);
     const qt = quiz.quizType === "PLACEMENT_TEST" ? "placement-test" : "quiz";
     setQuizType(qt as QuizType);
+    setThumbnailDraft(quiz.thumbnailUrl?.trim() || "");
     setReleaseDate(quiz.releaseDate ?? "");
     setReleaseTime(quiz.releaseTime ? quiz.releaseTime.slice(0, 5) : "");
     setCourseId(quiz.courseId ?? "");
@@ -327,7 +346,12 @@ const TeacherQuizPage = () => {
       void eduhubCourseQuizzes
         .get(fromUrl, editId)
         .then((quiz) => {
-          startEdit(quiz);
+          const local = getLocalCourseQuiz(fromUrl, editId);
+          startEdit(
+            !quiz.thumbnailUrl?.trim() && local?.thumbnailUrl?.trim()
+              ? { ...quiz, thumbnailUrl: local.thumbnailUrl }
+              : quiz,
+          );
           setSearchParams(
             (prev) => {
               const next = new URLSearchParams(prev);
@@ -350,19 +374,12 @@ const TeacherQuizPage = () => {
               { replace: true },
             );
           } else {
-            setError("Could not load that quiz for editing.");
+            setError(t("teacher.quiz.errors.loadFailed"));
           }
         })
         .finally(() => setEditLinkLoading(false));
     }
-  }, [searchParams, setSearchParams, startNew, startEdit]);
-
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    check();
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
+  }, [searchParams, setSearchParams, startNew, startEdit, t]);
 
   useEffect(() => {
     eduhubCourses.getAll().then((res) => {
@@ -402,6 +419,24 @@ const TeacherQuizPage = () => {
 
   /** Quiz is always created in a class context from the roster (courseId in URL); no class picker needed. */
   const classFieldLocked = Boolean(courseId.trim());
+
+  const onThumbnailPicked = async (file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("teacher.resumeEdit.toast.invalidImage"));
+      return;
+    }
+    setUploadingThumbnail(true);
+    try {
+      const { url } = await eduhubUploadFile(file, "quizzes");
+      setThumbnailDraft(url);
+    } catch {
+      toast.error(t("teacher.resumeEdit.toast.uploadFailed"));
+    } finally {
+      setUploadingThumbnail(false);
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
+    }
+  };
 
   const addQuestion = () => {
     setQuestions((prev) => [...prev, createEmptyQuestion(randomId())]);
@@ -460,6 +495,7 @@ const TeacherQuizPage = () => {
     const payload: QuizCreateRequest = {
       title: trimmedTitle,
       quizType: apiQuizType as "QUIZ" | "PLACEMENT_TEST",
+      thumbnailUrl: thumbnailDraft.trim() || undefined,
       releaseDate: quizType === "placement-test" ? (releaseDate.trim() || undefined) : undefined,
       releaseTime: quizType === "placement-test" ? (releaseTime.trim() || undefined) : undefined,
       questions: validQuestions.map((q, idx) => ({
@@ -477,6 +513,12 @@ const TeacherQuizPage = () => {
       payload.courseId = courseId;
     }
 
+    const withThumbnail = (saved: QuizResponse): QuizResponse => ({
+      ...saved,
+      courseId: saved.courseId ?? quizCourseId,
+      thumbnailUrl: payload.thumbnailUrl ?? saved.thumbnailUrl,
+    });
+
     try {
       setLoading(true);
       let saved: QuizResponse;
@@ -485,7 +527,7 @@ const TeacherQuizPage = () => {
       } else {
         saved = await eduhubCourseQuizzes.create(courseId.trim(), payload);
       }
-      upsertLocalCourseQuiz(quizCourseId, { ...saved, courseId: saved.courseId ?? quizCourseId });
+      upsertLocalCourseQuiz(quizCourseId, withThumbnail(saved));
       await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", quizCourseId] });
       void navigate(`/dashboard/teacher/courses/${quizCourseId}?tab=quiz`, { replace: true });
     } catch (e: unknown) {
@@ -523,341 +565,508 @@ const TeacherQuizPage = () => {
 
   if (editLinkLoading) {
     return (
-      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <DashboardSidebar />
-        <main
-          className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
-        >
-          <div className="container mx-auto flex max-w-3xl flex-col items-center justify-center px-6 py-24">
-            <Loader2 className="h-9 w-9 animate-spin text-[#1e40af]/70" aria-hidden />
-            <p className="mt-4 text-sm text-muted-foreground">{t("teacher.quiz.loading")}</p>
-          </div>
-        </main>
+      <div className="flex flex-col items-center justify-center px-4 py-24 lg:px-6">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-700/70" aria-hidden />
+        <p className="mt-4 text-sm text-muted-foreground">{t("teacher.quiz.loading")}</p>
       </div>
     );
   }
 
+  const typeLabel = (value: QuizType) =>
+    value === "placement-test"
+      ? t("teacher.quiz.types.placementTest")
+      : t("teacher.quiz.types.quiz");
+
   return (
-    <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <DashboardSidebar />
-      <main
-        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
+    <div className="px-4 py-5 pb-28 lg:px-6">
+      <form
+        id={QUIZ_FORM_ID}
+        onSubmit={(e) => {
+          e.preventDefault();
+          saveQuiz();
+        }}
+        className="space-y-5"
       >
-        <div className="container mx-auto px-6 max-w-3xl">
-          {courseId.trim() ? (
-          <Link
-              to={`/dashboard/teacher/courses/${courseId.trim()}?tab=quiz`}
-            className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
-          >
-            <ArrowLeft className="h-4 w-4" />{t("teacher.quiz.backToQuizzes")}</Link>
-          ) : (
-                              <Link
-              to="/dashboard/teacher"
-              className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
-                              >
-              <ArrowLeft className="h-4 w-4" />{t("teacherSettings.backToDashboard")}</Link>
-          )}
-
-            <>
-              <h1
-                className="text-2xl font-bold text-foreground mb-6"
-                style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            {courseId.trim() ? (
+              <Link
+                to={`/dashboard/teacher/courses/${courseId.trim()}?tab=quiz`}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
-                {editingQuizId ? "Edit quiz" : "Create quiz"}
-              </h1>
-
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  saveQuiz();
-                }}
-                className="space-y-6"
+                <ArrowLeft className="h-4 w-4 shrink-0" />
+                {t("teacher.quiz.backToQuizzes")}
+              </Link>
+            ) : (
+              <Link
+                to="/dashboard/teacher"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
-                {error && (
-                  <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                    {error}
-                  </div>
-                )}
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Quiz details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Type</Label>
-                        <Select value={quizType} onValueChange={(v) => setQuizType(v as QuizType)}>
-                          <SelectTrigger className="rounded-lg w-full">
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {QUIZ_TYPE_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground">
-                          Quiz for practice or Placement test for assessment.
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>{t("teacher.dashboard.classesTable.header.class")}</Label>
-                        {classFieldLocked ? (
-                          <>
-                            <div className="flex min-h-10 items-center rounded-lg border border-input bg-muted/40 px-3 py-2 text-sm font-medium text-foreground">
-                              {lockedClassLabel || courseId.trim() || "Loading…"}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              This quiz is saved for the class you opened from My Class (no need to pick a class again).
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                        <Select value={courseId || "none"} onValueChange={(v) => setCourseId(v === "none" ? "" : v)}>
-                          <SelectTrigger className="rounded-lg w-full">
-                            <SelectValue placeholder="Select class" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">No class</SelectItem>
-                            {courses.map((course) => (
-                              <SelectItem key={course.id} value={course.id}>
-                                {course.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground">
-                          Link to one of your classes from My Class.
-                        </p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="quiz-title">{quizType === "placement-test" ? "Placement test title *" : "Quiz title *"}</Label>
-                      <Input
-                        id="quiz-title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder="e.g. Economics Placement Test"
-                        className="rounded-lg"
-                      />
-                    </div>
-                    {quizType === "placement-test" && (
-                      <div className="space-y-2">
-                        <Label>Release date and time</Label>
-                        <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 flex items-start gap-4">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#1e40af]/10">
-                            <CalendarClock className="h-5 w-5 text-[#1e40af]" />
-                          </div>
-                          <div className="min-w-0 flex-1 flex flex-wrap items-end gap-3">
-                            <div className="space-y-1.5 flex-1 min-w-0">
-                              <Label htmlFor="release-date-picker" className="text-xs text-muted-foreground">Date</Label>
-                              <Popover open={releaseDatePickerOpen} onOpenChange={setReleaseDatePickerOpen}>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    id="release-date-picker"
-                                    className="w-full min-w-[10rem] justify-between rounded-lg h-11 bg-white font-normal"
-                                  >
-                                    {releaseDate ? format(new Date(releaseDate + "T12:00:00"), "PPP") : "Select date"}
-                                    <ChevronDown className="h-4 w-4 opacity-50" />
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                  <Calendar
-                                    mode="single"
-                                    selected={releaseDate ? new Date(releaseDate + "T12:00:00") : undefined}
-                                    disabled={(date) => startOfDay(date) < startOfDay(new Date())}
-                                    onSelect={(date) => {
-                                      if (date) setReleaseDate(format(date, "yyyy-MM-dd"));
-                                      setReleaseDatePickerOpen(false);
-                                    }}
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                            </div>
-                            <div className="space-y-1.5 flex-1 min-w-0 max-w-[10rem]">
-                              <Label className="text-xs text-muted-foreground">Time</Label>
-                              <Select value={releaseTime || undefined} onValueChange={setReleaseTime}>
-                                <SelectTrigger id="release-time" className="rounded-lg h-11 bg-white w-full">
-                                  <SelectValue placeholder="Select time" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {RELEASE_TIME_OPTIONS.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
-                                      {opt.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <p className="text-xs text-muted-foreground w-full">
-                              When this placement test becomes available to students.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-lg">Questions (multiple choice)</CardTitle>
-                    <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={addQuestion}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add question
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {questions.map((q, qIndex) => {
-                      const isCollapsed = collapsedQuestions.has(qIndex);
-                      return (
-                        <div
-                          key={q.id}
-                          className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 space-y-3"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 shrink-0 text-foreground/60 hover:text-foreground"
-                              onClick={() => {
-                                setCollapsedQuestions((prev) => {
-                                  const next = new Set(prev);
-                                  if (next.has(qIndex)) next.delete(qIndex);
-                                  else next.add(qIndex);
-                                  return next;
-                                });
-                              }}
-                              title={isCollapsed ? "Expand" : "Minimize"}
-                              aria-expanded={!isCollapsed}
-                            >
-                              {isCollapsed ? (
-                                <ChevronUp className="h-4 w-4" />
-                              ) : (
-                                <ChevronDown className="h-4 w-4" />
-                              )}
-                            </Button>
-                            <GripVertical className="h-4 w-4 text-foreground/40 shrink-0" />
-                            <span className="text-sm font-medium text-foreground/70 flex-1 min-w-0">Question {qIndex + 1}</span>
-                            <span className="text-xs font-medium text-foreground/50 shrink-0 rounded bg-gray-200/80 px-2 py-0.5">
-                              {questions.length > 0 ? Math.round(100 / questions.length) : 0} pts
-                            </span>
-                            {questions.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 shrink-0 text-red-600 hover:bg-red-50"
-                                onClick={() => setQuestionToRemoveIndex(qIndex)}
-                                title="Remove question"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                          {!isCollapsed && (
-                            <>
-                              <div className="space-y-2">
-                                <Label>Question text *</Label>
-                                <Input
-                                  value={q.question}
-                                  onChange={(e) => updateQuestion(qIndex, { question: e.target.value })}
-                                  placeholder="e.g. What is the main focus of microeconomics?"
-                                  className="rounded-lg"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Image for this question</Label>
-                                <MediaUploadBox
-                                  questionIndex={qIndex}
-                                  image={q.image}
-                                  onImageChange={(url) => updateQuestion(qIndex, { image: url })}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Time limit</Label>
-                                <Select
-                                  value={String(q.timeLimitSeconds ?? 30)}
-                                  onValueChange={(v) => updateQuestion(qIndex, { timeLimitSeconds: parseInt(v, 10) })}
-                                >
-                                  <SelectTrigger className="rounded-lg w-full max-w-xs">
-                                    <SelectValue placeholder="Choose…" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {TIME_LIMIT_OPTIONS.map((sec) => (
-                                      <SelectItem key={sec} value={String(sec)}>
-                                        {sec} s
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Options (check the correct answer)</Label>
-                                <div className="grid gap-2 sm:grid-cols-2">
-                                  {LETTERS.map((letter) => {
-                                    const opt = q.options.find((o) => o.letter === letter) ?? {
-                                      letter,
-                                      text: "",
-                                      correct: false,
-                                    };
-                                    return (
-                                      <div key={letter} className="flex items-center gap-2">
-                                        <input
-                                          type="radio"
-                                          name={`correct-${q.id}`}
-                                          checked={opt.correct}
-                                          onChange={() => setOptionCorrect(qIndex, letter)}
-                                          className="h-4 w-4 rounded-full border-gray-300 text-[#1e40af] focus:ring-[#1e40af]"
-                                        />
-                                        <Input
-                                          value={opt.text}
-                                          onChange={(e) => {
-                                            const newOptions = q.options.map((o) =>
-                                              o.letter === letter ? { ...o, text: e.target.value } : o
-                                            );
-                                            updateQuestion(qIndex, { options: newOptions });
-                                          }}
-                                          placeholder={`Option ${letter}`}
-                                          className="rounded-lg flex-1"
-                                        />
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </CardContent>
-                </Card>
-
-                <div className="flex flex-wrap gap-3">
-                  <Button type="submit" disabled={loading} className="rounded-full" style={{ backgroundColor: "#1e40af" }}>
-                    {editingQuizId ? "Save changes" : "Create quiz"}
-                  </Button>
-                  <Button type="button" variant="outline" className="rounded-full" onClick={goBackToClassQuizTab}>{t("common.cancel")}</Button>
-                </div>
-              </form>
-            </>
+                <ArrowLeft className="h-4 w-4 shrink-0" />
+                {t("teacherSettings.backToDashboard")}
+              </Link>
+            )}
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              {editingQuizId ? t("teacher.quiz.title.edit") : t("teacher.quiz.title.create")}
+            </h1>
+            {(lockedClassLabel || courseId.trim()) && classFieldLocked ? (
+              <p className="truncate text-sm text-muted-foreground">
+                {lockedClassLabel || courseId.trim()}
+              </p>
+            ) : null}
+          </div>
+          <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium tabular-nums text-muted-foreground">
+            {t("teacher.roster.quiz.questionCount", { count: questions.length })}
+          </span>
         </div>
-      </main>
 
-      <AlertDialog open={questionToRemoveIndex !== null} onOpenChange={(open) => !open && setQuestionToRemoveIndex(null)}>
+        {error ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
+
+        <div className="grid gap-5 lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] lg:items-start">
+          {/* Setup column */}
+          <aside className="space-y-4 rounded-xl border border-border bg-card p-4 lg:sticky lg:top-[4.25rem] lg:self-start">
+            <h2 className="text-sm font-semibold text-foreground">
+              {t("teacher.quiz.form.detailsTitle")}
+            </h2>
+
+            <div className="space-y-2">
+              <div className="flex items-baseline justify-between gap-2">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  {t("teacher.quiz.form.thumbnail.label")}
+                </Label>
+                <span className="text-[11px] text-muted-foreground">
+                  {t("teacher.quiz.form.thumbnail.optional")}
+                </span>
+              </div>
+              <input
+                ref={thumbnailInputRef}
+                type="file"
+                accept="image/*"
+                disabled={uploadingThumbnail}
+                className="sr-only"
+                onChange={(e) => void onThumbnailPicked(e.target.files?.[0] ?? null)}
+              />
+              {thumbnailDraft ? (
+                <div className="overflow-hidden rounded-lg border border-border">
+                  <img
+                    src={thumbnailDraft}
+                    alt={t("teacher.quiz.form.thumbnail.previewAlt")}
+                    className="aspect-[4/3] w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="flex gap-1.5 border-t border-border bg-muted/20 p-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 flex-1"
+                      disabled={uploadingThumbnail}
+                      onClick={() => thumbnailInputRef.current?.click()}
+                    >
+                      {uploadingThumbnail ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        t("teacher.quiz.form.thumbnail.change")
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-muted-foreground"
+                      onClick={() => setThumbnailDraft("")}
+                      title={t("teacher.quiz.form.thumbnail.remove")}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={uploadingThumbnail}
+                  onClick={() => thumbnailInputRef.current?.click()}
+                  className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-muted/20 px-3 text-center transition-colors hover:bg-muted/40 disabled:opacity-50"
+                >
+                  {uploadingThumbnail ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : (
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" aria-hidden />
+                  )}
+                  <span className="text-xs font-medium text-foreground">
+                    {uploadingThumbnail
+                      ? t("teacherSettings.uploading")
+                      : t("teacher.quiz.form.thumbnail.add")}
+                  </span>
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground">
+                {t("teacher.quiz.form.typeLabel")}
+              </Label>
+              <Select value={quizType} onValueChange={(v) => setQuizType(v as QuizType)}>
+                <SelectTrigger className="w-full bg-background">
+                  <SelectValue placeholder={t("teacher.quiz.form.typePlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {QUIZ_TYPE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {typeLabel(opt.value)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {!classFieldLocked ? (
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  {t("teacher.quiz.form.classLabel")}
+                </Label>
+                <Select
+                  value={courseId || "none"}
+                  onValueChange={(v) => setCourseId(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger className="w-full bg-background">
+                    <SelectValue placeholder={t("teacher.quiz.form.classPlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t("teacher.quiz.form.noClass")}</SelectItem>
+                    {courses.map((course) => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+
+            <div className="space-y-2">
+              <Label htmlFor="quiz-title" className="text-xs font-medium text-muted-foreground">
+                {quizType === "placement-test"
+                  ? t("teacher.quiz.form.titleLabels.placement")
+                  : t("teacher.quiz.form.titleLabels.quiz")}
+              </Label>
+              <Input
+                id="quiz-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={t("teacher.quiz.form.titlePlaceholder")}
+              />
+            </div>
+
+            {quizType === "placement-test" ? (
+              <div className="space-y-2 border-t border-border pt-4">
+                <Label className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <CalendarClock className="h-3.5 w-3.5" aria-hidden />
+                  {t("teacher.quiz.form.release.label")}
+                </Label>
+                <div className="space-y-2">
+                  <Popover open={releaseDatePickerOpen} onOpenChange={setReleaseDatePickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        id="release-date-picker"
+                        className="h-10 w-full justify-between bg-background font-normal"
+                      >
+                        <span className="truncate">
+                          {releaseDate
+                            ? format(new Date(releaseDate + "T12:00:00"), "PPP")
+                            : t("teacher.quiz.form.release.selectDate")}
+                        </span>
+                        <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={releaseDate ? new Date(releaseDate + "T12:00:00") : undefined}
+                        disabled={(date) => startOfDay(date) < startOfDay(new Date())}
+                        onSelect={(date) => {
+                          if (date) setReleaseDate(format(date, "yyyy-MM-dd"));
+                          setReleaseDatePickerOpen(false);
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Select value={releaseTime || undefined} onValueChange={setReleaseTime}>
+                    <SelectTrigger id="release-time" className="h-10 w-full bg-background">
+                      <SelectValue placeholder={t("teacher.quiz.form.release.selectTime")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RELEASE_TIME_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ) : null}
+          </aside>
+
+          {/* Questions column */}
+          <section className="min-w-0 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <h2 className="text-sm font-semibold text-foreground">
+                  {t("teacher.quiz.form.questionsTitle")}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {t("teacher.quiz.form.questionsHint")}
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                className="gap-1.5 bg-teal-700 hover:bg-teal-800"
+                onClick={addQuestion}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {t("teacher.quiz.form.addQuestion")}
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {questions.map((q, qIndex) => {
+                const isCollapsed = collapsedQuestions.has(qIndex);
+                return (
+                  <div
+                    key={q.id}
+                    className="overflow-hidden rounded-xl border border-border bg-card"
+                  >
+                    <div className="flex items-center gap-2 border-b border-border bg-muted/20 px-3 py-2.5">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          setCollapsedQuestions((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(qIndex)) next.delete(qIndex);
+                            else next.add(qIndex);
+                            return next;
+                          });
+                        }}
+                        title={
+                          isCollapsed
+                            ? t("teacher.quiz.form.questionActions.expand")
+                            : t("teacher.quiz.form.questionActions.minimize")
+                        }
+                        aria-expanded={!isCollapsed}
+                      >
+                        {isCollapsed ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <GripVertical
+                        className="hidden h-4 w-4 shrink-0 text-muted-foreground/40 sm:block"
+                        aria-hidden
+                      />
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-teal-700/10 text-xs font-semibold tabular-nums text-teal-800">
+                        {qIndex + 1}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                        {q.question.trim() ||
+                          t("teacher.quiz.form.questionLabel", { n: qIndex + 1 })}
+                      </span>
+                      <span className="shrink-0 text-[11px] font-medium tabular-nums text-muted-foreground">
+                        {t("teacher.quiz.form.pointsLabel", {
+                          n: questions.length > 0 ? Math.round(100 / questions.length) : 0,
+                        })}
+                      </span>
+                      {questions.length > 1 ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+                          onClick={() => setQuestionToRemoveIndex(qIndex)}
+                          title={t("teacher.quiz.form.questionActions.remove")}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      ) : null}
+                    </div>
+
+                    {!isCollapsed ? (
+                      <div className="space-y-4 p-4 sm:p-5">
+                        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                          <div className="space-y-2">
+                            <Label>{t("teacher.quiz.form.questionTextLabel")}</Label>
+                            <Input
+                              value={q.question}
+                              onChange={(e) => updateQuestion(qIndex, { question: e.target.value })}
+                              placeholder={t("teacher.quiz.form.questionTextPlaceholder")}
+                            />
+                          </div>
+                          <div className="space-y-2 justify-self-end">
+                            <Label className="inline-flex items-center justify-end gap-1 whitespace-nowrap text-right">
+                              <span>{t("teacher.quiz.form.timeLimit.label")}</span>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="inline-flex shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+                                    aria-label={t("teacher.quiz.form.timeLimit.hint")}
+                                  >
+                                    <CircleHelp className="h-3.5 w-3.5" aria-hidden />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[14rem] text-left">
+                                  {t("teacher.quiz.form.timeLimit.hint")}
+                                </TooltipContent>
+                              </Tooltip>
+                            </Label>
+                            <Select
+                              value={String(q.timeLimitSeconds ?? 30)}
+                              onValueChange={(v) =>
+                                updateQuestion(qIndex, {
+                                  timeLimitSeconds: parseInt(v, 10),
+                                })
+                              }
+                            >
+                              <SelectTrigger className="ml-auto w-[4.75rem] bg-background px-2">
+                                <SelectValue
+                                  placeholder={t("teacher.quiz.form.timeLimit.choose")}
+                                />
+                              </SelectTrigger>
+                              <SelectContent align="end" position="popper">
+                                {TIME_LIMIT_OPTIONS.map((sec) => (
+                                  <SelectItem key={sec} value={String(sec)}>
+                                    {t("teacher.quiz.form.timeLimit.seconds", { sec })}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {/* Labels share row 1; A–D options and image share row 2 at equal height */}
+                        <div className="grid gap-x-4 gap-y-2 lg:grid-cols-[minmax(0,1fr)_minmax(12rem,16rem)] lg:grid-rows-[auto_1fr]">
+                          <div className="space-y-0.5">
+                            <Label>{t("teacher.quiz.form.options.title")}</Label>
+                            <p className="text-xs text-muted-foreground">
+                              {t("teacher.quiz.form.options.hint")}
+                            </p>
+                          </div>
+                          <div className="space-y-0.5">
+                            <Label>{t("teacher.quiz.form.questionImageLabel")}</Label>
+                            <p className="text-xs text-muted-foreground">
+                              {t("teacher.quiz.form.questionImageOptional")}
+                            </p>
+                          </div>
+
+                          <div className="grid gap-2">
+                            {LETTERS.map((letter) => {
+                              const opt = q.options.find((o) => o.letter === letter) ?? {
+                                letter,
+                                text: "",
+                                correct: false,
+                              };
+                              return (
+                                <label
+                                  key={letter}
+                                  className={cn(
+                                    "flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 transition-colors",
+                                    opt.correct
+                                      ? "border-teal-300 bg-teal-50/60"
+                                      : "border-border bg-background hover:bg-muted/30",
+                                  )}
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`correct-${q.id}`}
+                                    checked={opt.correct}
+                                    onChange={() => setOptionCorrect(qIndex, letter)}
+                                    className="h-4 w-4 shrink-0 border-border text-teal-700 focus:ring-teal-700"
+                                  />
+                                  <span className="w-4 shrink-0 text-xs font-semibold text-muted-foreground">
+                                    {letter}
+                                  </span>
+                                  <Input
+                                    value={opt.text}
+                                    onChange={(e) => {
+                                      const newOptions = q.options.map((o) =>
+                                        o.letter === letter
+                                          ? { ...o, text: e.target.value }
+                                          : o,
+                                      );
+                                      updateQuestion(qIndex, { options: newOptions });
+                                    }}
+                                    placeholder={t("teacher.quiz.form.options.option", {
+                                      letter,
+                                    })}
+                                    className="h-8 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                </label>
+                              );
+                            })}
+                          </div>
+
+                          <MediaUploadBox
+                            questionIndex={qIndex}
+                            image={q.image}
+                            onImageChange={(url) => updateQuestion(qIndex, { image: url })}
+                            className="h-full min-h-[8rem] w-full"
+                          />
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      </form>
+
+      <footer
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-md transition-[left] duration-300 pb-[env(safe-area-inset-bottom)]",
+          isSidebarCollapsed ? "lg:left-20" : "lg:left-64",
+        )}
+      >
+        <div className="flex w-full flex-wrap items-center justify-between gap-2 px-4 py-3 lg:px-6">
+          <Button type="button" variant="outline" size="sm" onClick={goBackToClassQuizTab}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            type="submit"
+            form={QUIZ_FORM_ID}
+            size="sm"
+            disabled={loading}
+            className="gap-1.5 bg-teal-700 hover:bg-teal-800"
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+            {editingQuizId
+              ? t("teacher.quiz.form.saveChanges")
+              : t("teacher.quiz.form.createQuiz")}
+          </Button>
+        </div>
+      </footer>
+
+      <AlertDialog
+        open={questionToRemoveIndex !== null}
+        onOpenChange={(open) => !open && setQuestionToRemoveIndex(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove this question?</AlertDialogTitle>
+            <AlertDialogTitle>{t("teacher.quiz.dialog.removeQuestion.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the question from the quiz. You can add another question later if needed.
+              {t("teacher.quiz.dialog.removeQuestion.description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -870,7 +1079,9 @@ const TeacherQuizPage = () => {
                   setQuestionToRemoveIndex(null);
                 }
               }}
-            >{t("teacherSettings.remove")}</AlertDialogAction>
+            >
+              {t("teacherSettings.remove")}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Eye, Loader2 } from "@/lib/icons";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
+import { Eye, Loader2 } from "@/lib/icons";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -171,12 +170,7 @@ export default function AdminEnrollmentApplicationsPage() {
   );
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6">
-        <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
-          <ArrowLeft className="h-4 w-4" />
-          {t("admin.shared.backToDashboard")}
-        </Link>
 
         <AdminPageHeader
           title={t("adminNav.enrollmentApplications")}
@@ -312,6 +306,5 @@ export default function AdminEnrollmentApplicationsPage() {
           </div>
         )}
       </div>
-    </AdminLayout>
   );
 }

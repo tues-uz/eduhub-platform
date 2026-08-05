@@ -110,7 +110,11 @@ async function fetchCoursePdfContext(courseId: string): Promise<{
 }
 
 
-async function downloadEnrollmentPdf(r: EnrollmentApplicationResponse, t: TFunction) {
+async function downloadEnrollmentPdf(
+  r: EnrollmentApplicationResponse,
+  t: TFunction,
+  locale: "en" | "uz" = "en",
+) {
   let listedTuition: number | undefined;
   let teacherName: string | undefined;
   let scheduleSlots: SessionSlotLike[] | undefined;
@@ -126,7 +130,7 @@ async function downloadEnrollmentPdf(r: EnrollmentApplicationResponse, t: TFunct
     enriched = ensureEnrollmentDocuments(enriched, listedTuition, scheduleSlots);
   }
 
-  const pdfOpts = { teacherName, listedTuition, scheduleSlots };
+  const pdfOpts = { teacherName, listedTuition, scheduleSlots, locale };
   const official = buildEnrollmentReceiptPdfData(enriched, pdfOpts);
   if (official) {
     await downloadEnrollmentReceiptPdf(official);
@@ -465,10 +469,12 @@ const StudentPaymentInfo = () => {
               open={detailRecord != null}
               onOpenChange={(open) => !open && setDetailRecord(null)}
               downloadLoading={receiptLoading}
-              onDownload={() => {
+              onDownload={(locale) => {
                 if (!detailRecord) return;
                 setReceiptLoading(true);
-                void downloadEnrollmentPdf(detailRecord, t).finally(() => setReceiptLoading(false));
+                void downloadEnrollmentPdf(detailRecord, t, locale).finally(() =>
+                  setReceiptLoading(false),
+                );
               }}
             />
           </>

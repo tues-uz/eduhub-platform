@@ -1,53 +1,119 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CalendarCheck, CalendarClock, ChevronRight } from "@/lib/icons";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import { ArrowLeft, ChevronRight, Loader2 } from "@/lib/icons";
 import { useAuthSession } from "@/features/auth/context";
 import { eduhubCourses } from "@/api/eduhubClient";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
-function statusBadge(t: TFunction, status: string) {
+type ListTab = "pending" | "all";
+
+function statusPill(t: TFunction, status: string) {
+  const base = "inline-flex rounded-md border px-2 py-0.5 text-xs font-medium";
   switch (status) {
     case "SCHEDULE_PENDING":
       return (
-        <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-900">{t("teacher.scheduleApprovals.status.actionNeeded")}</Badge>
+        <span className={cn(base, "border-amber-200 bg-amber-50 text-amber-900")}>
+          {t("teacher.scheduleApprovals.status.actionNeeded")}
+        </span>
       );
     case "SCHEDULE_APPROVED":
       return (
-        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-900">
+        <span className={cn(base, "border-emerald-200 bg-emerald-50 text-emerald-800")}>
           {t("teacher.scheduleApprovals.status.approved")}
-        </Badge>
+        </span>
       );
     case "REJECTED":
       return (
-        <Badge variant="outline" className="border-red-200 bg-red-50 text-red-900">
+        <span className={cn(base, "border-red-200 bg-red-50 text-red-800")}>
           {t("teacher.scheduleApprovals.status.rejected")}
-        </Badge>
+        </span>
       );
     case "DRAFT":
       return (
-        <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+        <span className={cn(base, "border-border bg-muted text-muted-foreground")}>
           {t("teacher.scheduleApprovals.status.draft")}
-        </Badge>
+        </span>
       );
     case "PUBLISHED":
       return (
-        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-900">
+        <span className={cn(base, "border-emerald-200 bg-emerald-50 text-emerald-800")}>
           {t("teacher.scheduleApprovals.status.published")}
-        </Badge>
+        </span>
       );
     default:
       return (
-        <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
-          {status}
-        </Badge>
+        <span className={cn(base, "border-border bg-muted text-muted-foreground")}>{status}</span>
       );
   }
+}
+
+function statusDescription(t: TFunction, status: string): string {
+  switch (status) {
+    case "SCHEDULE_APPROVED":
+      return t("teacher.scheduleApprovals.statusDescriptions.scheduleApproved");
+    case "DRAFT":
+      return t("teacher.scheduleApprovals.statusDescriptions.draft");
+    case "REJECTED":
+      return t("teacher.scheduleApprovals.statusDescriptions.rejected");
+    case "SCHEDULE_PENDING":
+      return t("teacher.scheduleApprovals.statusDescriptions.pending");
+    default:
+      return t("teacher.scheduleApprovals.statusDescriptions.default");
+  }
+}
+
+function CourseRow({
+  course,
+  emphasize,
+  t,
+}: {
+  course: CourseSummaryResponse;
+  emphasize?: boolean;
+  t: TFunction;
+}) {
+  const created = new Date(course.createdAt).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return (
+    <li>
+      <Link
+        to={`/dashboard/teacher/courses/${course.id}/edit/schedule`}
+        className={cn(
+          "flex items-center gap-3 px-4 py-3.5 text-left transition-colors sm:px-5",
+          emphasize ? "hover:bg-amber-50/50" : "hover:bg-muted/40",
+        )}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate text-sm font-semibold text-foreground">{course.title}</p>
+            {statusPill(t, course.status)}
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">{statusDescription(t, course.status)}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t("teacher.scheduleApprovals.createdDate", { date: created })}
+          </p>
+        </div>
+        <span
+          className={cn(
+            "inline-flex shrink-0 items-center gap-1 text-xs font-medium",
+            emphasize ? "text-teal-800" : "text-muted-foreground",
+          )}
+        >
+          {emphasize
+            ? t("teacher.scheduleApprovals.reviewButton")
+            : t("teacher.scheduleApprovals.openButton")}
+          <ChevronRight className="h-3.5 w-3.5" />
+        </span>
+      </Link>
+    </li>
+  );
 }
 
 export default function TeacherScheduleApprovalsPage() {
@@ -55,14 +121,7 @@ export default function TeacherScheduleApprovalsPage() {
   const { user } = useAuthSession();
   const [courses, setCourses] = useState<CourseSummaryResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
-
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    check();
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
+  const [tab, setTab] = useState<ListTab>("pending");
 
   useEffect(() => {
     if (!user.id) return;
@@ -84,108 +143,119 @@ export default function TeacherScheduleApprovalsPage() {
     };
   }, [user.id]);
 
-  const pending = courses.filter((c) => c.status === "SCHEDULE_PENDING");
-  const other = courses.filter((c) => c.status !== "SCHEDULE_PENDING");
+  const pending = useMemo(
+    () => courses.filter((c) => c.status === "SCHEDULE_PENDING"),
+    [courses],
+  );
+  const other = useMemo(
+    () => courses.filter((c) => c.status !== "SCHEDULE_PENDING"),
+    [courses],
+  );
+
+  useEffect(() => {
+    if (loading) return;
+    if (pending.length === 0 && tab === "pending") setTab("all");
+  }, [loading, pending.length, tab]);
+
+  const list = tab === "pending" ? pending : other;
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <DashboardSidebar />
-      <main
-        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${
-          isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"
-        }`}
+    <div className="flex w-full min-w-0 flex-1 flex-col gap-4 px-4 py-4 text-left lg:px-6 md:gap-6 md:py-6">
+      <Link
+        to="/dashboard/teacher"
+        className="inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
-        <div className="container mx-auto px-6 max-w-3xl">
-          <Link
-            to="/dashboard/teacher"
-            className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
-          >
-            <ArrowLeft className="h-4 w-4" />{t("teacherSettings.backToDashboard")}</Link>
+        <ArrowLeft className="h-4 w-4 shrink-0" />
+        {t("teacherSettings.backToDashboard")}
+      </Link>
 
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-foreground" style={{ letterSpacing: "0.5px" }}>{t("teacherNav.scheduleApprovals")}</h1>
-            <p className="text-foreground/60 text-sm mt-1">
-              Review schedules proposed by an admin, then approve or request changes on each class.
-            </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            {t("teacher.scheduleApprovals.title")}
+          </h1>
+          <p className="max-w-xl text-sm text-muted-foreground">
+            {t("teacher.scheduleApprovals.subtitle")}
+          </p>
+        </div>
+        {pending.length > 0 ? (
+          <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium tabular-nums text-amber-900">
+            {t("teacher.scheduleApprovals.pendingCount", { count: pending.length })}
+          </span>
+        ) : null}
+      </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {t("teacher.scheduleApprovals.loading")}
+        </div>
+      ) : courses.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-10 text-left">
+          <p className="text-sm font-medium text-foreground">{t("teacher.scheduleApprovals.empty")}</p>
+          <Button
+            asChild
+            size="sm"
+            className="mt-4 bg-teal-700 text-white hover:bg-teal-800"
+          >
+            <Link to="/dashboard/teacher/courses/new">{t("teacher.scheduleApprovals.addClass")}</Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex gap-4 border-b border-border">
+            <button
+              type="button"
+              onClick={() => setTab("pending")}
+              className={cn(
+                "-mb-px border-b-2 pb-2 text-sm font-medium transition-colors",
+                tab === "pending"
+                  ? "border-teal-700 text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t("teacher.scheduleApprovals.pendingSectionTitle")}
+              {pending.length > 0 ? (
+                <span className="ml-1.5 tabular-nums text-muted-foreground">({pending.length})</span>
+              ) : null}
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("all")}
+              className={cn(
+                "-mb-px border-b-2 pb-2 text-sm font-medium transition-colors",
+                tab === "all"
+                  ? "border-teal-700 text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t("teacher.scheduleApprovals.allSectionTitle")}
+              <span className="ml-1.5 tabular-nums text-muted-foreground">({other.length})</span>
+            </button>
           </div>
 
-          {loading ? (
-            <p className="text-sm text-foreground/60">{t("teacher.scheduleApprovals.loading")}</p>
-          ) : courses.length === 0 ? (
-            <Card className="rounded-2xl border-dashed border-2 border-slate-200">
-              <CardContent className="py-12 text-center">
-                <CalendarClock className="h-12 w-12 mx-auto text-foreground/30 mb-4" />
-                <p className="text-sm text-foreground/70">{t("teacher.scheduleApprovals.empty")}</p>
-                <Button asChild className="mt-4 rounded-full" style={{ backgroundColor: "#1e40af" }}>
-                  <Link to="/dashboard/teacher/courses/new">{t("teacher.courses.addClass")}</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-8">
-              {pending.length > 0 ? (
-                <section className="space-y-3">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 flex items-center gap-2">
-                    <CalendarCheck className="h-4 w-4" />{t("teacher.scheduleApprovals.pendingSectionTitle")}</h2>
-                  <ul className="space-y-3">
-                    {pending.map((c) => (
-                      <li key={c.id}>
-                        <Link
-                          to={`/dashboard/teacher/courses/${c.id}/edit/schedule`}
-                          className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-[#1e40af]/40 hover:bg-slate-50/50"
-                        >
-                          <div className="min-w-0">
-                            <p className="font-medium text-slate-900 truncate">{c.title}</p>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              Created {new Date(c.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            {statusBadge(t, c.status)}
-                            <ChevronRight className="h-5 w-5 text-slate-400" />
-                          </div>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ) : null}
-
-              {other.length > 0 ? (
-                <section className="space-y-3">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{t("teacher.scheduleApprovals.allSectionTitle")}</h2>
-                  <div className="space-y-2">
-                    {other.map((c) => (
-                      <Card key={c.id} className="rounded-xl border-slate-200/90 shadow-sm">
-                        <CardHeader className="py-3 px-4 flex flex-row items-center justify-between gap-3 space-y-0">
-                          <div className="min-w-0">
-                            <CardTitle className="text-base font-medium truncate">{c.title}</CardTitle>
-                            <CardDescription className="text-xs mt-0.5">
-                              {c.status === "SCHEDULE_APPROVED"
-                                ? "Schedule approved — waiting for admin to publish"
-                                : c.status === "DRAFT"
-                                ? "Draft — admin will propose a schedule"
-                                : c.status === "REJECTED"
-                                ? "Rejected — admin sent feedback"
-                                : "Open the schedule step to view or approve when ready."}
-                            </CardDescription>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            {statusBadge(t, c.status)}
-                            <Button variant="outline" size="sm" className="rounded-full shrink-0" asChild>
-                              <Link to={`/dashboard/teacher/courses/${c.id}/edit/schedule`}>{t("teacher.scheduleApprovals.openButton")}</Link>
-                            </Button>
-                          </div>
-                        </CardHeader>
-                      </Card>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
+          {list.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-8 text-left">
+              <p className="text-sm text-muted-foreground">
+                {tab === "pending"
+                  ? t("teacher.scheduleApprovals.emptyPending")
+                  : t("teacher.scheduleApprovals.emptyOther")}
+              </p>
             </div>
+          ) : (
+            <ul className="overflow-hidden rounded-xl border border-border bg-card divide-y divide-border">
+              {list.map((course) => (
+                <CourseRow
+                  key={course.id}
+                  course={course}
+                  emphasize={course.status === "SCHEDULE_PENDING"}
+                  t={t}
+                />
+              ))}
+            </ul>
           )}
         </div>
-      </main>
+      )}
     </div>
   );
 }

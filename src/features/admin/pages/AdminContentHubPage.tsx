@@ -8,7 +8,6 @@ import {
   Megaphone,
 } from "@/lib/icons";
 import { useTranslation } from "react-i18next";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
@@ -89,7 +88,6 @@ export default function AdminContentHubPage() {
   const isContentAdmin = user.staffRole === "ADMIN_CONTENT";
 
   return (
-    <AdminLayout>
       <div className="container mx-auto max-w-5xl px-6">
         <div className="mb-8 border-b border-slate-200 pb-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -186,6 +184,5 @@ export default function AdminContentHubPage() {
           </div>
         </section>
       </div>
-    </AdminLayout>
   );
 }

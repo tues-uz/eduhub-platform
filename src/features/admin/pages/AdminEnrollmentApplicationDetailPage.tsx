@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "@/lib/icons";
 import { toast } from "sonner";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import {
@@ -170,25 +169,21 @@ export default function AdminEnrollmentApplicationDetailPage() {
 
   if (loading) {
     return (
-      <AdminLayout>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
           <span className="ml-2 text-sm text-slate-500">{t("admin.shared.loadingApplication")}</span>
         </div>
-      </AdminLayout>
     );
   }
 
   if (!applicationId) {
     return (
-      <AdminLayout>
         <div className="container mx-auto px-6 py-8">
           <p className="text-slate-600">{t("admin.enrollmentApplications.detail.notFound.missing")}</p>
           <Button asChild variant="outline" className="mt-4">
             <Link to="/dashboard/admin/enrollment-applications">{t("admin.shared.backToList")}</Link>
           </Button>
         </div>
-      </AdminLayout>
     );
   }
 
@@ -196,7 +191,6 @@ export default function AdminEnrollmentApplicationDetailPage() {
 
   if (!record) {
     return (
-      <AdminLayout>
         <div className="container mx-auto max-w-2xl px-6 py-8">
           <Link
             to="/dashboard/admin/enrollment-applications"
@@ -215,12 +209,11 @@ export default function AdminEnrollmentApplicationDetailPage() {
             </Button>
           </div>
         </div>
-      </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout>
+      <>
       <div className="container mx-auto max-w-3xl px-6 pb-16 pt-2">
         <Link
           to="/dashboard/admin/enrollment-applications"
@@ -524,6 +517,6 @@ export default function AdminEnrollmentApplicationDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
-  );
+      </>
+);
 }

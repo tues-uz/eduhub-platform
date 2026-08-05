@@ -1,7 +1,5 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft } from "@/lib/icons";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { useEnrollmentInstallmentPayments } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
 import { scheduleMonthOrdinalLabel } from "@/features/enrollment/enrollmentInstallmentPayments";
@@ -254,15 +252,7 @@ export default function AdminPayrollPage() {
   const hasActiveTuitionFilters = search.trim() !== "" || classFilter !== "all" || statusFilter !== "all";
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6 max-w-7xl">
-        <Link
-          to="/dashboard/admin"
-          className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t("admin.shared.backToDashboard")}
-        </Link>
 
         <AdminPageHeader
           title={t("adminNav.payroll")}
@@ -615,6 +605,5 @@ export default function AdminPayrollPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AdminLayout>
   );
 }

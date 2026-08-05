@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, ArrowLeft, Calendar, CheckCircle2, Clock3, FileText } from "@/lib/icons";
 import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminCourseReviewDialog } from "@/features/admin/components/AdminCourseReviewDialog";
 import { CourseStatusBadge } from "@/features/admin/components/AdminStatusBadges";
 import { useTranslation } from "react-i18next";
@@ -76,14 +75,12 @@ export default function AdminCourseDetailPage() {
 
   if (!enabled) {
     return (
-      <AdminLayout>
         <div className="container mx-auto px-6">
           <p className="text-sm text-red-600">{t("admin.courses.detail.invalidId")}</p>
           <Link to="/dashboard/admin/courses" className="text-sm text-slate-600 hover:underline mt-4 inline-block">
             ← Back to all classes
           </Link>
         </div>
-      </AdminLayout>
     );
   }
 
@@ -91,7 +88,6 @@ export default function AdminCourseDetailPage() {
   const isDraftOrRejected = detail?.status === "DRAFT" || detail?.status === "REJECTED";
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6 max-w-3xl pb-10">
         <Link
           to="/dashboard/admin/courses"
@@ -243,6 +239,5 @@ export default function AdminCourseDetailPage() {
           onOpenChange={setReviewOpen}
         />
       </div>
-    </AdminLayout>
   );
 }

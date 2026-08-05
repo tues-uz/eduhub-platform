@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Bell, BookOpen, Loader2, Mail, Phone, Save, Upload, User, X } from "@/lib/icons";
 import { toast } from "sonner";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,7 +41,6 @@ function formatMemberSince(iso: string | undefined): string {
 export default function TeacherSettingsPage() {
   const { t } = useTranslation();
   const { user, refreshUser } = useAuthSession();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true");
   const [name, setName] = useState(user.name);
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl ?? "");
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -51,13 +49,6 @@ export default function TeacherSettingsPage() {
   const [scheduleAlerts, setScheduleAlerts] = useState(true);
   const [apiUser, setApiUser] = useState<UserResponse | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    check();
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
 
   const { data: apiCourses = [], isLoading: coursesLoading } = useTeacherCoursesQuery(user.id);
 
@@ -162,33 +153,29 @@ export default function TeacherSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <DashboardSidebar />
-      <main
-        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${
-          isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"
-        }`}
-      >
-        <div className="container mx-auto px-6 max-w-2xl">
+    <div
+      className="flex w-full min-w-0 max-w-2xl flex-1 flex-col gap-3 px-4 py-4 text-left lg:px-6 md:py-6"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+    >
           <Link
             to="/dashboard/teacher"
-            className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
+            className="inline-flex w-fit items-center gap-2 text-sm text-foreground/70 hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             {t("teacherSettings.backToDashboard")}
           </Link>
 
-          <div className="mb-8">
+          <div className="space-y-1">
             <h1
               className="text-2xl font-bold text-foreground"
               style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, letterSpacing: "0.5px" }}
             >
               {t("teacherSettings.title")}
             </h1>
-            <p className="text-foreground/60 text-sm mt-1">{t("teacherSettings.subtitle")}</p>
+            <p className="text-sm text-foreground/60">{t("teacherSettings.subtitle")}</p>
           </div>
 
-          <form onSubmit={handleSave} className="space-y-8">
+          <form onSubmit={handleSave} className="space-y-5">
             <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm ring-1 ring-zinc-100/80">
               <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
                 <User className="h-5 w-5" aria-hidden />
@@ -332,8 +319,6 @@ export default function TeacherSettingsPage() {
               </Button>
             </div>
           </form>
-        </div>
-      </main>
     </div>
   );
 }

@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useTeacherCourseForm } from "./TeacherCourseFormContext";
+import { TeacherCourseFormStickyFooter } from "./TeacherCourseFormStickyFooter";
 import type { LessonContentType } from "../types";
 import { getVideoEmbed, getPdfPreviewUrl } from "./teacherCourseFormHelpers";
 import { useTranslation } from "react-i18next";
@@ -59,25 +59,34 @@ const TeacherCourseFormLessonsPage = () => {
 
   return (
     <>
-      <div className="mx-auto w-full max-w-2xl">
+      <div className="flex w-full max-w-5xl flex-col pb-24 text-left">
         {error ? (
-          <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 mb-6">{error}</div>
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+            {error}
+          </div>
         ) : null}
 
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-        <Card className="w-full rounded-2xl border-slate-200/90 shadow-sm overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/60 px-6 py-5">
-            <CardTitle className="text-lg font-semibold tracking-tight text-slate-900">
-              Lessons (PDF or video link)
-            </CardTitle>
-            <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={handleAddLessonClick}>
-              <Plus className="h-4 w-4 mr-1" />{t("teacher.courseForm.lessons.addLesson")}</Button>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-6 px-6 pb-6">
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-4 sm:px-5">
+            <div className="space-y-0.5">
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                {t("teacher.courseForm.lessons.title")}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {t("teacher.courseForm.lessons.intro")}
+              </p>
+            </div>
+            <Button type="button" size="sm" className="gap-1.5 bg-teal-700 hover:bg-teal-800" onClick={handleAddLessonClick}>
+              <Plus className="h-4 w-4 shrink-0" />
+              {t("teacher.courseForm.lessons.addLesson")}
+            </Button>
+          </div>
+          <div className="space-y-3 p-4 sm:p-5">
             {lessons.map((lesson, index) => {
               const isExpanded = !collapsedLessonIds.has(lesson.id);
               return (
-                <div key={lesson.id} className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 space-y-3">
+                <div key={lesson.id} className="space-y-3 rounded-xl border border-border bg-muted/20 p-4">
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
@@ -346,41 +355,44 @@ const TeacherCourseFormLessonsPage = () => {
                 </div>
               );
             })}
-          </CardContent>
-        </Card>
-
-        <div className="flex w-full flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-3">
-            <Button type="button" variant="outline" className="rounded-full" onClick={() => navigate(`${basePath}/schedule`)}>{t("common.back")}</Button>
-            <Button type="button" variant="outline" className="rounded-full" onClick={() => navigate(`${basePath}/schedule`)}>{t("teacher.courses.scheduleTab.editSchedule")}</Button>
           </div>
+        </div>
+
+        <TeacherCourseFormStickyFooter>
+          <Button type="button" variant="outline" onClick={() => navigate(`${basePath}/schedule`)}>
+            {t("common.back")}
+          </Button>
           <Button
             type={isEdit ? "submit" : "button"}
             disabled={saving}
-            className="rounded-full"
-            style={{ backgroundColor: "#1e40af" }}
+            className="bg-teal-700 hover:bg-teal-800"
             onClick={isEdit ? undefined : () => setConfirmCreateOpen(true)}
           >
-            {saving ? "Saving…" : isEdit ? "Save changes" : "Create class"}
+            {saving
+              ? t("teacher.courseForm.lessons.saving")
+              : isEdit
+                ? t("teacher.courseForm.lessons.saveChanges")
+                : t("teacher.courseForm.lessons.createClass")}
           </Button>
-        </div>
+        </TeacherCourseFormStickyFooter>
         </form>
 
         <AlertDialog open={confirmCreateOpen} onOpenChange={setConfirmCreateOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Create this class?</AlertDialogTitle>
+              <AlertDialogTitle>{t("teacher.courseForm.lessons.createDialog.title")}</AlertDialogTitle>
               <AlertDialogDescription className="text-left">
-                Your class is saved as a draft. An admin will review it, set catalog pricing, and publish it when it is
-                ready—then students can enroll.
+                {t("teacher.courseForm.lessons.createDialog.description")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Go back</AlertDialogCancel>
+              <AlertDialogCancel>{t("common.back")}</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-[#1e40af] text-white hover:bg-[#1e40af]/90"
+                className="bg-teal-700 text-white hover:bg-teal-800"
                 onClick={confirmCreateAndSubmit}
-              >{t("teacher.courseForm.lessons.createClass")}</AlertDialogAction>
+              >
+                {t("teacher.courseForm.lessons.createClass")}
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

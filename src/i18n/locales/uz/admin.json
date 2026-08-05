@@ -13,6 +13,7 @@
       "clearFilters": "Filtrlarni tozalash",
       "clear": "Tozalash",
       "roleBadge": "Admin",
+      "roleBadgeSuper": "Superadmin",
       "allRoles": "Barcha rollar",
       "allStatuses": "Barcha holatlar",
       "allCategories": "Barcha toifalar",
@@ -312,6 +313,7 @@
     "courses": {
       "list": {
         "description": "Quick list by title, lecturer, category, and status. Open a class for pricing, schedule workflow, and review.",
+        "referralCodesButton": "Referral va chegirma",
         "searchPlaceholder": "Search title, category, lecturer…",
         "statusDraft": "Draft (pending review)",
         "statusPublished": "Nashr qilingan",
@@ -671,7 +673,7 @@
       }
     },
     "referralCodes": {
-      "description": "Set referral codes and discount percentages per class. Students enter the code at enrollment to receive the listed discount off catalog tuition.",
+      "description": "Set referral codes, discount percentages, and trial class codes per class. Students enter the referral code at enrollment for the discount.",
       "searchPlaceholder": "Search class, code, lecturer…",
       "table": {
         "class": "Sinf",
@@ -683,6 +685,23 @@
       },
       "setPricing": "Narx belgilash",
       "empty": "No classes match your search.",
+      "addDialog": {
+        "title": "Referral, chegirma va sinov kodi",
+        "description": "Bitta dars uchun yoki umumiy (barcha darslar) kodlarni belgilang.",
+        "tabClass": "Dars",
+        "tabGeneral": "Umumiy",
+        "tabTrial": "Sinov",
+        "referralHint": "Talabalar chegirma uchun yozilishda shu kodni kiritadi.",
+        "generalHint": "Umumiy kodlar har qanday darsda, talaba mos referral kodini kiritsa, ishlaydi.",
+        "generalReferralHint": "Platforma bo'ylab referral kodi. Har qanday darsda ishlaydi.",
+        "generalDiscountHint": "Umumiy referral mos kelganda katalog narxidan foiz chegirma (0–100).",
+        "generalTrialHint": "Umumiy sinov kodi. Har qanday dars uchun ishlatilishi mumkin.",
+        "trialTabHint": "Bitta dars yoki barcha darslar uchun sinov kodini yarating.",
+        "trialAppliesTo": "Sinov kodi qo'llaniladi",
+        "trialCode": "Sinov dars kodi",
+        "trialPlaceholder": "masalan TRIAL-ENG-01",
+        "trialHint": "Talabalar tanlangan darsga sinov uchun shu koddan foydalanadi."
+      },
       "editDialog": {
         "title": "Edit referral code",
         "catalogSuffix": " · Catalog {{price}}",
@@ -694,10 +713,13 @@
         "discountSuffix": " (−{{percent}}%)"
       },
       "toast": {
-        "saved": "Referral code saved",
-        "savedDescription": "{{title}} updated.",
-        "saveFailed": "Could not save referral code",
-        "pricingRequired": "Set catalog pricing on the class before adding referral codes.",
+        "saved": "Kodlar saqlandi",
+        "savedDescription": "{{title}} yangilandi.",
+        "generalSaved": "Umumiy referral kodlar saqlandi",
+        "trialSaved": "Sinov dars kodi saqlandi",
+        "trialGeneralSaved": "Umumiy sinov kodi saqlandi",
+        "saveFailed": "Kodlarni saqlab bo'lmadi",
+        "pricingRequired": "Referral yoki sinov kodidan oldin dars narxini belgilang.",
         "discountRange": "Discount must be between 0 and 100%."
       }
     },

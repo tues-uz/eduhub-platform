@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "@/lib/icons";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { PayrollInstructorProofPanel } from "@/features/admin/components/PayrollInstructorProofPanel";
 import { Button } from "@/components/ui/button";
@@ -45,7 +44,6 @@ export default function AdminPayrollProofPage() {
   }, [sectionPayments, valid]);
 
   return (
-    <AdminLayout>
       <div className="container mx-auto max-w-2xl px-6">
         <Link
           to="/dashboard/admin/payroll"
@@ -120,6 +118,5 @@ export default function AdminPayrollProofPage() {
           </>
         )}
       </div>
-    </AdminLayout>
   );
 }

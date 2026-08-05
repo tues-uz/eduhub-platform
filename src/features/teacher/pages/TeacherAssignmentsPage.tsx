@@ -22,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import { eduhubAssignments, type AssignmentResponse, type SubmissionResponse } from "@/api/eduhubClient";
 import { eduhubCourses } from "@/api/eduhubClient";
 import { useAuthSession } from "@/features/auth/context";
@@ -31,22 +30,12 @@ import { useTranslation } from "react-i18next";
 const TeacherAssignmentsPage = () => {
   const { t } = useTranslation();
   const { user } = useAuthSession();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() =>
-    localStorage.getItem("sidebarCollapsed") === "true"
-  );
   const [activeTab, setActiveTab] = useState("assignments");
   const [assignments, setAssignments] = useState<AssignmentResponse[]>([]);
   const [pendingSubmissions, setPendingSubmissions] = useState<SubmissionResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    check();
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
 
   const loadAssignments = useCallback(async () => {
     if (!user.id) return;
@@ -140,14 +129,7 @@ const TeacherAssignmentsPage = () => {
   };
 
   return (
-    <div className="min-h-dvh bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <DashboardSidebar />
-      <main
-        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${
-          isSidebarCollapsed ? "lg:pl-6 lg:ml-20" : "lg:pl-6 lg:ml-64"
-        }`}
-      >
-        <div className="container mx-auto px-6">
+    <div className="container mx-auto px-6 py-4 md:py-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           <Link
             to="/dashboard/teacher"
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
@@ -323,8 +305,6 @@ const TeacherAssignmentsPage = () => {
               )}
             </TabsContent>
           </Tabs>
-        </div>
-      </main>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>

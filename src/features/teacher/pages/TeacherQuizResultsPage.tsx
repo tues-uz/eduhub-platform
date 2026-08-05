@@ -4,7 +4,6 @@ import { format } from "date-fns";
 import * as XLSX from "xlsx";
 import { ArrowLeft, BarChart2, FileSpreadsheet, Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import { eduhubQuizzes, eduhubCourseQuizzes, type QuizResultResponse, type QuizResponse } from "@/api/eduhubClient";
 import { getLocalCourseQuiz, isLocalOnlyQuizId } from "../data/localCourseQuizzesStorage";
 import { quizAttemptStore, type QuizAttempt } from "../data/quizAttemptStore";
@@ -34,9 +33,6 @@ interface LocalQuiz {
 export default function TeacherQuizResultsPage() {
   const { t } = useTranslation();
   const { courseId, moduleId, lessonId, quizId } = useParams<{ courseId: string; moduleId: string; lessonId: string; quizId: string }>();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
-    () => localStorage.getItem("sidebarCollapsed") === "true"
-  );
   const [quiz, setQuiz] = useState<QuizResponse | LocalQuiz | null>(null);
   const [results, setResults] = useState<QuizResultResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,13 +57,6 @@ export default function TeacherQuizResultsPage() {
     XLSX.utils.book_append_sheet(wb, ws, safeTitle || "Results");
     XLSX.writeFile(wb, `${safeTitle || "quiz-results"}-results.xlsx`);
   }, [quiz?.title, results]);
-
-  useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    check();
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
 
   useEffect(() => {
     if (!courseId || (!quizId && (!moduleId || !lessonId))) {
@@ -149,40 +138,34 @@ export default function TeacherQuizResultsPage() {
 
   if (loading) {
     return (
-      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <DashboardSidebar />
-        <main
-          className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
-        >
-          <div className="container mx-auto px-6 max-w-3xl">
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <span className="ml-3 text-muted-foreground">{t("teacher.quizResults.loading")}</span>
-            </div>
-          </div>
-        </main>
+      <div
+        className="teacher-course-form-page container mx-auto max-w-3xl px-6 py-4 md:py-6"
+        style={{ fontFamily: "'DM Sans', sans-serif" }}
+      >
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <span className="ml-3 text-muted-foreground">{t("teacher.quizResults.loading")}</span>
+        </div>
       </div>
     );
   }
 
   if (error || !quiz) {
     return (
-      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <DashboardSidebar />
-        <main
-          className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
+      <div
+        className="teacher-course-form-page container mx-auto max-w-3xl px-6 py-4 md:py-6"
+        style={{ fontFamily: "'DM Sans', sans-serif" }}
+      >
+        <Link
+          to={`/dashboard/teacher/courses/${courseId}?tab=quiz`}
+          className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
         >
-          <div className="container mx-auto px-6 max-w-3xl">
-            <Link
-              to={`/dashboard/teacher/courses/${courseId}?tab=quiz`}
-              className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
-            >
-              <ArrowLeft className="h-4 w-4" />{t("teacher.quiz.backToQuizzes")}</Link>
-            <div className="py-10 text-center">
-              <p className="text-red-500">{error || "Quiz not found"}</p>
-            </div>
-          </div>
-        </main>
+          <ArrowLeft className="h-4 w-4" />
+          {t("teacher.quiz.backToQuizzes")}
+        </Link>
+        <div className="py-10 text-center">
+          <p className="text-red-500">{error || "Quiz not found"}</p>
+        </div>
       </div>
     );
   }
@@ -191,12 +174,10 @@ export default function TeacherQuizResultsPage() {
   const quizTitle = quiz?.title || "";
 
   return (
-    <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <DashboardSidebar />
-      <main
-        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
-      >
-        <div className="container mx-auto px-6 max-w-3xl">
+    <div
+      className="teacher-course-form-page container mx-auto max-w-3xl px-6 py-4 md:py-6"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+    >
           <Link
             to={`/dashboard/teacher/courses/${courseId}?tab=quiz`}
             className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
@@ -268,8 +249,6 @@ export default function TeacherQuizResultsPage() {
               )}
             </tbody>
           </table>
-        </div>
-      </main>
     </div>
   );
 }

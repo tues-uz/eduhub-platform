@@ -1,14 +1,16 @@
 import { jsPDF } from "jspdf";
-import {
-  ENROLLMENT_DOCUMENT_ORG,
-  formatPaymentMethodLabel,
-} from "@/features/enrollment/enrollmentDocumentConfig";
+import { ENROLLMENT_DOCUMENT_ORG } from "@/features/enrollment/enrollmentDocumentConfig";
 import {
   EDUHUB_RECEIPT_HEADER_LOGO_ASPECT,
   EDUHUB_RECEIPT_STAMP_ASPECT,
   loadEduHubReceiptPdfLogos,
   type EduHubReceiptPdfLogos,
 } from "@/features/enrollment/enrollmentReceiptLogo";
+import {
+  formatPaymentMethodLabelLocalized,
+  getReceiptPdfCopy,
+  type ReceiptPdfLocale,
+} from "@/features/enrollment/enrollmentReceiptPdfI18n";
 
 const BRAND = { r: 57, g: 84, b: 208 } as const;
 const INK = { r: 9, g: 9, b: 11 } as const;
@@ -61,6 +63,8 @@ export type EduHubReceiptPdfInput = {
   currency: string;
   amount: number;
   isDemo?: boolean;
+  /** Receipt UI language (defaults to English). */
+  locale?: ReceiptPdfLocale;
 };
 
 export function formatReceiptAmount(amount: number, currency: string): string {
@@ -81,12 +85,13 @@ export function formatReceiptAmount(amount: number, currency: string): string {
   }
 }
 
-export function tuitionLineDescription(iso: string): string {
+export function tuitionLineDescription(iso: string, locale: ReceiptPdfLocale = "en"): string {
+  const copy = getReceiptPdfCopy(locale);
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "TUITION FEE";
-  const month = d.toLocaleString("en-US", { month: "long" }).toUpperCase();
+  if (Number.isNaN(d.getTime())) return copy.tuitionFee;
+  const month = copy.months[d.getMonth()] ?? "";
   const year = d.getFullYear();
-  return `TUITION FEE ${month} ${year}`;
+  return `${copy.tuitionFee} ${month} ${year}`;
 }
 
 function safeFilenamePart(s: string): string {
@@ -97,9 +102,14 @@ function safeFilenamePart(s: string): string {
     .slice(0, 40) || "document";
 }
 
-function formatReceiptDate(iso: string): string {
+function formatReceiptDate(iso: string, locale: ReceiptPdfLocale = "en"): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
+  if (locale === "uz") {
+    const copy = getReceiptPdfCopy("uz");
+    const month = copy.months[d.getMonth()] ?? "";
+    return `${d.getDate()} ${month.toLowerCase()} ${d.getFullYear()}`;
+  }
   return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
@@ -150,6 +160,7 @@ export function renderEduHubReceiptPdf(
   data: EduHubReceiptPdfInput,
   logos?: EduHubReceiptPdfLogos | null,
 ): void {
+  const copy = getReceiptPdfCopy(data.locale ?? "en");
   const headerLogo = logos?.header ?? null;
   const stampAsset = logos?.stamp ?? null;
 
@@ -162,8 +173,11 @@ export function renderEduHubReceiptPdf(
   doc.rect(0, 0, pageW, doc.internal.pageSize.getHeight(), "F");
 
   const amountStr = formatReceiptAmount(data.amount, data.currency);
-  const dateLabel = formatReceiptDate(data.issuedAtIso);
-  const paymentLabel = formatPaymentMethodLabel(data.paymentMethod).toUpperCase();
+  const dateLabel = formatReceiptDate(data.issuedAtIso, data.locale ?? "en");
+  const paymentLabel = formatPaymentMethodLabelLocalized(
+    data.paymentMethod,
+    data.locale ?? "en",
+  ).toUpperCase();
 
   let y = M;
 
@@ -193,14 +207,14 @@ export function renderEduHubReceiptPdf(
   leftY += 5;
   doc.text(ENROLLMENT_DOCUMENT_ORG.addressLine, M, leftY);
   leftY += 4;
-  doc.text(`Phone ${ENROLLMENT_DOCUMENT_ORG.phone}`, M, leftY);
+  doc.text(`${copy.phonePrefix} ${ENROLLMENT_DOCUMENT_ORG.phone}`, M, leftY);
   leftY += 4;
-  doc.text(`Telegram ${ENROLLMENT_DOCUMENT_ORG.telegram}`, M, leftY);
+  doc.text(`${copy.telegramPrefix} ${ENROLLMENT_DOCUMENT_ORG.telegram}`, M, leftY);
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(FONT.docTitle);
   ink(doc, INK);
-  doc.text("Receipt", rightX, y + 6, { align: "right" });
+  doc.text(copy.receiptTitle, rightX, y + 6, { align: "right" });
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(FONT.amountHero);
@@ -208,13 +222,13 @@ export function renderEduHubReceiptPdf(
   doc.text(amountStr, rightX, y + 15, { align: "right" });
 
   let metaY = y + 24;
-  metaLine(doc, "Invoice no.", data.invoiceNumber, metaY, rightX, metaLabelX);
+  metaLine(doc, copy.invoiceNo, data.invoiceNumber, metaY, rightX, metaLabelX);
   metaY += 6;
-  metaLine(doc, "Receipt no.", data.receiptNumber, metaY, rightX, metaLabelX);
+  metaLine(doc, copy.receiptNo, data.receiptNumber, metaY, rightX, metaLabelX);
   metaY += 6;
-  metaLine(doc, "Date", dateLabel, metaY, rightX, metaLabelX);
+  metaLine(doc, copy.date, dateLabel, metaY, rightX, metaLabelX);
   metaY += 6;
-  metaLine(doc, "Payment method", paymentLabel, metaY, rightX, metaLabelX);
+  metaLine(doc, copy.paymentMethod, paymentLabel, metaY, rightX, metaLabelX);
 
   y = Math.max(leftY, metaY) + 11;
   rule(doc, y, M, rightX);
@@ -224,12 +238,7 @@ export function renderEduHubReceiptPdf(
     doc.setFont("helvetica", "italic");
     doc.setFontSize(FONT.notice);
     ink(doc, MUTED);
-    doc.text(
-      "Submission copy — official invoice and receipt numbers are issued after the school approves your enrollment.",
-      M,
-      y,
-      { maxWidth: contentW },
-    );
+    doc.text(copy.submissionNotice, M, y, { maxWidth: contentW });
     y += 9;
     rule(doc, y, M, rightX, 0.15);
     y += 10;
@@ -237,13 +246,13 @@ export function renderEduHubReceiptPdf(
     doc.setFont("helvetica", "italic");
     doc.setFontSize(FONT.notice);
     ink(doc, MUTED);
-    doc.text("Demo document — numbers not issued by server", M, y);
+    doc.text(copy.demoNotice, M, y);
     y += 9;
     rule(doc, y, M, rightX, 0.15);
     y += 10;
   }
 
-  sectionTitle(doc, "Received from", M, y);
+  sectionTitle(doc, copy.receivedFrom, M, y);
   y += 7;
 
   doc.setFont("helvetica", "bold");
@@ -267,11 +276,11 @@ export function renderEduHubReceiptPdf(
   rule(doc, y, M, rightX);
   y += 10;
 
-  sectionTitle(doc, "Description", M, y);
+  sectionTitle(doc, copy.description, M, y);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(FONT.section);
   ink(doc, MUTED);
-  doc.text("Amount", rightX, y, { align: "right" });
+  doc.text(copy.amount, rightX, y, { align: "right" });
   y += 8;
 
   const descW = contentW * 0.62;
@@ -287,7 +296,7 @@ export function renderEduHubReceiptPdf(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(FONT.teacher);
   ink(doc, MUTED);
-  const teacherLabel = `Teacher · ${data.teacherName.toUpperCase()}`;
+  const teacherLabel = `${copy.teacher} · ${data.teacherName.toUpperCase()}`;
   const teacherLines = doc.splitTextToSize(teacherLabel, descW);
   doc.text(teacherLines, M, itemTop + descH + 2.5);
 
@@ -301,7 +310,7 @@ export function renderEduHubReceiptPdf(
   y += 9;
 
   const totalsLabelX = rightX - 62;
-  metaLine(doc, "Tax", "—", y, rightX, totalsLabelX);
+  metaLine(doc, copy.tax, "—", y, rightX, totalsLabelX);
   y += 8;
   rule(doc, y, totalsLabelX, rightX, 0.35);
   y += 7;
@@ -309,7 +318,7 @@ export function renderEduHubReceiptPdf(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(FONT.totalLabel);
   ink(doc, INK);
-  doc.text("Grand total", totalsLabelX, y);
+  doc.text(copy.grandTotal, totalsLabelX, y);
   doc.setFontSize(FONT.totalAmount);
   ink(doc, BRAND);
   doc.text(amountStr, rightX, y + 0.5, { align: "right" });
@@ -322,13 +331,13 @@ export function renderEduHubReceiptPdf(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(FONT.legalTitle);
   ink(doc, INK);
-  doc.text("CANCELLATIONS & REFUNDS:", M, y);
+  doc.text(copy.cancellationsTitle, M, y);
 
   y += 5;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(FONT.legalBody);
   ink(doc, MUTED);
-  for (const line of ENROLLMENT_DOCUMENT_ORG.cancellationLines) {
+  for (const line of copy.cancellationLines) {
     doc.text(line, M, y, { maxWidth: contentW * 0.58 });
     y += 4;
   }
@@ -336,7 +345,7 @@ export function renderEduHubReceiptPdf(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(FONT.legalBody);
   ink(doc, INK);
-  doc.text(ENROLLMENT_DOCUMENT_ORG.helpLine, M, y, { maxWidth: contentW * 0.58 });
+  doc.text(copy.helpLine, M, y, { maxWidth: contentW * 0.58 });
 
   const stampX = rightX - STAMP_W;
   const sigX = stampX + STAMP_W / 2;
@@ -374,8 +383,9 @@ export async function downloadEduHubReceiptPdf(
   const logos = await loadEduHubReceiptPdfLogos();
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   renderEduHubReceiptPdf(doc, data, logos);
+  const locale = data.locale ?? "en";
   const slug = safeFilenamePart(
     data.variant === "official" ? data.receiptNumber : filenameBase,
   );
-  doc.save(`${filenameBase}-${slug}.pdf`);
+  doc.save(`${filenameBase}-${locale}-${slug}.pdf`);
 }

@@ -5,6 +5,8 @@
     "courseLeadFallback": "Course lead",
     "classFallback": "Class",
     "dashboard": {
+      "overviewTitle": "Overview",
+      "managingSubtitle": "Managing {{name}}",
       "subtitle": "Instructor Dashboard",
       "roleBadge": "Teacher",
       "stats": {
@@ -15,7 +17,8 @@
       },
       "attendanceQr": {
         "title": "Attendance QR (projector)",
-        "description": "Generate a session QR code to show on the whiteboard—students scan to check in on their phones."
+        "description": "Generate a session QR code to show on the whiteboard—students scan to check in on their phones.",
+        "cta": "Open check-in"
       },
       "upcomingSessions": {
         "title": "Upcoming Sessions"
@@ -51,10 +54,10 @@
     },
     "notifications": {
       "title": "Notifications",
-      "subtitle": "Class schedule, publishing, and other updates.",
+      "subtitle": "Schedule, publishing, and other class updates.",
       "unreadCount": "{{count}} unread",
-      "markAllRead": "Mark all as read",
-      "loading": "Loading notifications…",
+      "markAllRead": "Mark all read",
+      "loading": "Loading…",
       "markRead": "Mark read",
       "receivedPrefix": "Received",
       "time": {
@@ -66,13 +69,13 @@
         "daysAgo_other": "{{count}} days ago"
       },
       "cta": {
-        "openClassPage": "Open this class page",
-        "viewMyClasses": "View my classes",
-        "goToLinkedPage": "Go to linked page"
+        "openClassPage": "Open class",
+        "viewMyClasses": "View classes",
+        "goToLinkedPage": "Open"
       },
       "empty": {
         "title": "No notifications yet.",
-        "description": "Schedule proposals, class publishing updates, and other notifications will appear here."
+        "description": "Updates about schedules and publishing will show up here."
       }
     },
     "placeholder": {
@@ -88,19 +91,19 @@
       }
     },
     "courses": {
-      "description": "New classes stay in draft until an admin sets a price and publishes them. Add lessons with PDF or video content, then wait for approval.",
+      "description": "Create and manage your classes. Drafts wait for admin pricing and publish before students can enroll.",
       "addClass": "Add class",
       "tabs": {
         "classes": "Classes",
-        "attendance": "Student attendance",
+        "attendance": "Attendance",
         "schedule": "Schedule",
-        "substitute": "Substitute instructor"
+        "substitute": "Substitute"
       },
       "loading": "Loading classes…",
       "empty": {
         "title": "No classes yet",
-        "description": "Create your first class and add lessons with PDF materials or video links.",
-        "cta": "Add your first class"
+        "description": "Create a class, then add lessons with PDFs or video links.",
+        "cta": "Add class"
       },
       "card": {
         "sessionsInSixMonths": "{{count}} sessions in 6 months",
@@ -109,14 +112,15 @@
         "studentCount_other": "{{count}} students"
       },
       "attendanceTab": {
-        "intro": "Name each meeting and generate a QR; past meetings stay on this device. Full-page tool:",
+        "intro": "Generate a check-in QR for a class meeting. Open the full tool:",
         "attendanceQrLink": "Attendance QR"
       },
       "scheduleTab": {
-        "intro": "Edit the planned sessions (title, date, time) for each class. This uses the same schedule section from the class setup form.",
+        "intro": "Set session titles, dates, and times for each class.",
         "loading": "Loading schedules…",
-        "emptyDescription": "Create a class first, then come back here to set up the per-session schedule.",
+        "emptyDescription": "Create a class first, then set up session dates and times here.",
         "sessionsSummary": "{{sessions}} sessions in 6 months",
+        "sessionsSummaryFilled": "{{sessions}} sessions in 6 months · {{filled}} filled",
         "filledSuffix": " · {{filled}} filled",
         "notSetYet": "Sessions in 6 months not set yet",
         "editSchedule": "Edit schedule"
@@ -125,7 +129,12 @@
     "students": {
       "title": "Students",
       "subtitle": "Students registered to your classes.",
+      "searchPlaceholder": "Search by name, email, or class",
+      "count_one": "{{count}} student",
+      "count_other": "{{count}} students",
+      "noSearchResults": "No students match your search.",
       "table": {
+        "student": "Student",
         "name": "Student name",
         "email": "Email",
         "class": "Class",
@@ -175,18 +184,22 @@
     },
     "attendanceQr": {
       "title": "Attendance QR",
-      "description": "Select the class and the planned session from the schedule, then generate a QR. When you stop the session, that meeting is marked held for student enrollment. Use projector view for full screen. Students sign in to check in."
+      "description": "Pick a class and session, generate a QR, then show it for students to scan."
     },
     "scheduleApprovals": {
       "title": "Schedule approvals",
-      "subtitle": "Review schedules proposed by an admin, then approve or request changes on each class.",
+      "subtitle": "Approve or request changes on schedules proposed by admin.",
       "loading": "Loading your classes…",
       "empty": "No classes yet. Create a class first.",
+      "emptyPending": "Nothing waiting for your approval.",
+      "emptyOther": "No other classes in this list.",
       "addClass": "Add class",
-      "pendingSectionTitle": "Needs your approval",
+      "pendingSectionTitle": "Needs approval",
+      "pendingCount": "{{count}} need review",
       "createdDate": "Created {{date}}",
-      "allSectionTitle": "All your classes",
+      "allSectionTitle": "Your classes",
       "openButton": "Open",
+      "reviewButton": "Review",
       "status": {
         "actionNeeded": "Action needed",
         "approved": "Approved",
@@ -195,10 +208,11 @@
         "published": "Published"
       },
       "statusDescriptions": {
-        "scheduleApproved": "Schedule approved — waiting for admin to publish",
-        "draft": "Draft — admin will propose a schedule",
-        "rejected": "Rejected — admin sent feedback",
-        "default": "Open the schedule step to view or approve when ready."
+        "pending": "Admin proposed a schedule — review to approve or request changes.",
+        "scheduleApproved": "Approved — waiting for admin to publish.",
+        "draft": "Draft — waiting for admin to propose a schedule.",
+        "rejected": "Rejected — admin sent feedback.",
+        "default": "Open the schedule step to view details."
       }
     },
     "status": {
@@ -227,28 +241,39 @@
       }
     },
     "substitutePanel": {
+      "loading": "Loading substitute requests…",
+      "error": {
+        "title": "Could not load requests",
+        "description": "Something went wrong. Refresh the page to try again."
+      },
       "empty": {
-        "title": "No substitute cover requests",
-        "description": "When you invite a substitute from a class page, requests appear here for you and the substitute to review."
+        "title": "No substitute requests",
+        "description": "Invite a substitute from a class page and requests will show up here."
       },
       "summary": {
         "needsResponse": "{{count}} request needs your response.",
         "needsResponse_other": "{{count}} requests need your response.",
-        "track": "Track substitute invitations and approval status for your classes."
+        "track": "Invitations and approval status for your cover requests.",
+        "actionBadge": "{{count}} need action",
+        "actionBadge_one": "{{count}} needs action",
+        "actionBadge_other": "{{count}} need action"
       },
       "card": {
-        "courseLead": "Course lead:",
-        "substitute": "Substitute:"
+        "yourRole": "Your role",
+        "courseLead": "Course lead",
+        "substitute": "Substitute",
+        "session": "Session covered",
+        "wholeClass": "Whole class cover"
       },
       "role": {
-        "youAreSubstitute": "You are the substitute",
-        "youInvited": "You invited",
+        "youAreSubstitute": "Substitute",
+        "youInvited": "Course lead",
         "participant": "Participant"
       },
       "updated": "Updated {{datetime}}",
       "actions": {
         "review": "Review",
-        "viewDetails": "View details",
+        "viewDetails": "Details",
         "openClass": "Open class"
       }
     },
@@ -295,14 +320,18 @@
     },
     "courseForm": {
       "title": {
-        "edit": "Edit Class",
-        "new": "Add New Class"
+        "edit": "Edit class",
+        "new": "New class"
+      },
+      "subtitle": {
+        "edit": "Update details, schedule, and lessons.",
+        "new": "Add details, then set schedule and lessons."
       },
       "steps": {
         "ariaLabel": "Class setup steps",
-        "details": "1 · Details",
-        "schedule": "2 · Schedule approval",
-        "lessons": "3 · Lessons"
+        "details": "Details",
+        "schedule": "Schedule",
+        "lessons": "Lessons"
       },
       "errors": {
         "classNotFound": "Class not found.",
@@ -333,23 +362,36 @@
         }
       },
       "details": {
-        "replaceImage": "Replace image",
-        "addCoverImage": "Add cover image",
+        "replaceImage": "Replace",
+        "addCoverImage": "Add cover",
+        "coverHint": "JPEG, PNG, or WebP · max 8 MB",
         "instructorLabel": "Instructor",
-        "classNameLabel": "Class name *",
-        "classNamePlaceholder": "e.g. Introduction to Economics",
-        "categoryLabel": "Category *",
+        "classNameLabel": "Class name",
+        "classNamePlaceholder": "Class name",
+        "categoryLabel": "Category",
         "categoryNotAssigned": "Not assigned",
-        "categoryHint": "Assigned by admin when your instructor account was created. Contact support if this looks wrong.",
-        "aboutLabel": "About this class (optional)",
-        "aboutPlaceholder": "What students will learn — a sentence or two is enough.",
-        "datesSectionTitle": "Class dates (optional)",
-        "datesSectionHint": "When this run starts and ends. Leave blank if not decided yet.",
-        "startLabel": "Class starts",
-        "endLabel": "Class ends",
+        "categoryHint": "Set by admin on your instructor account.",
+        "levelLabel": "Level",
+        "levelPlaceholder": "Select class level",
+        "levelRequired": "Please select a class level.",
+        "levels": {
+          "beginnerA1": "Beginner (A1)",
+          "elementaryA1Plus": "Elementary (A1+)",
+          "preIntermediateB1": "Pre-Intermediate (B1)",
+          "intermediateB1Plus": "Intermediate (B1+)",
+          "upperIntermediateB2Plus": "Upper-Intermediate (B2+)",
+          "advancedC1": "Advanced (C1)",
+          "advancedC2": "Advanced (C2)"
+        },
+        "aboutLabel": "About",
+        "aboutPlaceholder": "What students will learn…",
+        "datesSectionTitle": "Dates (optional)",
+        "datesSectionHint": "Start and end for this run.",
+        "startLabel": "Starts",
+        "endLabel": "Ends",
         "pricingTitle": "Pricing",
-        "pricingHint": "Set by an admin after you save this class and they publish it.",
-        "continueToSchedule": "Continue to schedule"
+        "pricingHint": "Pricing is set by an admin after the class is published.",
+        "continueToSchedule": "Continue"
       },
       "schedule": {
         "status": {
@@ -361,8 +403,8 @@
         "dateLabel": "Date",
         "timeLabel": "Time",
         "sectionTitle": "Schedule",
-        "newClassInfo": "After you create this class, an administrator will propose session dates and times for your review.",
-        "newClassNote": "Your new class is saved with a minimal placeholder schedule until admin proposes the real one.",
+        "newClassInfo": "After you create the class, an admin will propose session dates for you to approve here.",
+        "newClassNote": "You can continue to lessons for now.",
         "rejectionNoteTitle": "Your note to admin",
         "loading": "Loading schedule…",
         "noProposal": "When an admin proposes a schedule for this class, session rows will appear here for your approval.",
@@ -377,7 +419,7 @@
         "approveSchedule": "Approve schedule",
         "requestChanges": "Request changes",
         "approvedNote": "Schedule approved. The admin can now set pricing and publish the class.",
-        "continueToLessons": "Continue to lessons",
+        "continueToLessons": "Continue",
         "rejectDialog": {
           "title": "Request schedule changes",
           "description": "Describe what should change (days, times, session count). Admin will revise and send a new proposal.",
@@ -392,7 +434,8 @@
         }
       },
       "lessons": {
-        "title": "Lessons (PDF or video link)",
+        "title": "Lessons",
+        "intro": "Add PDF or video content for each lesson.",
         "addLesson": "Add lesson",
         "minimize": "Minimize",
         "expand": "Expand",
@@ -442,7 +485,7 @@
     },
     "quiz": {
       "loading": "Loading quiz…",
-      "backToQuizzes": "Back to class quizzes",
+      "backToQuizzes": "Back to quizzes",
       "title": {
         "edit": "Edit quiz",
         "create": "Create quiz"
@@ -450,33 +493,43 @@
       "form": {
         "questionImageAlt": "Question",
         "changeImage": "Change",
-        "addImageAriaLabel": "Add image to the current question.",
-        "findAndInsertMedia": "Find and insert media",
-        "uploadFile": "Upload file",
-        "dragHere": "or drag here to upload",
-        "detailsTitle": "Quiz details",
+        "addImageAriaLabel": "Add image to this question.",
+        "findAndInsertMedia": "Add image",
+        "uploadFile": "Upload",
+        "dragHere": "or drag and drop",
+        "detailsTitle": "Details",
+        "thumbnail": {
+          "label": "Cover image",
+          "optional": "Optional",
+          "hint": "Shown on the quiz card in this class.",
+          "add": "Upload image",
+          "change": "Change",
+          "remove": "Remove",
+          "previewAlt": "Quiz cover preview"
+        },
         "typeLabel": "Type",
         "typePlaceholder": "Select type",
-        "typeHint": "Quiz for practice or Placement test for assessment.",
+        "typeHint": "Quiz for practice, or Placement test for assessment.",
         "classLabel": "Class",
         "classPlaceholder": "Select class",
         "noClass": "No class",
-        "classLockedHint": "Class is locked for this quiz.",
-        "classPickerHint": "Loading…",
+        "classLockedHint": "Saved for the class you opened from My Class.",
+        "classPickerHint": "Link to one of your classes.",
         "titleLabels": {
-          "placement": "Placement test title *",
-          "quiz": "Quiz title *"
+          "placement": "Placement test title",
+          "quiz": "Quiz title"
         },
-        "titlePlaceholder": "e.g. Economics Placement Test",
+        "titlePlaceholder": "e.g. Week 2 practice quiz",
         "release": {
-          "label": "Release date and time",
+          "label": "Release date & time",
           "date": "Date",
           "time": "Time",
           "selectDate": "Select date",
           "selectTime": "Select time"
         },
-        "releaseHint": "When this placement test becomes available to students.",
-        "questionsTitle": "Questions (multiple choice)",
+        "releaseHint": "When students can take this placement test.",
+        "questionsTitle": "Questions",
+        "questionsHint": "Multiple choice — mark the correct option.",
         "addQuestion": "Add question",
         "questionActions": {
           "expand": "Expand",
@@ -485,19 +538,22 @@
         },
         "questionLabel": "Question {{n}}",
         "pointsLabel": "{{n}} pts",
-        "questionTextLabel": "Question text *",
+        "questionTextLabel": "Question",
         "questionTextPlaceholder": "e.g. What is the main focus of microeconomics?",
-        "questionImageLabel": "Image for this question",
+        "questionImageLabel": "Image",
+        "questionImageOptional": "Optional",
         "timeLimit": {
           "label": "Time limit",
+          "hint": "Seconds allowed to answer this question",
           "choose": "Choose…",
           "seconds": "{{sec}} s"
         },
         "options": {
-          "title": "Options (check the correct answer)",
+          "title": "Options",
+          "hint": "Select the correct answer",
           "option": "Option {{letter}}"
         },
-        "saveChanges": "Save changes",
+        "saveChanges": "Save",
         "createQuiz": "Create quiz"
       },
       "types": {
@@ -510,7 +566,7 @@
         "questionIncomplete": "Each question needs text, at least two options, and one correct answer.",
         "classRequired": "Please select a class for this quiz.",
         "saveFailed": "Failed to save quiz.",
-        "loadFailed": "Could not load quiz."
+        "loadFailed": "Could not load that quiz for editing."
       },
       "toast": {
         "savedLocally": "Saved on this device only",
@@ -549,23 +605,23 @@
     },
     "payroll": {
       "title": "Payroll",
-      "subtitle": "Your classes and linked student payments. Submit monthly payroll when schedule months are complete.",
+      "subtitle": "Submit payroll per class, then track approvals on My submissions.",
       "tabs": {
-        "payroll": "Payroll",
-        "submissions": "My submissions"
+        "payroll": "Classes",
+        "submissions": "Submissions"
       },
       "summary": {
-        "classes": "Your classes",
-        "paymentRows": "payment row(s)",
-        "classesCount": "class(es)",
-        "totalInView": "Total in view"
+        "classes": "Classes",
+        "paymentRows": "{{count}} payments",
+        "classesCount": "{{count}} classes",
+        "totalInView": "Total"
       },
-      "searchPlaceholder": "Search class, student, invoice…",
+      "searchPlaceholder": "Search class or student…",
       "empty": {
-        "signIn": "Sign in with a profile that has instructor classes to see payroll.",
-        "loading": "Loading your classes…",
+        "signIn": "Sign in to see your classes.",
+        "loading": "Loading classes…",
         "noMatch": "No classes match your search.",
-        "noClasses": "No active classes yet. Create a class and wait for enrollment."
+        "noClasses": "No classes yet. Create one in My Class first."
       },
       "table": {
         "class": "Class",
@@ -613,18 +669,19 @@
         "enrolled": "Enrolled"
       },
       "submissions": {
-        "title": "My submissions",
-        "subtitle": "Track your monthly submissions and admin review status.",
-        "viewNotifications": "View notifications",
+        "title": "Submissions",
+        "subtitle": "Pending, approved, and declined payroll requests.",
+        "viewNotifications": "Notifications",
         "stats": {
-          "total": "Total submissions",
+          "total": "Total",
           "pending": "Pending",
           "search": "Search"
         },
-        "searchPlaceholder": "Class, period, status…",
+        "searchPlaceholder": "Search submissions…",
         "empty": {
-          "none": "No payroll submissions yet.",
-          "noMatch": "No submissions match your search."
+          "none": "No submissions yet. Submit from the Classes tab.",
+          "noMatch": "No submissions match your search.",
+          "loading": "Loading submissions…"
         },
         "table": {
           "class": "Class",
@@ -744,46 +801,50 @@
       "backToClasses": "Back to My Classes",
       "backToResumes": "Back to resumes",
       "title": {
-        "new": "New class resume",
-        "edit": "Edit class resume"
+        "new": "New resume",
+        "edit": "Edit resume"
       },
-      "intro": "Recaps and reminders appear on the student class page under the Resume tab.",
+      "intro": "Students see this on their class Resume tab.",
       "substituteBanner": {
-        "viewingAs": "You are editing as substitute.",
+        "viewingAs": "Editing as substitute",
         "courseLead": "Course lead:",
-        "hint": "You can add or edit resumes for students while covering this class."
+        "hint": "You can add or edit resumes while covering this class. Only the course lead can delete."
       },
-      "primaryBanner": "You are the course lead. Substitute instructors with approved cover can also add resumes in demo mode.",
+      "primaryBanner": "Course lead — approved substitutes can also edit resumes here.",
       "thumbnail": {
-        "label": "Thumbnail image (optional)",
+        "label": "Cover image",
+        "optional": "Optional",
         "previewAlt": "Resume thumbnail preview",
-        "hint": "Shows on the resume cards students see on their class page."
+        "hint": "Shown next to the resume on the class page.",
+        "add": "Upload image",
+        "change": "Change",
+        "remove": "Remove"
       },
-      "sessionLabel": "Link to a scheduled session",
+      "sessionLabel": "Session",
       "sessionHints": {
-        "primary": "Optional — tie this recap to a specific session or leave as whole-class.",
-        "substituteLocked": "Session is set from your substitute cover invite.",
-        "noSessions": "No scheduled sessions yet — recap applies to the whole class.",
-        "wholeClass": "Whole class — general recap"
+        "primary": "Tie this to one session, or leave as a whole-class recap.",
+        "substituteLocked": "Locked to the session on your substitute invite.",
+        "noSessions": "No sessions on the schedule yet. You can still save a whole-class recap.",
+        "wholeClass": "Whole class"
       },
       "session": {
-        "wholeClass": "Whole class — general recap",
+        "wholeClass": "Whole class",
         "placeholder": "Whole class or one session…",
-        "loadingAssigned": "Loading assigned session…"
+        "loadingAssigned": "Loading session…"
       },
-      "bodyLabel": "Resume text",
-      "bodyPlaceholder": "Key points, homework, reminders for students…",
+      "bodyLabel": "Recap",
+      "bodyPlaceholder": "Key points, homework, what to review next…",
       "actions": {
         "delete": "Delete",
-        "saveForStudents": "Save for students"
+        "saveForStudents": "Save"
       },
       "deleteDialog": {
         "title": "Delete this resume?",
-        "description": "Students will no longer see this recap. This cannot be undone."
+        "description": "Students will no longer see it. This cannot be undone."
       },
       "errors": {
         "missingClass": "Missing class.",
-        "noAccess": "You don't have access to edit resumes for this class.",
+        "noAccess": "You don't have access to this class.",
         "classNotFound": "Class not found.",
         "emptyBody": "Write something before saving."
       },
@@ -793,9 +854,9 @@
         "deleteFailed": "Could not delete resume.",
         "deleted": "Resume deleted",
         "created": "Resume created",
-        "createdDescription": "Students can now read this recap on their class page.",
+        "createdDescription": "Students can read it on the class Resume tab.",
         "updated": "Resume updated",
-        "updatedDescription": "Your changes are saved for students.",
+        "updatedDescription": "Students will see your changes.",
         "invalidImage": "Please pick an image file.",
         "uploadFailed": "Could not upload image."
       }
@@ -808,7 +869,7 @@
         "unarchive": "Unarchive",
         "archive": "Archive",
         "deleteClass": "Delete class",
-        "editClassContent": "Edit class content"
+        "editClassContent": "Edit class"
       },
       "errors": {
         "missingClass": "Missing class.",
@@ -830,19 +891,30 @@
         }
       },
       "enrollmentHint": "Students enrolled from the catalog appear below when the API returns roster data.",
-      "inviteSubstitute": "Invite Substitute",
+      "inviteSubstitute": "Invite substitute",
       "inviteSubstituteHint": "Covers a session when you're unavailable. Enter the Substitute's admin-registered lecturer email. Demo: in-app notifications only.",
+      "meta": {
+        "category": "Category",
+        "students": "Students",
+        "studentCount_one": "{{count}} student",
+        "studentCount_other": "{{count}} students",
+        "sessions": "Sessions",
+        "sessionsCount": "{{count}} in 6 months",
+        "sessionsNotSet": "Not set",
+        "instructor": "Instructor"
+      },
       "tabs": {
         "enrolled": "Enrolled",
         "schedule": "Schedule",
         "resume": "Resume",
         "quiz": "Quiz",
+        "quizScores": "Quiz scores",
         "attendance": "Attendance",
         "grades": "Grades"
       },
       "enrolled": {
         "title": "Enrolled students",
-        "intro": "Everyone signed up for this class in the platform. Local-only classes won't show rows until the class exists on the server.",
+        "intro": "Students enrolled in this class from the catalog.",
         "sessionsNote": "This class is set to {{count}} sessions in 6 months (from class settings); the table compares local check-ins to that target.",
         "localOnly": "This class is stored only in your browser. Connect it to the API to load enrolled students here.",
         "substituteNoRoster": "Enrollment list is not loaded for substitutes (API).",
@@ -851,48 +923,61 @@
         "loadError": "Could not load enrollment list. Check permissions or try again later.",
         "empty": "No students enrolled yet.",
         "table": {
-          "name": "Name",
+          "name": "Student",
           "email": "Email",
           "sessionsTitle": "Check-ins recorded on this browser vs planned class meetings in six months (class settings).",
-          "sessionsInSixMonths": "Sessions in 6 months *"
+          "sessionsInSixMonths": "Sessions *"
         },
-        "footnote": "* Sessions in 6 months is the planned total from class settings. The first number is how many distinct sessions this student checked into on this browser only."
+        "footnote": "* Sessions = check-ins on this browser ÷ planned sessions from class settings."
       },
       "schedule": {
-        "yourCover": "Your cover on this class",
+        "yourCover": "Your cover",
         "classSchedule": "Class schedule",
-        "substituteIntro": "Only the session(s) you are covering appear here—not the course lead's full term calendar.",
+        "substituteIntro": "Only the sessions you’re covering are listed here.",
         "courseLead": "Course lead:",
-        "primaryIntro": "Session plan from the catalog and, when present, the latest admin proposal from the server.",
-        "scheduleApprovalsLink": "Schedule approvals",
-        "editClassScheduleLink": "Edit class → Schedule",
-        "feedbackTitle": "Schedule feedback on file",
+        "primaryIntro": "Planned sessions for this class.",
+        "scheduleApprovalsLink": "All approvals",
+        "editClassScheduleLink": "Edit schedule",
+        "feedbackTitle": "Schedule feedback",
         "classWindowStart": "Class window start:",
         "classWindowEnd": "End:",
-        "approveOrRequest": "Approve or request schedule changes",
-        "loadingProposal": "Loading latest admin schedule proposal…",
-        "substituteNoMatch": "We couldn't match an active substitute invite on this device to a schedule row.",
-        "substituteNoMatchHint": "Check that your sign-in email matches the invited substitute, or ask the course lead which session you cover.",
-        "wholeClassCover": "Whole-class substitute cover",
-        "wholeClassCoverDescription": "The course lead did not tie this cover to a single calendar row, so the full term schedule is not listed here.",
-        "sessionsCovering": "Session(s) you are covering:",
+        "approveOrRequest": "Review schedule",
+        "loadingProposal": "Loading schedule…",
+        "substituteNoMatch": "No matching cover session found.",
+        "substituteNoMatchHint": "Ask the course lead which session you cover.",
+        "wholeClassCover": "Whole-class cover",
+        "wholeClassCoverDescription": "This cover isn’t tied to a single session, so individual rows aren’t listed here.",
+        "sessionsCovering": "Sessions you’re covering:",
         "table": {
           "number": "#",
           "session": "Session",
           "yourCover": "Your cover",
           "yourCoverTitle": "Your invited cover email and workflow status.",
-          "substituteInstructor": "Substitute instructor",
-          "substituteInstructorTitle": "Lecturer invited when the course lead cannot run this session (demo workflow).",
+          "substituteInstructor": "Substitute",
+          "substituteInstructorTitle": "Lecturer invited when the course lead cannot run this session.",
           "date": "Date",
           "time": "Time",
           "yourEmailTitle": "Your work email on this cover",
           "invitedEmailTitle": "Invited substitute work email"
         },
-        "substituteHiddenNote": "Other sessions in this class are hidden on purpose. The course lead still sees the full schedule.",
-        "noSessions": "No session rows yet. When an admin proposes dates and times, they will show here.",
-        "adminProposal": "Admin proposal from {{name}}.",
-        "plannedSessions": "Planned sessions (six-month window):",
-        "substituteColumnNote": "The Substitute instructor column lists the work email from your invite when the course lead cannot run that session."
+        "substituteHiddenNote": "Other class sessions are hidden. The course lead still sees the full schedule.",
+        "noSessions": "No sessions yet. They’ll appear when a schedule is proposed.",
+        "adminProposal": "Proposed by {{name}}",
+        "plannedSessions": "Sessions:",
+        "substituteColumnNote": "The Substitute column shows invited cover emails and approval status.",
+        "sessionCount_one": "{{count}} session",
+        "sessionCount_other": "{{count}} sessions",
+        "sessionLabel": "Session #{{n}}",
+        "sessionDetailHint": "Select a session on the left to review details and take action.",
+        "statusHeld": "Finished",
+        "statusLive": "Ongoing",
+        "statusPlanned": "Planned",
+        "coverChip": "Cover",
+        "takeAttendance": "Take attendance",
+        "inviteForSessionTitle": "Need a substitute for this session?",
+        "inviteForSessionBody": "Invite another teacher to cover when you can’t run this meeting.",
+        "undatedMonth": "No date",
+        "sidebarHint": "Pick a month, then a session."
       },
       "scheduleStatus": {
         "pendingApproval": "Schedule pending your approval",
@@ -904,34 +989,38 @@
       "substituteCoverTitle": "Substitute cover · {{title}}",
       "resume": {
         "title": "Class resumes",
-        "intro": "Each card is a recap students can read on their class page (Resume tab). Create or edit on a dedicated page.",
+        "intro": "Session recaps students can read on their class page.",
         "newResume": "New resume",
         "emptyTitle": "No resumes yet",
-        "emptyDescription": "Write your first recap so enrolled students can review it anytime.",
+        "emptyDescription": "Write a short recap after class so students can review it later.",
         "createResume": "Create resume",
-        "wholeClassRecap": "Whole class recap",
-        "updated": "Updated",
-        "thumbnailAlt": "Resume thumbnail"
+        "wholeClassRecap": "Whole class",
+        "updated": "Updated {{datetime}}",
+        "thumbnailAlt": "Resume thumbnail",
+        "count_one": "{{count}} resume",
+        "count_other": "{{count}} resumes"
       },
       "quiz": {
-        "title": "Quiz & placement tests",
-        "intro": "Multiple-choice quizzes for this class appear below as cards. Use Create quiz to add one, then publish, edit, or open results from each card.",
+        "title": "Quizzes",
+        "intro": "Multiple-choice quizzes and placement tests for this class.",
         "createQuiz": "Create quiz",
         "substituteRestriction": "Quiz management is for the course lead.",
-        "substituteRestrictionDescription": "Creating and publishing quizzes for this class is done by the instructor who owns the catalog listing.",
-        "localOnly": "This class exists only in your browser. Connect it to the API to list server-backed quizzes for this course.",
+        "substituteRestrictionDescription": "Only the instructor who owns this class can create and publish quizzes.",
+        "localOnly": "This class is only on this device. Connect it to the API to manage quizzes here.",
         "yourQuizzes": "Your quizzes",
-        "fetchNoteFallback": "Quiz list could not be loaded. Quizzes you save on this device still appear below.",
-        "fetchNoteWithError": "Quiz list could not be loaded ({{error}}). Quizzes you save on this device still appear below.",
+        "fetchNoteFallback": "Could not load the quiz list. Local quizzes still appear below.",
+        "fetchNoteWithError": "Could not load quizzes ({{error}}). Local quizzes still appear below.",
         "loadError": "Could not load quizzes for this class.",
-        "emptyTitle": "No quizzes for this class yet",
-        "emptyDescription": "Your real quizzes will replace the example cards below. Create a practice quiz or placement test to get started.",
-        "exampleLayout": "Example layout (not saved — disappears when you add a quiz)",
-        "example": "Example",
+        "emptyTitle": "No quizzes yet",
+        "emptyDescription": "Create a practice quiz or placement test for this class.",
         "placement": "Placement",
         "quiz": "Quiz",
+        "draft": "Draft",
+        "published": "Published",
         "questionCount_one": "{{count}} question",
         "questionCount_other": "{{count}} questions",
+        "count_one": "{{count}} quiz",
+        "count_other": "{{count}} quizzes",
         "publish": "Publish",
         "results": "Results",
         "toast": {
@@ -940,43 +1029,96 @@
           "publishFailed": "Could not publish quiz."
         }
       },
+      "quizScores": {
+        "title": "Quiz scores",
+        "intro": "Gradebook for this class — add quiz columns and enter 0–100. Saved on this device until a server API is available.",
+        "searchPlaceholder": "Search student…",
+        "addQuiz": "Add quiz",
+        "deleteQuiz": "Delete quiz",
+        "save": "Save",
+        "saveAll": "Save all",
+        "scorePlaceholder": "—",
+        "ungraded": "Not graded",
+        "groupLabel": "Quiz scores",
+        "noQuizzesShared": "No quizzes added yet",
+        "table": {
+          "no": "No.",
+          "student": "Student"
+        },
+        "addDialog": {
+          "title": "Add quiz column",
+          "description": "Link this quiz to an approved class session, then give it a short name.",
+          "label": "Quiz title",
+          "placeholder": "e.g. Week 2 Quiz",
+          "dateLabel": "Session date",
+          "datePlaceholder": "Select date",
+          "sessionLabel": "Session",
+          "sessionPlaceholder": "Select session",
+          "noSchedule": "No approved schedule sessions yet. Ask admin to propose a schedule, then approve it on the Schedule tab.",
+          "noSessionsForDate": "No sessions on this date.",
+          "sessionRequired": "Select a session from the class schedule."
+        },
+        "deleteDialog": {
+          "title": "Delete quiz column?",
+          "description": "Remove \"{{title}}\" and all scores entered for it on this device. This cannot be undone."
+        },
+        "empty": {
+          "connectApi": "Connect this class to the API to load enrolled students for quiz scores.",
+          "loading": "Loading students…",
+          "error": "Could not load students for quiz scores.",
+          "noStudents": "No enrolled students yet — nothing to score.",
+          "noColumnsTitle": "No quiz columns yet",
+          "noColumnsDescription": "Add a quiz to start entering scores.",
+          "noSearchResults": "No students match your search."
+        },
+        "toast": {
+          "saved": "Scores saved",
+          "savedAll": "All visible scores saved",
+          "invalidScore": "Enter a score between 0 and 100, or leave the cell empty.",
+          "titleRequired": "Enter a quiz title.",
+          "columnAdded": "Quiz column added",
+          "columnDeleted": "Quiz column deleted"
+        }
+      },
       "attendance": {
-        "qrTitle": "Class meeting check-in (QR)",
-        "qrIntro": "Each QR opens the check-in link; students must use it signed in as a student. The roster table below only shows check-ins stored on this browser.",
-        "overviewTitle": "Student attendance overview",
-        "overviewIntro": "Use Jump by class schedule to pick the last planned session or a specific row from your schedule.",
-        "connectApi": "Connect this class to the API to align attendance tracking with enrolled students.",
-        "substituteOverview": "Attendance overview needs the server roster.",
-        "substituteOverviewDescription": "That roster is only returned for the course lead today, so this table cannot load while you are signed in as substitute.",
-        "loadingRoster": "Loading roster for attendance table…",
-        "loadStudentsError": "Could not load students for this overview.",
-        "noStudents": "No enrolled students yet — nothing to show in the attendance overview.",
+        "qrTitle": "Attendance",
+        "qrIntro": "Pick a session, generate a QR, and have students scan to check in.",
+        "overviewTitle": "Roster",
+        "overviewIntro": "Check-ins for the session selected above.",
+        "connectApi": "Connect this class to the API to track enrolled students.",
+        "substituteOverview": "Roster needs the course lead account.",
+        "substituteOverviewDescription": "Enrollment is only available to the course lead right now.",
+        "loadingRoster": "Loading students…",
+        "loadStudentsError": "Could not load students.",
+        "noStudents": "No enrolled students yet.",
         "phoneScanNote": "Phone scan vs this screen:",
         "phoneScanDescription": "student phone scans now sync through the EduHub attendance API.",
         "confirmEmailNote": "Confirm the student account email matches the roster row, the meeting selected here matches the QR they scanned, and they are signed in as a student on the check-in page.",
-        "showingFor": "Showing attendance for:",
-        "presentForMeeting": "Present for this meeting:",
-        "selectMeetingHint": "Select a meeting with Jump by class schedule or in Class meeting check-in to load check-in data for the table below.",
+        "showingFor": "Session",
+        "presentForMeeting": "Present",
+        "selectMeetingHint": "Select a session above to load check-ins.",
         "enrollmentNote": "Enrollment lists everyone who joined the class on the platform. Present and Checked in now use the EduHub attendance API for the selected QR meeting.",
         "jumpBySchedule": "Jump by class schedule",
         "chooseScheduleContext": "Choose schedule context",
         "latestQr": "Latest QR session (newest)",
         "lastScheduled": "Last date on class schedule",
         "matchHint": "When a row matches the selected QR session, the Present and Checked in columns in this table use that meeting from the attendance API.",
-        "tableAria": "Student attendance for the selected check-in meeting",
+        "tableAria": "Student attendance for the selected session",
+        "verifyHint": "Tick to confirm attendance for this meeting.",
         "table": {
           "student": "Student",
           "email": "Email",
           "present": "Present",
           "checkedIn": "Checked in",
-          "instructorCheck": "Instructor Check"
+          "instructorCheck": "Verify"
         },
         "presentBadge": "Present",
+        "absentBadge": "—",
         "checkedInTitle": "Checked in",
         "signInToCheck": "Sign in to save teacher check",
         "toast": {
-          "noQrMeetings": "No QR meetings yet — generate check-in in Class meeting check-in above.",
-          "noSavedMeeting": "No saved meeting matches that schedule row yet. Generate a QR for that class day, or pick the meeting manually in Class meeting check-in."
+          "noQrMeetings": "No QR sessions yet — generate one above.",
+          "noSavedMeeting": "No QR for that schedule row yet. Generate one above, then try again."
         }
       },
       "dialogs": {
@@ -1017,15 +1159,19 @@
       }
     },
     "attendancePanel": {
-      "title": "Class meeting check-in",
+      "title": "Class check-in",
+      "setupTitle": "Setup",
+      "sessionLabel": "Session",
+      "live": "Live",
+      "ended": "Ended",
       "description": {
-        "fixed": "Generate a QR for this class. Students scan to check in on their phones.",
-        "schedule": "Pick a planned session from the schedule, name the meeting, then generate a QR.",
-        "embedded": "Name each meeting and generate a QR; past meetings stay on this device.",
-        "default": "Select a class and meeting, then generate a QR code for student check-in."
+        "fixed": "Pick a session, generate a QR, then show it to students.",
+        "schedule": "Pick a planned session, then generate a QR.",
+        "embedded": "Pick a session, generate a QR, then show it to students.",
+        "default": "Select a class and session, then generate a QR."
       },
       "loading": "Loading classes…",
-      "noClasses": "No classes yet. Create a class first.",
+      "noClasses": "No classes yet.",
       "classLabel": "Class",
       "classPlaceholder": "Select class",
       "scheduleHint": {
@@ -1033,16 +1179,17 @@
         "setSessions": "Set Sessions in 6 months on the class schedule to align meeting names with planned rows."
       },
       "meetingName": {
-        "label": "Name this class meeting",
+        "label": "Meeting name",
         "placeholder": "e.g. Week 3 — Supply & Demand",
-        "helper": "Shown on the projector and in the session log."
+        "helper": "Shown under the QR and in projector view."
       },
       "generateQr": {
-        "new": "New QR for next meeting",
-        "this": "Generate QR for this meeting"
+        "new": "New QR",
+        "this": "Generate QR",
+        "pickSessionFirst": "Pick a session first."
       },
-      "projectorView": "Projector view",
-      "stopSession": "Stop session",
+      "projectorView": "Projector",
+      "stopSession": "Stop",
       "modality": {
         "online": "Online check-in — students scan from anywhere.",
         "inPerson": "In-person check-in — show QR on the projector."
@@ -1050,37 +1197,42 @@
       "sessionTimer": {
         "label": "Class session time",
         "max": "max {{duration}}",
-        "remaining": "{{time}} remaining",
+        "remaining": "{{time}} left",
         "closesAt": "Check-in closes at {{time}}"
       },
-      "qrHint": "Scan opens student check-in — they must be signed in as a student.",
+      "qrHint": "Students must be signed in to check in.",
       "sessionEnded": {
         "stopped": {
           "title": "Session stopped",
-          "body": "Check-in is closed for this meeting."
+          "body": "Check-in is closed. Generate a new QR for the next window."
         },
         "windowEnded": {
           "title": "Check-in closed",
-          "body": "The check-in window for this session has ended."
+          "body": "This session has ended. Generate a new QR to continue."
         },
         "closed": {
-          "title": "Check-in window ended",
-          "body": "Start a new QR session for the next meeting."
+          "title": "Check-in ended",
+          "body": "Generate a new QR for the next meeting."
+        },
+        "noToken": {
+          "title": "QR unavailable here",
+          "body": "This session is still open, but the code isn’t in this tab. Generate a new QR to show it again."
         }
       },
       "emptyQr": {
-        "tapGenerate": "Tap Generate below to create a QR for this meeting.",
-        "pickClass": "Pick a class and tap Generate to start check-in."
+        "tapGenerate": "Tap Generate to create a QR for this meeting.",
+        "pickClass": "Pick a class, then generate a QR.",
+        "pickSession": "Pick a session, then generate a QR."
       },
       "sessionLog": {
-        "title": "Session log (this class)",
-        "description": "Past QR sessions for this class on this device."
+        "title": "Recent sessions",
+        "description": "Past check-in sessions for this class."
       },
       "projector": {
         "title": "Attendance QR — projector",
-        "scanHint": "Students scan with their phone to check in",
+        "scanHint": "Scan with your phone to check in",
         "meetingLabel": "Meeting:",
-        "exitAria": "Exit projector view",
+        "exitAria": "Exit projector",
         "ariaLabel": "Projector attendance QR"
       },
       "meetingFallback": "Meeting",
@@ -1136,9 +1288,9 @@
       }
     },
     "grades": {
-      "title": "Final scores",
-      "intro": "Total = average of attendance % and instructor score (0–100). Publish certificates when grades are final.",
-      "publishAll": "Publish all certificates",
+      "title": "Grades",
+      "intro": "Enter instructor scores, then publish certificates for students.",
+      "publishAll": "Publish all",
       "empty": {
         "substitute": "Substitute instructors cannot edit grades on this demo page.",
         "connectApi": "Connect this class to the API to load enrolled students for grading.",
@@ -1150,23 +1302,23 @@
         "student": "Student",
         "sessions": "Sessions",
         "attendance": "Attend. %",
-        "instructor": "Instructor",
+        "instructor": "Score",
         "total": "Total",
         "feedback": "Feedback",
         "actions": "Actions",
         "headerTitles": {
-          "sessions": "QR check-ins on this browser vs planned sessions",
-          "attendance": "Auto: sessions attended ÷ planned sessions in 6 months",
+          "sessions": "Check-ins vs planned sessions",
+          "attendance": "Sessions attended ÷ planned (0–100)",
           "instructor": "Your score 0–100",
-          "total": "Average of attendance % and instructor score"
+          "total": "Instructor score (attendance is informational)"
         }
       },
       "feedback": {
         "sessions": "sess.",
         "platformPending": "Platform pending",
         "platformBonus": "+ platform",
-        "pending": "Pending",
-        "readReview": "Read review"
+        "pending": "—",
+        "readReview": "Review"
       },
       "scorePlaceholder": "0–100",
       "actions": {
@@ -1175,22 +1327,26 @@
         "publish": "Publish",
         "done": "Done"
       },
-      "footnote": "Attend. % = sessions checked in on this browser ÷ planned sessions (class settings). Not synced across devices until an attendance API exists.",
+      "footnote": "Attend. % is informational. Total uses the instructor score. Publish so students can see certificates.",
+      "invalidScore": "Enter a score from 0 to 100.",
       "reviewDialog": {
         "title": "Student review",
-        "description": "Ratings and comments submitted by the student.",
+        "description": "Ratings and comments from {{name}}.",
         "instructorRating": "Instructor rating",
         "platformRating": "Platform rating",
         "noComment": "No comment.",
-        "submitted": "Submitted {{date}}"
+        "submitted": "Submitted {{date}}",
+        "noInstructorReview": "No instructor review yet."
       },
       "starsAriaLabel": "{{rating}} out of 5 stars",
       "toast": {
         "gradeSaved": "Grade saved",
         "certificatePublished": "Certificate published",
+        "certificateDownloaded": "Certificate downloaded",
         "saveFailed": "Could not save grade",
         "publishFailed": "Could not publish certificate",
-        "publishAllDone": "All certificates published"
+        "publishAllDone": "All certificates published",
+        "downloadFailed": "Could not generate certificate PDF"
       }
     }
   }

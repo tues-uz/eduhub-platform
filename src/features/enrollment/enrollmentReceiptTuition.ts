@@ -13,7 +13,11 @@ import {
   formatReceiptAmount,
   tuitionLineDescription,
 } from "@/features/enrollment/eduHubReceiptPdfLayout";
-import { formatPaymentMethodLabel } from "@/features/enrollment/enrollmentDocumentConfig";
+import {
+  formatPaymentMethodLabelLocalized,
+  getReceiptPdfCopy,
+  type ReceiptPdfLocale,
+} from "@/features/enrollment/enrollmentReceiptPdfI18n";
 
 /** Resolve session count + join point for invoice/receipt (stored enrollment fields win). */
 export function resolveEnrollmentSessionBounds(
@@ -94,11 +98,13 @@ export function computeReceiptAmountPaid(
 export function tuitionLineDescriptionForQuote(
   issuedAtIso: string,
   quote: SessionTuitionQuote | null,
+  locale: ReceiptPdfLocale = "en",
 ): string {
-  const base = tuitionLineDescription(issuedAtIso);
+  const copy = getReceiptPdfCopy(locale);
+  const base = tuitionLineDescription(issuedAtIso, locale);
   if (!quote || quote.sessionsIncluded <= 0) return base;
   if (quote.joinFromMeeting > 1 && quote.sessionsIncluded < quote.totalSessions) {
-    return `${base} · MEETINGS ${quote.joinFromMeeting}–${quote.totalSessions} OF ${quote.totalSessions}`;
+    return `${base} · ${copy.meetingsOf} ${quote.joinFromMeeting}–${quote.totalSessions} ${copy.of} ${quote.totalSessions}`;
   }
   return base;
 }
@@ -112,40 +118,49 @@ export function buildReceiptDescriptionLines(params: {
   paymentMethod?: string;
   amountPaid: number;
   currency: string;
+  locale?: ReceiptPdfLocale;
 }): string[] {
+  const locale = params.locale ?? "en";
+  const copy = getReceiptPdfCopy(locale);
   const lines: string[] = [];
-  lines.push(tuitionLineDescription(params.issuedAtIso));
+  lines.push(tuitionLineDescription(params.issuedAtIso, locale));
 
   const course = params.courseTitle.trim();
   if (course) {
-    lines.push(`CLASS: ${course.toUpperCase()}`);
+    lines.push(`${copy.classPrefix}: ${course.toUpperCase()}`);
   }
 
   const quote = params.quote;
   if (quote && quote.totalSessions > 0) {
     const listedStr = formatReceiptAmount(quote.listedTotal, params.currency);
-    lines.push(`LISTED TUITION: ${listedStr} · ${quote.totalSessions} CLASS SESSIONS`);
+    lines.push(
+      `${copy.listedTuition}: ${listedStr} · ${quote.totalSessions} ${copy.classSessions}`,
+    );
     if (quote.joinFromMeeting > 1 || quote.sessionsIncluded < quote.totalSessions) {
       lines.push(
-        `PRORATED BILLING: SESSIONS ${quote.joinFromMeeting}–${quote.totalSessions} OF ${quote.totalSessions} (${quote.sessionsIncluded} INCLUDED)`,
+        `${copy.proratedBilling}: ${copy.meetingsOf} ${quote.joinFromMeeting}–${quote.totalSessions} ${copy.of} ${quote.totalSessions} (${quote.sessionsIncluded} ${copy.included})`,
       );
     } else {
-      lines.push(`FULL SCHEDULE: ALL ${quote.totalSessions} SESSIONS`);
+      lines.push(`${copy.fullSchedule}: ${copy.allSessions} ${quote.totalSessions} ${copy.classSessions}`);
     }
   }
 
   const plan = params.paymentPlan ?? "FULL";
   if (plan === "DOWN_PAYMENT") {
-    lines.push("PAYMENT PLAN: DOWN PAYMENT (FIRST INSTALLMENT)");
-    lines.push("REMAINING BALANCE & DATES PER SCHOOL POLICY AFTER VERIFICATION");
+    lines.push(copy.paymentPlanDown);
+    lines.push(copy.paymentPlanRemaining);
   } else {
-    lines.push("PAYMENT PLAN: FULL PAYMENT");
+    lines.push(copy.paymentPlanFull);
   }
 
   if (params.paymentMethod) {
-    lines.push(`METHOD: ${formatPaymentMethodLabel(params.paymentMethod).toUpperCase()}`);
+    lines.push(
+      `${copy.methodPrefix}: ${formatPaymentMethodLabelLocalized(params.paymentMethod, locale).toUpperCase()}`,
+    );
   }
 
-  lines.push(`AMOUNT ON THIS RECEIPT: ${formatReceiptAmount(params.amountPaid, params.currency)}`);
+  lines.push(
+    `${copy.amountOnReceipt}: ${formatReceiptAmount(params.amountPaid, params.currency)}`,
+  );
   return lines;
 }

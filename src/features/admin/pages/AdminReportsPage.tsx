@@ -1,7 +1,5 @@
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, BarChart3 } from "@/lib/icons";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
+import { BarChart3 } from "@/lib/icons";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 
 export default function AdminReportsPage() {
@@ -14,12 +12,7 @@ export default function AdminReportsPage() {
   ] as const;
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6">
-        <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
-          <ArrowLeft className="h-4 w-4" />
-          {t("admin.shared.backToDashboard")}
-        </Link>
 
         <AdminPageHeader
           title={t("adminNav.reports")}
@@ -39,6 +32,5 @@ export default function AdminReportsPage() {
           ))}
         </div>
       </div>
-    </AdminLayout>
   );
 }

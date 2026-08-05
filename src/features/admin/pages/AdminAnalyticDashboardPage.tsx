@@ -17,7 +17,6 @@ import {
   Users,
   UserX,
 } from "@/lib/icons";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -635,7 +634,6 @@ export default function AdminAnalyticDashboardPage() {
   ]);
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6 max-w-6xl">
         {isStaffAnalytic ? (
           <div className="mb-8 pb-6 border-b border-slate-200">
@@ -807,10 +805,10 @@ export default function AdminAnalyticDashboardPage() {
             <section className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
               <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
                 <h2 className="text-base font-semibold text-slate-900">
-                  {t("adminNav.enrollmentsWaitlist")}
+                  {t("adminNav.enrollmentApplications")}
                 </h2>
                 <Button variant="ghost" size="sm" className="h-8 text-slate-600" asChild>
-                  <Link to="/dashboard/admin/enrollments">
+                  <Link to="/dashboard/admin/enrollment-applications">
                     {t("common.viewAll")}
                     <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                   </Link>
@@ -1112,6 +1110,5 @@ export default function AdminAnalyticDashboardPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AdminLayout>
   );
 }

@@ -1,8 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "@/lib/icons";
 import { toast } from "sonner";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { mockAdminSupportSessions } from "@/features/admin/data/adminOperationalMock";
 import { Button } from "@/components/ui/button";
@@ -51,12 +48,7 @@ export default function AdminSupportSessionsPage() {
     search.trim() !== "" || statusFilter !== "all" || courseFilter !== "all";
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6">
-        <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
-          <ArrowLeft className="h-4 w-4" />
-          {t("admin.shared.backToDashboard")}
-        </Link>
 
         <AdminPageHeader
           title={t("admin.supportSessions.title")}
@@ -163,6 +155,5 @@ export default function AdminSupportSessionsPage() {
           </Table>
         </div>
       </div>
-    </AdminLayout>
   );
 }

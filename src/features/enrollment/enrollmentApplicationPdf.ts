@@ -1,11 +1,26 @@
 import type { EnrollmentApplicationRecord } from "@/features/enrollment/enrollmentApplicationStore";
 import type { EduHubReceiptPdfInput } from "@/features/enrollment/eduHubReceiptPdfLayout";
+import {
+  formatSessionTimeLabel,
+  type SessionSlotLike,
+} from "@/features/courses/classSchedulePreview";
 import { downloadEnrollmentSubmissionReceiptPdf } from "@/features/enrollment/enrollmentReceiptPdf";
 import {
   buildReceiptDescriptionLines,
   resolveEnrollmentTuitionQuote,
 } from "@/features/enrollment/enrollmentReceiptTuition";
+import {
+  getReceiptPdfCopy,
+  type ReceiptPdfLocale,
+} from "@/features/enrollment/enrollmentReceiptPdfI18n";
 import { enrollmentMonthsPaidLabel } from "@/features/enrollment/enrollmentTuitionThirds";
+
+export type EnrollmentScheduleSessionSummary = {
+  title?: string;
+  dateLabel: string;
+  timeLabel?: string;
+  weekdayLabel?: string;
+};
 
 export type EnrollmentApplicationPdfData = {
   submittedAtIso: string;
@@ -25,6 +40,7 @@ export type EnrollmentApplicationPdfData = {
   currency?: string;
   paymentMethod?: string;
   teacherName?: string;
+  scheduleSessions?: EnrollmentScheduleSessionSummary[];
   paymentPlan?: "FULL" | "DOWN_PAYMENT";
   joinFromSessionNumber?: number;
   scheduleSessionCount?: number;
@@ -39,13 +55,40 @@ function formatMoneyLine(price: number | undefined, currency: string): string {
   }).format(price);
 }
 
+/** Compact schedule rows for enrollment success UI / PDF payload. */
+export function buildEnrollmentScheduleSessionSummaries(
+  slots: SessionSlotLike[],
+): EnrollmentScheduleSessionSummary[] {
+  return slots
+    .filter((slot) => Boolean(slot.sessionDate?.trim() || slot.title?.trim()))
+    .map((slot) => {
+      const dateRaw = slot.sessionDate?.trim() ?? "";
+      const d = dateRaw ? new Date(dateRaw) : null;
+      const valid = d != null && !Number.isNaN(d.getTime());
+      return {
+        title: slot.title?.trim() || undefined,
+        dateLabel: valid
+          ? d!.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+          : dateRaw || "—",
+        timeLabel: formatSessionTimeLabel(slot.sessionTime) ?? undefined,
+        weekdayLabel: valid
+          ? d!.toLocaleDateString(undefined, { weekday: "long" })
+          : undefined,
+      };
+    });
+}
+
 function parseAmountFromTuitionLabel(label: string): number {
   const digits = label.replace(/[^\d]/g, "");
   const n = Number(digits);
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-function applicationPdfDataToReceiptInput(data: EnrollmentApplicationPdfData): EduHubReceiptPdfInput | null {
+function applicationPdfDataToReceiptInput(
+  data: EnrollmentApplicationPdfData,
+  locale: ReceiptPdfLocale = "en",
+): EduHubReceiptPdfInput | null {
+  const copy = getReceiptPdfCopy(locale);
   const amount =
     data.amount != null && data.amount > 0 ? data.amount : parseAmountFromTuitionLabel(data.tuitionLabel);
   if (amount <= 0) return null;
@@ -80,8 +123,8 @@ function applicationPdfDataToReceiptInput(data: EnrollmentApplicationPdfData): E
   return {
     variant: "submission",
     issuedAtIso: data.submittedAtIso,
-    invoiceNumber: "Pending approval",
-    receiptNumber: "Pending approval",
+    invoiceNumber: copy.pendingApproval,
+    receiptNumber: copy.pendingApproval,
     paymentMethod: data.paymentMethod ?? "BANK_TRANSFER",
     fullName: data.fullName,
     courseTitle: data.courseTitle,
@@ -95,9 +138,11 @@ function applicationPdfDataToReceiptInput(data: EnrollmentApplicationPdfData): E
       paymentMethod: data.paymentMethod ?? "BANK_TRANSFER",
       amountPaid: amount,
       currency: data.currency ?? "UZS",
+      locale,
     }),
     currency: data.currency ?? "UZS",
     amount,
+    locale,
   };
 }
 
@@ -139,8 +184,9 @@ export function enrollmentRecordToPdfData(record: EnrollmentApplicationRecord): 
 /** Same layout as official school receipt; marked as submission until INV/REC are issued. */
 export async function downloadEnrollmentApplicationPdf(
   data: EnrollmentApplicationPdfData,
+  locale: ReceiptPdfLocale = "en",
 ): Promise<void> {
-  const receipt = applicationPdfDataToReceiptInput(data);
+  const receipt = applicationPdfDataToReceiptInput(data, locale);
   if (!receipt) {
     return;
   }

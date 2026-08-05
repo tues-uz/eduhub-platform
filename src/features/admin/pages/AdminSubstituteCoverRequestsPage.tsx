@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ClipboardCheck } from "@/lib/icons";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { adminSubstituteDetailHref } from "@/features/admin/substituteCoverAdminRoutes";
 import { useTranslation } from "react-i18next";
@@ -69,7 +68,6 @@ export default function AdminSubstituteCoverRequestsPage() {
   }, []);
 
   return (
-    <AdminLayout>
       <div className="container mx-auto max-w-3xl px-6 pb-14">
         <Link
           to="/dashboard/admin/notifications"
@@ -135,6 +133,5 @@ export default function AdminSubstituteCoverRequestsPage() {
           )}
         </div>
       </div>
-    </AdminLayout>
   );
 }

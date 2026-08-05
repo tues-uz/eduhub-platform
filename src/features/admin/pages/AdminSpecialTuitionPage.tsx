@@ -1,11 +1,9 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Trash2 } from "@/lib/icons";
+import { Plus, Trash2 } from "@/lib/icons";
 import { toast } from "sonner";
 import { eduhubCourses } from "@/api/eduhubClient";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { useTranslation } from "react-i18next";
 import {
@@ -95,15 +93,7 @@ export default function AdminSpecialTuitionPage() {
   };
 
   return (
-    <AdminLayout>
       <div className="container mx-auto max-w-4xl px-6 pb-10">
-        <Link
-          to="/dashboard/admin"
-          className="mb-6 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t("admin.shared.backToDashboard")}
-        </Link>
 
         <AdminPageHeader
           title={t("adminNav.specialTuition")}
@@ -234,6 +224,5 @@ export default function AdminSpecialTuitionPage() {
           </Table>
         </div>
       </div>
-    </AdminLayout>
   );
 }

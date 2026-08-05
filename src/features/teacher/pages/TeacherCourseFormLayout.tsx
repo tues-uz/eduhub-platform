@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Outlet, useNavigate, useMatch, NavLink } from "react-router-dom";
+import { Outlet, useNavigate, useMatch, NavLink, useLocation } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,13 +10,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import { Check } from "@/lib/icons";
 import { useAuthSession } from "@/features/auth/context";
 import { createEmptyLesson } from "../data/teacherLessonDefaults";
 import { eduhubCourses, eduhubModules, eduhubLessons, eduhubUploadFile } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import type { ClassMeetingSlot, TeacherLesson } from "../types";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   fetchPdfReadingTimeEstimate,
   fetchVideoDurationFromUrl,
@@ -27,7 +28,22 @@ import {
 } from "./teacherCourseFormHelpers";
 import { TeacherCourseFormContext, type TeacherCourseFormContextValue } from "./TeacherCourseFormContext";
 import { resolveInstructorCategory, INSTRUCTOR_CATEGORY_MISSING } from "../resolveInstructorCategory";
+import { COURSE_LEVEL_REQUIRED } from "../data/courseLevels";
 import { useTranslation } from "react-i18next";
+
+type FormStepId = "details" | "schedule" | "lessons";
+
+const FORM_STEPS: { id: FormStepId; path: string; labelKey: string; number: number }[] = [
+  { id: "details", path: "details", labelKey: "teacher.courseForm.steps.details", number: 1 },
+  { id: "schedule", path: "schedule", labelKey: "teacher.courseForm.steps.schedule", number: 2 },
+  { id: "lessons", path: "lessons", labelKey: "teacher.courseForm.steps.lessons", number: 3 },
+];
+
+function stepIndexFromPath(pathname: string): number {
+  if (pathname.includes("/schedule")) return 1;
+  if (pathname.includes("/lessons")) return 2;
+  return 0;
+}
 
 /** Normalize API ISO strings to `YYYY-MM-DD` for date inputs. */
 function toDateInputValue(iso?: string): string {
@@ -55,15 +71,12 @@ const TeacherCourseFormLayout = () => {
   );
 
   const [title, setTitle] = useState("");
+  const [level, setLevel] = useState("");
   const [description, setDescription] = useState("");
   const [classMeetingsInSixMonths, setClassMeetingsInSixMonths] = useState("");
   const [classStartDate, setClassStartDate] = useState("");
   const [classEndDate, setClassEndDate] = useState("");
   const [lessons, setLessons] = useState<TeacherLesson[]>([]);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem("sidebarCollapsed");
-    return saved === "true";
-  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [durationLoadingIndex, setDurationLoadingIndex] = useState<number | null>(null);
@@ -98,19 +111,13 @@ const TeacherCourseFormLayout = () => {
   }, [videoUrlKey]);
 
   useEffect(() => {
-    const check = () => setIsSidebarCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
-    check();
-    const id = setInterval(check, 100);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
     if (isEdit && courseId) {
       if (isUuid(courseId)) {
         eduhubCourses
           .getById(courseId)
           .then((course) => {
             setTitle(course.title);
+            setLevel(course.level ?? "");
             setDescription(course.description ?? "");
             setThumbnailUrl(course.thumbnailUrl ?? "");
             {
@@ -280,6 +287,10 @@ const TeacherCourseFormLayout = () => {
       setError(INSTRUCTOR_CATEGORY_MISSING);
       return false;
     }
+    if (!level.trim()) {
+      setError(COURSE_LEVEL_REQUIRED);
+      return false;
+    }
     const startTrim = classStartDate.trim();
     const endTrim = classEndDate.trim();
     if ((startTrim && !endTrim) || (!startTrim && endTrim)) {
@@ -299,7 +310,7 @@ const TeacherCourseFormLayout = () => {
       }
     }
     return true;
-  }, [title, instructorCategory, classStartDate, classEndDate]);
+  }, [title, instructorCategory, level, classStartDate, classEndDate]);
 
   /** Schedule is owned by admin; this step is informational / approval only. */
   const validateScheduleStep = useCallback((): boolean => {
@@ -316,6 +327,10 @@ const TeacherCourseFormLayout = () => {
     }
     if (!instructorCategory.trim()) {
       setError(INSTRUCTOR_CATEGORY_MISSING);
+      return;
+    }
+    if (!level.trim()) {
+      setError(COURSE_LEVEL_REQUIRED);
       return;
     }
     const startTrim = classStartDate.trim();
@@ -361,6 +376,7 @@ const TeacherCourseFormLayout = () => {
           title: trimmedTitle,
           description: description.trim() || "—",
           category: instructorCategory.trim(),
+          level: level.trim(),
           status: "DRAFT",
           classMeetingsInSixMonths: meetingsSixMo,
           classMeetingTitles: meetingTitlesForSave,
@@ -398,6 +414,7 @@ const TeacherCourseFormLayout = () => {
           title: trimmedTitle,
           description: description.trim() || "—",
           category: instructorCategory.trim() || existingCourse.category,
+          level: level.trim(),
           status: existingCourse.status,
           classMeetingsInSixMonths: meetingsSixMo,
           classMeetingTitles: meetingTitlesForSave,
@@ -452,6 +469,8 @@ const TeacherCourseFormLayout = () => {
     title,
     setTitle,
     category: instructorCategory,
+    level,
+    setLevel,
     description,
     setDescription,
     classMeetingsInSixMonths,
@@ -495,61 +514,82 @@ const TeacherCourseFormLayout = () => {
     setLessonToRemoveIndex,
   };
 
+  const location = useLocation();
+  const activeStepIndex = stepIndexFromPath(location.pathname);
+
   if (!newMatch && !editMatch) {
     return null;
   }
 
-  const stepLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-      isActive ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-    }`;
-
   return (
     <TeacherCourseFormContext.Provider value={contextValue}>
-      <div className="teacher-course-form-page min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <DashboardSidebar />
-        <main
-          className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-0 pb-20 transition-all duration-300 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
-        >
-          <div className="w-full min-w-0 px-6 pt-0">
-            <div className="sticky top-16 z-30 -mx-6 mb-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-slate-100 bg-white px-6 pb-6 pt-4 lg:top-0">
-              <h1
-                className="min-w-0 text-2xl font-bold text-foreground"
-                style={{ fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.5px" }}
-              >
-                {isEdit ? "Edit Class" : "Add New Class"}
-              </h1>
+      <div className="teacher-course-form-page flex min-h-full w-full min-w-0 flex-col px-4 pb-4 pt-0 lg:px-6 md:pb-6">
+        <div className="sticky top-0 z-20 -mx-4 mb-6 border-b border-border bg-background px-4 py-4 lg:-mx-6 lg:px-6">
+          <h1 className="mb-3 text-2xl font-semibold tracking-tight text-foreground">
+            {isEdit ? t("teacher.courseForm.title.edit") : t("teacher.courseForm.title.new")}
+          </h1>
+          <nav
+            className="flex w-full items-center gap-0 overflow-x-auto"
+            aria-label={t("teacher.courseForm.steps.ariaLabel")}
+          >
+            {FORM_STEPS.map((step, index) => {
+              const isActive = index === activeStepIndex;
+              const isCompleted = index < activeStepIndex;
+              return (
+                <div key={step.id} className="flex min-w-0 items-center">
+                  {index > 0 ? (
+                    <div
+                      className={cn(
+                        "mx-1 h-px w-6 shrink-0 sm:mx-2 sm:w-10",
+                        isCompleted || isActive ? "bg-teal-600/50" : "bg-border",
+                      )}
+                      aria-hidden
+                    />
+                  ) : null}
+                  <NavLink
+                    to={`${basePath}/${step.path}`}
+                    end={step.id === "details"}
+                    className={cn(
+                      "inline-flex items-center gap-2 rounded-full px-2 py-1.5 text-sm font-medium transition-colors sm:px-2.5",
+                      isActive
+                        ? "text-teal-800"
+                        : isCompleted
+                          ? "text-foreground hover:text-teal-800"
+                          : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums",
+                        isActive && "bg-teal-700 text-white",
+                        isCompleted && !isActive && "bg-teal-700/15 text-teal-800 ring-1 ring-teal-700/30",
+                        !isActive && !isCompleted && "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {isCompleted && !isActive ? (
+                        <Check className="h-3.5 w-3.5" aria-hidden />
+                      ) : (
+                        step.number
+                      )}
+                    </span>
+                    <span className="whitespace-nowrap">{t(step.labelKey)}</span>
+                  </NavLink>
+                </div>
+              );
+            })}
+          </nav>
+        </div>
 
-              <nav className="flex shrink-0 flex-wrap items-center gap-2" aria-label="Class setup steps">
-                <NavLink to={`${basePath}/details`} className={stepLinkClass} end>
-                  1 · Details
-                </NavLink>
-                <span className="text-slate-300 select-none" aria-hidden>
-                  /
-                </span>
-                <NavLink to={`${basePath}/schedule`} className={stepLinkClass}>
-                  2 · Schedule approval
-                </NavLink>
-                <span className="text-slate-300 select-none" aria-hidden>
-                  /
-                </span>
-                <NavLink to={`${basePath}/lessons`} className={stepLinkClass}>
-                  3 · Lessons
-                </NavLink>
-              </nav>
-            </div>
-
-            <Outlet />
-          </div>
-        </main>
+        <div className="min-h-0 min-w-0 flex-1">
+          <Outlet />
+        </div>
 
         <AlertDialog open={showAddLessonModal} onOpenChange={setShowAddLessonModal}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Complete the current lesson first</AlertDialogTitle>
+              <AlertDialogTitle>{t("teacher.courseForm.dialog.completeLesson.title")}</AlertDialogTitle>
               <AlertDialogDescription>
-                Please add a title and video or PDF content to the current lesson before adding another. This keeps your
-                lessons organized.
+                {t("teacher.courseForm.dialog.completeLesson.description")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -561,9 +601,9 @@ const TeacherCourseFormLayout = () => {
         <AlertDialog open={lessonToRemoveIndex !== null} onOpenChange={(open) => !open && setLessonToRemoveIndex(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Remove this lesson?</AlertDialogTitle>
+              <AlertDialogTitle>{t("teacher.courseForm.dialog.removeLesson.title")}</AlertDialogTitle>
               <AlertDialogDescription>
-                This will remove the lesson from the class. You can add it again later if needed.
+                {t("teacher.courseForm.dialog.removeLesson.description")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -576,7 +616,9 @@ const TeacherCourseFormLayout = () => {
                     setLessonToRemoveIndex(null);
                   }
                 }}
-              >{t("teacherSettings.remove")}</AlertDialogAction>
+              >
+                {t("teacherSettings.remove")}
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

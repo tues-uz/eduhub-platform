@@ -5,6 +5,8 @@
     "courseLeadFallback": "Course lead",
     "classFallback": "课程",
     "dashboard": {
+      "overviewTitle": "概览",
+      "managingSubtitle": "管理 {{name}}",
       "subtitle": "Instructor 仪表盘",
       "roleBadge": "教师",
       "stats": {
@@ -15,7 +17,8 @@
       },
       "attendanceQr": {
         "title": "考勤 QR (projector)",
-        "description": "Generate a session QR code to show on the whiteboard—学生s scan to check in on their phones."
+        "description": "Generate a session QR code to show on the whiteboard—学生s scan to check in on their phones.",
+        "cta": "打开签到"
       },
       "upcomingSessions": {
         "title": "Upcoming Sessions"
@@ -88,13 +91,13 @@
       }
     },
     "courses": {
-      "description": "New 课程es stay in draft until an admin sets a price and publishes them. Add lessons with PDF or video content, then wait for approval.",
-      "addClass": "Add 课程",
+      "description": "创建并管理课程。草稿需等待管理员定价并发布后，学生才能报名。",
+      "addClass": "添加课程",
       "tabs": {
-        "classes": "课程es",
-        "attendance": "学生 attendance",
+        "classes": "课程",
+        "attendance": "考勤",
         "schedule": "课表",
-        "substitute": "Substitute instructor"
+        "substitute": "代课"
       },
       "loading": "加载中 课程es…",
       "empty": {
@@ -115,8 +118,9 @@
       "scheduleTab": {
         "intro": "编辑 the planned sessions (title, date, time) for each 课程. This uses the same 课表 section from the 课程 setup form.",
         "loading": "加载中 课表s…",
-        "emptyDescription": "Create a 课程 first, then come back here to set up the per-session 课表.",
+        "emptyDescription": "Create a class first, then set up session dates and times here.",
         "sessionsSummary": "{{sessions}} sessions in 6 months",
+        "sessionsSummaryFilled": "{{sessions}} sessions in 6 months · {{filled}} filled",
         "filledSuffix": " · {{filled}} filled",
         "notSetYet": "Sessions in 6 months not set yet",
         "editSchedule": "编辑 课表"
@@ -125,7 +129,12 @@
     "students": {
       "title": "学生",
       "subtitle": "学生 registered to your 课程es.",
+      "searchPlaceholder": "按姓名、邮箱或课程搜索",
+      "count_one": "{{count}} 名学生",
+      "count_other": "{{count}} 名学生",
+      "noSearchResults": "没有匹配搜索的学生。",
       "table": {
+        "student": "学生",
         "name": "学生 name",
         "email": "Email",
         "class": "课程",
@@ -175,18 +184,22 @@
     },
     "attendanceQr": {
       "title": "考勤 QR",
-      "description": "Select the 课程 and the planned session from the 课表, then generate a QR. When you stop the session, that meeting is marked held for 学生 enrollment. Use projector view for full screen. 学生 sign in to check in."
+      "description": "选择课程和课时，生成二维码，展示给学生扫描签到。"
     },
     "scheduleApprovals": {
       "title": "课表 approvals",
-      "subtitle": "Review 课表s proposed by an admin, then approve or request changes on each 课程.",
+      "subtitle": "Approve or request changes on schedules proposed by admin.",
       "loading": "加载中 your 课程es…",
       "empty": "No 课程es yet. Create a 课程 first.",
+      "emptyPending": "Nothing waiting for your approval.",
+      "emptyOther": "No other classes in this list.",
       "addClass": "Add 课程",
-      "pendingSectionTitle": "Needs your approval",
+      "pendingSectionTitle": "Needs approval",
+      "pendingCount": "{{count}} need review",
       "createdDate": "Created {{date}}",
-      "allSectionTitle": "All your 课程es",
+      "allSectionTitle": "Your classes",
       "openButton": "Open",
+      "reviewButton": "Review",
       "status": {
         "actionNeeded": "Action needed",
         "approved": "已批准",
@@ -195,10 +208,11 @@
         "published": "已发布"
       },
       "statusDescriptions": {
-        "scheduleApproved": "课表 approved — waiting for admin to publish",
-        "draft": "草稿 — admin will propose a 课表",
-        "rejected": "Rejected — admin sent feedback",
-        "default": "Open the 课表 step to view or approve when ready."
+        "pending": "Admin proposed a schedule — review to approve or request changes.",
+        "scheduleApproved": "Approved — waiting for admin to publish.",
+        "draft": "草稿 — waiting for admin to propose a schedule.",
+        "rejected": "Rejected — admin sent feedback.",
+        "default": "Open the schedule step to view details."
       }
     },
     "status": {
@@ -341,6 +355,18 @@
         "categoryLabel": "Category *",
         "categoryNotAssigned": "Not assigned",
         "categoryHint": "Assigned by admin when your instructor account was created. Contact support if this looks wrong.",
+        "levelLabel": "Level",
+        "levelPlaceholder": "Select class level",
+        "levelRequired": "Please select a class level.",
+        "levels": {
+          "beginnerA1": "Beginner (A1)",
+          "elementaryA1Plus": "Elementary (A1+)",
+          "preIntermediateB1": "Pre-Intermediate (B1)",
+          "intermediateB1Plus": "Intermediate (B1+)",
+          "upperIntermediateB2Plus": "Upper-Intermediate (B2+)",
+          "advancedC1": "Advanced (C1)",
+          "advancedC2": "Advanced (C2)"
+        },
         "aboutLabel": "About this 课程 (optional)",
         "aboutPlaceholder": "What 学生s will learn — a sentence or two is enough.",
         "datesSectionTitle": "课程 dates (optional)",
@@ -455,6 +481,15 @@
         "uploadFile": "Upload file",
         "dragHere": "or drag here to upload",
         "detailsTitle": "测验 details",
+        "thumbnail": {
+          "label": "封面图",
+          "optional": "可选",
+          "hint": "显示在本课程的测验卡片上。",
+          "add": "上传图片",
+          "change": "更换",
+          "remove": "移除",
+          "previewAlt": "测验封面预览"
+        },
         "typeLabel": "Type",
         "typePlaceholder": "Select type",
         "typeHint": "测验 for practice or Placement test for assessment.",
@@ -741,63 +776,67 @@
       }
     },
     "resumeEdit": {
-      "backToClasses": "返回 to My 课程es",
-      "backToResumes": "返回 to resumes",
+      "backToClasses": "返回我的课程",
+      "backToResumes": "返回课堂回顾",
       "title": {
-        "new": "New 课程 resume",
-        "edit": "编辑 课程 resume"
+        "new": "新建回顾",
+        "edit": "编辑回顾"
       },
-      "intro": "Recaps and reminders appear on the 学生 课程 page under the Resume tab.",
+      "intro": "学生可在课程页的 Resume 标签中查看。",
       "substituteBanner": {
-        "viewingAs": "You are 编辑ing as substitute.",
-        "courseLead": "Course lead:",
-        "hint": "You can add or 编辑 resumes for 学生s while covering this 课程."
+        "viewingAs": "以代课教师身份编辑",
+        "courseLead": "主讲教师：",
+        "hint": "代课时可添加或编辑回顾；仅主讲教师可删除。"
       },
-      "primaryBanner": "You are the course lead. Substitute instructors with approved cover can also add resumes in demo mode.",
+      "primaryBanner": "您是主讲教师 — 已批准的代课教师也可在此编辑回顾。",
       "thumbnail": {
-        "label": "Thumbnail image (optional)",
-        "previewAlt": "Resume thumbnail preview",
-        "hint": "Shows on the resume cards 学生s see on their 课程 page."
+        "label": "封面图",
+        "optional": "可选",
+        "previewAlt": "回顾缩略图预览",
+        "hint": "显示在课程页回顾条目旁。",
+        "add": "上传图片",
+        "change": "更换",
+        "remove": "移除"
       },
-      "sessionLabel": "Link to a 课表d session",
+      "sessionLabel": "课时",
       "sessionHints": {
-        "primary": "Optional — tie this recap to a specific session or leave as whole-课程.",
-        "substituteLocked": "Session is set from your substitute cover invite.",
-        "noSessions": "No 课表d sessions yet — recap applies to the whole 课程.",
-        "wholeClass": "Whole 课程 — general recap"
+        "primary": "关联到某一节课，或保留为整班回顾。",
+        "substituteLocked": "已锁定为代课邀请中的课时。",
+        "noSessions": "课表中尚无课时。仍可保存整班回顾。",
+        "wholeClass": "整班"
       },
       "session": {
-        "wholeClass": "Whole 课程 — general recap",
-        "placeholder": "Whole 课程 or one session…",
-        "loadingAssigned": "加载中 assigned session…"
+        "wholeClass": "整班",
+        "placeholder": "整班或某一节课…",
+        "loadingAssigned": "正在加载课时…"
       },
-      "bodyLabel": "Resume text",
-      "bodyPlaceholder": "Key points, homework, reminders for 学生s…",
+      "bodyLabel": "回顾内容",
+      "bodyPlaceholder": "要点、作业、下节课前需复习的内容…",
       "actions": {
         "delete": "删除",
-        "saveForStudents": "保存 for 学生s"
+        "saveForStudents": "保存"
       },
       "deleteDialog": {
-        "title": "删除 this resume?",
-        "description": "学生 will no longer see this recap. This cannot be undone."
+        "title": "删除这条回顾？",
+        "description": "学生将无法再看到。此操作无法撤销。"
       },
       "errors": {
-        "missingClass": "Missing 课程.",
-        "noAccess": "You don't have access to 编辑 resumes for this 课程.",
-        "classNotFound": "课程 not found.",
-        "emptyBody": "Write something before saving."
+        "missingClass": "缺少课程。",
+        "noAccess": "您无权访问此课程。",
+        "classNotFound": "未找到课程。",
+        "emptyBody": "保存前请先填写内容。"
       },
       "toast": {
-        "notFound": "Resume not found",
-        "saveFailed": "Could not save.",
-        "deleteFailed": "Could not 删除 resume.",
-        "deleted": "Resume 删除d",
-        "created": "Resume created",
-        "createdDescription": "学生 can now read this recap on their 课程 page.",
-        "updated": "Resume updated",
-        "updatedDescription": "Your changes are saved for 学生s.",
-        "invalidImage": "Please pick an image file.",
-        "uploadFailed": "Could not upload image."
+        "notFound": "未找到回顾",
+        "saveFailed": "保存失败。",
+        "deleteFailed": "删除失败。",
+        "deleted": "回顾已删除",
+        "created": "回顾已创建",
+        "createdDescription": "学生可在 Resume 标签中阅读。",
+        "updated": "回顾已更新",
+        "updatedDescription": "学生将看到您的更改。",
+        "invalidImage": "请选择图片文件。",
+        "uploadFailed": "图片上传失败。"
       }
     },
     "roster": {
@@ -837,6 +876,7 @@
         "schedule": "课表",
         "resume": "Resume",
         "quiz": "测验",
+        "quizScores": "测验分数",
         "attendance": "考勤",
         "grades": "成绩"
       },
@@ -903,41 +943,85 @@
       "sessionFallback": "Session {{n}}",
       "substituteCoverTitle": "Substitute cover · {{title}}",
       "resume": {
-        "title": "课程 resumes",
-        "intro": "Each card is a recap 学生s can read on their 课程 page (Resume tab). Create or 编辑 on a dedicated page.",
-        "newResume": "New resume",
-        "emptyTitle": "No resumes yet",
-        "emptyDescription": "Write your first recap so enrolled 学生s can review it anytime.",
-        "createResume": "Create resume",
-        "wholeClassRecap": "Whole 课程 recap",
-        "updated": "Updated",
-        "thumbnailAlt": "Resume thumbnail"
+        "title": "课堂回顾",
+        "intro": "学生可在课程页阅读的课堂小结。",
+        "newResume": "新建回顾",
+        "emptyTitle": "暂无回顾",
+        "emptyDescription": "课后写一段简短小结，方便学生日后复习。",
+        "createResume": "创建回顾",
+        "wholeClassRecap": "整班",
+        "updated": "更新于 {{datetime}}",
+        "thumbnailAlt": "回顾缩略图",
+        "count_one": "{{count}} 条回顾",
+        "count_other": "{{count}} 条回顾"
       },
       "quiz": {
-        "title": "测验 & placement tests",
-        "intro": "Multiple-choice quizzes for this 课程 appear below as cards. Use Create quiz to add one, then publish, 编辑, or open results from each card.",
-        "createQuiz": "Create quiz",
-        "substituteRestriction": "测验 management is for the course lead.",
-        "substituteRestrictionDescription": "Creating and publishing quizzes for this 课程 is done by the instructor who owns the catalog listing.",
-        "localOnly": "This 课程 exists only in your browser. Connect it to the API to list server-backed quizzes for this course.",
-        "yourQuizzes": "Your quizzes",
-        "fetchNoteFallback": "测验 list could not be loaded. 测验zes you save on this device still appear below.",
-        "fetchNoteWithError": "测验 list could not be loaded ({{error}}). 测验zes you save on this device still appear below.",
-        "loadError": "Could not load quizzes for this 课程.",
-        "emptyTitle": "No quizzes for this 课程 yet",
-        "emptyDescription": "Your real quizzes will replace the example cards below. Create a practice quiz or placement test to get started.",
-        "exampleLayout": "Example layout (not saved — disappears when you add a quiz)",
-        "example": "Example",
-        "placement": "Placement",
+        "title": "测验",
+        "intro": "本课程的选择题测验与分班测试。",
+        "createQuiz": "创建测验",
+        "substituteRestriction": "测验由主讲教师管理。",
+        "substituteRestrictionDescription": "仅课程所有者可以创建并发布测验。",
+        "localOnly": "此课程仅保存在本设备。连接 API 后可在此管理测验。",
+        "yourQuizzes": "我的测验",
+        "fetchNoteFallback": "无法加载测验列表。本地测验仍会显示在下方。",
+        "fetchNoteWithError": "无法加载测验（{{error}}）。本地测验仍会显示在下方。",
+        "loadError": "无法加载本课程的测验。",
+        "emptyTitle": "暂无测验",
+        "emptyDescription": "为本课程创建练习测验或分班测试。",
+        "placement": "分班",
         "quiz": "测验",
-        "questionCount_one": "{{count}} question",
-        "questionCount_other": "{{count}} questions",
-        "publish": "Publish",
-        "results": "Results",
+        "draft": "草稿",
+        "published": "已发布",
+        "questionCount_one": "{{count}} 题",
+        "questionCount_other": "{{count}} 题",
+        "count_one": "{{count}} 个测验",
+        "count_other": "{{count}} 个测验",
+        "publish": "发布",
+        "results": "结果",
         "toast": {
-          "publishedLocally": "已发布 on this device",
-          "published": "测验 published",
-          "publishFailed": "Could not publish quiz."
+          "publishedLocally": "已在本设备发布",
+          "published": "测验已发布",
+          "publishFailed": "发布失败。"
+        }
+      },
+      "quizScores": {
+        "title": "手动测验分数",
+        "intro": "为已选课学生手动录入测验分数。添加测验列，为每位学生输入 0–100，然后保存。分数保存在本设备，直至提供服务器 API。",
+        "searchPlaceholder": "按姓名或邮箱搜索",
+        "addQuiz": "添加测验",
+        "deleteQuiz": "删除测验",
+        "save": "保存",
+        "saveAll": "全部保存",
+        "scorePlaceholder": "—",
+        "table": {
+          "student": "学生"
+        },
+        "addDialog": {
+          "title": "添加测验列",
+          "description": "为该测验取一个简短名称，它将成为每位学生的分数列。",
+          "label": "测验标题",
+          "placeholder": "例如：第2周测验"
+        },
+        "deleteDialog": {
+          "title": "删除测验列？",
+          "description": "将删除「{{title}}」以及本设备上为其录入的所有分数。此操作无法撤销。"
+        },
+        "empty": {
+          "connectApi": "请将此课程连接到 API，以加载学生名单用于手动测验分数。",
+          "loading": "正在加载学生…",
+          "error": "无法加载测验分数的学生列表。",
+          "noStudents": "尚无已选课学生 — 无可评分对象。",
+          "noColumnsTitle": "尚无测验列",
+          "noColumnsDescription": "添加测验后即可为每位学生录入分数。",
+          "noSearchResults": "没有匹配搜索的学生。"
+        },
+        "toast": {
+          "saved": "分数已保存",
+          "savedAll": "所有可见分数已保存",
+          "invalidScore": "请输入 0 到 100 之间的分数，或留空。",
+          "titleRequired": "请输入测验标题。",
+          "columnAdded": "已添加测验列",
+          "columnDeleted": "已删除测验列"
         }
       },
       "attendance": {
@@ -964,14 +1048,16 @@
         "lastScheduled": "Last date on 课程 课表",
         "matchHint": "When a row matches the selected QR session, the Present and Checked in columns in this table use that meeting from the attendance API.",
         "tableAria": "学生 attendance for the selected check-in meeting",
+        "verifyHint": "Tick to confirm attendance for this meeting.",
         "table": {
           "student": "学生",
           "email": "Email",
           "present": "Present",
           "checkedIn": "Checked in",
-          "instructorCheck": "Instructor Check"
+          "instructorCheck": "Verify"
         },
         "presentBadge": "Present",
+        "absentBadge": "—",
         "checkedInTitle": "Checked in",
         "signInToCheck": "Sign in to save 教师 check",
         "toast": {
@@ -1038,11 +1124,12 @@
         "helper": "Shown on the projector and in the session log."
       },
       "generateQr": {
-        "new": "New QR for next meeting",
-        "this": "Generate QR for this meeting"
+        "new": "新二维码",
+        "this": "生成二维码",
+        "pickSessionFirst": "请先选择课时。"
       },
-      "projectorView": "Projector view",
-      "stopSession": "Stop session",
+      "projectorView": "投影",
+      "stopSession": "停止",
       "modality": {
         "online": "Online check-in — 学生s scan from anywhere.",
         "inPerson": "In-person check-in — show QR on the projector."
@@ -1066,15 +1153,20 @@
         "closed": {
           "title": "Check-in window ended",
           "body": "Start a new QR session for the next meeting."
+        },
+        "noToken": {
+          "title": "此处无二维码",
+          "body": "会话仍开放，但此标签页没有二维码。请重新生成。"
         }
       },
       "emptyQr": {
         "tapGenerate": "Tap Generate below to create a QR for this meeting.",
-        "pickClass": "Pick a 课程 and tap Generate to start check-in."
+        "pickClass": "选择课程，然后生成二维码。",
+        "pickSession": "选择课时，然后生成二维码。"
       },
       "sessionLog": {
-        "title": "Session log (this 课程)",
-        "description": "Past QR sessions for this 课程 on this device."
+        "title": "最近会话",
+        "description": "该课程过去的签到会话。"
       },
       "projector": {
         "title": "考勤 QR — projector",
@@ -1087,7 +1179,11 @@
       "toast": {
         "generateFailed": "Could not generate attendance QR",
         "stopFailed": "Could not stop attendance session"
-      }
+      },
+      "setupTitle": "设置",
+      "sessionLabel": "课时",
+      "live": "进行中",
+      "ended": "已结束"
     },
     "attendancePicker": {
       "label": "Meeting (for the table below)",

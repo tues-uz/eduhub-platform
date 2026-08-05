@@ -1,8 +1,6 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Megaphone, Pencil, Plus, Trash2 } from "@/lib/icons";
+import { Megaphone, Pencil, Plus, Trash2 } from "@/lib/icons";
 import { toast } from "sonner";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -115,16 +113,8 @@ export default function AdminPromosPage() {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="container mx-auto max-w-5xl px-6">
-        <Link
-          to="/dashboard/admin"
-          className="mb-6 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t("admin.shared.backToDashboard")}
-        </Link>
-
         <AdminPageHeader
           title={t("adminNav.studentPromos")}
           description={t("admin.promos.description")}
@@ -371,6 +361,6 @@ export default function AdminPromosPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </>
   );
 }

@@ -57,7 +57,6 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
     labelKey: "adminNav.classes",
     children: [
       { labelKey: "adminNav.allClassesSchedules", path: "/dashboard/admin/courses" },
-      { labelKey: "adminNav.enrollmentsWaitlist", path: "/dashboard/admin/enrollments" },
       { labelKey: "adminNav.enrollmentApplications", path: "/dashboard/admin/enrollment-applications" },
       { labelKey: "adminNav.classesRosters", path: "/dashboard/admin/classes" },
       { labelKey: "adminNav.studentPromos", path: "/dashboard/admin/promos" },
