@@ -12,25 +12,16 @@ export type CourseScheduleProposal = {
   updatedAt: string;
 };
 
-/** Exported so UI can listen for cross-tab `storage` updates. */
-export const COURSE_SCHEDULE_PROPOSAL_STORAGE_KEY = "eduhub.courseScheduleProposals.v1";
-const STORAGE_KEY = COURSE_SCHEDULE_PROPOSAL_STORAGE_KEY;
+let memoryProposals: Record<string, CourseScheduleProposal> = {};
 
 function loadAll(): Record<string, CourseScheduleProposal> {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object") return {};
-    return parsed as Record<string, CourseScheduleProposal>;
-  } catch {
-    return {};
-  }
+  return memoryProposals;
 }
 
 function saveAll(next: Record<string, CourseScheduleProposal>) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  memoryProposals = next;
 }
+
 
 export const courseScheduleProposalStore = {
   get(courseId: string): CourseScheduleProposal | null {

@@ -15,28 +15,18 @@
 
 import { eduhubLessonProgress, getAccessToken } from "@/api/eduhubClient";
 
-const STORAGE_KEY = "eduhub_lesson_completion";
-
 type CompletionMap = Record<string, string[]>;
 
+let memoryCompletionMap: CompletionMap = {};
+
 function load(): CompletionMap {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    return typeof parsed === "object" && parsed !== null ? (parsed as CompletionMap) : {};
-  } catch {
-    return {};
-  }
+  return memoryCompletionMap;
 }
 
 function save(data: CompletionMap): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.warn("[LessonProgress] Could not update local cache", e);
-  }
+  memoryCompletionMap = data;
 }
+
 
 export const lessonProgressStore = {
   /**

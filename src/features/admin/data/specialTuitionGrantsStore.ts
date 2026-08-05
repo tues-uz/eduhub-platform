@@ -1,4 +1,3 @@
-const STORAGE_KEY = "eduhub_special_tuition_grants";
 export const SPECIAL_TUITION_GRANTS_CHANGED_EVENT = "eduhub-special-tuition-grants-changed";
 
 export type SpecialTuitionGrant = {
@@ -22,6 +21,8 @@ export type SpecialTuitionGrantInput = {
   active?: boolean;
 };
 
+let memoryGrants: SpecialTuitionGrant[] = [];
+
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -30,45 +31,18 @@ function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-function normalizeGrant(raw: unknown): SpecialTuitionGrant | null {
-  if (!raw || typeof raw !== "object") return null;
-  const o = raw as Record<string, unknown>;
-  if (typeof o.id !== "string" || typeof o.email !== "string") return null;
-  const email = normalizeEmail(o.email);
-  if (!email) return null;
-  return {
-    id: o.id,
-    email,
-    courseId: typeof o.courseId === "string" && o.courseId.trim() ? o.courseId.trim() : null,
-    courseTitle: typeof o.courseTitle === "string" ? o.courseTitle.trim().slice(0, 200) : undefined,
-    note: typeof o.note === "string" ? o.note.trim().slice(0, 280) : "",
-    active: o.active !== false,
-    createdAt: typeof o.createdAt === "string" ? o.createdAt : new Date().toISOString(),
-    updatedAt: typeof o.updatedAt === "string" ? o.updatedAt : new Date().toISOString(),
-  };
-}
-
 function notifyChanged() {
-  window.dispatchEvent(new Event(SPECIAL_TUITION_GRANTS_CHANGED_EVENT));
-}
-
-export function readSpecialTuitionGrants(): SpecialTuitionGrant[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map(normalizeGrant)
-      .filter((g): g is SpecialTuitionGrant => g !== null)
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  } catch {
-    return [];
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(SPECIAL_TUITION_GRANTS_CHANGED_EVENT));
   }
 }
 
+export function readSpecialTuitionGrants(): SpecialTuitionGrant[] {
+  return [...memoryGrants].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
 function writeSpecialTuitionGrants(grants: SpecialTuitionGrant[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(grants));
+  memoryGrants = grants;
   notifyChanged();
 }
 
@@ -120,3 +94,4 @@ export function setSpecialTuitionGrantActive(id: string, active: boolean) {
 export function deleteSpecialTuitionGrant(id: string) {
   writeSpecialTuitionGrants(readSpecialTuitionGrants().filter((g) => g.id !== id));
 }
+

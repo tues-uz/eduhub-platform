@@ -16,8 +16,8 @@ export type CourseCertificateRecord = {
   publishedByEmail?: string;
 };
 
-const STORAGE_KEY = "eduhub_course_certificates_v1";
-const SEQ_KEY = "eduhub_course_certificate_seq_v1";
+let memoryCertMap: Record<string, CourseCertificateRecord> = {};
+let seqCounter = 1000;
 
 export const COURSE_CERTIFICATES_CHANGED = "eduhub-course-certificates-changed";
 
@@ -26,45 +26,26 @@ function certKey(courseId: string, studentId: string): string {
 }
 
 function loadAll(): Record<string, CourseCertificateRecord> {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as Record<string, CourseCertificateRecord>;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
+  return memoryCertMap;
 }
 
 function saveAll(map: Record<string, CourseCertificateRecord>): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  memoryCertMap = map;
+  if (typeof window !== "undefined") {
     window.dispatchEvent(
       new CustomEvent(COURSE_CERTIFICATES_CHANGED, { detail: {} }),
     );
-  } catch {
-    /* ignore */
   }
 }
 
 function nextCertificateNumber(): string {
-  if (typeof window === "undefined") return `CERT.EDUHUB.${Date.now()}`;
-  try {
-    const yy = String(new Date().getFullYear()).slice(-2);
-    const mm = String(new Date().getMonth() + 1).padStart(2, "0");
-    const prefix = `${yy}${mm}`;
-    const raw = localStorage.getItem(SEQ_KEY);
-    const parsed = raw ? (JSON.parse(raw) as Record<string, number>) : {};
-    const n = (parsed[prefix] ?? 0) + 1;
-    parsed[prefix] = n;
-    localStorage.setItem(SEQ_KEY, JSON.stringify(parsed));
-    return `CERT.EDUHUB.${prefix}-${String(n).padStart(4, "0")}`;
-  } catch {
-    return `CERT.EDUHUB.${Date.now()}`;
-  }
+  const yy = String(new Date().getFullYear()).slice(-2);
+  const mm = String(new Date().getMonth() + 1).padStart(2, "0");
+  const prefix = `${yy}${mm}`;
+  seqCounter += 1;
+  return `CERT.EDUHUB.${prefix}-${String(seqCounter).padStart(4, "0")}`;
 }
+
 
 export function getCourseCertificate(
   courseId: string,

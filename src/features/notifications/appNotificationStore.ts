@@ -1,80 +1,22 @@
 import { endReasonLabel, formatDurationMs } from "@/features/teacher/attendance/attendanceMeetingsStorage";
 
-const STORAGE_KEY = "eduhub_app_notifications_v1";
-
-export const APP_NOTIFICATIONS_CHANGE_EVENT = "eduhub-app-notifications-changed";
-
-export type AppNotificationKind =
-  | "enrollment_approved"
-  | "enrollment_rejected"
-  | "enrollment_receipt_ready"
-  | "admin_enrollment_action"
-  | "instructor_payroll_paid"
-  | "admin_instructor_payroll_request"
-  | "instructor_payroll_request_approved"
-  | "instructor_payroll_request_rejected"
-  | "admin_substitute_invite_request"
-  | "instructor_substitute_invitation"
-  | "instructor_substitute_invite_sent"
-  | "instructor_substitute_need_primary_approval"
-  | "instructor_substitute_cover_confirmed"
-  | "instructor_substitute_declined_notice"
-  | "instructor_substitute_rejected_notice"
-  | "instructor_substitute_awaiting_primary"
-  | "admin_substitute_final_approval_needed"
-  | "admin_substitute_invite_declined"
-  | "instructor_substitute_awaiting_admin"
-  | "instructor_substitute_pending_admin_review"
-  | "instructor_substitute_inviter_final_ok"
-  | "instructor_substitute_admin_rejected"
-  | "instructor_attendance_qr_generated"
-  | "admin_attendance_qr_generated"
-  | "instructor_attendance_session_completed"
-  | "admin_attendance_session_completed"
-  | "student_attendance_check_in_open";
-
-export type AppNotification = {
-  id: string;
-  kind: AppNotificationKind;
-  audience: "student" | "admin" | "instructor";
-  /** When set, only this student (normalized email) sees the notification. */
-  studentEmailNorm?: string;
-  /** When set, only this instructor (normalized email) sees the notification. */
-  instructorEmailNorm?: string;
-  /** Fallback when instructor has no email on file (demo matching by display name). */
-  instructorNameNorm?: string;
-  title: string;
-  body: string;
-  createdAt: string;
-  read: boolean;
-  /** Deep link for admin / instructor UIs (demo). */
-  href?: string;
-  refId?: string;
-};
+let memoryNotifications: AppNotification[] = [];
 
 function emitChanged() {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent(APP_NOTIFICATIONS_CHANGE_EVENT));
-}
-
-function load(): AppNotification[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed as AppNotification[];
-  } catch {
-    return [];
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(APP_NOTIFICATIONS_CHANGE_EVENT));
   }
 }
 
+function load(): AppNotification[] {
+  return memoryNotifications;
+}
+
 function save(items: AppNotification[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  memoryNotifications = items;
   emitChanged();
 }
+
 
 function pushNotification(n: AppNotification) {
   const all = load();

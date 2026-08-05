@@ -1,9 +1,6 @@
 import type { EnrollmentApplicationResponse, EnrollmentPaymentMethod } from "@/api/eduhubTypes";
 import { DEFAULT_ENROLLMENT_PAYMENT_METHOD } from "@/features/enrollment/enrollmentDocumentConfig";
 
-const STORAGE_KEY = "eduhub_enrollment_documents_v1";
-const SEQ_KEY = "eduhub_enrollment_document_seq_v1";
-
 export type StoredEnrollmentDocuments = {
   invoiceNumber: string;
   receiptNumber: string;
@@ -11,39 +8,25 @@ export type StoredEnrollmentDocuments = {
   invoiceIssuedAt: string;
   receiptIssuedAt: string;
   amountPaid?: number;
-  /** Demo-only flag when FE generated numbers. */
   isDemo?: boolean;
 };
 
+let memoryDocumentMap: Record<string, StoredEnrollmentDocuments> = {};
+let docSequence = 1;
+
 function loadMap(): Record<string, StoredEnrollmentDocuments> {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    return parsed && typeof parsed === "object" ? (parsed as Record<string, StoredEnrollmentDocuments>) : {};
-  } catch {
-    return {};
-  }
+  return memoryDocumentMap;
 }
 
 function saveMap(map: Record<string, StoredEnrollmentDocuments>) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  memoryDocumentMap = map;
 }
 
 function nextSequence(): number {
-  if (typeof window === "undefined") return 1;
-  try {
-    const raw = localStorage.getItem(SEQ_KEY);
-    const n = raw ? Number(raw) : 0;
-    const next = Number.isFinite(n) && n >= 0 ? n + 1 : 1;
-    localStorage.setItem(SEQ_KEY, String(next));
-    return next;
-  } catch {
-    return Math.floor(Date.now() % 10000);
-  }
+  docSequence += 1;
+  return docSequence;
 }
+
 
 /** YYMM from date (e.g. Nov 2025 → 1125). */
 export function documentPeriodCode(iso: string): string {

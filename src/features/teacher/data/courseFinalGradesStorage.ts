@@ -38,37 +38,25 @@ export function readInstructorScore(record?: CourseFinalGradeRecord): number | u
   return undefined;
 }
 
-const STORAGE_PREFIX = "eduhub_course_final_grades__";
+let memoryFinalGradesMap: Record<string, Record<string, CourseFinalGradeRecord>> = {};
 
 export const COURSE_FINAL_GRADES_CHANGED = "eduhub-course-final-grades-changed";
 
-function storageKey(courseId: string): string {
-  return `${STORAGE_PREFIX}${encodeURIComponent(courseId)}`;
-}
-
 function loadMap(courseId: string): Record<string, CourseFinalGradeRecord> {
-  if (typeof window === "undefined" || !courseId.trim()) return {};
-  try {
-    const raw = localStorage.getItem(storageKey(courseId));
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as Record<string, CourseFinalGradeRecord>;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
+  if (!courseId.trim()) return {};
+  return memoryFinalGradesMap[courseId.trim()] ?? {};
 }
 
 function saveMap(courseId: string, map: Record<string, CourseFinalGradeRecord>): void {
-  if (typeof window === "undefined" || !courseId.trim()) return;
-  try {
-    localStorage.setItem(storageKey(courseId), JSON.stringify(map));
+  if (!courseId.trim()) return;
+  memoryFinalGradesMap[courseId.trim()] = map;
+  if (typeof window !== "undefined") {
     window.dispatchEvent(
       new CustomEvent(COURSE_FINAL_GRADES_CHANGED, { detail: { courseId } }),
     );
-  } catch {
-    /* ignore quota */
   }
 }
+
 
 export function listCourseFinalGrades(courseId: string): Record<string, CourseFinalGradeRecord> {
   return loadMap(courseId);

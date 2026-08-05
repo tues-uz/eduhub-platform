@@ -1,4 +1,3 @@
-const STORAGE_KEY = "eduhub_landing_page_content";
 export const LANDING_PAGE_CONTENT_CHANGED_EVENT = "eduhub-landing-page-changed";
 
 export type LandingPageHero = {
@@ -83,18 +82,16 @@ function normalizeContent(raw: unknown): LandingPageContent | null {
   };
 }
 
+let memoryLandingContent: LandingPageContent | null = null;
+
 function notifyChanged() {
-  window.dispatchEvent(new Event(LANDING_PAGE_CONTENT_CHANGED_EVENT));
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(LANDING_PAGE_CONTENT_CHANGED_EVENT));
+  }
 }
 
 export function readLandingPageContent(): LandingPageContent | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return normalizeContent(JSON.parse(raw) as unknown);
-  } catch {
-    return null;
-  }
+  return memoryLandingContent;
 }
 
 import { eduhubLandingPage } from "@/api/eduhubClient";
@@ -102,19 +99,20 @@ import { eduhubLandingPage } from "@/api/eduhubClient";
 export function writeLandingPageContent(content: LandingPageContent) {
   const next = normalizeContent({ ...content, updatedAt: new Date().toISOString() });
   if (!next) return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  memoryLandingContent = next;
   notifyChanged();
 
   // Async sync to backend REST API
   void eduhubLandingPage.updateSection("landing_main", JSON.stringify(next)).catch((e) => {
-    console.warn("[LandingPageCMS] API sync failed, relying on local storage", e);
+    console.warn("[LandingPageCMS] API sync failed", e);
   });
 }
 
 export function resetLandingPageContent() {
-  localStorage.removeItem(STORAGE_KEY);
+  memoryLandingContent = null;
   notifyChanged();
 }
+
 
 
 export function parseHeroWordsInput(input: string): string[] {

@@ -4,31 +4,18 @@
  */
 import type { QuizCreateRequest, QuizQuestionResponse, QuizResponse } from "@/api/eduhubClient";
 
-const STORAGE_KEY = "eduhub_local_course_quizzes_v1";
-
 type Store = Record<string, QuizResponse[]>;
 
+let memoryStore: Store = {};
+
 function readStore(): Store {
-  if (typeof localStorage === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    if (parsed && typeof parsed === "object") return parsed as Store;
-  } catch {
-    /* ignore */
-  }
-  return {};
+  return memoryStore;
 }
 
 function writeStore(store: Store) {
-  if (typeof localStorage === "undefined" || typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-  } catch (e) {
-    console.warn("[localCourseQuizzes] Could not save to localStorage", e);
-  }
+  memoryStore = store;
 }
+
 
 function sortQuizzesDesc(list: QuizResponse[]): QuizResponse[] {
   return [...list].sort((a, b) => {

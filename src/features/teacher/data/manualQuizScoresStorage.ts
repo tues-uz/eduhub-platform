@@ -25,45 +25,29 @@ export type ManualQuizScoresCourseData = {
   scores: ManualQuizScoreMap;
 };
 
-const STORAGE_PREFIX = "eduhub_manual_quiz_scores__";
+let memoryDataMap: Record<string, ManualQuizScoresCourseData> = {};
 
 export const MANUAL_QUIZ_SCORES_CHANGED = "eduhub-manual-quiz-scores-changed";
-
-function storageKey(courseId: string): string {
-  return `${STORAGE_PREFIX}${encodeURIComponent(courseId)}`;
-}
 
 function emptyData(): ManualQuizScoresCourseData {
   return { columns: [], scores: {} };
 }
 
 function loadData(courseId: string): ManualQuizScoresCourseData {
-  if (typeof window === "undefined" || !courseId.trim()) return emptyData();
-  try {
-    const raw = localStorage.getItem(storageKey(courseId));
-    if (!raw) return emptyData();
-    const parsed = JSON.parse(raw) as ManualQuizScoresCourseData;
-    if (!parsed || typeof parsed !== "object") return emptyData();
-    return {
-      columns: Array.isArray(parsed.columns) ? parsed.columns : [],
-      scores: parsed.scores && typeof parsed.scores === "object" ? parsed.scores : {},
-    };
-  } catch {
-    return emptyData();
-  }
+  if (!courseId.trim()) return emptyData();
+  return memoryDataMap[courseId.trim()] ?? emptyData();
 }
 
 function saveData(courseId: string, data: ManualQuizScoresCourseData): void {
-  if (typeof window === "undefined" || !courseId.trim()) return;
-  try {
-    localStorage.setItem(storageKey(courseId), JSON.stringify(data));
+  if (!courseId.trim()) return;
+  memoryDataMap[courseId.trim()] = data;
+  if (typeof window !== "undefined") {
     window.dispatchEvent(
       new CustomEvent(MANUAL_QUIZ_SCORES_CHANGED, { detail: { courseId } }),
     );
-  } catch {
-    /* ignore quota */
   }
 }
+
 
 function newId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {

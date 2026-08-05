@@ -2,160 +2,9 @@ import { useSyncExternalStore } from "react";
 import { useEffect } from "react";
 import { eduhubPayroll, eduhubUploadFile } from "@/api/eduhubClient";
 
-const STORAGE_KEY = "eduhub.adminPayrollProofs.v1";
-/** Base64 data URLs — demo/local only; replace with API upload. */
-export const PAYROLL_PROOF_MAX_FILE_BYTES = 4 * 1024 * 1024;
-export const PAYROLL_INFORMATION_MAX_CHARS = 2000;
-
-export type PayrollProofRecord = {
-  requestId?: string;
-  /** Admin context: bank ref, period, rate notes, cautions for finance. */
-  informationNotes?: string;
-  fileName?: string;
-  mimeType?: string;
-  uploadedAt?: string;
-  dataUrl?: string;
-  approvedAt?: string;
-};
-
-type Listener = () => void;
-const listeners = new Set<Listener>();
-
-function emit() {
-  listeners.forEach((l) => l());
-}
-
-export function payrollProofKey(className: string, course: string): string {
-  return `${className}\t${course}`;
-}
-
-/** Match proof saved under class/course labels that may differ slightly between admin and instructor UIs. */
-export function resolvePayrollProofBundle(
-  proofMap: Record<string, PayrollProofRecord>,
-  classSection: string,
-  course: string,
-): PayrollProofRecord | undefined {
-  const candidates = [
-    payrollProofKey(classSection, course),
-    payrollProofKey(course, classSection),
-    payrollProofKey(classSection, classSection),
-    payrollProofKey(course, course),
-  ];
-  const seen = new Set<string>();
-  for (const key of candidates) {
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const bundle = proofMap[key];
-    if (bundle) return bundle;
-  }
-  return undefined;
-}
-
-/** Instructor may open the bank receipt after admin approved the payroll request and attached a file. */
-export function canInstructorViewTransferProof(
-  submission: { status: string } | undefined,
-  proof: PayrollProofRecord | undefined,
-): boolean {
-  if (submission?.status !== "approved") return false;
-  return hasPayrollProofFile(proof);
-}
-
-export function hasPayrollProofFile(r: PayrollProofRecord | undefined): boolean {
-  return !!(
-    r &&
-    typeof r.dataUrl === "string" &&
-    r.dataUrl.length > 0 &&
-    typeof r.fileName === "string" &&
-    typeof r.uploadedAt === "string"
-  );
-}
-
-/** Admin attached a file but has not submitted payout proof to the instructor yet. */
-export function hasDraftPayrollTransferFile(r: PayrollProofRecord | undefined): boolean {
-  return hasPayrollProofFile(r) && !r?.approvedAt;
-}
-
-/** Bank receipt released to instructor after admin submits payout proof (not student certificates). */
-export function isReleasedInstructorTransferProof(r: PayrollProofRecord | undefined): boolean {
-  return hasPayrollProofFile(r) && Boolean(r?.approvedAt?.trim());
-}
-
-export function looksLikeCourseCertificateFileName(fileName: string): boolean {
-  return /certificate/i.test(fileName.trim());
-}
-
-/** Path + query for the dedicated payout proof page. */
-export function buildPayrollProofPagePath(
-  section: string,
-  course: string,
-  instructor?: string,
-  instructorEmail?: string,
-): string {
-  const sp = new URLSearchParams();
-  sp.set("section", section);
-  sp.set("course", course);
-  if (instructor?.trim()) sp.set("instructor", instructor.trim());
-  if (instructorEmail?.trim()) sp.set("instructorEmail", instructorEmail.trim());
-  return `/dashboard/admin/payroll/proof?${sp.toString()}`;
-}
-
 let snapshot: Record<string, PayrollProofRecord> = {};
 let loadingPromise: Promise<void> | null = null;
 
-function normalizeRecord(r: Record<string, unknown>): PayrollProofRecord | null {
-  const informationNotes =
-    typeof r.informationNotes === "string" ? r.informationNotes.slice(0, PAYROLL_INFORMATION_MAX_CHARS) : undefined;
-  const hasFile =
-    typeof r.dataUrl === "string" &&
-    r.dataUrl.length > 0 &&
-    typeof r.fileName === "string" &&
-    typeof r.uploadedAt === "string" &&
-    typeof r.mimeType === "string";
-  if (!hasFile && !(informationNotes?.trim())) return null;
-  const base: PayrollProofRecord = {};
-  if (informationNotes?.trim()) base.informationNotes = informationNotes.trim();
-  if (hasFile) {
-    base.fileName = r.fileName as string;
-    base.mimeType = r.mimeType as string;
-    base.uploadedAt = r.uploadedAt as string;
-    base.dataUrl = r.dataUrl as string;
-    if (typeof r.approvedAt === "string") base.approvedAt = r.approvedAt;
-  }
-  return base;
-}
-
-function parseStored(raw: string | null): Record<string, PayrollProofRecord> {
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object") return {};
-    const out: Record<string, PayrollProofRecord> = {};
-    for (const [k, v] of Object.entries(parsed)) {
-      if (!v || typeof v !== "object") continue;
-      const rec = normalizeRecord(v as Record<string, unknown>);
-      if (rec) out[k] = rec;
-    }
-    return out;
-  } catch {
-    return {};
-  }
-}
-
-function persist() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-  } catch {
-    // quota
-  }
-}
-
-function hydrate() {
-  snapshot = parseStored(
-    typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null,
-  );
-}
-
-hydrate();
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -231,7 +80,7 @@ export const adminPayrollProofStore = {
     } else {
       snapshot = { ...snapshot, [key]: next };
     }
-    persist();
+
     emit();
     const id = requestId ?? next.requestId ?? prev.requestId;
     if (id) {
@@ -283,7 +132,7 @@ export const adminPayrollProofStore = {
         approvedAt: undefined,
       },
     };
-    persist();
+
     emit();
     const id = requestId ?? prev.requestId;
     if (id) {
@@ -311,7 +160,7 @@ export const adminPayrollProofStore = {
       ...snapshot,
       [key]: { ...prev!, approvedAt: new Date().toISOString() },
     };
-    persist();
+
     emit();
     const id = requestId ?? prev.requestId;
     if (id) {
@@ -336,7 +185,7 @@ export const adminPayrollProofStore = {
       const { [key]: _, ...rest } = snapshot;
       snapshot = rest;
     }
-    persist();
+
     emit();
   },
 };

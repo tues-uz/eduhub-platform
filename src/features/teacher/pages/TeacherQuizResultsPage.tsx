@@ -197,7 +197,6 @@ export default function TeacherQuizResultsPage() {
               </div>
               <p className="text-foreground/60 text-sm">
                 Student attempts and scores for this {typeLabel.toLowerCase()}.
-                {useLocalStorage && <span className="ml-2 text-amber-600">(Showing local data)</span>}
               </p>
             </div>
             <Button

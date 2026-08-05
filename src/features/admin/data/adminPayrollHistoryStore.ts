@@ -1,7 +1,5 @@
 import { useSyncExternalStore } from "react";
 
-const STORAGE_KEY = "eduhub.adminPayrollSubmissions.v1";
-
 export const PAYROLL_SUBMISSIONS_CHANGE_EVENT = "eduhub-payroll-submissions-changed";
 
 export type PayrollSubmissionRecord = {
@@ -27,40 +25,7 @@ function emit() {
   }
 }
 
-function load(): PayrollSubmissionRecord[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (x): x is PayrollSubmissionRecord =>
-        !!x &&
-        typeof x === "object" &&
-        typeof (x as PayrollSubmissionRecord).id === "string" &&
-        typeof (x as PayrollSubmissionRecord).submittedAt === "string" &&
-        typeof (x as PayrollSubmissionRecord).classSection === "string" &&
-        typeof (x as PayrollSubmissionRecord).course === "string",
-    );
-  } catch {
-    return [];
-  }
-}
-
-function save(rows: PayrollSubmissionRecord[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
-  emit();
-}
-
-let snapshot: PayrollSubmissionRecord[] = load();
-
-function hydrate() {
-  snapshot = load();
-}
-
-hydrate();
+let snapshot: PayrollSubmissionRecord[] = [];
 
 export const adminPayrollHistoryStore = {
   subscribe(fn: Listener): () => void {
@@ -80,11 +45,6 @@ export const adminPayrollHistoryStore = {
       submittedAt: new Date().toISOString(),
     };
     snapshot = [rec, ...snapshot].slice(0, 500);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-    } catch {
-      //
-    }
     emit();
     return rec;
   },
@@ -97,3 +57,4 @@ export function usePayrollSubmissions(): PayrollSubmissionRecord[] {
     adminPayrollHistoryStore.getSnapshot,
   );
 }
+

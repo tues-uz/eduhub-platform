@@ -30,33 +30,23 @@ function broadcastCheckIn(courseId: string, sessionId: string) {
 
 type RollStore = Record<string, Record<string, Record<string, AttendanceRollEntry>>>;
 
+let memoryRollStore: RollStore = {};
+
 function readStore(): RollStore {
-  if (typeof localStorage === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(ROLL_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object") return {};
-    return parsed as RollStore;
-  } catch {
-    return {};
-  }
+  return memoryRollStore;
 }
 
 function writeStore(store: RollStore) {
-  if (typeof localStorage === "undefined" || typeof window === "undefined") return;
-  try {
-    localStorage.setItem(ROLL_KEY, JSON.stringify(store));
-  } catch (e) {
-    console.warn("[attendance] Could not save roll to localStorage", e);
-    return;
+  memoryRollStore = store;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent<{ courseId?: string; sessionId?: string }>(ATTENDANCE_ROLL_CHANGED, {
+        detail: {},
+      }),
+    );
   }
-  window.dispatchEvent(
-    new CustomEvent<{ courseId?: string; sessionId?: string }>(ATTENDANCE_ROLL_CHANGED, {
-      detail: {},
-    }),
-  );
 }
+
 
 export function recordAttendanceCheckIn(
   courseId: string,

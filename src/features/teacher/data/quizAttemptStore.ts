@@ -10,25 +10,10 @@ export interface QuizAttempt {
   completedAt: string;
 }
 
-const STORAGE_KEY = "eduhub_quiz_attempts";
+let memoryAttempts: QuizAttempt[] = [];
 
 function randomId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-
-function loadAttempts(): QuizAttempt[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as QuizAttempt[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveAttempts(attempts: QuizAttempt[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(attempts));
 }
 
 export const quizAttemptStore = {
@@ -40,7 +25,6 @@ export const quizAttemptStore = {
     totalQuestions: number,
     studentEmail?: string
   ): QuizAttempt {
-    const attempts = loadAttempts();
     const scorePercent =
       totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
     const attempt: QuizAttempt = {
@@ -54,20 +38,20 @@ export const quizAttemptStore = {
       totalQuestions,
       completedAt: new Date().toISOString(),
     };
-    attempts.push(attempt);
-    saveAttempts(attempts);
+    memoryAttempts.push(attempt);
     return attempt;
   },
 
   getByQuizId(quizId: string): QuizAttempt[] {
-    return loadAttempts()
+    return [...memoryAttempts]
       .filter((a) => a.quizId === quizId)
       .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
   },
 
   getAll(): QuizAttempt[] {
-    return loadAttempts().sort(
+    return [...memoryAttempts].sort(
       (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
     );
   },
 };
+

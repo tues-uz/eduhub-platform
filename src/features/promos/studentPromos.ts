@@ -1,4 +1,3 @@
-const STORAGE_KEY = "eduhub_student_promos";
 export const STUDENT_PROMOS_CHANGED_EVENT = "eduhub-promos-changed";
 
 export type StudentPromoPlacement = "my-class" | "dashboard" | "all";
@@ -95,20 +94,16 @@ function normalizePromo(raw: unknown): StudentPromo | null {
   };
 }
 
+let memoryPromos: StudentPromo[] = [];
+
 function readRawPromos(): StudentPromo[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map(normalizePromo).filter((p): p is StudentPromo => p !== null);
-  } catch {
-    return [];
-  }
+  return memoryPromos;
 }
 
 function notifyPromosChanged() {
-  window.dispatchEvent(new Event(STUDENT_PROMOS_CHANGED_EVENT));
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(STUDENT_PROMOS_CHANGED_EVENT));
+  }
 }
 
 export function readStudentPromos(): StudentPromo[] {
@@ -126,9 +121,10 @@ export function readStudentPromosWithDefaults(): StudentPromo[] {
 import { eduhubPromos } from "@/api/eduhubClient";
 
 export function writeStudentPromos(promos: StudentPromo[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(promos));
+  memoryPromos = promos;
   notifyPromosChanged();
 }
+
 
 export function upsertStudentPromo(input: StudentPromoInput): StudentPromo {
   const all = readStudentPromos();

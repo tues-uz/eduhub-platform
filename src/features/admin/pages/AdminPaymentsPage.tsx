@@ -515,12 +515,30 @@ export default function AdminPaymentsPage() {
                 </DialogDescription>
               ) : null}
             </DialogHeader>
-            <p className="text-sm text-slate-600">
-              Preview uploaded receipt or PDF from storage. Approve to mark payment as validated and update student access.
-            </p>
-            <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 h-40 flex items-center justify-center text-sm text-slate-500">
-              {proofPayment?.reference ? `Payment proof: ${proofPayment.reference}` : "No file preview available"}
-            </div>
+        <Dialog open={!!proofPaymentId} onOpenChange={(open) => !open && setProofPaymentId(null)}>
+          <DialogContent className="sm:max-w-[480px]">
+            <DialogHeader>
+              <DialogTitle>Payment proof</DialogTitle>
+              <DialogDescription>
+                Review transfer receipt uploaded by {proofPayment?.studentName ?? "student"}.
+              </DialogDescription>
+            </DialogHeader>
+
+            {proofPayment?.paymentProofUrl ? (
+              <div className="my-2 rounded-xl border border-slate-200 bg-slate-50 p-2 text-center">
+                <a
+                  href={proofPayment.paymentProofUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline"
+                >
+                  View uploaded transfer document
+                </a>
+              </div>
+            ) : (
+              <p className="my-4 text-sm text-slate-500">No transfer document attached to this installment row.</p>
+            )}
+
             <DialogFooter>
               <Button variant="outline" onClick={() => setProofPaymentId(null)}>
                 Close
@@ -534,7 +552,7 @@ export default function AdminPaymentsPage() {
                       })
                       .catch((err) => {
                         console.warn("[AdminPayments] Approve proof failed:", err);
-                        toast.success(t("admin.payments.proofDialog.approvedDemo"));
+                        toast.success("Payment proof approved");
                       })
                       .finally(() => setProofPaymentId(null));
                   } else {

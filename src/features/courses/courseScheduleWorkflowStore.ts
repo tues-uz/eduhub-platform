@@ -13,25 +13,16 @@ export type CourseScheduleWorkflowRecord = {
   rejectionNote?: string;
 };
 
-/** Exported so UI can listen for cross-tab `storage` updates. */
-export const COURSE_SCHEDULE_WORKFLOW_STORAGE_KEY = "eduhub.courseScheduleWorkflow.v1";
-const STORAGE_KEY = COURSE_SCHEDULE_WORKFLOW_STORAGE_KEY;
+let memoryWorkflows: Record<string, CourseScheduleWorkflowRecord> = {};
 
 function loadAll(): Record<string, CourseScheduleWorkflowRecord> {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object") return {};
-    return parsed as Record<string, CourseScheduleWorkflowRecord>;
-  } catch {
-    return {};
-  }
+  return memoryWorkflows;
 }
 
 function saveAll(next: Record<string, CourseScheduleWorkflowRecord>) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  memoryWorkflows = next;
 }
+
 
 function notifyWorkflowUpdated(courseId: string) {
   try {

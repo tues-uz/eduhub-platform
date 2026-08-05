@@ -3,55 +3,25 @@
  * Independent from student attendance / QR roll columns.
  */
 
-export const TEACHER_CLASS_CHECKLIST_STORAGE_KEY = "eduhub_teacher_class_checklist_v1";
 export const TEACHER_CLASS_CHECKLIST_CHANGED = "eduhub-teacher-class-checklist-changed";
 
-export const DEFAULT_TEACHER_CLASS_CHECKLIST_ITEMS: readonly { readonly id: string; readonly label: string }[] = [
-  {
-    id: "session_ready",
-    label: "I'm ready for this session (QR, roster, timing, materials)",
-  },
-] as const;
-
-/** Per-student instructor verification for a QR attendance session. */
-export function instructorVerifyItemId(
-  sessionId: string,
-  studentId: string,
-  studentEmail: string,
-): string {
-  const sid = studentId?.trim() || `email:${studentEmail.trim().toLowerCase()}`;
-  return `verify:${sessionId}:${sid}`;
-}
-
-type ChecklistRoot = Record<string, Record<string, Record<string, true>>>;
+let memoryChecklistRoot: ChecklistRoot = {};
 
 function readRoot(): ChecklistRoot {
-  if (typeof localStorage === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(TEACHER_CLASS_CHECKLIST_STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object") return {};
-    return parsed as ChecklistRoot;
-  } catch {
-    return {};
-  }
+  return memoryChecklistRoot;
 }
 
 function writeRoot(root: ChecklistRoot) {
-  if (typeof localStorage === "undefined" || typeof window === "undefined") return;
-  try {
-    localStorage.setItem(TEACHER_CLASS_CHECKLIST_STORAGE_KEY, JSON.stringify(root));
-  } catch (e) {
-    console.warn("[teacher checklist] could not persist", e);
-    return;
+  memoryChecklistRoot = root;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent<{ userKey?: string; courseId?: string }>(TEACHER_CLASS_CHECKLIST_CHANGED, {
+        detail: {},
+      }),
+    );
   }
-  window.dispatchEvent(
-    new CustomEvent<{ userKey?: string; courseId?: string }>(TEACHER_CLASS_CHECKLIST_CHANGED, {
-      detail: {},
-    }),
-  );
 }
+
 
 export function teacherClassChecklistUserKey(userId: string | undefined, email: string | undefined): string {
   const id = userId?.trim();
