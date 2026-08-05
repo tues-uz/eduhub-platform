@@ -58,6 +58,13 @@ import type {
   AssignmentSubmissionResponse,
   PromoCodeResponse,
   LandingPageContentResponse,
+  AdminAttendanceRowResponse,
+  AdminTransactionRowResponse,
+  AdminClassRowResponse,
+  AdminCalendarEventResponse,
+  AdminSupportSessionResponse,
+  AdminCertificationRowResponse,
+  AdminPaymentRowResponse,
 } from "./eduhubTypes";
 
 
@@ -1180,6 +1187,34 @@ export const eduhubLandingPage = {
       method: "PUT",
       body: JSON.stringify({ contentJson }),
     }),
+};
+
+export const eduhubAdminAttendance = {
+  listAll: () => request<AdminAttendanceRowResponse[]>("/admin/attendance"),
+};
+
+export const eduhubAdminTransactions = {
+  listAll: () => request<AdminTransactionRowResponse[]>("/admin/transactions"),
+};
+
+export const eduhubAdminClasses = {
+  listAll: () => request<AdminClassRowResponse[]>("/admin/classes"),
+};
+
+export const eduhubAdminCalendar = {
+  listEvents: () => request<AdminCalendarEventResponse[]>("/admin/calendar/events"),
+};
+
+export const eduhubAdminSupport = {
+  listAll: () => request<AdminSupportSessionResponse[]>("/admin/support-sessions"),
+};
+
+export const eduhubAdminCertifications = {
+  listAll: () => request<AdminCertificationRowResponse[]>("/admin/certifications"),
+};
+
+export const eduhubAdminPayments = {
+  listAll: () => request<AdminPaymentRowResponse[]>("/admin/payments"),
 };
 
 

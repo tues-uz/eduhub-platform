@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { mockAdminCertifications } from "@/features/admin/data/adminOperationalMock";
+import { eduhubAdminCertifications } from "@/api/eduhubClient";
+import type { AdminCertificationRowResponse as AdminCertificationRow } from "@/api/eduhubTypes";
+import { Loader2 } from "@/lib/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,22 +29,33 @@ export default function AdminCertificationsPage() {
   const [search, setSearch] = useState("");
   const [eligibleFilter, setEligibleFilter] = useState("all");
   const [courseFilter, setCourseFilter] = useState("all");
+  const [certList, setCertList] = useState<AdminCertificationRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    eduhubAdminCertifications
+      .listAll()
+      .then((data) => setCertList(data || []))
+      .catch(() => setCertList([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   const courseOptions = useMemo(() => {
-    const names = new Set(mockAdminCertifications.map((c) => c.course));
+    const names = new Set(certList.map((c) => c.course));
     return Array.from(names).sort((a, b) => a.localeCompare(b));
-  }, []);
+  }, [certList]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return mockAdminCertifications.filter((c) => {
+    return certList.filter((c) => {
       if (eligibleFilter === "yes" && !c.eligible) return false;
       if (eligibleFilter === "no" && c.eligible) return false;
       if (courseFilter !== "all" && c.course !== courseFilter) return false;
       if (!q) return true;
       return [c.studentName, c.course].join(" ").toLowerCase().includes(q);
     });
-  }, [search, eligibleFilter, courseFilter]);
+  }, [search, eligibleFilter, courseFilter, certList]);
 
   const hasActiveFilters =
     search.trim() !== "" || eligibleFilter !== "all" || courseFilter !== "all";

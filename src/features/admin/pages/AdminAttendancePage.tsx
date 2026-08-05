@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { mockAdminAttendance, type AdminAttendanceRow } from "@/features/admin/data/adminOperationalMock";
+import { eduhubAdminAttendance } from "@/api/eduhubClient";
+import type { AdminAttendanceRowResponse as AdminAttendanceRow } from "@/api/eduhubTypes";
+import { Loader2 } from "@/lib/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -53,15 +55,26 @@ export default function AdminAttendancePage() {
   const [riskFilter, setRiskFilter] = useState<string>("all");
   const [lecturerFilter, setLecturerFilter] = useState<string>("all");
   const [detailRow, setDetailRow] = useState<AdminAttendanceRow | null>(null);
+  const [attendanceData, setAttendanceData] = useState<AdminAttendanceRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    eduhubAdminAttendance
+      .listAll()
+      .then((data) => setAttendanceData(data || []))
+      .catch(() => setAttendanceData([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   const lecturerOptions = useMemo(() => {
-    const names = new Set(mockAdminAttendance.map((a) => a.lecturerName));
+    const names = new Set(attendanceData.map((a) => a.lecturerName));
     return Array.from(names).sort((a, b) => a.localeCompare(b));
-  }, []);
+  }, [attendanceData]);
 
   const filteredAttendance = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return mockAdminAttendance.filter((a) => {
+    return attendanceData.filter((a) => {
       if (riskFilter === "at_risk" && !a.atRisk) return false;
       if (riskFilter === "on_track" && a.atRisk) return false;
       if (lecturerFilter !== "all" && a.lecturerName !== lecturerFilter) return false;
@@ -69,7 +82,7 @@ export default function AdminAttendancePage() {
       const haystack = [a.studentName, a.course, a.lecturerName, a.className].join(" ").toLowerCase();
       return haystack.includes(q);
     });
-  }, [search, riskFilter, lecturerFilter]);
+  }, [search, riskFilter, lecturerFilter, attendanceData]);
 
   const hasActiveFilters =
     search.trim() !== "" || riskFilter !== "all" || lecturerFilter !== "all";

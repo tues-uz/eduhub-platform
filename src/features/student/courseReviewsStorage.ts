@@ -85,6 +85,8 @@ export function getCourseReview(
   return target === "INSTRUCTOR" ? data.instructor : data.platform;
 }
 
+import { eduhubCompletion, getAccessToken } from "@/api/eduhubClient";
+
 export function saveCourseReview(
   courseId: string,
   emailNorm: string,
@@ -97,6 +99,18 @@ export function saveCourseReview(
     data.platform = review;
   }
   save(courseId, emailNorm, data);
+
+  if (getAccessToken() && courseId.trim()) {
+    void eduhubCompletion
+      .submitReview(courseId, {
+        target: review.target,
+        rating: review.rating,
+        comment: review.comment,
+      })
+      .catch((err) => {
+        console.warn("[CourseReviews] Backend API sync failed, saved locally", err);
+      });
+  }
 }
 
 export function hasSubmittedBothReviews(courseId: string, emailNorm: string): boolean {

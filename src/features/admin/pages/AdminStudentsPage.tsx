@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { eduhubAdmin } from "@/api/eduhubClient";
-import type { StudentStatus } from "@/features/admin/data/adminOperationalMock";
+import type { StudentStatus } from "@/api/eduhubTypes";
 
 interface StudentRow {
   id: string;

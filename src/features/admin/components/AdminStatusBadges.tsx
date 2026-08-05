@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
-import type { ClassStatus, PaymentStatus, StudentStatus } from "@/features/admin/data/adminOperationalMock";
+import type { ClassStatus, PaymentStatus, StudentStatus } from "@/api/eduhubTypes";
 
 /** API publish workflow for lecturer classes — used in admin class list & review. */
 const courseStatusClass: Record<string, string> = {

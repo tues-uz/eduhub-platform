@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { mockAdminTransactions } from "@/features/admin/data/adminOperationalMock";
+import { eduhubAdminTransactions } from "@/api/eduhubClient";
+import type { AdminTransactionRowResponse as AdminTransactionRow } from "@/api/eduhubTypes";
+import { Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "react-i18next";
@@ -29,20 +31,31 @@ export default function AdminTransactionsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [methodFilter, setMethodFilter] = useState<string>("all");
+  const [transactions, setTransactions] = useState<AdminTransactionRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    eduhubAdminTransactions
+      .listAll()
+      .then((data) => setTransactions(data || []))
+      .catch(() => setTransactions([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   const methodOptions = useMemo(() => {
-    const names = new Set(mockAdminTransactions.map((t) => t.method));
+    const names = new Set(transactions.map((t) => t.method));
     return Array.from(names).sort((a, b) => a.localeCompare(b));
-  }, []);
+  }, [transactions]);
 
   const typeOptions = useMemo(() => {
-    const names = new Set(mockAdminTransactions.map((t) => t.type));
+    const names = new Set(transactions.map((t) => t.type));
     return Array.from(names).sort((a, b) => a.localeCompare(b));
-  }, []);
+  }, [transactions]);
 
   const filteredTransactions = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return mockAdminTransactions.filter((t) => {
+    return transactions.filter((t) => {
       if (typeFilter !== "all" && t.type !== typeFilter) return false;
       if (methodFilter !== "all" && t.method !== methodFilter) return false;
       if (!q) return true;
@@ -51,7 +64,7 @@ export default function AdminTransactionsPage() {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [search, typeFilter, methodFilter]);
+  }, [search, typeFilter, methodFilter, transactions]);
 
   const hasActiveFilters =
     search.trim() !== "" || typeFilter !== "all" || methodFilter !== "all";

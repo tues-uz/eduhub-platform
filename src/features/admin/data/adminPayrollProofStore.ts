@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { useEffect } from "react";
-import { eduhubPayroll } from "@/api/eduhubClient";
+import { eduhubPayroll, eduhubUploadFile } from "@/api/eduhubClient";
 
 const STORAGE_KEY = "eduhub.adminPayrollProofs.v1";
 /** Base64 data URLs — demo/local only; replace with API upload. */
@@ -260,10 +260,16 @@ export const adminPayrollProofStore = {
     if (file.size > PAYROLL_PROOF_MAX_FILE_BYTES) {
       return { ok: false, reason: `File must be under ${Math.round(PAYROLL_PROOF_MAX_FILE_BYTES / (1024 * 1024))} MB.` };
     }
-    const dataUrl = await readFileAsDataUrl(file);
-    if (dataUrl.length > PAYROLL_PROOF_MAX_FILE_BYTES * 2) {
-      return { ok: false, reason: "File is too large after encoding. Try a smaller scan." };
+
+    let publicUrl = "";
+    try {
+      const uploadRes = await eduhubUploadFile(file, "payroll-proofs");
+      publicUrl = uploadRes.url;
+    } catch {
+      // If presigned URL upload is offline in local dev, fall back to dataUrl
+      publicUrl = await readFileAsDataUrl(file);
     }
+
     const key = payrollProofKey(className, course);
     const prev = snapshot[key] ?? {};
     snapshot = {
@@ -273,7 +279,7 @@ export const adminPayrollProofStore = {
         fileName: file.name,
         mimeType: file.type || "application/octet-stream",
         uploadedAt: new Date().toISOString(),
-        dataUrl,
+        dataUrl: publicUrl,
         approvedAt: undefined,
       },
     };
@@ -286,7 +292,7 @@ export const adminPayrollProofStore = {
           informationNotes: snapshot[key]?.informationNotes,
           fileName: file.name,
           mimeType: file.type || "application/octet-stream",
-          proofUrl: dataUrl,
+          proofUrl: publicUrl,
           uploadedAt: snapshot[key]?.uploadedAt,
         });
         void adminPayrollProofStore.load();

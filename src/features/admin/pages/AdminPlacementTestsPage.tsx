@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { mockAdminPlacementResults } from "@/features/admin/data/adminOperationalMock";
+import { eduhubCourseQuizzes } from "@/api/eduhubClient";
+import type { QuizResultResponse } from "@/api/eduhubClient";
+import { Loader2 } from "@/lib/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,26 +23,60 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+interface PlacementRow {
+  id: string;
+  studentName: string;
+  course: string;
+  lecturerName: string;
+  quizTitle: string;
+  scorePercent: number;
+  passed: boolean;
+  completedAt: string;
+}
+
 export default function AdminPlacementTestsPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [resultFilter, setResultFilter] = useState<string>("all");
   const [courseFilter, setCourseFilter] = useState<string>("all");
   const [lecturerFilter, setLecturerFilter] = useState<string>("all");
+  const [resultsList, setResultsList] = useState<PlacementRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    eduhubCourseQuizzes
+      .getAllMyResults()
+      .then((data) => {
+        const rows: PlacementRow[] = (data || []).map((r: QuizResultResponse) => ({
+          id: r.id,
+          studentName: r.student?.fullName || "—",
+          course: "General Placement",
+          lecturerName: "—",
+          quizTitle: "Placement Test",
+          scorePercent: r.scorePercent ?? 0,
+          passed: r.passed ?? false,
+          completedAt: r.completedAt ? new Date(r.completedAt).toLocaleDateString() : "—",
+        }));
+        setResultsList(rows);
+      })
+      .catch(() => setResultsList([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   const courseOptions = useMemo(() => {
-    const names = new Set(mockAdminPlacementResults.map((r) => r.course));
+    const names = new Set(resultsList.map((r) => r.course));
     return Array.from(names).sort((a, b) => a.localeCompare(b));
-  }, []);
+  }, [resultsList]);
 
   const lecturerOptions = useMemo(() => {
-    const names = new Set(mockAdminPlacementResults.map((r) => r.lecturerName));
+    const names = new Set(resultsList.map((r) => r.lecturerName));
     return Array.from(names).sort((a, b) => a.localeCompare(b));
-  }, []);
+  }, [resultsList]);
 
   const filteredResults = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return mockAdminPlacementResults.filter((r) => {
+    return resultsList.filter((r) => {
       if (resultFilter === "passed" && !r.passed) return false;
       if (resultFilter === "failed" && r.passed) return false;
       if (courseFilter !== "all" && r.course !== courseFilter) return false;
@@ -51,7 +87,7 @@ export default function AdminPlacementTestsPage() {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [search, resultFilter, courseFilter, lecturerFilter]);
+  }, [search, resultFilter, courseFilter, lecturerFilter, resultsList]);
 
   const hasActiveFilters =
     search.trim() !== "" ||
@@ -142,7 +178,14 @@ export default function AdminPlacementTestsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredResults.length === 0 ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center text-slate-500">
+                    <Loader2 className="h-5 w-5 animate-spin inline mr-2 text-slate-400" />
+                    {t("common.loading", "Loading...")}
+                  </TableCell>
+                </TableRow>
+              ) : filteredResults.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center text-slate-500">
                     No rows match your search or filters.

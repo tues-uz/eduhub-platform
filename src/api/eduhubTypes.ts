@@ -871,4 +871,97 @@ export interface LandingPageContentResponse {
   contentJson: string;
 }
 
+// New Admin Feature Interfaces
+export interface AdminAttendanceRowResponse {
+  id: string;
+  studentName: string;
+  course: string;
+  lecturerName: string;
+  className: string;
+  attendancePct: number;
+  progressPct: number;
+  atRisk: boolean;
+  sessionsPresent: number;
+  sessionsTotal: number;
+  lastActivity: string;
+  sessionLog: {
+    date: string;
+    label: string;
+    status: "present" | "absent" | "late" | "excused";
+  }[];
+}
+
+export interface AdminTransactionRowResponse {
+  id: string;
+  ref: string;
+  studentName: string;
+  type: "Tuition" | "Deposit" | "Refund";
+  amount: number;
+  currency: string;
+  recordedAt: string;
+  method: string;
+}
+
+export interface AdminClassRowResponse {
+  id: string;
+  name: string;
+  course: string;
+  schedule: string;
+  capacity: number;
+  filled: number;
+  status: "active" | "waiting" | "completed";
+  sessionQuota: { used: number; total: number };
+}
+
+export interface AdminCalendarEventResponse {
+  id: string;
+  title: string;
+  type: "class" | "test" | "review";
+  start: string;
+  end: string;
+}
+
+export interface AdminSupportSessionResponse {
+  id: string;
+  studentName: string;
+  course: string;
+  topic: string;
+  status: "requested" | "scheduled";
+  requestedAt: string;
+}
+
+export interface AdminCertificationRowResponse {
+  id: string;
+  studentName: string;
+  course: string;
+  surveyComplete: boolean;
+  courseComplete: boolean;
+  eligible: boolean;
+}
+
+export type StudentStatus = "trial" | "active" | "inactive";
+export type PaymentStatus = "pending" | "paid" | "overdue";
+export type ClassStatus = "active" | "waiting" | "completed";
+
+export interface AdminPaymentRowResponse {
+  id: string;
+  className: string;
+  studentName: string;
+  studentEmail: string;
+  course: string;
+  lecturerName: string;
+  lecturerEmail?: string;
+  amount: number;
+  currency: string;
+  dueDate: string;
+  status: PaymentStatus;
+  proofSubmitted: boolean;
+  reference: string;
+  paymentMethod: string;
+  createdAt: string;
+  paidAt?: string;
+}
+
+export type AdminPaymentRow = AdminPaymentRowResponse;
+
 

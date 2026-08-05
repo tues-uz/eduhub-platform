@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { ClassStatusBadge } from "@/features/admin/components/AdminStatusBadges";
-import { mockAdminClasses, type ClassStatus } from "@/features/admin/data/adminOperationalMock";
+import { eduhubAdminClasses } from "@/api/eduhubClient";
+import type { ClassStatus, AdminClassRowResponse as AdminClassRow } from "@/api/eduhubTypes";
+import { Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -28,21 +30,32 @@ export default function AdminClassesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [courseFilter, setCourseFilter] = useState("all");
+  const [classList, setClassList] = useState<AdminClassRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    eduhubAdminClasses
+      .listAll()
+      .then((data) => setClassList(data || []))
+      .catch(() => setClassList([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   const courseOptions = useMemo(() => {
-    const names = new Set(mockAdminClasses.map((c) => c.course));
+    const names = new Set(classList.map((c) => c.course));
     return Array.from(names).sort((a, b) => a.localeCompare(b));
-  }, []);
+  }, [classList]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return mockAdminClasses.filter((c) => {
+    return classList.filter((c) => {
       if (statusFilter !== "all" && c.status !== (statusFilter as ClassStatus)) return false;
       if (courseFilter !== "all" && c.course !== courseFilter) return false;
       if (!q) return true;
       return [c.name, c.course, c.schedule].join(" ").toLowerCase().includes(q);
     });
-  }, [search, statusFilter, courseFilter]);
+  }, [search, statusFilter, courseFilter, classList]);
 
   const hasActiveFilters =
     search.trim() !== "" || statusFilter !== "all" || courseFilter !== "all";

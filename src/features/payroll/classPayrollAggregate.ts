@@ -1,4 +1,4 @@
-import type { AdminPaymentRow, PaymentStatus } from "@/features/admin/data/adminOperationalMock";
+import type { AdminPaymentRow, PaymentStatus } from "@/api/eduhubTypes";
 import type { InstallmentPaymentResponse } from "@/api/eduhubTypes";
 
 export const INSTRUCTOR_REVENUE_SHARE = 0.6;

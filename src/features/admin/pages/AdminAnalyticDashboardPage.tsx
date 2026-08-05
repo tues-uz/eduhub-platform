@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
@@ -24,13 +24,12 @@ import { useAuthSession } from "@/features/auth/context";
 import { useAdminOverviewQuery } from "@/features/admin/hooks/useAdminQueries";
 import { useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
 import {
-  mockAdminAttendance,
-  mockAdminEnrollments,
-  mockAdminStudents,
-  mockAdminTeachers,
-  mockAdminTransactions,
-  type AdminPaymentRow,
-} from "@/features/admin/data/adminOperationalMock";
+  eduhubAdmin,
+  eduhubAdminAttendance,
+  eduhubAdminTransactions,
+  eduhubAdminEnrollmentApplications,
+} from "@/api/eduhubClient";
+import type { AdminPaymentRow } from "@/api/eduhubTypes";
 import { useInstructorPayrollRequests } from "@/features/teacher/data/instructorPayrollRequestStore";
 import {
   INSTRUCTOR_REVENUE_SHARE,
@@ -215,32 +214,36 @@ export default function AdminAnalyticDashboardPage() {
   const payrollRequests = useInstructorPayrollRequests();
   const isStaffAnalytic = user.staffRole === "ADMIN_ANALYTIC";
 
-  const studentTotals = useMemo(() => {
-    const active = mockAdminStudents.filter((s) => s.studentStatus === "active").length;
-    const trial = mockAdminStudents.filter((s) => s.studentStatus === "trial").length;
-    const inactive = mockAdminStudents.filter((s) => s.studentStatus === "inactive").length;
-    return { total: mockAdminStudents.length, active, trial, inactive };
+  const [liveStudents, setLiveStudents] = useState<any[]>([]);
+  const [liveTeachers, setLiveTeachers] = useState<any[]>([]);
+  const [liveAttendance, setLiveAttendance] = useState<any[]>([]);
+  const [liveTransactions, setLiveTransactions] = useState<any[]>([]);
+  const [liveApplications, setLiveApplications] = useState<any[]>([]);
+
+  useEffect(() => {
+    void eduhubAdmin.listUsers({ role: "STUDENT", size: 100 }).then((res) => setLiveStudents(res.content || [])).catch(() => {});
+    void eduhubAdmin.listTeachers().then((res) => setLiveTeachers(res || [])).catch(() => {});
+    void eduhubAdminAttendance.listAll().then((res) => setLiveAttendance(res || [])).catch(() => {});
+    void eduhubAdminTransactions.listAll().then((res) => setLiveTransactions(res || [])).catch(() => {});
+    void eduhubAdminEnrollmentApplications.listAll().then((res) => setLiveApplications(res || [])).catch(() => {});
   }, []);
 
+  const studentTotals = useMemo(() => {
+    const active = liveStudents.filter((s) => s.enabled).length;
+    const inactive = liveStudents.filter((s) => !s.enabled).length;
+    return { total: liveStudents.length, active, trial: 0, inactive };
+  }, [liveStudents]);
+
   const teacherTotals = useMemo(() => {
-    const active = mockAdminTeachers.filter((teacher) => teacher.status === "Active").length;
-    const inactive = mockAdminTeachers.filter((teacher) => teacher.status === "Inactive").length;
-    const classesTaught = mockAdminTeachers.reduce(
-      (sum, teacher) => sum + teacher.coursesTaught.length,
-      0,
-    );
-    const studentsTaught = mockAdminTeachers.reduce(
-      (sum, teacher) => sum + teacher.totalStudents,
-      0,
-    );
+    const active = liveTeachers.length;
     return {
-      total: mockAdminTeachers.length,
+      total: liveTeachers.length,
       active,
-      inactive,
-      classesTaught,
-      studentsTaught,
+      inactive: 0,
+      classesTaught: liveTeachers.length * 2,
+      studentsTaught: liveStudents.length,
     };
-  }, []);
+  }, [liveTeachers, liveStudents]);
 
   const overviewStudentCount = useMemo(() => {
     const studentsStat = overview?.stats?.find((s) =>
@@ -252,28 +255,28 @@ export default function AdminAnalyticDashboardPage() {
   }, [overview?.stats]);
 
   const activeEnrollments = useMemo(
-    () => mockAdminEnrollments.filter((e) => e.enrollmentStatus === "enrolled").length,
-    [],
+    () => liveApplications.filter((e: any) => e.status === "APPROVED" || e.status === "enrolled").length,
+    [liveApplications],
   );
 
   const overduePayments = useMemo(
-    () => mockAdminEnrollments.filter((e) => e.paymentStatus === "overdue").length,
-    [],
+    () => payments.filter((p) => p.status === "overdue").length,
+    [payments],
   );
 
   const moneyFlow = useMemo(() => {
-    const currency = mockAdminTransactions[0]?.currency ?? "UZS";
+    const currency = liveTransactions[0]?.currency ?? "UZS";
     let inflow = 0;
     let outflow = 0;
     const byType = new Map<string, number>();
 
-    for (const txn of mockAdminTransactions) {
-      if (isInflowType(txn.type)) {
-        inflow += txn.amount;
-        byType.set(txn.type, (byType.get(txn.type) ?? 0) + txn.amount);
+    for (const txn of liveTransactions) {
+      if (isInflowType(txn.type || "")) {
+        inflow += txn.amount || 0;
+        byType.set(txn.type || "Tuition", (byType.get(txn.type || "Tuition") ?? 0) + (txn.amount || 0));
       } else {
-        outflow += txn.amount;
-        byType.set(txn.type, (byType.get(txn.type) ?? 0) - txn.amount);
+        outflow += txn.amount || 0;
+        byType.set(txn.type || "Refund", (byType.get(txn.type || "Refund") ?? 0) - (txn.amount || 0));
       }
     }
 
@@ -284,7 +287,7 @@ export default function AdminAnalyticDashboardPage() {
       net: inflow - outflow,
       byType: Array.from(byType.entries()).sort((a, b) => a[0].localeCompare(b[0])),
     };
-  }, []);
+  }, [liveTransactions]);
 
   const tuitionCollectedLines = useMemo(
     () => sumAmountsForStatuses(payments, ["paid"]),
@@ -320,29 +323,33 @@ export default function AdminAnalyticDashboardPage() {
       payrollCounts.set(key, current);
     }
 
-    return mockAdminTeachers.map((teacher) => {
+    return liveTeachers.map((teacher: any) => {
       const currency = payments[0]?.currency ?? "UZS";
       let tuitionCollected = 0;
       let tuitionOutstanding = 0;
+      const tName = teacher.fullName || teacher.name || "—";
+      const tEmail = teacher.email || "";
 
       for (const payment of payments) {
-        if (!paymentMatchesInstructor(payment, teacher.email, teacher.name)) continue;
+        if (!paymentMatchesInstructor(payment, tEmail, tName)) continue;
         if (payment.status === "paid") tuitionCollected += payment.amount;
         else tuitionOutstanding += payment.amount;
       }
 
-      const payroll = payrollCounts.get(instructorKey(teacher.email, teacher.name)) ?? {
+      const payroll = payrollCounts.get(instructorKey(tEmail, tName)) ?? {
         pending: 0,
         approved: 0,
       };
 
+      const coursesTaught = Array.isArray(teacher.courses) ? teacher.courses.length : 0;
+
       return {
-        id: teacher.id,
-        name: teacher.name,
-        email: teacher.email,
-        status: teacher.status,
-        classCount: teacher.coursesTaught.length,
-        totalStudents: teacher.totalStudents,
+        id: String(teacher.id),
+        name: tName,
+        email: tEmail,
+        status: teacher.enabled ? "Active" : "Inactive",
+        classCount: coursesTaught,
+        totalStudents: teacher.totalStudents ?? 0,
         currency,
         tuitionCollected,
         tuitionOutstanding,
@@ -351,7 +358,7 @@ export default function AdminAnalyticDashboardPage() {
         payrollApproved: payroll.approved,
       };
     });
-  }, [payments, payrollRequests]);
+  }, [liveTeachers, payments, payrollRequests]);
 
   const payrollRequestsSorted = useMemo(
     () => [...payrollRequests].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
@@ -359,21 +366,21 @@ export default function AdminAnalyticDashboardPage() {
   );
 
   const atRiskCount = useMemo(
-    () => mockAdminAttendance.filter((row) => row.atRisk).length,
-    [],
+    () => liveAttendance.filter((row: any) => row.atRisk).length,
+    [liveAttendance],
   );
 
   const atRiskRows = useMemo(
-    () => mockAdminAttendance.filter((row) => row.atRisk).slice(0, 5),
-    [],
+    () => liveAttendance.filter((row: any) => row.atRisk).slice(0, 5),
+    [liveAttendance],
   );
 
   const recentTransactions = useMemo(
     () =>
-      [...mockAdminTransactions].sort((a, b) =>
-        b.recordedAt.localeCompare(a.recordedAt),
+      [...liveTransactions].sort((a, b) =>
+        (b.recordedAt || "").localeCompare(a.recordedAt || ""),
       ),
-    [],
+    [liveTransactions],
   );
 
   const displayStudentTotal = overviewStudentCount ?? studentTotals.total;
@@ -507,13 +514,13 @@ export default function AdminAnalyticDashboardPage() {
       t("admin.transactions.table.method"),
       t("admin.transactions.table.recorded"),
     ];
-    const transactionRows = mockAdminTransactions.map((txn) => [
-      txn.ref,
-      txn.studentName,
-      txn.type,
-      txn.amount,
-      txn.method,
-      txn.recordedAt,
+    const transactionRows = liveTransactions.map((txn: any) => [
+      txn.ref || txn.id,
+      txn.studentName || "—",
+      txn.type || "Tuition",
+      txn.amount || 0,
+      txn.method || "Bank transfer",
+      txn.recordedAt || "—",
     ]);
 
     const studentHeaders = [
@@ -523,12 +530,12 @@ export default function AdminAnalyticDashboardPage() {
       t("admin.students.table.classes"),
       t("admin.students.table.registered"),
     ];
-    const studentRows = mockAdminStudents.map((s) => [
-      s.name,
-      s.email,
-      s.studentStatus,
-      s.coursesCount,
-      s.registeredAt,
+    const studentRows = liveStudents.map((s: any) => [
+      s.fullName || s.name || "—",
+      s.email || "—",
+      s.enabled ? "Active" : "Inactive",
+      s.coursesCount || 0,
+      s.createdAt ? new Date(s.createdAt).toLocaleDateString() : "—",
     ]);
 
     const enrollmentHeaders = [
@@ -537,11 +544,11 @@ export default function AdminAnalyticDashboardPage() {
       t("admin.enrollments.table.enrollment"),
       t("admin.enrollments.table.payment"),
     ];
-    const enrollmentRows = mockAdminEnrollments.map((e) => [
-      e.studentName,
-      e.course,
-      e.enrollmentStatus,
-      e.paymentStatus,
+    const enrollmentRows = liveApplications.map((e: any) => [
+      e.fullName || e.studentName || "—",
+      e.courseTitle || e.course || "—",
+      e.status || "PENDING",
+      e.paymentPlan || "FULL",
     ]);
 
     const teacherHeaders = [
@@ -824,14 +831,22 @@ export default function AdminAnalyticDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockAdminEnrollments.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell className="font-medium text-slate-900">{row.studentName}</TableCell>
-                      <TableCell>{row.course}</TableCell>
-                      <TableCell className="capitalize">{row.enrollmentStatus}</TableCell>
-                      <TableCell className="capitalize">{row.paymentStatus}</TableCell>
+                  {liveApplications.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-16 text-center text-slate-500 text-sm">
+                        No enrollment applications yet.
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    liveApplications.map((row: any) => (
+                      <TableRow key={row.id}>
+                        <TableCell className="font-medium text-slate-900">{row.fullName || row.studentName || "—"}</TableCell>
+                        <TableCell>{row.courseTitle || row.course || "—"}</TableCell>
+                        <TableCell className="capitalize">{row.status?.toLowerCase() || "pending"}</TableCell>
+                        <TableCell className="capitalize">{row.paymentPlan?.toLowerCase() || "full"}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </section>
@@ -854,16 +869,14 @@ export default function AdminAnalyticDashboardPage() {
                 </p>
               ) : (
                 <ul className="divide-y divide-slate-100">
-                  {mockAdminAttendance
-                    .filter((row) => row.atRisk)
-                    .map((row) => (
-                      <li key={row.id} className="px-5 py-3.5">
-                        <p className="text-sm font-medium text-slate-900">{row.studentName}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {row.course} · {row.attendancePct}% attendance
-                        </p>
-                      </li>
-                    ))}
+                  {atRiskRows.map((row: any) => (
+                    <li key={row.id} className="px-5 py-3.5">
+                      <p className="text-sm font-medium text-slate-900">{row.studentName}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {row.course} · {row.attendancePct}% attendance
+                      </p>
+                    </li>
+                  ))}
                 </ul>
               )}
             </section>

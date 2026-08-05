@@ -5,7 +5,7 @@ import { FileCheck } from "@/lib/icons";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
-import type { AdminPaymentRow } from "@/features/admin/data/adminOperationalMock";
+import type { AdminPaymentRow } from "@/api/eduhubTypes";
 import { adminPaymentsStore, useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";

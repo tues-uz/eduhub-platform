@@ -9,18 +9,18 @@ describe("useSidebarState", () => {
     expect(result.current.isCollapsed).toBe(false);
   });
 
-  it("always returns false when collapse feature flag is disabled", () => {
-    localStorage.setItem("sidebarCollapsed", "true");
+  it("writes new value to localStorage on toggle", () => {
+    localStorage.setItem("sidebarCollapsed", "false");
     const { result } = renderHook(() => useSidebarState());
 
     act(() => {
       result.current.toggle();
     });
 
-    expect(result.current.isCollapsed).toBe(false);
+    expect(result.current.isCollapsed).toBe(true);
   });
 
-  it("handles storage events gracefully when collapse feature flag is disabled", () => {
+  it("syncs state when storage event is dispatched", () => {
     const { result } = renderHook(() => useSidebarState());
 
     act(() => {
@@ -32,7 +32,7 @@ describe("useSidebarState", () => {
       );
     });
 
-    expect(result.current.isCollapsed).toBe(false);
+    expect(result.current.isCollapsed).toBe(true);
   });
 
 });

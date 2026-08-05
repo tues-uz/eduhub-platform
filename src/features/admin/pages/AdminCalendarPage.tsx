@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { mockAdminCalendarEvents } from "@/features/admin/data/adminOperationalMock";
+import { eduhubAdminCalendar } from "@/api/eduhubClient";
+import type { AdminCalendarEventResponse as AdminCalendarEvent } from "@/api/eduhubTypes";
+import { Loader2 } from "@/lib/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,16 +20,27 @@ export default function AdminCalendarPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [eventsList, setEventsList] = useState<AdminCalendarEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    eduhubAdminCalendar
+      .listEvents()
+      .then((data) => setEventsList(data || []))
+      .catch(() => setEventsList([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return mockAdminCalendarEvents.filter((ev) => {
+    return eventsList.filter((ev) => {
       if (typeFilter !== "all" && ev.type !== typeFilter) return false;
       if (!q) return true;
       const timeStr = `${format(parseISO(ev.start), "PPp")} ${format(parseISO(ev.end), "p")}`.toLowerCase();
       return [ev.title, ev.type, timeStr].join(" ").toLowerCase().includes(q);
     });
-  }, [search, typeFilter]);
+  }, [search, typeFilter, eventsList]);
 
   const hasActiveFilters = search.trim() !== "" || typeFilter !== "all";
 

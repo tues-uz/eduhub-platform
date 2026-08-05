@@ -433,9 +433,9 @@ export const coursesApi = {
 
         return [...apiList, ...localApprovedApi];
       } catch {
-        return enrolledCourses.map(enrichMockCourseProgress);
+        return [];
       }
     }
-    return enrolledCourses.map(enrichMockCourseProgress);
+    return [];
   },
 };

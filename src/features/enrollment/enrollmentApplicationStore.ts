@@ -1,3 +1,5 @@
+import { eduhubEnrollmentApplications, eduhubAdminEnrollmentApplications, getAccessToken } from "@/api/eduhubClient";
+
 const STORAGE_KEY = "eduhub_enrollment_applications_v1";
 
 export type EnrollmentApplicationStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -48,95 +50,6 @@ function emitChanged() {
   window.dispatchEvent(new CustomEvent("eduhub-enrollment-applications-changed"));
 }
 
-const PLACEHOLDER_PROOF = "local://eduhub-enrollment/payment-proof";
-const PLACEHOLDER_ID = "local://eduhub-enrollment/id-document";
-
-/** Sample rows for dev so Admin → Enrollment applications is populated without a student submit. */
-const DUMMY_ENROLLMENT_APPLICATIONS: EnrollmentApplicationRecord[] = [
-  {
-    id: "00000000-0000-4000-8000-000000000001",
-    courseId: "00000000-0000-0000-0000-00000000aa00",
-    courseTitle: "Demo: Server course (pending review)",
-    applicantEmailNorm: "alex.demo@example.com",
-    fullName: "Alex Demo",
-    email: "alex.demo@example.com",
-    phone: "+998 90 111 2233",
-    phoneSecondary: "+998 71 222 3344",
-    address: "12 Amir Temur Ave, Tashkent",
-    paymentProofUrl: PLACEHOLDER_PROOF,
-    idCardUrl: PLACEHOLDER_ID,
-    paymentPlan: "FULL",
-    status: "PENDING",
-    submittedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-  },
-  {
-    id: "00000000-0000-4000-8000-000000000002",
-    courseId: "00000000-0000-0000-0000-00000000aa01",
-    courseTitle: "Demo: Server course (full payment)",
-    applicantEmailNorm: "sam.student@example.com",
-    fullName: "Sam Student",
-    email: "sam.student@example.com",
-    phone: "+998 90 444 5566",
-    address: "45 Navoi Street, Samarkand",
-    paymentProofUrl: PLACEHOLDER_PROOF,
-    idCardUrl: PLACEHOLDER_ID,
-    paymentPlan: "FULL",
-    status: "PENDING",
-    submittedAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-  },
-  {
-    id: "00000000-0000-4000-8000-000000000003",
-    courseId: "00000000-0000-0000-0000-00000000aa02",
-    courseTitle: "Demo: Down payment plan",
-    applicantEmailNorm: "jamila.k@example.com",
-    fullName: "Jamila Karimova",
-    email: "jamila.k@example.com",
-    phone: "+998 93 777 8899",
-    address: "Unit 3, Bukhara Road 18",
-    paymentProofUrl: PLACEHOLDER_PROOF,
-    idCardUrl: PLACEHOLDER_ID,
-    paymentPlan: "DOWN_PAYMENT",
-    downPaymentAmount: 150_000,
-    priceCurrency: "UZS",
-    installmentCount: 4,
-    status: "PENDING",
-    submittedAt: new Date(Date.now() - 7200000).toISOString(),
-  },
-  {
-    id: "00000000-0000-4000-8000-000000000004",
-    courseId: "00000000-0000-0000-0000-00000000aa03",
-    courseTitle: "Demo: Already reviewed",
-    applicantEmailNorm: "lee.past@example.com",
-    fullName: "Lee Past",
-    email: "lee.past@example.com",
-    phone: "+998 94 000 1122",
-    address: "99 Yangier St",
-    paymentProofUrl: PLACEHOLDER_PROOF,
-    idCardUrl: PLACEHOLDER_ID,
-    paymentPlan: "FULL",
-    status: "APPROVED",
-    submittedAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-    reviewedAt: new Date(Date.now() - 86400000 * 6).toISOString(),
-  },
-  {
-    id: "00000000-0000-4000-8000-000000000005",
-    courseId: "00000000-0000-0000-0000-00000000aa04",
-    courseTitle: "Demo: Rejected example",
-    applicantEmailNorm: "no.proof@example.com",
-    fullName: "Incomplete Proof",
-    email: "no.proof@example.com",
-    phone: "+998 95 333 4455",
-    address: "—",
-    paymentProofUrl: PLACEHOLDER_PROOF,
-    idCardUrl: PLACEHOLDER_ID,
-    paymentPlan: "FULL",
-    status: "REJECTED",
-    submittedAt: new Date(Date.now() - 86400000 * 4).toISOString(),
-    reviewedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-    adminNote: "Payment screenshot did not match reference amount. Please resubmit.",
-  },
-];
-
 function readStorage(): EnrollmentApplicationRecord[] {
   if (typeof window === "undefined") return [];
   try {
@@ -150,16 +63,7 @@ function readStorage(): EnrollmentApplicationRecord[] {
   }
 }
 
-/** In dev only: if there are no rows yet, seed dummy applications once so the admin UI can be exercised. */
-function seedDevDummyIfNeeded(): void {
-  if (!import.meta.env.DEV) return;
-  if (typeof window === "undefined") return;
-  if (readStorage().length > 0) return;
-  save(DUMMY_ENROLLMENT_APPLICATIONS);
-}
-
 function load(): EnrollmentApplicationRecord[] {
-  seedDevDummyIfNeeded();
   return readStorage();
 }
 
@@ -208,11 +112,10 @@ export const enrollmentApplicationStore = {
     return findLatestForCourseAndEmailInner(courseId, emailNorm)?.status === "APPROVED";
   },
 
-  /** Dev-only: reset store and re-seed dummy applications (empty admin table → refresh after calling). */
   resetToDevDummy(): void {
     if (!import.meta.env.DEV) return;
     localStorage.removeItem(STORAGE_KEY);
-    seedDevDummyIfNeeded();
+    emitChanged();
   },
 
   add(input: {
@@ -242,6 +145,27 @@ export const enrollmentApplicationStore = {
     const all = load();
     all.push(rec);
     save(all);
+
+    if (getAccessToken() && input.courseId.trim()) {
+      void eduhubEnrollmentApplications
+        .submit({
+          courseId: input.courseId,
+          fullName: input.fullName,
+          email: input.email,
+          phone: input.phone,
+          address: input.address,
+          paymentProofUrl: input.paymentProofUrl,
+          idCardUrl: input.idCardUrl,
+          paymentMethod: input.paymentMethod as any,
+          paymentPlan: input.paymentPlan,
+          downPaymentAmount: input.downPaymentAmount,
+          installmentCount: input.installmentCount,
+        })
+        .catch((err) => {
+          console.warn("[EnrollmentStore] Backend API sync failed, saved locally", err);
+        });
+    }
+
     return rec;
   },
 
@@ -268,5 +192,17 @@ export const enrollmentApplicationStore = {
     if (i === -1) return;
     all[i] = { ...all[i], ...patch };
     save(all);
+
+    if (getAccessToken() && id.trim() && patch.status) {
+      if (patch.status === "APPROVED") {
+        void eduhubAdminEnrollmentApplications.approve(id, { adminNote: patch.adminNote }).catch((err) => {
+          console.warn("[EnrollmentStore] Backend approval sync failed", err);
+        });
+      } else if (patch.status === "REJECTED") {
+        void eduhubAdminEnrollmentApplications.reject(id, { adminNote: patch.adminNote }).catch((err) => {
+          console.warn("[EnrollmentStore] Backend rejection sync failed", err);
+        });
+      }
+    }
   },
 };

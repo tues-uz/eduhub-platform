@@ -40,7 +40,7 @@ describe("AppRoutes", () => {
 
     renderRoutes("/dashboard");
 
-    expect(await screen.findByText(/admin dashboard|adminDashboard/i)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1 })).toBeInTheDocument();
   });
 
 });

@@ -1,4 +1,21 @@
-import type { AdminTeacherRow } from "@/features/admin/data/adminOperationalMock";
+import { eduhubAdmin, getAccessToken } from "@/api/eduhubClient";
+
+export interface AdminTeacherCourseRef {
+  id: string;
+  title: string;
+  enrolled: number;
+  capacity: number;
+}
+
+export interface AdminTeacherRow {
+  id: string;
+  name: string;
+  email: string;
+  category?: string;
+  coursesTaught: AdminTeacherCourseRef[];
+  totalStudents: number;
+  status: "Active" | "Inactive";
+}
 
 const STORAGE_KEY = "eduhub.adminTeachers.created.v1";
 
@@ -51,5 +68,19 @@ export const adminTeachersStore = {
     });
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
+
+    if (getAccessToken() && next.email.trim()) {
+      void eduhubAdmin
+        .createUser({
+          fullName: next.name,
+          email: next.email,
+          phoneNumber: "+998900000000",
+          role: "LECTURER",
+          category: next.category,
+        })
+        .catch((err) => {
+          console.warn("[AdminTeachersStore] Backend teacher creation sync failed", err);
+        });
+    }
   },
 };

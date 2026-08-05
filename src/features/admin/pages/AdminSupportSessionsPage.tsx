@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { mockAdminSupportSessions } from "@/features/admin/data/adminOperationalMock";
+import { eduhubAdminSupport } from "@/api/eduhubClient";
+import type { AdminSupportSessionResponse as AdminSupportSession } from "@/api/eduhubTypes";
+import { Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -27,22 +29,33 @@ export default function AdminSupportSessionsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [courseFilter, setCourseFilter] = useState("all");
+  const [sessionsList, setSessionsList] = useState<AdminSupportSession[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    eduhubAdminSupport
+      .listAll()
+      .then((data) => setSessionsList(data || []))
+      .catch(() => setSessionsList([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   const courseOptions = useMemo(() => {
-    const names = new Set(mockAdminSupportSessions.map((s) => s.course));
+    const names = new Set(sessionsList.map((s) => s.course));
     return Array.from(names).sort((a, b) => a.localeCompare(b));
-  }, []);
+  }, [sessionsList]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return mockAdminSupportSessions.filter((s) => {
+    return sessionsList.filter((s) => {
       if (statusFilter === "requested" && s.status !== "requested") return false;
       if (statusFilter === "scheduled" && s.status !== "scheduled") return false;
       if (courseFilter !== "all" && s.course !== courseFilter) return false;
       if (!q) return true;
       return [s.studentName, s.course, s.topic, s.requestedAt].join(" ").toLowerCase().includes(q);
     });
-  }, [search, statusFilter, courseFilter]);
+  }, [search, statusFilter, courseFilter, sessionsList]);
 
   const hasActiveFilters =
     search.trim() !== "" || statusFilter !== "all" || courseFilter !== "all";
