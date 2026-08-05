@@ -39,13 +39,11 @@ export function resolveAvatarFromAuthResponse(
 
 function readSessionUser(): SessionUser {
   const role = (localStorage.getItem("userRole") || "student") as UserRole;
-  const name = localStorage.getItem("userName") || (role === "admin" ? "Admin" : "Demo User");
-  const email = localStorage.getItem("userEmail") || "demo@eduhub.com";
+  const name = localStorage.getItem("userName") || "";
+  const email = localStorage.getItem("userEmail") || "";
   const id = localStorage.getItem(USER_ID_KEY) || undefined;
   const avatarUrl = localStorage.getItem(USER_AVATAR_URL_KEY) || undefined;
-  const phoneNumber = localStorage.getItem(USER_PHONE_KEY) || undefined;
   const category = localStorage.getItem(USER_CATEGORY_KEY) || undefined;
-  const adminCode = localStorage.getItem("userAdminCode") || undefined;
   const staffRoleRaw = localStorage.getItem(USER_STAFF_ROLE_KEY);
   const staffRole =
     staffRoleRaw === "ADMIN" ||
@@ -57,7 +55,7 @@ function readSessionUser(): SessionUser {
       : role === "admin"
         ? "ADMIN"
         : undefined;
-  return { id, name, email, role, avatarUrl, phoneNumber, category, adminCode, staffRole };
+  return { id, name, email, role, avatarUrl, phoneNumber: undefined, category, adminCode: undefined, staffRole };
 }
 
 export function setSessionUser(user: SessionUser): void {
@@ -67,15 +65,12 @@ export function setSessionUser(user: SessionUser): void {
   localStorage.setItem("userRole", user.role);
   if (user.avatarUrl) localStorage.setItem(USER_AVATAR_URL_KEY, user.avatarUrl);
   else localStorage.removeItem(USER_AVATAR_URL_KEY);
-  if (user.phoneNumber) localStorage.setItem(USER_PHONE_KEY, user.phoneNumber);
-  else localStorage.removeItem(USER_PHONE_KEY);
+  // phoneNumber and adminCode deliberately NOT stored in localStorage (PII minimization).
   if (user.role === "teacher" && user.category?.trim()) {
     localStorage.setItem(USER_CATEGORY_KEY, user.category.trim());
   } else {
     localStorage.removeItem(USER_CATEGORY_KEY);
   }
-  if (user.adminCode) localStorage.setItem("userAdminCode", user.adminCode);
-  else localStorage.removeItem("userAdminCode");
   if (user.staffRole) localStorage.setItem(USER_STAFF_ROLE_KEY, user.staffRole);
   else localStorage.removeItem(USER_STAFF_ROLE_KEY);
 }
@@ -86,9 +81,8 @@ export function clearSessionUser(): void {
   localStorage.removeItem("userEmail");
   localStorage.removeItem("userRole");
   localStorage.removeItem(USER_AVATAR_URL_KEY);
-  localStorage.removeItem(USER_PHONE_KEY);
+  // phoneNumber and adminCode were never stored — nothing to remove.
   localStorage.removeItem(USER_CATEGORY_KEY);
-  localStorage.removeItem("userAdminCode");
   localStorage.removeItem(USER_STAFF_ROLE_KEY);
 }
 

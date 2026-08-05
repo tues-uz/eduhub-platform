@@ -1,24 +1,13 @@
-import {
-  Users,
-  GraduationCap,
-  BookOpen,
-} from "@/lib/icons";
+/**
+ * Admin dashboard data.
+ *
+ * All static mock data has been removed. Dashboard statistics and activity
+ * are now fetched exclusively from the live backend API via
+ * {@link import("@/api/client").dashboardApi.getAdminOverview}.
+ *
+ * This file is kept as a module boundary in case shared admin dashboard
+ * type definitions need to live here in the future.
+ */
 
-export const adminStats = [
-  { icon: Users, label: "Total Users", value: "2,847", change: "+142", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
-  { icon: GraduationCap, label: "Students", value: "2,521", change: "+89", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
-  { icon: BookOpen, label: "Classes", value: "48", change: "+5", trend: "up", color: "text-slate-600", bgColor: "bg-slate-50", borderColor: "border-slate-200" },
-];
-
-export const adminRecentUsers = [
-  { id: 1, name: "Sevinch", email: "Sevinch@eduhub.com", role: "Student", joined: "2024-01-10", status: "Active" },
-  { id: 2, name: "Dr. Karimov", email: "karimov@eduhub.com", role: "Teacher", joined: "2024-01-09", status: "Active" },
-  { id: 3, name: "Sarah Johnson", email: "sarah.j@eduhub.com", role: "Teacher", joined: "2024-01-08", status: "Active" },
-  { id: 4, name: "Ahmed Hassan", email: "ahmed@eduhub.com", role: "Student", joined: "2024-01-07", status: "Inactive" },
-];
-
-export const adminSystemActivity = [
-  { action: "New user registered", detail: "Sevinch (Student)", time: "10 min ago" },
-  { action: "Class published", detail: "Introduction to Economics", time: "1 hour ago" },
-  { action: "Teacher account created", detail: "Dr. Karimov", time: "2 hours ago" },
-];
+// No exports — all data comes from the API.
+// If you need to add shared admin dashboard types, place them here.

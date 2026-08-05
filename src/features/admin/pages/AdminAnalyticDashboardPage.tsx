@@ -240,7 +240,7 @@ export default function AdminAnalyticDashboardPage() {
       total: liveTeachers.length,
       active,
       inactive: 0,
-      classesTaught: liveTeachers.length * 2,
+      classesTaught: liveTeachers.length,
       studentsTaught: liveStudents.length,
     };
   }, [liveTeachers, liveStudents]);

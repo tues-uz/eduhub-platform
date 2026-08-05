@@ -158,14 +158,9 @@ const StudentCertificates = () => {
     queryFn: eduhubCompletion.myCertificates,
   });
 
-  const localDemoCertificates = useMemo(() => {
-    void tick;
-    return listCertificatesForStudent(emailNorm).filter((c) => !isUuid(c.courseId));
-  }, [emailNorm, tick]);
-
   const certificates = useMemo(
-    (): DisplayCertificate[] => [...(certificatesQuery.data ?? []), ...localDemoCertificates],
-    [certificatesQuery.data, localDemoCertificates],
+    (): DisplayCertificate[] => certificatesQuery.data ?? [],
+    [certificatesQuery.data],
   );
 
   const readyCount = useMemo(

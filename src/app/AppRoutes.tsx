@@ -88,6 +88,7 @@ import StudentEnrollmentSuccessPage from "@/pages/StudentEnrollmentSuccessPage";
 import StudentCourseCompletionPage from "@/pages/StudentCourseCompletionPage";
 import StudentCourseResumePage from "@/pages/StudentCourseResumePage";
 import { appRoutes } from "@/app/routes";
+import { AuthRouteGuard } from "@/features/auth/components/AuthRouteGuard";
 
 export function AppRoutes() {
   return (
@@ -161,7 +162,9 @@ export function AppRoutes() {
         </Route>
       </Route>
 
-      <Route element={<TeacherDashboardLayout />}>
+      {/* ── Teacher routes (requires any valid auth token) ─────────────────── */}
+      <Route element={<AuthRouteGuard />}>
+        <Route element={<TeacherDashboardLayout />}>
         <Route path={appRoutes.dashboardTeacher} element={<TeacherDashboard />} />
         <Route path="/dashboard/teacher/courses" element={<TeacherCoursesPage />} />
         <Route path="/dashboard/teacher/courses/new" element={<TeacherCourseFormLayout />}>
@@ -198,6 +201,7 @@ export function AppRoutes() {
         <Route path="/dashboard/teacher/payroll" element={<TeacherPayrollPage />} />
         <Route path="/dashboard/teacher/payroll/submissions" element={<Navigate to="/dashboard/teacher/payroll" replace />} />
         <Route path="/dashboard/teacher/settings" element={<TeacherSettingsPage />} />
+        </Route>
       </Route>
 
       <Route path="/dashboard/available-courses/enroll/:courseId/success" element={<StudentEnrollmentSuccessPage />} />
@@ -207,7 +211,9 @@ export function AppRoutes() {
       <Route path="/dashboard/congrats-preview" element={<StudentCourseCompletionPage />} />
       <Route path="/dashboard/courses/:courseId/congrats" element={<StudentCourseCompletionPage />} />
 
-      <Route element={<StudentDashboardLayout />}>
+      {/* ── Student routes (requires any valid auth token) ───────────────── */}
+      <Route element={<AuthRouteGuard />}>
+        <Route element={<StudentDashboardLayout />}>
         <Route path="/dashboard/courses" element={<StudentCoursesPage />} />
         <Route path="/dashboard/available-courses" element={<StudentAvailableCourses />} />
         <Route path="/dashboard/available-courses/class/:courseId" element={<StudentAvailableCourseDetailPage />} />
@@ -225,6 +231,7 @@ export function AppRoutes() {
         <Route path="/dashboard/quiz" element={<StudentQuiz />} />
         <Route path="/dashboard/placement-tests" element={<StudentPlacementTests />} />
         <Route path="/dashboard/attendance/join" element={<StudentAttendanceJoin />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<NotFound />} />

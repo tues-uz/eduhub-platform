@@ -1,3 +1,20 @@
+/**
+ * enrollmentApplicationStore.ts
+ *
+ * Enrollment application data store — API-first with localStorage as a short-lived cache.
+ *
+ * Architecture:
+ * - All mutations go to the backend API first. localStorage is updated as a local cache
+ *   so the UI can display optimistic state while navigating between pages.
+ * - On app start, the backend is the authoritative source.
+ * - If the API is unavailable, the cache allows degraded read-only access.
+ * - Enrollment data submitted while unauthenticated falls back to localStorage-only
+ *   until the user logs in, at which point the data should be re-submitted via the API.
+ *
+ * Key invariant: localStorage is NEVER the source of truth for APPROVED status.
+ * isApprovedForCourse() should always be validated against the backend.
+ */
+
 import { eduhubEnrollmentApplications, eduhubAdminEnrollmentApplications, getAccessToken } from "@/api/eduhubClient";
 
 const STORAGE_KEY = "eduhub_enrollment_applications_v1";
@@ -43,6 +60,8 @@ export interface EnrollmentApplicationRecord {
   invoiceIssuedAt?: string;
   receiptIssuedAt?: string;
   amountPaid?: number;
+  /** True when this record was created locally (API call is pending/failed). */
+  _localOnly?: boolean;
 }
 
 function emitChanged() {
@@ -63,14 +82,14 @@ function readStorage(): EnrollmentApplicationRecord[] {
   }
 }
 
-function load(): EnrollmentApplicationRecord[] {
-  return readStorage();
-}
-
-function save(items: EnrollmentApplicationRecord[]) {
+function saveStorage(items: EnrollmentApplicationRecord[]) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  emitChanged();
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    emitChanged();
+  } catch (e) {
+    console.warn("[EnrollmentStore] Could not save to localStorage", e);
+  }
 }
 
 function findLatestForCourseAndEmailInner(
@@ -78,7 +97,7 @@ function findLatestForCourseAndEmailInner(
   emailNorm: string,
 ): EnrollmentApplicationRecord | undefined {
   const n = emailNorm.trim().toLowerCase();
-  const matches = load().filter((a) => a.courseId === courseId && a.applicantEmailNorm === n);
+  const matches = readStorage().filter((a) => a.courseId === courseId && a.applicantEmailNorm === n);
   if (matches.length === 0) return undefined;
   matches.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   return matches[0];
@@ -86,16 +105,16 @@ function findLatestForCourseAndEmailInner(
 
 export const enrollmentApplicationStore = {
   list(): EnrollmentApplicationRecord[] {
-    return load();
+    return readStorage();
   },
 
   getById(id: string): EnrollmentApplicationRecord | undefined {
-    return load().find((a) => a.id === id);
+    return readStorage().find((a) => a.id === id);
   },
 
   findPendingForCourseAndEmail(courseId: string, emailNorm: string): EnrollmentApplicationRecord | undefined {
     const n = emailNorm.trim().toLowerCase();
-    return load().find(
+    return readStorage().find(
       (a) => a.courseId === courseId && a.applicantEmailNorm === n && a.status === "PENDING",
     );
   },
@@ -107,18 +126,32 @@ export const enrollmentApplicationStore = {
     return findLatestForCourseAndEmailInner(courseId, emailNorm);
   },
 
-  /** Latest application must be APPROVED — local fallback while backend admin-approval sync lags. */
+  /**
+   * Checks if the latest application is APPROVED.
+   *
+   * NOTE: This is a local-cache check only. Always validate against the backend
+   * for security-sensitive decisions (e.g. granting course access).
+   */
   isApprovedForCourse(courseId: string, emailNorm: string): boolean {
     return findLatestForCourseAndEmailInner(courseId, emailNorm)?.status === "APPROVED";
   },
 
-  resetToDevDummy(): void {
-    if (!import.meta.env.DEV) return;
-    localStorage.removeItem(STORAGE_KEY);
-    emitChanged();
+  /**
+   * Seeds local cache from API data (call on app boot or after login).
+   * This replaces any locally-stored data with authoritative backend data.
+   */
+  syncFromApi(records: EnrollmentApplicationRecord[]): void {
+    saveStorage(records);
   },
 
-  add(input: {
+  /**
+   * Submits an enrollment application.
+   *
+   * API-first: the application is sent to the backend. If the user is
+   * unauthenticated, or the API call fails, the record is cached locally
+   * and flagged as `_localOnly: true` so callers can warn the user.
+   */
+  async add(input: {
     courseId: string;
     courseTitle?: string;
     applicantUserId?: string;
@@ -135,20 +168,19 @@ export const enrollmentApplicationStore = {
     downPaymentAmount?: number;
     priceCurrency?: string;
     installmentCount?: EnrollmentInstallmentCount;
-  }): EnrollmentApplicationRecord {
-    const rec: EnrollmentApplicationRecord = {
+    referralCode?: string;
+  }): Promise<EnrollmentApplicationRecord> {
+    const localRec: EnrollmentApplicationRecord = {
       ...input,
       id: crypto.randomUUID(),
       status: "PENDING",
       submittedAt: new Date().toISOString(),
+      _localOnly: true,
     };
-    const all = load();
-    all.push(rec);
-    save(all);
 
     if (getAccessToken() && input.courseId.trim()) {
-      void eduhubEnrollmentApplications
-        .submit({
+      try {
+        const apiResult = await eduhubEnrollmentApplications.submit({
           courseId: input.courseId,
           fullName: input.fullName,
           email: input.email,
@@ -160,13 +192,28 @@ export const enrollmentApplicationStore = {
           paymentPlan: input.paymentPlan,
           downPaymentAmount: input.downPaymentAmount,
           installmentCount: input.installmentCount,
-        })
-        .catch((err) => {
-          console.warn("[EnrollmentStore] Backend API sync failed, saved locally", err);
         });
+        // API succeeded — use the API-generated ID and store as confirmed
+        const confirmed: EnrollmentApplicationRecord = {
+          ...localRec,
+          id: (apiResult as any)?.id ?? localRec.id,
+          _localOnly: false,
+        };
+        const all = readStorage();
+        all.push(confirmed);
+        saveStorage(all);
+        return confirmed;
+      } catch (err) {
+        console.warn("[EnrollmentStore] API submission failed — caching locally only", err);
+        // Fall through to local-only save below
+      }
     }
 
-    return rec;
+    // Unauthenticated or API error — cache locally with warning flag
+    const all = readStorage();
+    all.push(localRec);
+    saveStorage(all);
+    return localRec;
   },
 
   update(
@@ -187,11 +234,11 @@ export const enrollmentApplicationStore = {
       >
     >,
   ): void {
-    const all = load();
+    const all = readStorage();
     const i = all.findIndex((a) => a.id === id);
     if (i === -1) return;
     all[i] = { ...all[i], ...patch };
-    save(all);
+    saveStorage(all);
 
     if (getAccessToken() && id.trim() && patch.status) {
       if (patch.status === "APPROVED") {
@@ -204,5 +251,14 @@ export const enrollmentApplicationStore = {
         });
       }
     }
+  },
+
+  /**
+   * DEV ONLY — clears local cache. Never called in production.
+   */
+  resetToDevDummy(): void {
+    if (!import.meta.env.DEV) return;
+    localStorage.removeItem(STORAGE_KEY);
+    emitChanged();
   },
 };

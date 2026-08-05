@@ -204,37 +204,7 @@ const ENROLLED_COURSES: Record<
   },
 };
 
-const LESSONS_BY_COURSE: Record<number, { id: number; title: string; duration: string; completed: boolean }[]> = {
-  1: [
-    { id: 1, title: "Introduction to Microeconomics", duration: "12 min", completed: true },
-    { id: 2, title: "Supply and Demand", duration: "18 min", completed: true },
-    { id: 3, title: "Market Structures", duration: "22 min", completed: false },
-    { id: 4, title: "Monopoly and Competition", duration: "15 min", completed: false },
-    { id: 5, title: "International Trade", duration: "20 min", completed: false },
-  ],
-  2: [
-    { id: 1, title: "Introduction to Management", duration: "14 min", completed: true },
-    { id: 2, title: "Strategic Planning", duration: "25 min", completed: false },
-    { id: 3, title: "Organizational Behavior", duration: "18 min", completed: false },
-  ],
-  3: [
-    { id: 1, title: "Marketing Fundamentals", duration: "16 min", completed: true },
-    { id: 2, title: "Digital Channels", duration: "20 min", completed: true },
-    { id: 3, title: "Final Project", duration: "—", completed: false },
-  ],
-  4: [
-    { id: 1, title: "Accounting Basics", duration: "15 min", completed: true },
-    { id: 2, title: "Balance Sheets", duration: "22 min", completed: false },
-  ],
-  5: [
-    { id: 1, title: "Business Writing Basics", duration: "12 min", completed: true },
-    { id: 2, title: "Writing Reports", duration: "18 min", completed: false },
-  ],
-  6: [
-    { id: 1, title: "Excel Fundamentals", duration: "20 min", completed: true },
-    { id: 2, title: "Data Analysis", duration: "25 min", completed: true },
-  ],
-};
+
 
 const formatDate = (dateString: string) =>
   new Date(dateString).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -819,21 +789,10 @@ const StudentCourseDetail = () => {
     ? installmentPaymentPath(approvedEnrollment.id)
     : "/dashboard/payment";
 
-  const lessonsFromApi = apiLessons.map((l) => ({
+  const lessons: LessonRow[] = apiLessons.map((l) => ({
     ...l,
     completed: completedApiLessonIds.has(l.id),
   }));
-  const lessonsFromMock =
-    id && LESSONS_BY_COURSE[id]
-      ? LESSONS_BY_COURSE[id].map((l) => ({
-          id: String(l.id),
-          title: l.title,
-          duration: l.duration,
-          completed: l.completed || lessonProgressStore.isComplete(String(id), String(l.id)),
-        }))
-      : [];
-
-  const lessons: LessonRow[] = apiCourse ? lessonsFromApi : lessonsFromMock;
 
   const completedCount = lessons.filter((l) => l.completed).length;
   const progressPercent = lessons.length ? Math.round((completedCount / lessons.length) * 100) : 0;

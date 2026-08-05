@@ -16,49 +16,7 @@ import { lessonProgressStore } from "@/features/student/data/lessonProgressStore
 import { eduhubCourses, eduhubLessons, eduhubLessonProgress } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 
-const ENROLLED_COURSES: Record<number, { id: number; title: string; instructor: string }> = {
-  1: { id: 1, title: "Introduction to Economics", instructor: "Dr. Dilshod Karimov" },
-  2: { id: 2, title: "Business Management Fundamentals", instructor: "Prof. Sarah Johnson" },
-  3: { id: 3, title: "Digital Marketing Essentials", instructor: "Dr. Ahmed Hassan" },
-  4: { id: 4, title: "Financial Accounting", instructor: "Prof. Maria Garcia" },
-  5: { id: 5, title: "English for Business", instructor: "Ms. Elena Petrova" },
-  6: { id: 6, title: "Data Analysis with Excel", instructor: "Dr. James Wilson" },
-};
 
-const LESSONS_BY_COURSE: Record<number, { id: number; title: string; duration: string }[]> = {
-  1: [
-    { id: 1, title: "Introduction to Microeconomics", duration: "12 min" },
-    { id: 2, title: "Supply and Demand", duration: "18 min" },
-    { id: 3, title: "Market Structures", duration: "22 min" },
-    { id: 4, title: "Monopoly and Competition", duration: "15 min" },
-    { id: 5, title: "International Trade", duration: "20 min" },
-  ],
-  2: [
-    { id: 1, title: "Introduction to Management", duration: "14 min" },
-    { id: 2, title: "Strategic Planning", duration: "25 min" },
-    { id: 3, title: "Organizational Behavior", duration: "18 min" },
-  ],
-  3: [
-    { id: 1, title: "Marketing Fundamentals", duration: "16 min" },
-    { id: 2, title: "Digital Channels", duration: "20 min" },
-    { id: 3, title: "Final Project", duration: "—" },
-  ],
-  4: [
-    { id: 1, title: "Accounting Basics", duration: "15 min" },
-    { id: 2, title: "Balance Sheets", duration: "22 min" },
-  ],
-  5: [
-    { id: 1, title: "Business Writing Basics", duration: "12 min" },
-    { id: 2, title: "Writing Reports", duration: "18 min" },
-  ],
-  6: [
-    { id: 1, title: "Excel Fundamentals", duration: "20 min" },
-    { id: 2, title: "Data Analysis", duration: "25 min" },
-  ],
-};
-
-const DUMMY_DESCRIPTION =
-  "This lesson covers the key concepts and practical applications. Watch the video above and use the resources below to reinforce your learning. You can pause and rewatch any section as needed.";
 
 /** Convert YouTube URL to embed URL if needed */
 function toEmbedUrl(url: string): string {
@@ -146,17 +104,13 @@ const StudentLessonPage = () => {
     }
   }, [isApiCourse, courseId, lessonId, moduleIdParam]);
 
-  const cid = courseId && !isApiCourse ? parseInt(courseId, 10) : NaN;
-  const lid = lessonId && !isApiCourse ? parseInt(lessonId, 10) : NaN;
   const course = apiCourse
     ? { id: courseId!, title: apiCourse.title, instructor: apiCourse.instructor }
-    : cid
-      ? ENROLLED_COURSES[cid]
-      : undefined;
-  const lessons = apiLessons.length ? apiLessons : (cid && LESSONS_BY_COURSE[cid]) || [];
+    : undefined;
+  const lessons = apiLessons;
   const lesson = apiLesson
     ? { id: lessonId!, title: apiLesson.title, duration: apiLesson.duration }
-    : lessons.find((l) => l.id === lid || l.id === lessonId);
+    : lessons.find((l) => l.id === lessonId);
   const lessonIndex = lesson ? lessons.findIndex((l) => l.id === lesson.id) : -1;
   const prevLesson = lessonIndex > 0 ? lessons[lessonIndex - 1] : null;
   const nextLesson = lessonIndex >= 0 && lessonIndex < lessons.length - 1 ? lessons[lessonIndex + 1] : null;
@@ -278,7 +232,9 @@ const StudentLessonPage = () => {
                 <h2 className="font-semibold text-foreground mb-3" style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}>
                   About this lesson
                 </h2>
-                <p className="text-sm text-foreground/80 leading-relaxed">{DUMMY_DESCRIPTION}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  No lesson description provided.
+                </p>
               </div>
             </>
           )}

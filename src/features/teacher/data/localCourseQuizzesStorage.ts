@@ -126,23 +126,11 @@ export function setLocalCourseQuizPublished(courseId: string, quizId: string, pu
   writeStore(store);
 }
 
-/** Merge API list with locally stored quizzes (same id: API wins; keep local thumbnail if API omits it). */
+/** Return API list sorted by update date; fallback to local storage only if offline/unauthenticated. */
 export function mergeCourseQuizListsWithLocal(courseId: string, apiQuizzes: QuizResponse[]): QuizResponse[] {
+  if (Array.isArray(apiQuizzes) && apiQuizzes.length > 0) {
+    return sortQuizzesDesc(apiQuizzes.filter((q) => q && typeof q.id === "string"));
+  }
   const local = getLocalCourseQuizzes(courseId);
-  const byId = new Map<string, QuizResponse>();
-  for (const q of apiQuizzes) {
-    if (q?.id) byId.set(q.id, q);
-  }
-  for (const q of local) {
-    if (!q?.id) continue;
-    const existing = byId.get(q.id);
-    if (!existing) {
-      byId.set(q.id, q);
-      continue;
-    }
-    if (!existing.thumbnailUrl?.trim() && q.thumbnailUrl?.trim()) {
-      byId.set(q.id, { ...existing, thumbnailUrl: q.thumbnailUrl });
-    }
-  }
-  return sortQuizzesDesc(Array.from(byId.values()));
+  return sortQuizzesDesc(local);
 }
