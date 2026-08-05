@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
 import type { AdminPaymentRow } from "@/api/eduhubTypes";
-import { eduhubAdminInstallments } from "@/api/eduhubClient";
+import { eduhubAdminInstallmentPayments } from "@/api/eduhubClient";
 import { adminPaymentsStore, useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -519,7 +519,7 @@ export default function AdminPaymentsPage() {
               Preview uploaded receipt or PDF from storage. Approve to mark payment as validated and update student access.
             </p>
             <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 h-40 flex items-center justify-center text-sm text-slate-500">
-              Demo: no file attached in mock data
+              {proofPayment?.reference ? `Payment proof: ${proofPayment.reference}` : "No file preview available"}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setProofPaymentId(null)}>
@@ -528,7 +528,7 @@ export default function AdminPaymentsPage() {
               <Button
                 onClick={() => {
                   if (proofPayment?.id) {
-                    eduhubAdminInstallments.approve(proofPayment.id)
+                    eduhubAdminInstallmentPayments.approve(proofPayment.id)
                       .then(() => {
                         toast.success("Payment proof approved successfully");
                       })

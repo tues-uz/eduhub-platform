@@ -90,37 +90,53 @@ function getRequestTimeoutMs(): number {
   return DEFAULT_REQUEST_TIMEOUT_MS;
 }
 
-const AUTH_ACCESS_TOKEN_KEY = "eduhub_accessToken";
-const AUTH_REFRESH_TOKEN_KEY = "eduhub_refreshToken";
-const AUTH_EXPIRES_AT_KEY = "eduhub_expiresAt";
-
 const TOKEN_REFRESH_BUFFER_MS = 60 * 1000;
 
+const inMemoryTokens = {
+  accessToken: typeof sessionStorage !== "undefined" ? sessionStorage.getItem("eduhub_at") : null,
+  refreshToken: typeof sessionStorage !== "undefined" ? sessionStorage.getItem("eduhub_rt") : null,
+  expiresAt: typeof sessionStorage !== "undefined" ? Number(sessionStorage.getItem("eduhub_exp") || 0) : 0,
+};
+
 export function getAccessToken(): string | null {
-  return localStorage.getItem(AUTH_ACCESS_TOKEN_KEY);
+  return inMemoryTokens.accessToken;
 }
 
 export function setAuthTokens(accessToken: string, refreshToken: string, expiresIn: number = 3600): void {
-  localStorage.setItem(AUTH_ACCESS_TOKEN_KEY, accessToken);
-  localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refreshToken);
+  inMemoryTokens.accessToken = accessToken;
+  inMemoryTokens.refreshToken = refreshToken;
   const expiresMs = expiresIn > 86_400 ? expiresIn : expiresIn * 1000;
-  localStorage.setItem(AUTH_EXPIRES_AT_KEY, String(Date.now() + expiresMs));
+  inMemoryTokens.expiresAt = Date.now() + expiresMs;
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.setItem("eduhub_at", accessToken);
+    sessionStorage.setItem("eduhub_rt", refreshToken);
+    sessionStorage.setItem("eduhub_exp", String(inMemoryTokens.expiresAt));
+  }
 }
 
 export function clearAuthTokens(): void {
-  localStorage.removeItem(AUTH_ACCESS_TOKEN_KEY);
-  localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
-  localStorage.removeItem(AUTH_EXPIRES_AT_KEY);
+  inMemoryTokens.accessToken = null;
+  inMemoryTokens.refreshToken = null;
+  inMemoryTokens.expiresAt = 0;
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.removeItem("eduhub_at");
+    sessionStorage.removeItem("eduhub_rt");
+    sessionStorage.removeItem("eduhub_exp");
+  }
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem("eduhub_accessToken");
+    localStorage.removeItem("eduhub_refreshToken");
+    localStorage.removeItem("eduhub_expiresAt");
+  }
 }
 
 export function getRefreshToken(): string | null {
-  return localStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+  return inMemoryTokens.refreshToken;
 }
 
 function isTokenExpiringSoon(): boolean {
-  const expiresAt = localStorage.getItem(AUTH_EXPIRES_AT_KEY);
-  if (!expiresAt) return false;
-  return Date.now() + TOKEN_REFRESH_BUFFER_MS > parseInt(expiresAt, 10);
+  if (!inMemoryTokens.expiresAt) return false;
+  return Date.now() + TOKEN_REFRESH_BUFFER_MS > inMemoryTokens.expiresAt;
 }
 
 function toCamel(o: any): any {
@@ -790,6 +806,8 @@ export const eduhubAdmin = {
     request<ScheduleProposalResponse>(`/admin/courses/${courseId}/schedule`, { method: "POST", body: JSON.stringify(body) }),
 };
 
+export const eduhubAdminOverview = eduhubAdmin;
+
 export const eduhubPayroll = {
   getClasses: () => request<PayrollClassSummaryResponse[]>("/payroll/classes"),
 
@@ -1157,6 +1175,8 @@ export const eduhubAdminInstallmentPayments = {
       { method: "POST", body: JSON.stringify(body) },
     ),
 };
+
+export const eduhubAdminInstallments = eduhubAdminInstallmentPayments;
 
 /** Promo Codes API */
 export const eduhubPromos = {

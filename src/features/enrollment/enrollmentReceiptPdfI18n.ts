@@ -51,6 +51,7 @@ const EN: ReceiptPdfCopy = {
   pendingApproval: "Pending approval",
   submissionNotice:
     "Submission copy — official invoice and receipt numbers are issued after the school approves your enrollment.",
+  demoNotice: "Demo receipt for testing/preview purposes.",
   receivedFrom: "Received from",
   description: "Description",
   amount: "Amount",
@@ -108,6 +109,7 @@ const UZ: ReceiptPdfCopy = {
   pendingApproval: "Tasdiq kutilmoqda",
   submissionNotice:
     "Yuborish nusxasi — rasmiy hisob-faktura va kvitansiya raqamlari maktab arizangizni tasdiqlagandan keyin beriladi.",
+  demoNotice: "Sinov va ko'rib chiqish uchun demo kvitansiya.",
   receivedFrom: "To'lovchi",
   description: "Tavsif",
   amount: "Summa",

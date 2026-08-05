@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BarChart3 } from "@/lib/icons";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { eduhubAdminOverview } from "@/api/eduhubClient";
+import { eduhubAdmin } from "@/api/eduhubClient";
 
 export default function AdminReportsPage() {
   const { t } = useTranslation();
@@ -10,7 +10,7 @@ export default function AdminReportsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    eduhubAdminOverview.getOverview()
+    eduhubAdmin.getOverview()
       .then((res: any) => {
         if (res) {
           setMetrics({
