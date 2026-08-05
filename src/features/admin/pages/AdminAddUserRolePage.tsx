@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Check, Phone, Square2Stack, User } from "@/lib/icons";
+import { useNavigate } from "react-router-dom";
+import { Check, Phone, Square2Stack, User } from "@/lib/icons";
 import { toast } from "sonner";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,12 +138,7 @@ export default function AdminAddUserRolePage() {
   };
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6 max-w-lg">
-        <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
-          <ArrowLeft className="h-4 w-4" />
-          {t("admin.shared.backToDashboard")}
-        </Link>
 
         <AdminPageHeader
           title={t("adminNav.addUserRole")}
@@ -328,6 +322,5 @@ export default function AdminAddUserRolePage() {
           </DialogContent>
         </Dialog>
       </div>
-    </AdminLayout>
   );
 }

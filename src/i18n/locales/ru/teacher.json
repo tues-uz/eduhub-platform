@@ -5,6 +5,8 @@
     "courseLeadFallback": "Course lead",
     "classFallback": "Класс",
     "dashboard": {
+      "overviewTitle": "Обзор",
+      "managingSubtitle": "Управление: {{name}}",
       "subtitle": "Instructor Панель",
       "roleBadge": "Преподаватель",
       "stats": {
@@ -15,7 +17,8 @@
       },
       "attendanceQr": {
         "title": "Посещаемость QR (projector)",
-        "description": "Generate a session QR code to show on the whiteboard—студентs scan to check in on their phones."
+        "description": "Generate a session QR code to show on the whiteboard—студентs scan to check in on their phones.",
+        "cta": "Открыть чек-ин"
       },
       "upcomingSessions": {
         "title": "Upcoming Sessions"
@@ -88,13 +91,13 @@
       }
     },
     "courses": {
-      "description": "New классes stay in draft until an admin sets a price and publishes them. Add lessons with PDF or video content, then wait for approval.",
-      "addClass": "Add класс",
+      "description": "Создавайте и управляйте классами. Черновики ждут цены и публикации от админа.",
+      "addClass": "Добавить класс",
       "tabs": {
-        "classes": "Классes",
-        "attendance": "Студент attendance",
+        "classes": "Классы",
+        "attendance": "Посещаемость",
         "schedule": "Расписание",
-        "substitute": "Substitute instructor"
+        "substitute": "Замена"
       },
       "loading": "Загрузка классes…",
       "empty": {
@@ -115,8 +118,9 @@
       "scheduleTab": {
         "intro": "Редактировать the planned sessions (title, date, time) for each класс. This uses the same расписание section from the класс setup form.",
         "loading": "Загрузка расписаниеs…",
-        "emptyDescription": "Create a класс first, then come back here to set up the per-session расписание.",
+        "emptyDescription": "Create a class first, then set up session dates and times here.",
         "sessionsSummary": "{{sessions}} sessions in 6 months",
+        "sessionsSummaryFilled": "{{sessions}} sessions in 6 months · {{filled}} filled",
         "filledSuffix": " · {{filled}} filled",
         "notSetYet": "Sessions in 6 months not set yet",
         "editSchedule": "Редактировать расписание"
@@ -125,7 +129,12 @@
     "students": {
       "title": "Студенты",
       "subtitle": "Студенты registered to your классes.",
+      "searchPlaceholder": "Поиск по имени, email или классу",
+      "count_one": "{{count}} студент",
+      "count_other": "{{count}} студентов",
+      "noSearchResults": "Нет студентов по вашему запросу.",
       "table": {
+        "student": "Студент",
         "name": "Студент name",
         "email": "Email",
         "class": "Класс",
@@ -175,18 +184,22 @@
     },
     "attendanceQr": {
       "title": "Посещаемость QR",
-      "description": "Select the класс and the planned session from the расписание, then generate a QR. When you stop the session, that meeting is marked held for студент enrollment. Use projector view for full screen. Студенты sign in to check in."
+      "description": "Выберите класс и занятие, создайте QR и покажите его студентам для отметки."
     },
     "scheduleApprovals": {
       "title": "Расписание approvals",
-      "subtitle": "Review расписаниеs proposed by an admin, then approve or request changes on each класс.",
+      "subtitle": "Approve or request changes on schedules proposed by admin.",
       "loading": "Загрузка your классes…",
       "empty": "No классes yet. Create a класс first.",
+      "emptyPending": "Nothing waiting for your approval.",
+      "emptyOther": "No other classes in this list.",
       "addClass": "Add класс",
-      "pendingSectionTitle": "Needs your approval",
+      "pendingSectionTitle": "Needs approval",
+      "pendingCount": "{{count}} need review",
       "createdDate": "Created {{date}}",
-      "allSectionTitle": "All your классes",
+      "allSectionTitle": "Your classes",
       "openButton": "Open",
+      "reviewButton": "Review",
       "status": {
         "actionNeeded": "Action needed",
         "approved": "Одобрено",
@@ -195,10 +208,11 @@
         "published": "Опубликовано"
       },
       "statusDescriptions": {
-        "scheduleApproved": "Расписание approved — waiting for admin to publish",
-        "draft": "Черновик — admin will propose a расписание",
-        "rejected": "Rejected — admin sent feedback",
-        "default": "Open the расписание step to view or approve when ready."
+        "pending": "Admin proposed a schedule — review to approve or request changes.",
+        "scheduleApproved": "Approved — waiting for admin to publish.",
+        "draft": "Черновик — waiting for admin to propose a schedule.",
+        "rejected": "Rejected — admin sent feedback.",
+        "default": "Open the schedule step to view details."
       }
     },
     "status": {
@@ -341,6 +355,18 @@
         "categoryLabel": "Category *",
         "categoryNotAssigned": "Not assigned",
         "categoryHint": "Assigned by admin when your instructor account was created. Contact support if this looks wrong.",
+        "levelLabel": "Level",
+        "levelPlaceholder": "Select class level",
+        "levelRequired": "Please select a class level.",
+        "levels": {
+          "beginnerA1": "Beginner (A1)",
+          "elementaryA1Plus": "Elementary (A1+)",
+          "preIntermediateB1": "Pre-Intermediate (B1)",
+          "intermediateB1Plus": "Intermediate (B1+)",
+          "upperIntermediateB2Plus": "Upper-Intermediate (B2+)",
+          "advancedC1": "Advanced (C1)",
+          "advancedC2": "Advanced (C2)"
+        },
         "aboutLabel": "About this класс (optional)",
         "aboutPlaceholder": "What студентs will learn — a sentence or two is enough.",
         "datesSectionTitle": "Класс dates (optional)",
@@ -455,6 +481,15 @@
         "uploadFile": "Upload file",
         "dragHere": "or drag here to upload",
         "detailsTitle": "Тест details",
+        "thumbnail": {
+          "label": "Обложка",
+          "optional": "Необязательно",
+          "hint": "Показывается на карточке теста в классе.",
+          "add": "Загрузить изображение",
+          "change": "Изменить",
+          "remove": "Убрать",
+          "previewAlt": "Превью обложки теста"
+        },
         "typeLabel": "Type",
         "typePlaceholder": "Select type",
         "typeHint": "Тест for practice or Placement test for assessment.",
@@ -741,63 +776,67 @@
       }
     },
     "resumeEdit": {
-      "backToClasses": "Назад to My Классes",
-      "backToResumes": "Назад to resumes",
+      "backToClasses": "Назад к классам",
+      "backToResumes": "Назад к конспектам",
       "title": {
-        "new": "New класс resume",
-        "edit": "Редактировать класс resume"
+        "new": "Новый конспект",
+        "edit": "Редактировать конспект"
       },
-      "intro": "Recaps and reminders appear on the студент класс page under the Resume tab.",
+      "intro": "Студенты видят это на вкладке Resume в классе.",
       "substituteBanner": {
-        "viewingAs": "You are редактироватьing as substitute.",
-        "courseLead": "Course lead:",
-        "hint": "You can add or редактировать resumes for студентs while covering this класс."
+        "viewingAs": "Редактирование как заместитель",
+        "courseLead": "Ведущий преподаватель:",
+        "hint": "Вы можете добавлять и редактировать конспекты. Удалять может только ведущий преподаватель."
       },
-      "primaryBanner": "You are the course lead. Substitute instructors with approved cover can also add resumes in demo mode.",
+      "primaryBanner": "Вы ведущий преподаватель — утверждённые заместители тоже могут редактировать конспекты.",
       "thumbnail": {
-        "label": "Thumbnail image (optional)",
-        "previewAlt": "Resume thumbnail preview",
-        "hint": "Shows on the resume cards студентs see on their класс page."
+        "label": "Обложка",
+        "optional": "Необязательно",
+        "previewAlt": "Превью обложки",
+        "hint": "Показывается рядом с конспектом на странице класса.",
+        "add": "Загрузить изображение",
+        "change": "Изменить",
+        "remove": "Убрать"
       },
-      "sessionLabel": "Link to a расписаниеd session",
+      "sessionLabel": "Занятие",
       "sessionHints": {
-        "primary": "Optional — tie this recap to a specific session or leave as whole-класс.",
-        "substituteLocked": "Session is set from your substitute cover invite.",
-        "noSessions": "No расписаниеd sessions yet — recap applies to the whole класс.",
-        "wholeClass": "Whole класс — general recap"
+        "primary": "Привяжите к одному занятию или оставьте для всего класса.",
+        "substituteLocked": "Занятие задано в приглашении заместителя.",
+        "noSessions": "В расписании пока нет занятий. Можно сохранить общий конспект.",
+        "wholeClass": "Весь класс"
       },
       "session": {
-        "wholeClass": "Whole класс — general recap",
-        "placeholder": "Whole класс or one session…",
-        "loadingAssigned": "Загрузка assigned session…"
+        "wholeClass": "Весь класс",
+        "placeholder": "Весь класс или одно занятие…",
+        "loadingAssigned": "Загрузка занятия…"
       },
-      "bodyLabel": "Resume text",
-      "bodyPlaceholder": "Key points, homework, reminders for студентs…",
+      "bodyLabel": "Текст",
+      "bodyPlaceholder": "Ключевые моменты, домашнее задание, что повторить…",
       "actions": {
         "delete": "Удалить",
-        "saveForStudents": "Сохранить for студентs"
+        "saveForStudents": "Сохранить"
       },
       "deleteDialog": {
-        "title": "Удалить this resume?",
-        "description": "Студенты will no longer see this recap. This cannot be undone."
+        "title": "Удалить этот конспект?",
+        "description": "Студенты больше его не увидят. Это нельзя отменить."
       },
       "errors": {
-        "missingClass": "Missing класс.",
-        "noAccess": "You don't have access to редактировать resumes for this класс.",
-        "classNotFound": "Класс not found.",
-        "emptyBody": "Write something before saving."
+        "missingClass": "Класс не указан.",
+        "noAccess": "Нет доступа к этому классу.",
+        "classNotFound": "Класс не найден.",
+        "emptyBody": "Напишите текст перед сохранением."
       },
       "toast": {
-        "notFound": "Resume not found",
-        "saveFailed": "Could not save.",
-        "deleteFailed": "Could not удалить resume.",
-        "deleted": "Resume удалитьd",
-        "created": "Resume created",
-        "createdDescription": "Студенты can now read this recap on their класс page.",
-        "updated": "Resume updated",
-        "updatedDescription": "Your changes are saved for студентs.",
-        "invalidImage": "Please pick an image file.",
-        "uploadFailed": "Could not upload image."
+        "notFound": "Конспект не найден",
+        "saveFailed": "Не удалось сохранить.",
+        "deleteFailed": "Не удалось удалить конспект.",
+        "deleted": "Конспект удалён",
+        "created": "Конспект создан",
+        "createdDescription": "Студенты могут прочитать его на вкладке Resume.",
+        "updated": "Конспект обновлён",
+        "updatedDescription": "Студенты увидят изменения.",
+        "invalidImage": "Выберите файл изображения.",
+        "uploadFailed": "Не удалось загрузить изображение."
       }
     },
     "roster": {
@@ -837,6 +876,7 @@
         "schedule": "Расписание",
         "resume": "Resume",
         "quiz": "Тест",
+        "quizScores": "Оценки за тесты",
         "attendance": "Посещаемость",
         "grades": "Оценки"
       },
@@ -903,41 +943,85 @@
       "sessionFallback": "Session {{n}}",
       "substituteCoverTitle": "Substitute cover · {{title}}",
       "resume": {
-        "title": "Класс resumes",
-        "intro": "Each card is a recap студентs can read on their класс page (Resume tab). Create or редактировать on a dedicated page.",
-        "newResume": "New resume",
-        "emptyTitle": "No resumes yet",
-        "emptyDescription": "Write your first recap so enrolled студентs can review it anytime.",
-        "createResume": "Create resume",
-        "wholeClassRecap": "Whole класс recap",
-        "updated": "Updated",
-        "thumbnailAlt": "Resume thumbnail"
+        "title": "Конспекты занятий",
+        "intro": "Краткие итоги, которые студенты видят на странице класса.",
+        "newResume": "Новый конспект",
+        "emptyTitle": "Конспектов пока нет",
+        "emptyDescription": "Напишите короткий итог после занятия, чтобы студенты могли вернуться к нему позже.",
+        "createResume": "Создать конспект",
+        "wholeClassRecap": "Весь класс",
+        "updated": "Обновлено {{datetime}}",
+        "thumbnailAlt": "Миниатюра конспекта",
+        "count_one": "{{count}} конспект",
+        "count_other": "{{count}} конспектов"
       },
       "quiz": {
-        "title": "Тест & placement tests",
-        "intro": "Multiple-choice quizzes for this класс appear below as cards. Use Create quiz to add one, then publish, редактировать, or open results from each card.",
-        "createQuiz": "Create quiz",
-        "substituteRestriction": "Тест management is for the course lead.",
-        "substituteRestrictionDescription": "Creating and publishing quizzes for this класс is done by the instructor who owns the catalog listing.",
-        "localOnly": "This класс exists only in your browser. Connect it to the API to list server-backed quizzes for this course.",
-        "yourQuizzes": "Your quizzes",
-        "fetchNoteFallback": "Тест list could not be loaded. Тестzes you save on this device still appear below.",
-        "fetchNoteWithError": "Тест list could not be loaded ({{error}}). Тестzes you save on this device still appear below.",
-        "loadError": "Could not load quizzes for this класс.",
-        "emptyTitle": "No quizzes for this класс yet",
-        "emptyDescription": "Your real quizzes will replace the example cards below. Create a practice quiz or placement test to get started.",
-        "exampleLayout": "Example layout (not saved — disappears when you add a quiz)",
-        "example": "Example",
+        "title": "Тесты",
+        "intro": "Тесты с выбором ответа и placement-тесты для этого класса.",
+        "createQuiz": "Создать тест",
+        "substituteRestriction": "Управление тестами — у ведущего преподавателя.",
+        "substituteRestrictionDescription": "Создавать и публиковать тесты может только владелец класса.",
+        "localOnly": "Этот класс только на устройстве. Подключите API, чтобы управлять тестами здесь.",
+        "yourQuizzes": "Ваши тесты",
+        "fetchNoteFallback": "Не удалось загрузить список. Локальные тесты всё равно показаны ниже.",
+        "fetchNoteWithError": "Не удалось загрузить тесты ({{error}}). Локальные тесты всё равно показаны ниже.",
+        "loadError": "Не удалось загрузить тесты для этого класса.",
+        "emptyTitle": "Тестов пока нет",
+        "emptyDescription": "Создайте практику или placement-тест для этого класса.",
         "placement": "Placement",
         "quiz": "Тест",
-        "questionCount_one": "{{count}} question",
-        "questionCount_other": "{{count}} questions",
-        "publish": "Publish",
-        "results": "Results",
+        "draft": "Черновик",
+        "published": "Опубликован",
+        "questionCount_one": "{{count}} вопрос",
+        "questionCount_other": "{{count}} вопросов",
+        "count_one": "{{count}} тест",
+        "count_other": "{{count}} тестов",
+        "publish": "Опубликовать",
+        "results": "Результаты",
         "toast": {
-          "publishedLocally": "Опубликовано on this device",
-          "published": "Тест published",
-          "publishFailed": "Could not publish quiz."
+          "publishedLocally": "Опубликовано на этом устройстве",
+          "published": "Тест опубликован",
+          "publishFailed": "Не удалось опубликовать тест."
+        }
+      },
+      "quizScores": {
+        "title": "Ручные оценки за тесты",
+        "intro": "Введите оценки за тесты вручную для записанных студентов. Добавьте колонку теста, укажите 0–100 для каждого студента и сохраните. Оценки хранятся на этом устройстве, пока нет API.",
+        "searchPlaceholder": "Поиск по имени или email",
+        "addQuiz": "Добавить тест",
+        "deleteQuiz": "Удалить тест",
+        "save": "Сохранить",
+        "saveAll": "Сохранить все",
+        "scorePlaceholder": "—",
+        "table": {
+          "student": "Студент"
+        },
+        "addDialog": {
+          "title": "Добавить колонку теста",
+          "description": "Краткое название теста станет колонкой оценок для каждого студента.",
+          "label": "Название теста",
+          "placeholder": "напр. Тест недели 2"
+        },
+        "deleteDialog": {
+          "title": "Удалить колонку теста?",
+          "description": "Удалить «{{title}}» и все введённые для неё оценки на этом устройстве. Это нельзя отменить."
+        },
+        "empty": {
+          "connectApi": "Подключите класс к API, чтобы загрузить студентов для ручных оценок.",
+          "loading": "Загрузка студентов…",
+          "error": "Не удалось загрузить студентов для оценок за тесты.",
+          "noStudents": "Пока нет записанных студентов — некого оценивать.",
+          "noColumnsTitle": "Пока нет колонок тестов",
+          "noColumnsDescription": "Добавьте тест, чтобы вводить оценки для каждого студента.",
+          "noSearchResults": "Нет студентов по вашему запросу."
+        },
+        "toast": {
+          "saved": "Оценки сохранены",
+          "savedAll": "Все видимые оценки сохранены",
+          "invalidScore": "Введите оценку от 0 до 100 или оставьте ячейку пустой.",
+          "titleRequired": "Введите название теста.",
+          "columnAdded": "Колонка теста добавлена",
+          "columnDeleted": "Колонка теста удалена"
         }
       },
       "attendance": {
@@ -964,14 +1048,16 @@
         "lastScheduled": "Last date on класс расписание",
         "matchHint": "When a row matches the selected QR session, the Present and Checked in columns in this table use that meeting from the attendance API.",
         "tableAria": "Студент attendance for the selected check-in meeting",
+        "verifyHint": "Tick to confirm attendance for this meeting.",
         "table": {
           "student": "Студент",
           "email": "Email",
           "present": "Present",
           "checkedIn": "Checked in",
-          "instructorCheck": "Instructor Check"
+          "instructorCheck": "Verify"
         },
         "presentBadge": "Present",
+        "absentBadge": "—",
         "checkedInTitle": "Checked in",
         "signInToCheck": "Sign in to save преподаватель check",
         "toast": {
@@ -1017,32 +1103,37 @@
       }
     },
     "attendancePanel": {
-      "title": "Класс meeting check-in",
+      "title": "Отметка на занятии",
+      "setupTitle": "Настройка",
+      "sessionLabel": "Занятие",
+      "live": "Активно",
+      "ended": "Завершено",
       "description": {
-        "fixed": "Generate a QR for this класс. Студенты scan to check in on their phones.",
-        "schedule": "Pick a planned session from the расписание, name the meeting, then generate a QR.",
-        "embedded": "Name each meeting and generate a QR; past meetings stay on this device.",
-        "default": "Select a класс and meeting, then generate a QR code for студент check-in."
+        "fixed": "Выберите занятие, создайте QR — студенты сканируют для отметки.",
+        "schedule": "Выберите занятие из расписания, затем создайте QR.",
+        "embedded": "Назовите занятие, создайте QR и покажите студентам.",
+        "default": "Выберите класс и занятие, затем создайте QR."
       },
-      "loading": "Загрузка классes…",
-      "noClasses": "No классes yet. Create a класс first.",
+      "loading": "Загрузка классов…",
+      "noClasses": "Пока нет классов.",
       "classLabel": "Класс",
-      "classPlaceholder": "Select класс",
+      "classPlaceholder": "Выберите класс",
       "scheduleHint": {
         "meetingsPerWeek": "{{count}} meetings per week on average (from расписание).",
         "setSessions": "Set Sessions in 6 months on the класс расписание to align meeting names with planned rows."
       },
       "meetingName": {
-        "label": "Name this класс meeting",
-        "placeholder": "e.g. Week 3 — Supply & Demand",
-        "helper": "Shown on the projector and in the session log."
+        "label": "Название занятия",
+        "placeholder": "напр. Неделя 3 — Спрос и предложение",
+        "helper": "Показывается под QR и в режиме проектора."
       },
       "generateQr": {
-        "new": "New QR for next meeting",
-        "this": "Generate QR for this meeting"
+        "new": "Новый QR",
+        "this": "Создать QR",
+        "pickSessionFirst": "Сначала выберите занятие."
       },
-      "projectorView": "Projector view",
-      "stopSession": "Stop session",
+      "projectorView": "Проектор",
+      "stopSession": "Стоп",
       "modality": {
         "online": "Online check-in — студентs scan from anywhere.",
         "inPerson": "In-person check-in — show QR on the projector."
@@ -1050,37 +1141,42 @@
       "sessionTimer": {
         "label": "Класс session time",
         "max": "max {{duration}}",
-        "remaining": "{{time}} remaining",
+        "remaining": "{{time}} осталось",
         "closesAt": "Check-in closes at {{time}}"
       },
-      "qrHint": "Scan opens студент check-in — they must be signed in as a студент.",
+      "qrHint": "Студенты должны войти в аккаунт, чтобы отметиться.",
       "sessionEnded": {
         "stopped": {
-          "title": "Session stopped",
-          "body": "Check-in is closed for this meeting."
+          "title": "Сессия остановлена",
+          "body": "Отметка закрыта. Создайте новый QR для следующего окна."
         },
         "windowEnded": {
-          "title": "Check-in closed",
-          "body": "The check-in window for this session has ended."
+          "title": "Отметка закрыта",
+          "body": "Эта сессия завершена. Создайте новый QR, чтобы продолжить."
         },
         "closed": {
-          "title": "Check-in window ended",
-          "body": "Start a new QR session for the next meeting."
+          "title": "Отметка завершена",
+          "body": "Создайте новый QR для следующего занятия."
+        },
+        "noToken": {
+          "title": "QR недоступен здесь",
+          "body": "Сессия ещё открыта, но код недоступен в этой вкладке. Создайте новый QR."
         }
       },
       "emptyQr": {
-        "tapGenerate": "Tap Generate below to create a QR for this meeting.",
-        "pickClass": "Pick a класс and tap Generate to start check-in."
+        "tapGenerate": "Нажмите «Создать QR» для этого занятия.",
+        "pickClass": "Выберите класс, затем создайте QR.",
+        "pickSession": "Выберите занятие, затем создайте QR."
       },
       "sessionLog": {
-        "title": "Session log (this класс)",
-        "description": "Past QR sessions for this класс on this device."
+        "title": "Недавние сессии",
+        "description": "Прошлые сессии отметки для этого класса."
       },
       "projector": {
         "title": "Посещаемость QR — projector",
-        "scanHint": "Студенты scan with their phone to check in",
+        "scanHint": "Отсканируйте телефоном, чтобы отметиться",
         "meetingLabel": "Meeting:",
-        "exitAria": "Exit projector view",
+        "exitAria": "Выйти из проектора",
         "ariaLabel": "Projector attendance QR"
       },
       "meetingFallback": "Meeting",

@@ -94,6 +94,7 @@ export function buildClientOnlyQuizResponse(
     courseId: cid,
     title: payload.title,
     ...(payload.description ? { description: payload.description } : {}),
+    ...(payload.thumbnailUrl ? { thumbnailUrl: payload.thumbnailUrl } : {}),
     quizType: payload.quizType ?? "QUIZ",
     ...(payload.releaseDate ? { releaseDate: payload.releaseDate } : {}),
     ...(payload.releaseTime ? { releaseTime: payload.releaseTime } : {}),
@@ -125,7 +126,7 @@ export function setLocalCourseQuizPublished(courseId: string, quizId: string, pu
   writeStore(store);
 }
 
-/** Merge API list with locally stored quizzes (same id: API wins). */
+/** Merge API list with locally stored quizzes (same id: API wins; keep local thumbnail if API omits it). */
 export function mergeCourseQuizListsWithLocal(courseId: string, apiQuizzes: QuizResponse[]): QuizResponse[] {
   const local = getLocalCourseQuizzes(courseId);
   const byId = new Map<string, QuizResponse>();
@@ -133,7 +134,15 @@ export function mergeCourseQuizListsWithLocal(courseId: string, apiQuizzes: Quiz
     if (q?.id) byId.set(q.id, q);
   }
   for (const q of local) {
-    if (q?.id && !byId.has(q.id)) byId.set(q.id, q);
+    if (!q?.id) continue;
+    const existing = byId.get(q.id);
+    if (!existing) {
+      byId.set(q.id, q);
+      continue;
+    }
+    if (!existing.thumbnailUrl?.trim() && q.thumbnailUrl?.trim()) {
+      byId.set(q.id, { ...existing, thumbnailUrl: q.thumbnailUrl });
+    }
   }
   return sortQuizzesDesc(Array.from(byId.values()));
 }

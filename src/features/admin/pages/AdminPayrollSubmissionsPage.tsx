@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "@/lib/icons";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +43,6 @@ export default function AdminPayrollSubmissionsPage() {
   }, [rows, q]);
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6">
         <Link
           to="/dashboard/admin/payroll"
@@ -117,6 +115,5 @@ export default function AdminPayrollSubmissionsPage() {
           </Table>
         </div>
       </div>
-    </AdminLayout>
   );
 }

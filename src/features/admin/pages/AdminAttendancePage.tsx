@@ -1,7 +1,4 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "@/lib/icons";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { mockAdminAttendance, type AdminAttendanceRow } from "@/features/admin/data/adminOperationalMock";
 import { Badge } from "@/components/ui/badge";
@@ -78,12 +75,7 @@ export default function AdminAttendancePage() {
     search.trim() !== "" || riskFilter !== "all" || lecturerFilter !== "all";
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6">
-        <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
-          <ArrowLeft className="h-4 w-4" />
-          {t("admin.shared.backToDashboard")}
-        </Link>
 
         <AdminPageHeader
           title={t("adminNav.attendanceProgress")}
@@ -277,6 +269,5 @@ export default function AdminAttendancePage() {
           </DialogContent>
         </Dialog>
       </div>
-    </AdminLayout>
   );
 }

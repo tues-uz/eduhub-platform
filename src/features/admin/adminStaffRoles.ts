@@ -135,7 +135,6 @@ const FINANCE_PATHS = new Set([
   ADMIN_FINANCE_HOME,
   "/dashboard/admin/notifications",
   "/dashboard/admin/enrollment-applications",
-  "/dashboard/admin/enrollments",
   "/dashboard/admin/payments",
   "/dashboard/admin/installment-payments",
   "/dashboard/admin/payroll",

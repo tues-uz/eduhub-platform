@@ -18,7 +18,12 @@
     "logout": "Chiqish",
     "openMenu": "Menyuni ochish",
     "closeMenu": "Menyuni yopish",
-    "notifications": "Bildirishnomalar"
+    "notifications": "Bildirishnomalar",
+    "groups": {
+      "overview": "Umumiy",
+      "teaching": "O'qitish",
+      "account": "Hisob"
+    }
   },
   "teacherNav": {
     "dashboard": "Boshqaruv paneli",

@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCircle2, Clock, Loader2, XCircle, AlertCircle } from "@/lib/icons";
 import { useNavigate } from "react-router-dom";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { eduhubNotifications } from "@/api/eduhubClient";
@@ -133,7 +132,6 @@ export default function AdminNotificationsPage() {
   }, [notifications, search, filter]);
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6 max-w-4xl">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -278,6 +276,5 @@ export default function AdminNotificationsPage() {
           </div>
         )}
       </div>
-    </AdminLayout>
   );
 }

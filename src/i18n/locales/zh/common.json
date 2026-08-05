@@ -18,7 +18,12 @@
     "logout": "退出登录",
     "openMenu": "打开菜单",
     "closeMenu": "关闭菜单",
-    "notifications": "通知"
+    "notifications": "通知",
+    "groups": {
+      "overview": "概览",
+      "teaching": "教学",
+      "account": "账户"
+    }
   },
   "teacherNav": {
     "dashboard": "仪表盘",

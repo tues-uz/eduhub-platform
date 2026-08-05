@@ -37,6 +37,10 @@ export type ApprovedScheduleSlotOption = {
 type Props = {
   courseId: string;
   className?: string;
+  /** Override the field label (default depends on generateQrBelow). */
+  label?: string;
+  /** Hide the long helper paragraph under the select. */
+  hideHelper?: boolean;
   /** Fires when the selected meeting changes, including the first load from storage. */
   onSelectionChange?: (sessionId: string | null) => void;
   /**
@@ -64,6 +68,8 @@ type Props = {
 export function AttendanceOverviewQrPicker({
   courseId,
   className,
+  label,
+  hideHelper = false,
   onSelectionChange,
   generateQrBelow = false,
   approvedScheduleSlots,
@@ -235,91 +241,63 @@ export function AttendanceOverviewQrPicker({
 
   if (!courseId) return null;
 
-  return (
-    <div
-      className={cn(
-        "rounded-xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5 space-y-2",
-        className,
-      )}
-    >
-      <div className="space-y-2">
-        <Label htmlFor="attendance-overview-pick-meeting">Meeting (for the table below)</Label>
-        <Select value={selectValue} onValueChange={handleSelectValue} disabled={!selectEnabled}>
-          <SelectTrigger id="attendance-overview-pick-meeting" className="max-w-xl bg-white">
-            <SelectValue
-              placeholder={
-                hasScheduleOptions && !hasQrMeetings
-                  ? "Pick a planned session or saved meeting first"
-                  : hasQrMeetings
-                    ? "Choose a meeting"
-                    : "No meetings generated yet"
-              }
-            />
-          </SelectTrigger>
-          <SelectContent className="max-h-72">
-            {hasScheduleOptions ? (
-              <SelectGroup>
-                <SelectLabel className="text-xs font-semibold text-muted-foreground">
-                  Planned sessions (approved schedule)
-                </SelectLabel>
-                {scheduleSlots.map((s) => (
-                  <SelectItem key={`sched-${s.index}`} value={`schedule-slot-${s.index}`}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            ) : null}
-            {hasQrMeetings ? (
-              <SelectGroup>
-                <SelectLabel className="text-xs font-semibold text-muted-foreground">
-                  Saved check-ins (this browser)
-                </SelectLabel>
-                {meetings.map((m) => {
-                  void rollTick;
-                  const present = countPresentForSession(courseId, m.sessionId);
-                  const suffix =
-                    present > 0 ? ` · ${present} checked in (this browser)` : " · no check-ins stored here yet";
-                  return (
-                    <SelectItem key={m.sessionId} value={m.sessionId}>
-                      {`${formatMeetingOptionLabel(m)}${suffix}`}
-                    </SelectItem>
-                  );
-                })}
-              </SelectGroup>
-            ) : null}
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground max-w-xl">
-          {generateQrBelow ? (
-            <>
-              {hasScheduleOptions ? (
-                <>
-                  <span className="text-foreground/85">
-                    Planned rows mirror the class schedule (admin proposal and dates you approved on the Schedule tab).
-                  </span>{" "}
-                </>
-              ) : null}
-              After you tap Generate below, this menu can switch to that new meeting so the roster table matches the QR
-              you show. Older meetings stay in the list if you need yesterday&apos;s data (counts are per session, this
-              browser only).
-            </>
-          ) : (
-            <>
-              After you tap Generate above, this menu switches to that new meeting so the table matches the QR you show.
-              Older meetings stay in the list if you need yesterday&apos;s data (counts are per session, this browser
-              only).
-            </>
-          )}
-        </p>
-      </div>
+  const fieldLabel =
+    label ?? (generateQrBelow ? "Session" : "Meeting (for the table below)");
 
-      {!hasQrMeetings ? (
-        <p className="text-sm text-foreground/60 pt-1">
-          {hasScheduleOptions
-            ? "Pick a planned session (or a saved check-in when listed), then generate a QR below when you are ready."
-            : generateQrBelow
-              ? "Generate a meeting with the button below first — it will show up in this list."
-              : 'Generate a meeting in "Class meeting check-in" above first — it will show up in this list.'}
+  return (
+    <div className={cn("space-y-2", className)}>
+      <Label htmlFor="attendance-overview-pick-meeting">{fieldLabel}</Label>
+      <Select value={selectValue} onValueChange={handleSelectValue} disabled={!selectEnabled}>
+        <SelectTrigger id="attendance-overview-pick-meeting" className="bg-background">
+          <SelectValue
+            placeholder={
+              hasScheduleOptions && !hasQrMeetings
+                ? "Pick a planned session…"
+                : hasQrMeetings
+                  ? "Choose a session"
+                  : "No sessions yet"
+            }
+          />
+        </SelectTrigger>
+        <SelectContent className="max-h-72">
+          {hasScheduleOptions ? (
+            <SelectGroup>
+              <SelectLabel className="text-xs font-semibold text-muted-foreground">
+                Planned sessions
+              </SelectLabel>
+              {scheduleSlots.map((s) => (
+                <SelectItem key={`sched-${s.index}`} value={`schedule-slot-${s.index}`}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          ) : null}
+          {hasQrMeetings ? (
+            <SelectGroup>
+              <SelectLabel className="text-xs font-semibold text-muted-foreground">
+                Past check-ins
+              </SelectLabel>
+              {meetings.map((m) => {
+                void rollTick;
+                const present = countPresentForSession(courseId, m.sessionId);
+                const suffix = present > 0 ? ` · ${present} checked in` : "";
+                return (
+                  <SelectItem key={m.sessionId} value={m.sessionId}>
+                    {`${formatMeetingOptionLabel(m)}${suffix}`}
+                  </SelectItem>
+                );
+              })}
+            </SelectGroup>
+          ) : null}
+        </SelectContent>
+      </Select>
+      {!hideHelper ? (
+        <p className="text-xs text-muted-foreground">
+          {generateQrBelow
+            ? hasScheduleOptions
+              ? "Pick today’s session from the schedule, then generate a QR."
+              : "Generate a QR first — it will appear in this list."
+            : "Choose a session to load its attendance table."}
         </p>
       ) : null}
     </div>

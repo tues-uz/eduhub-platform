@@ -1,7 +1,5 @@
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ExternalLink } from "@/lib/icons";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
+import { ExternalLink } from "@/lib/icons";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +11,7 @@ export default function AdminIntegrationsPage() {
   const { t } = useTranslation();
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6 max-w-2xl">
-        <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
-          <ArrowLeft className="h-4 w-4" />
-          {t("admin.shared.backToDashboard")}
-        </Link>
 
         <AdminPageHeader
           title={t("adminNav.integrations")}
@@ -45,6 +38,5 @@ export default function AdminIntegrationsPage() {
           </div>
         </div>
       </div>
-    </AdminLayout>
   );
 }

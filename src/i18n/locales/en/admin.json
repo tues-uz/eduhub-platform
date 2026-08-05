@@ -13,6 +13,7 @@
       "clearFilters": "Clear filters",
       "clear": "Clear",
       "roleBadge": "Admin",
+      "roleBadgeSuper": "Superadmin",
       "allRoles": "All roles",
       "allStatuses": "All statuses",
       "allCategories": "All categories",
@@ -492,6 +493,7 @@
     "courses": {
       "list": {
         "description": "Quick list by title, lecturer, category, and status. Open a class for pricing, schedule workflow, and review.",
+        "referralCodesButton": "Referral & discount",
         "searchPlaceholder": "Search title, category, lecturer…",
         "statusDraft": "Draft (pending review)",
         "statusPublished": "Published",
@@ -852,7 +854,7 @@
       }
     },
     "referralCodes": {
-      "description": "Set referral codes and discount percentages per class. Students enter the code at enrollment to receive the listed discount off catalog tuition.",
+      "description": "Set referral codes, discount percentages, and trial class codes per class. Students enter the referral code at enrollment for the discount.",
       "searchPlaceholder": "Search class, code, lecturer…",
       "table": {
         "class": "Class",
@@ -864,6 +866,23 @@
       },
       "setPricing": "Set pricing",
       "empty": "No classes match your search.",
+      "addDialog": {
+        "title": "Referral, discount & trial code",
+        "description": "Set class or general referral discounts, and manage trial class codes separately.",
+        "tabClass": "Class",
+        "tabGeneral": "General",
+        "tabTrial": "Trial",
+        "referralHint": "Students enter this at enrollment to apply the discount below.",
+        "generalHint": "General codes apply to any class at enrollment when the student enters the matching referral code.",
+        "generalReferralHint": "Platform-wide referral code. Works on every class unless a class-specific code also matches.",
+        "generalDiscountHint": "Percent off that class’s catalog price when the general referral code matches (0–100).",
+        "generalTrialHint": "Platform-wide trial code. Students can use it for trial access on any class.",
+        "trialTabHint": "Create a trial class code for one class, or a general trial code for all classes.",
+        "trialAppliesTo": "Apply trial code to",
+        "trialCode": "Trial class code",
+        "trialPlaceholder": "e.g. TRIAL-ENG-01",
+        "trialHint": "Students use this code for trial access to the selected class. Leave blank to clear."
+      },
       "editDialog": {
         "title": "Edit referral code",
         "catalogSuffix": " · Catalog {{price}}",
@@ -875,10 +894,13 @@
         "discountSuffix": " (−{{percent}}%)"
       },
       "toast": {
-        "saved": "Referral code saved",
+        "saved": "Codes saved",
         "savedDescription": "{{title}} updated.",
-        "saveFailed": "Could not save referral code",
-        "pricingRequired": "Set catalog pricing on the class before adding referral codes.",
+        "generalSaved": "General referral codes saved",
+        "trialSaved": "Trial class code saved",
+        "trialGeneralSaved": "General trial code saved",
+        "saveFailed": "Could not save codes",
+        "pricingRequired": "Set catalog pricing on the class before adding referral or trial codes.",
         "discountRange": "Discount must be between 0 and 100%."
       }
     },

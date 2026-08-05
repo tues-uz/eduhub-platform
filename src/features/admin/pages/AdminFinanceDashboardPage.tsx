@@ -10,7 +10,6 @@ import {
   Receipt,
   CircleDollarSign,
 } from "@/lib/icons";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/features/auth/context";
 import { eduhubAdminEnrollmentApplications } from "@/api/eduhubClient";
@@ -102,7 +101,6 @@ export default function AdminFinanceDashboardPage() {
   ];
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6 max-w-5xl">
         <div className="mb-8 pb-6 border-b border-slate-200">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -217,6 +215,5 @@ export default function AdminFinanceDashboardPage() {
           </section>
         </div>
       </div>
-    </AdminLayout>
   );
 }

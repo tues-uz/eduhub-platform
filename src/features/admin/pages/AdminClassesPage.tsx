@@ -1,8 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "@/lib/icons";
 import { toast } from "sonner";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { ClassStatusBadge } from "@/features/admin/components/AdminStatusBadges";
 import { mockAdminClasses, type ClassStatus } from "@/features/admin/data/adminOperationalMock";
@@ -51,12 +48,7 @@ export default function AdminClassesPage() {
     search.trim() !== "" || statusFilter !== "all" || courseFilter !== "all";
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6">
-        <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
-          <ArrowLeft className="h-4 w-4" />
-          {t("admin.shared.backToDashboard")}
-        </Link>
 
         <AdminPageHeader
           title={t("adminNav.classesRosters")}
@@ -163,6 +155,5 @@ export default function AdminClassesPage() {
           </Table>
         </div>
       </div>
-    </AdminLayout>
   );
 }

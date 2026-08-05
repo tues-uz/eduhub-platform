@@ -12,6 +12,10 @@ import {
   computeReceiptAmountPaid,
   resolveEnrollmentTuitionQuote,
 } from "@/features/enrollment/enrollmentReceiptTuition";
+import {
+  getReceiptPdfCopy,
+  type ReceiptPdfLocale,
+} from "@/features/enrollment/enrollmentReceiptPdfI18n";
 
 export type EnrollmentReceiptPdfData = EduHubReceiptPdfInput;
 
@@ -23,6 +27,7 @@ export type BuildEnrollmentReceiptOpts = {
   teacherName?: string;
   listedTuition?: number;
   scheduleSlots?: SessionSlotLike[];
+  locale?: ReceiptPdfLocale;
 };
 
 function buildReceiptPdfData(
@@ -30,6 +35,8 @@ function buildReceiptPdfData(
   opts: BuildEnrollmentReceiptOpts,
   variant: "official" | "submission",
 ): EnrollmentReceiptPdfData | null {
+  const locale = opts.locale ?? "en";
+  const copy = getReceiptPdfCopy(locale);
   const enriched = enrichEnrollmentApplication(app);
   const listed = opts.listedTuition;
   const quote =
@@ -47,8 +54,8 @@ function buildReceiptPdfData(
   return {
     variant: variant === "official" && hasOfficial ? "official" : "submission",
     issuedAtIso,
-    invoiceNumber: enriched.invoiceNumber ?? "Pending approval",
-    receiptNumber: enriched.receiptNumber ?? "Pending approval",
+    invoiceNumber: enriched.invoiceNumber ?? copy.pendingApproval,
+    receiptNumber: enriched.receiptNumber ?? copy.pendingApproval,
     paymentMethod: enriched.paymentMethod ?? "BANK_TRANSFER",
     isDemo: isDemoEnrollmentDocuments(enriched),
     fullName: enriched.fullName,
@@ -63,9 +70,11 @@ function buildReceiptPdfData(
       paymentMethod: enriched.paymentMethod ?? "BANK_TRANSFER",
       amountPaid: amount,
       currency: enriched.priceCurrency ?? "UZS",
+      locale,
     }),
     currency: enriched.priceCurrency ?? "UZS",
     amount,
+    locale,
   };
 }
 

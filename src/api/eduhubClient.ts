@@ -309,7 +309,12 @@ export const eduhubAuth = {
   changePassword: (body: { currentPassword: string; newPassword: string }) =>
     request<AuthResponse>("/auth/change-password", { method: "POST", body: JSON.stringify(body) }),
 
-  updateProfile: (body: { avatarUrl?: string; fullName?: string }) =>
+  updateProfile: (body: {
+    avatarUrl?: string;
+    fullName?: string;
+    passportImageUrl?: string;
+    internationalPassportImageUrl?: string;
+  }) =>
     request<{ id: string; fullName: string; email: string; role: string; avatarUrl?: string }>("/auth/me", {
       method: "PATCH",
       body: JSON.stringify(body),
@@ -543,6 +548,8 @@ export const eduhubQuizzes = {
 export interface QuizCreateRequest {
   title: string;
   description?: string;
+  /** Cover image shown on quiz cards in the class roster. */
+  thumbnailUrl?: string;
   quizType?: "QUIZ" | "PLACEMENT_TEST";
   releaseDate?: string;
   releaseTime?: string;
@@ -572,6 +579,8 @@ export interface QuizResponse {
   lessonId?: string;
   title: string;
   description?: string;
+  /** Cover image shown on quiz cards in the class roster. */
+  thumbnailUrl?: string;
   quizType?: "QUIZ" | "PLACEMENT_TEST";
   releaseDate?: string;
   releaseTime?: string;
@@ -717,9 +726,16 @@ export const eduhubLecturer = {
     ),
 
   getAllStudents: (lecturerId: string) =>
-    request<{ id: string; fullName: string; email: string; courseTitle: string; enrolledAt: string }[]>(
-      `/lecturers/${lecturerId}/all-students`
-    ),
+    request<
+      {
+        id: string;
+        fullName: string;
+        email: string;
+        avatarUrl?: string;
+        courseTitle: string;
+        enrolledAt: string;
+      }[]
+    >(`/lecturers/${lecturerId}/all-students`),
 };
 
 /** Admin */
@@ -732,6 +748,7 @@ export const eduhubAdmin = {
     currency?: string;
     referralCode?: string;
     discountPercent?: number;
+    trialCode?: string;
     rejectionReason?: string;
     adminActionCode?: string;
   }) => request<CourseResponse>(`/admin/courses/${id}/review`, { method: "PATCH", body: JSON.stringify(body) }),

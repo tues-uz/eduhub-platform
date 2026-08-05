@@ -4,13 +4,6 @@ import QRCode from "react-qr-code";
 import { Maximize2, Minimize2, QrCode, RefreshCw, Square } from "@/lib/icons";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -587,285 +580,279 @@ export function TeacherAttendanceSessionPanel({
     user.name,
   ]);
 
+  const canGenerate =
+    Boolean(courseId) &&
+    (!useSchedulePicker ? Boolean(nextMeetingName.trim()) : Boolean(rosterOverviewSessionId || rosterScheduleSlotIntent));
+
+  const setupControls = (
+    <div className="space-y-5">
+      {!fixedCourse ? (
+        <div className="space-y-2">
+          <Label htmlFor={embedded ? "attendance-course-embedded" : "attendance-course"}>
+            {t("teacher.attendancePanel.classLabel")}
+          </Label>
+          <Select value={courseId} onValueChange={setCourseId}>
+            <SelectTrigger
+              id={embedded ? "attendance-course-embedded" : "attendance-course"}
+              className="bg-background"
+            >
+              <SelectValue placeholder={t("teacher.attendancePanel.classPlaceholder")} />
+            </SelectTrigger>
+            <SelectContent>
+              {courses.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null}
+
+      {fixedScheduleHint ? (
+        <p className="text-xs text-muted-foreground">{fixedScheduleHint}</p>
+      ) : null}
+
+      {!useSchedulePicker ? (
+        <div className="space-y-2">
+          <Label htmlFor={embedded ? "attendance-meeting-name-embedded" : "attendance-meeting-name"}>
+            {t("teacher.attendancePanel.meetingName.label")}
+          </Label>
+          <Input
+            id={embedded ? "attendance-meeting-name-embedded" : "attendance-meeting-name"}
+            value={nextMeetingName}
+            onChange={(e) => setNextMeetingName(e.target.value.slice(0, 120))}
+            placeholder={t("teacher.attendancePanel.meetingName.placeholder")}
+            className="bg-background"
+            autoComplete="off"
+          />
+          <p className="text-xs text-muted-foreground">
+            {t("teacher.attendancePanel.meetingName.helper")}
+          </p>
+        </div>
+      ) : null}
+
+      {useSchedulePicker && courseId ? (
+        <AttendanceOverviewQrPicker
+          courseId={courseId}
+          label={t("teacher.attendancePanel.sessionLabel")}
+          hideHelper={!rosterAttendanceOverviewPicker}
+          generateQrBelow
+          deferAutoSelectFirstMeeting
+          approvedScheduleSlots={approvedScheduleSlots}
+          onSelectionChange={(id) => {
+            setRosterOverviewSessionId(id);
+            rosterAttendanceOverviewPicker?.onSelectionChange?.(id);
+          }}
+          onScheduleSlotIntent={handleRosterScheduleSlotIntent}
+        />
+      ) : null}
+
+      <div className="flex flex-col gap-2">
+        <Button
+          type="button"
+          className="w-full justify-center bg-teal-700 hover:bg-teal-800"
+          onClick={generateSession}
+          disabled={!canGenerate}
+          title={
+            useSchedulePicker && !canGenerate
+              ? t("teacher.attendancePanel.generateQr.pickSessionFirst")
+              : undefined
+          }
+        >
+          <RefreshCw className="h-4 w-4 shrink-0" />
+          {storedMeetings.length > 0
+            ? t("teacher.attendancePanel.generateQr.new")
+            : t("teacher.attendancePanel.generateQr.this")}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full justify-center"
+          disabled={!joinUrl || !checkInWindowOpen}
+          onClick={() => setProjectorMode(true)}
+        >
+          <Maximize2 className="h-4 w-4 shrink-0" />
+          {t("teacher.attendancePanel.projectorView")}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const qrPreview = (
+    <div className="flex h-full min-h-[20rem] flex-col items-center justify-center rounded-xl border border-border bg-muted/30 px-6 py-8 text-center">
+      {sessionId && selectedCourse ? (
+        <>
+          <div className="mb-5 space-y-1">
+            {checkInWindowOpen ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-800">
+                <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
+                {t("teacher.attendancePanel.live")}
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                {t("teacher.attendancePanel.ended")}
+              </span>
+            )}
+            <p className="pt-2 text-sm font-medium text-foreground">{selectedCourse.title}</p>
+            {activeMeeting?.name.trim() ? (
+              <p className="text-sm text-muted-foreground">{activeMeeting.name.trim()}</p>
+            ) : null}
+          </div>
+
+          {checkInWindowOpen ? (
+            <>
+              <div className="mb-5 rounded-2xl bg-background p-4 ring-1 ring-border">
+                <QRCode value={joinUrl} size={qrSize} level="M" />
+              </div>
+              <p className="text-xs tabular-nums text-muted-foreground">
+                {formatElapsedLabel(sessionElapsedMs)}
+                <span className="text-foreground/40"> · </span>
+                {t("teacher.attendancePanel.sessionTimer.remaining", {
+                  time: formatElapsedLabel(sessionRemainingMs),
+                })}
+              </p>
+              <p className="mt-2 max-w-xs text-xs text-muted-foreground">
+                {t("teacher.attendancePanel.qrHint")}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-5 border-red-200 text-red-800 hover:bg-red-50 hover:text-red-900"
+                onClick={stopSession}
+              >
+                <Square className="h-3.5 w-3.5 shrink-0 fill-current" />
+                {t("teacher.attendancePanel.stopSession")}
+              </Button>
+            </>
+          ) : isSessionManuallyStopped ? (
+            <div className="max-w-sm space-y-1">
+              <p className="text-sm font-medium text-foreground">
+                {t("teacher.attendancePanel.sessionEnded.stopped.title")}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t("teacher.attendancePanel.sessionEnded.stopped.body")}
+              </p>
+            </div>
+          ) : isBackendSessionClosed ? (
+            <div className="max-w-sm space-y-1">
+              <p className="text-sm font-medium text-foreground">
+                {t("teacher.attendancePanel.sessionEnded.windowEnded.title")}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t("teacher.attendancePanel.sessionEnded.windowEnded.body")}
+              </p>
+            </div>
+          ) : noTokenKnown ? (
+            <div className="max-w-sm space-y-1">
+              <p className="text-sm font-medium text-foreground">
+                {t("teacher.attendancePanel.sessionEnded.noToken.title")}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t("teacher.attendancePanel.sessionEnded.noToken.body")}
+              </p>
+            </div>
+          ) : (
+            <div className="max-w-sm space-y-1">
+              <p className="text-sm font-medium text-foreground">
+                {t("teacher.attendancePanel.sessionEnded.closed.title")}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t("teacher.attendancePanel.sessionEnded.closed.body")}
+              </p>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <div className="flex size-12 items-center justify-center rounded-full border border-dashed border-border bg-background">
+            <QrCode className="h-5 w-5" aria-hidden />
+          </div>
+          <p className="max-w-xs text-sm">
+            {useSchedulePicker
+              ? t("teacher.attendancePanel.emptyQr.pickSession")
+              : t("teacher.attendancePanel.emptyQr.pickClass")}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
-      <Card className="border border-gray-100 shadow-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <QrCode className="h-5 w-5 text-[#1e40af]" />{t("teacher.attendancePanel.title")}</CardTitle>
-          <CardDescription>
-            {fixedCourse
-              ? "Pick the planned session from your class schedule, then generate the QR. Stopping the session marks that meeting as held for enrollment."
-              : useSchedulePicker
-                ? "Pick the planned session from your class schedule, then generate the QR. When you stop the session, that meeting is marked held for enrollment."
-                : embedded
-                  ? "Name the meeting, then generate. Share the link or show the QR. Older meetings stay in this browser."
-                  : "Generate a check-in code for each session; recent meetings are kept on this device."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {loading ? (
-            <p className="text-sm text-foreground/60">{t("teacher.courses.loading")}</p>
-          ) : courses.length === 0 ? (
-            <p className="text-sm text-foreground/70">{t("teacher.dashboard.classesTable.emptyPrefix")}{" "}
-              <Link to="/dashboard/teacher/courses/new" className="text-[#1e40af] font-medium underline">
-                Create a class
-              </Link>{" "}
-              first.
-            </p>
-          ) : (
-            <>
-              {!fixedCourse ? (
-                <div className="space-y-2">
-                  <Label htmlFor={embedded ? "attendance-course-embedded" : "attendance-course"}>{t("teacher.dashboard.classesTable.header.class")}</Label>
-                  <Select value={courseId} onValueChange={setCourseId}>
-                    <SelectTrigger id={embedded ? "attendance-course-embedded" : "attendance-course"} className="bg-white">
-                      <SelectValue placeholder="Select class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {courses.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : null}
+      {loading ? (
+        <p className="text-sm text-muted-foreground">{t("teacher.attendancePanel.loading")}</p>
+      ) : courses.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            {t("teacher.attendancePanel.noClasses")}{" "}
+            <Link to="/dashboard/teacher/courses/new" className="font-medium text-teal-700 underline-offset-2 hover:underline">
+              {t("teacher.dashboard.classesTable.createFirstClass")}
+            </Link>
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start lg:gap-6">
+            <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
+              <p className="mb-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t("teacher.attendancePanel.setupTitle")}
+              </p>
+              {setupControls}
+            </div>
+            {qrPreview}
+          </div>
 
-              {fixedScheduleHint ? (
-                <div className="rounded-lg border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm text-slate-700">
-                  {fixedScheduleHint}
-                </div>
-              ) : fixedCourse ? (
-                <div className="rounded-lg border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm text-slate-700">
-                  Set &quot;Sessions in 6 months&quot; on the class details form so we can estimate meetings per week next
-                  to your QR workflow.
-                </div>
-              ) : null}
-
-              {!useSchedulePicker ? (
-                <div className="space-y-2">
-                  <Label htmlFor={embedded ? "attendance-meeting-name-embedded" : "attendance-meeting-name"}>
-                    Name this class meeting
-                  </Label>
-                  <Input
-                    id={embedded ? "attendance-meeting-name-embedded" : "attendance-meeting-name"}
-                    value={nextMeetingName}
-                    onChange={(e) => setNextMeetingName(e.target.value.slice(0, 120))}
-                    placeholder='e.g. Week 3 — Tuesday, or "Midterm review (online)"'
-                    className="max-w-xl bg-white"
-                    autoComplete="off"
-                  />
-                  <p className="text-xs text-muted-foreground max-w-xl">
-                    Enter a short name before generating the QR (shown under the code and in projector view).
-                    {suggestedMeetingName?.trim() ? (
-                      <>
-                        {" "}
-                        <span className="text-foreground/75">
-                          Pre-filled from your scheduled cover session; edit if you need a different label.
-                        </span>
-                      </>
-                    ) : null}
-                  </p>
-                </div>
-              ) : null}
-
-              {useSchedulePicker && courseId ? (
-                <AttendanceOverviewQrPicker
-                  courseId={courseId}
-                  className="mb-0"
-                  generateQrBelow
-                  deferAutoSelectFirstMeeting
-                  approvedScheduleSlots={approvedScheduleSlots}
-                  onSelectionChange={(id) => {
-                    setRosterOverviewSessionId(id);
-                    rosterAttendanceOverviewPicker?.onSelectionChange?.(id);
-                  }}
-                  onScheduleSlotIntent={handleRosterScheduleSlotIntent}
-                />
-              ) : null}
-
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  type="button"
-                  className="rounded-full bg-[#1e40af] hover:bg-[#1e3a8a]"
-                  onClick={generateSession}
-                  disabled={
-                    !courseId ||
-                    (!useSchedulePicker && !nextMeetingName.trim()) ||
-                    (useSchedulePicker && !rosterOverviewSessionId && !rosterScheduleSlotIntent)
-                  }
-                  title={
-                    useSchedulePicker && !rosterOverviewSessionId && !rosterScheduleSlotIntent
-                      ? "Choose a planned session from the schedule dropdown above first."
-                      : undefined
-                  }
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  {storedMeetings.length > 0 ? "New QR for next meeting" : "Generate QR for this meeting"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-full"
-                  disabled={!joinUrl || !checkInWindowOpen}
-                  onClick={() => setProjectorMode(true)}
-                >
-                  <Maximize2 className="h-4 w-4 mr-2" />
-                  Projector view
-                </Button>
-              </div>
-
-              {sessionId && selectedCourse ? (
-                <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-6 flex flex-col items-center gap-4">
-                  <div className="text-center space-y-1">
-                    <p className="text-sm font-medium text-foreground">{selectedCourse.title}</p>
-                    {activeMeeting?.name.trim() ? (
-                      <p className="text-sm text-[#1e40af] font-medium">{activeMeeting.name.trim()}</p>
-                    ) : null}
-                    {activeMeeting ? (
-                      <p className="text-xs text-muted-foreground">
-                        {activeMeeting.modality === "online"
-                          ? "Online check-in — students can scan or open the link away from campus."
-                          : "In-person check-in — students scan in the room."}
-                      </p>
-                    ) : null}
-                  </div>
-                  {checkInWindowOpen ? (
-                    <>
-                      <div className="w-full max-w-md rounded-lg border border-[#1e40af]/25 bg-[#1e40af]/[0.06] px-4 py-3 text-center">
-                        <p className="text-xs font-medium uppercase tracking-wide text-[#1e40af]/90">
-                          Class session time
-                        </p>
-                        <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
-                          {formatElapsedLabel(sessionElapsedMs)}
-                          <span className="text-sm font-normal text-muted-foreground">
-                            {" "}
-                            / {formatElapsedLabel(ATTENDANCE_SESSION_MAX_MS)} max
-                          </span>
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Check-in closes automatically after{" "}
-                          {formatElapsedLabel(ATTENDANCE_SESSION_MAX_MS)} total ·{" "}
-                          {formatElapsedLabel(sessionRemainingMs)} remaining
-                        </p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="mt-3 rounded-full border-red-200 bg-white text-red-800 hover:bg-red-50 hover:text-red-900"
-                          onClick={stopSession}
-                        >
-                          <Square className="h-3.5 w-3.5 mr-2 fill-current" />
-                          Stop session
-                        </Button>
-                      </div>
-                      <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200/80">
-                        <QRCode value={joinUrl} size={qrSize} level="M" />
-                      </div>
-                      <p className="text-xs text-center text-foreground/55 max-w-md">
-                        Scan opens student check-in for this meeting only. Meeting id (support):{" "}
-                        <span className="font-mono text-foreground/70">{sessionId.slice(0, 8)}…</span>
-                      </p>
-                    </>
-                  ) : isSessionManuallyStopped ? (
-                    <div className="w-full max-w-md rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-5 text-center">
-                      <p className="text-sm font-semibold text-amber-950">Session stopped</p>
-                      <p className="mt-2 text-sm text-amber-950/85">
-                        You ended check-in for this meeting ({formatElapsedLabel(sessionElapsedMs)}). Generate a new QR
-                        when you are ready for another check-in window.
-                      </p>
-                    </div>
-                  ) : isBackendSessionClosed ? (
-                    <div className="w-full max-w-md rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-5 text-center">
-                      <p className="text-sm font-semibold text-amber-950">Check-in closed</p>
-                      <p className="mt-2 text-sm text-amber-950/85">
-                        This meeting is closed on the server. Generate a new QR when you need another check-in window.
-                      </p>
-                    </div>
-                  ) : noTokenKnown ? (
-                    <div className="w-full max-w-md rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-5 text-center">
-                      <p className="text-sm font-semibold text-amber-950">QR not available in this tab</p>
-                      <p className="mt-2 text-sm text-amber-950/85">
-                        This meeting is still open on the server, but its one-time QR code isn&apos;t available here
-                        (e.g. after a page reload). Generate a new QR to show a scannable code again.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="w-full max-w-md rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-5 text-center">
-                      <p className="text-sm font-semibold text-amber-950">Check-in window ended</p>
-                      <p className="mt-2 text-sm text-amber-950/85">
-                        This session ran for {formatElapsedLabel(ATTENDANCE_SESSION_MAX_MS)} (the maximum length).
-                        Generate a new QR if you need another check-in period.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-foreground/60">
-                  {rosterAttendanceOverviewPicker
-                    ? "Tap Generate below to create the check-in QR for this class."
-                    : "Pick a class and tap Generate QR for this meeting to create the code for today's session."}
-                </p>
-              )}
-
-              {courseId ? (
-                <AttendanceSessionLogsSection
-                  meetings={storedMeetings}
-                  title="Session log (this class)"
-                  description="Each QR starts a session; time in class is recorded when you tap Stop session, the 2h 15m cap is confirmed, or you start a new QR."
-                />
-              ) : null}
-            </>
-          )}
-        </CardContent>
-      </Card>
+          {courseId ? (
+            <AttendanceSessionLogsSection
+              meetings={storedMeetings}
+              title={t("teacher.attendancePanel.sessionLog.title")}
+              description={t("teacher.attendancePanel.sessionLog.description")}
+            />
+          ) : null}
+        </div>
+      )}
 
       {projectorMode && joinUrl && selectedCourse ? (
         <div
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black px-6 py-10 text-white"
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-zinc-950 px-6 py-10 text-white"
           role="dialog"
-          aria-label="Projector attendance QR"
+          aria-label={t("teacher.attendancePanel.projector.ariaLabel")}
         >
-          <p className="text-xl sm:text-2xl font-semibold text-center mb-2 max-w-4xl">{selectedCourse.title}</p>
+          <p className="mb-2 max-w-4xl text-center text-xl font-semibold sm:text-2xl">{selectedCourse.title}</p>
           {activeMeeting?.name.trim() ? (
-            <p className="text-base text-white/90 font-medium text-center mb-1 max-w-4xl">{activeMeeting.name.trim()}</p>
+            <p className="mb-1 max-w-4xl text-center text-base font-medium text-white/85">
+              {activeMeeting.name.trim()}
+            </p>
           ) : null}
-          <p className="text-sm text-white/70 mb-4 text-center max-w-lg">
-            {activeMeeting?.modality === "online"
-              ? "Online meeting check-in · Scan or open link · Esc to exit"
-              : activeMeeting
-                ? "In-person meeting check-in · Scan to check in · Esc to exit"
-                : "Class meeting check-in · Scan to check in · Esc to exit"}
+          <p className="mb-8 max-w-lg text-center text-sm text-white/60">
+            {t("teacher.attendancePanel.projector.scanHint")}
           </p>
           {checkInWindowOpen ? (
             <>
-              <p className="text-lg font-semibold tabular-nums text-white mb-8">
-                Session: {formatElapsedLabel(sessionElapsedMs)} / {formatElapsedLabel(ATTENDANCE_SESSION_MAX_MS)}
+              <p className="mb-8 text-lg font-semibold tabular-nums text-white/90">
+                {formatElapsedLabel(sessionElapsedMs)}
               </p>
-              <div className="rounded-3xl bg-white p-6 sm:p-10 shadow-2xl">
+              <div className="rounded-3xl bg-white p-6 sm:p-10">
                 <QRCode value={joinUrl} size={qrSize} level="H" />
               </div>
             </>
-          ) : isSessionManuallyStopped ? (
-            <p className="text-lg text-center text-amber-200 max-w-lg mb-8">
-              Session stopped — check-in closed for this meeting. Generate a new QR to continue.
-            </p>
           ) : (
-            <p className="text-lg text-center text-amber-200 max-w-lg mb-8">
-              Check-in closed — session reached {formatElapsedLabel(ATTENDANCE_SESSION_MAX_MS)}. Generate a new QR to
-              continue.
+            <p className="mb-8 max-w-lg text-center text-lg text-amber-200">
+              {isSessionManuallyStopped
+                ? t("teacher.attendancePanel.sessionEnded.stopped.body")
+                : t("teacher.attendancePanel.sessionEnded.closed.body")}
             </p>
           )}
           <Button
             type="button"
             variant="secondary"
-            className="mt-10 rounded-full"
+            className="mt-10"
             onClick={() => setProjectorMode(false)}
           >
-            <Minimize2 className="h-4 w-4 mr-2" />
-            Exit projector view
+            <Minimize2 className="mr-2 h-4 w-4" />
+            {t("teacher.attendancePanel.projector.exitAria")}
           </Button>
         </div>
       ) : null}

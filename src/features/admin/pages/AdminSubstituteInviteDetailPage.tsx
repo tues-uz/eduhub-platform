@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "@/lib/icons";
 import { toast } from "sonner";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { SubstituteInviteRequestSummary } from "@/features/teacher/components/SubstituteInviteRequestSummary";
 import { useTranslation } from "react-i18next";
@@ -103,27 +102,23 @@ export default function AdminSubstituteInviteDetailPage() {
 
   if (!inviteId) {
     return (
-      <AdminLayout>
         <div className="container mx-auto max-w-lg px-6 py-10">
           <p className="text-sm text-slate-600">{t("admin.substituteCover.detail.missingId")}</p>
           <Button type="button" variant="outline" className="mt-4 rounded-full" onClick={goNotifications}>
             Back to notifications
           </Button>
         </div>
-      </AdminLayout>
     );
   }
 
   if (!loading && (notFound || !rec)) {
     return (
-      <AdminLayout>
         <div className="container mx-auto max-w-lg px-6 py-10">
           <p className="text-sm text-slate-600">{t("admin.substituteCover.detail.notFound")}</p>
           <Button type="button" variant="outline" className="mt-4 rounded-full" onClick={goNotifications}>
             Back to notifications
           </Button>
         </div>
-      </AdminLayout>
     );
   }
 
@@ -134,7 +129,6 @@ export default function AdminSubstituteInviteDetailPage() {
   const foot = readonlyNote(rec);
 
   return (
-    <AdminLayout>
       <div className="container mx-auto max-w-xl px-6 pb-14">
         <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <button
@@ -209,6 +203,5 @@ export default function AdminSubstituteInviteDetailPage() {
           </Button>
         </div>
       </div>
-    </AdminLayout>
   );
 }

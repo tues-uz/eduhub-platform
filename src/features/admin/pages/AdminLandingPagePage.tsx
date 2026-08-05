@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, ExternalLink } from "@/lib/icons";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,7 +76,6 @@ export default function AdminLandingPagePage() {
   };
 
   return (
-    <AdminLayout>
       <div className="container mx-auto max-w-2xl px-6">
         <Link
           to="/dashboard/admin/content"
@@ -235,6 +233,5 @@ export default function AdminLandingPagePage() {
           </section>
         </div>
       </div>
-    </AdminLayout>
   );
 }

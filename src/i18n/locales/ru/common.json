@@ -18,7 +18,12 @@
     "logout": "Выйти",
     "openMenu": "Открыть меню",
     "closeMenu": "Закрыть меню",
-    "notifications": "Уведомления"
+    "notifications": "Уведомления",
+    "groups": {
+      "overview": "Обзор",
+      "teaching": "Преподавание",
+      "account": "Аккаунт"
+    }
   },
   "teacherNav": {
     "dashboard": "Панель управления",

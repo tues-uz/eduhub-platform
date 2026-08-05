@@ -2,15 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { ClipboardCheck, UserPlus } from "@/lib/icons";
+import { ArrowRight, ClipboardCheck, UserPlus } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useAuthSession } from "@/features/auth/context";
 import { eduhubSubstituteInvites } from "@/api/eduhubClient";
 import type { SubstituteInviteResponse, SubstituteInviteStatus } from "@/api/eduhubTypes";
@@ -38,18 +31,18 @@ function statusLabel(t: TFunction, status: SubstituteInviteStatus): string {
   }
 }
 
-function statusPillClass(status: SubstituteInviteStatus, needsAction: boolean): string {
-  if (needsAction) return "bg-emerald-50 text-emerald-800 ring-emerald-200";
-  if (status === "APPROVED") return "bg-green-50 text-green-800 ring-green-200";
+function statusTone(status: SubstituteInviteStatus, needsAction: boolean): string {
+  if (needsAction) return "border-amber-200 bg-amber-50 text-amber-900";
+  if (status === "APPROVED") return "border-emerald-200 bg-emerald-50 text-emerald-800";
   if (
     status === "DECLINED_BY_SUBSTITUTE" ||
     status === "REJECTED_BY_PRIMARY" ||
     status === "REJECTED_BY_ADMIN" ||
     status === "CANCELLED_BY_PRIMARY"
   ) {
-    return "bg-amber-50 text-amber-900 ring-amber-200";
+    return "border-red-200 bg-red-50 text-red-800";
   }
-  return "bg-slate-100 text-slate-700 ring-slate-200";
+  return "border-border bg-muted/50 text-muted-foreground";
 }
 
 function teacherNeedsAction(rec: SubstituteInviteResponse, userId?: string): boolean {
@@ -62,6 +55,15 @@ function roleLabel(t: TFunction, rec: SubstituteInviteResponse, userId?: string)
   if (rec.substituteId === userId) return t("teacher.substitutePanel.role.youAreSubstitute");
   if (rec.primaryInstructorId === userId) return t("teacher.substitutePanel.role.youInvited");
   return t("teacher.substitutePanel.role.participant");
+}
+
+function formatUpdated(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 type Props = {
@@ -99,117 +101,160 @@ export function TeacherSubstituteCoverPanel({ embedded = false }: Props) {
 
   const pendingCount = rows.filter((r) => teacherNeedsAction(r, user.id)).length;
 
-  if (loadError) {
+  if (loading) {
     return (
-      <Card className="border-dashed border-2 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-          <UserPlus className="h-14 w-14 text-red-300 mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-1">Could not load substitute requests</h3>
-          <p className="text-sm text-foreground/60 mb-6 max-w-sm">
-            Something went wrong while fetching your substitute requests. Please refresh the page to try again.
-          </p>
-        </CardContent>
-      </Card>
+      <div className={embedded ? "max-w-3xl" : undefined}>
+        <p className="text-sm text-muted-foreground">{t("teacher.substitutePanel.loading")}</p>
+      </div>
     );
   }
 
-  if (!loading && rows.length === 0) {
+  if (loadError) {
     return (
-      <Card className="border-dashed border-2 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-          <UserPlus className="h-14 w-14 text-foreground/30 mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-1">{t("teacher.substitutePanel.empty.title")}</h3>
-          <p className="text-sm text-foreground/60 mb-6 max-w-sm">
-            {t("teacher.substitutePanel.empty.description")}
-          </p>
-        </CardContent>
-      </Card>
+      <div className="max-w-3xl rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
+        <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full border border-red-200 bg-red-50">
+          <UserPlus className="h-5 w-5 text-red-500" aria-hidden />
+        </div>
+        <h3 className="text-sm font-semibold text-foreground">
+          {t("teacher.substitutePanel.error.title")}
+        </h3>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+          {t("teacher.substitutePanel.error.description")}
+        </p>
+      </div>
+    );
+  }
+
+  if (rows.length === 0) {
+    return (
+      <div className="max-w-3xl rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
+        <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full border border-border bg-background">
+          <UserPlus className="h-5 w-5 text-muted-foreground" aria-hidden />
+        </div>
+        <h3 className="text-sm font-semibold text-foreground">
+          {t("teacher.substitutePanel.empty.title")}
+        </h3>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+          {t("teacher.substitutePanel.empty.description")}
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className={embedded ? "max-w-3xl" : undefined}>
-      <p className="text-sm text-foreground/60 mb-4">
+    <div className={embedded ? "max-w-3xl space-y-4" : "space-y-4"}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">
+          {pendingCount > 0
+            ? t("teacher.substitutePanel.summary.needsResponse", { count: pendingCount })
+            : t("teacher.substitutePanel.summary.track")}
+        </p>
         {pendingCount > 0 ? (
-          t("teacher.substitutePanel.summary.needsResponse", { count: pendingCount })
-        ) : (
-          t("teacher.substitutePanel.summary.track")
-        )}
-      </p>
+          <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-medium text-amber-900">
+            {t("teacher.substitutePanel.summary.actionBadge", { count: pendingCount })}
+          </span>
+        ) : null}
+      </div>
 
-      <div className="space-y-3 max-w-3xl">
+      <div className="space-y-3">
         {rows.map((rec) => {
           const needsAction = teacherNeedsAction(rec, user.id);
           const isSubstitute = rec.substituteId === user.id;
+          const personLabel = isSubstitute
+            ? t("teacher.substitutePanel.card.courseLead")
+            : t("teacher.substitutePanel.card.substitute");
+          const personValue = isSubstitute
+            ? rec.primaryInstructorName
+            : rec.substituteEmail;
+
           return (
-            <Card key={rec.id} className="rounded-2xl border-slate-200/90 shadow-sm">
-              <CardHeader className="pb-3">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <CardTitle className="text-base font-semibold text-slate-900 line-clamp-2">{rec.courseTitle}</CardTitle>
-                    <CardDescription className="mt-1 space-y-1">
-                      <span className="block text-sm text-slate-600">
-                        {isSubstitute ? (
-                          <>
-                            {t("teacher.substitutePanel.card.courseLead")}{" "}
-                            <span className="font-medium text-slate-800">{rec.primaryInstructorName}</span>
-                          </>
-                        ) : (
-                          <>
-                            {t("teacher.substitutePanel.card.substitute")}{" "}
-                            <span className="font-mono text-xs font-medium text-slate-800">{rec.substituteEmail}</span>
-                          </>
-                        )}
-                      </span>
-                      {rec.sessionNote ? (
-                        <span className="block text-xs text-slate-500">{rec.sessionNote}</span>
-                      ) : null}
-                      <span className="block text-xs text-slate-500">
-                        {roleLabel(t, rec, user.id)} ·{" "}
-                        {t("teacher.substitutePanel.updated", {
-                          datetime: new Date(rec.updatedAt).toLocaleString(undefined, {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          }),
-                        })}
-                      </span>
-                    </CardDescription>
-                  </div>
-                  <div className="flex shrink-0 flex-wrap items-center gap-2">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ${statusPillClass(
-                        rec.status,
-                        needsAction,
-                      )}`}
-                    >
-                      {statusLabel(t, rec.status)}
-                    </span>
-                    <Button size="sm" className="rounded-full bg-[#1e40af] hover:bg-[#1e3a8a]" asChild>
-                      <Link
-                        to={`/dashboard/teacher/substitute-requests/${rec.id}`}
-                        className="inline-flex items-center gap-1.5"
-                      >
-                        {needsAction ? (
-                          <>
-                            <ClipboardCheck className="h-3.5 w-3.5" aria-hidden />
-                            {t("teacher.substitutePanel.actions.review")}
-                          </>
-                        ) : (
-                          t("teacher.substitutePanel.actions.viewDetails")
-                        )}
-                      </Link>
-                    </Button>
-                    {!isSubstitute ? (
-                      <Button size="sm" variant="outline" className="rounded-full" asChild>
-                        <Link to={`/dashboard/teacher/courses/${rec.courseId}`}>
-                          {t("teacher.substitutePanel.actions.openClass")}
-                        </Link>
-                      </Button>
-                    ) : null}
-                  </div>
+            <article
+              key={rec.id}
+              className={`rounded-xl border bg-card p-4 sm:p-5 ${
+                needsAction ? "border-amber-200 bg-amber-50/30" : "border-border"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="truncate text-base font-semibold tracking-tight text-foreground">
+                    {rec.courseTitle}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {t("teacher.substitutePanel.updated", {
+                      datetime: formatUpdated(rec.updatedAt),
+                    })}
+                  </p>
                 </div>
-              </CardHeader>
-            </Card>
+                <span
+                  className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusTone(
+                    rec.status,
+                    needsAction,
+                  )}`}
+                >
+                  {statusLabel(t, rec.status)}
+                </span>
+              </div>
+
+              <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-lg bg-muted/40 px-3 py-2.5">
+                  <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("teacher.substitutePanel.card.yourRole")}
+                  </dt>
+                  <dd className="mt-0.5 truncate text-sm font-medium text-foreground">
+                    {roleLabel(t, rec, user.id)}
+                  </dd>
+                </div>
+                <div className="rounded-lg bg-muted/40 px-3 py-2.5">
+                  <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {personLabel}
+                  </dt>
+                  <dd className="mt-0.5 truncate text-sm font-medium text-foreground" title={personValue}>
+                    {personValue}
+                  </dd>
+                </div>
+                <div className="rounded-lg bg-muted/40 px-3 py-2.5">
+                  <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("teacher.substitutePanel.card.session")}
+                  </dt>
+                  <dd className="mt-0.5 truncate text-sm font-medium text-foreground" title={rec.sessionNote?.trim() || undefined}>
+                    {rec.sessionNote?.trim() || t("teacher.substitutePanel.card.wholeClass")}
+                  </dd>
+                </div>
+              </dl>
+
+              <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3">
+                {!isSubstitute ? (
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to={`/dashboard/teacher/courses/${rec.courseId}`}>
+                      {t("teacher.substitutePanel.actions.openClass")}
+                    </Link>
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  className={needsAction ? "bg-teal-700 hover:bg-teal-800" : undefined}
+                  variant={needsAction ? "default" : "outline"}
+                  asChild
+                >
+                  <Link
+                    to={`/dashboard/teacher/substitute-requests/${rec.id}`}
+                    className="inline-flex items-center gap-1.5"
+                  >
+                    {needsAction ? (
+                      <>
+                        <ClipboardCheck className="h-3.5 w-3.5" aria-hidden />
+                        {t("teacher.substitutePanel.actions.review")}
+                      </>
+                    ) : (
+                      <>
+                        {t("teacher.substitutePanel.actions.viewDetails")}
+                        <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                      </>
+                    )}
+                  </Link>
+                </Button>
+              </div>
+            </article>
           );
         })}
       </div>

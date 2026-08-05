@@ -8,6 +8,8 @@ export type AdminCourseCatalogMeta = {
   referralCode: string;
   /** Percent off list price when this referral code is applied at checkout (0 = no reduction). */
   discountPercent: number;
+  /** Optional trial access code for the class; empty if unused. */
+  trialCode: string;
 };
 
 function clampDiscount(n: unknown): number {
@@ -23,11 +25,16 @@ function normalizeEntry(raw: unknown): AdminCourseCatalogMeta | null {
     typeof o.referralCode === "string"
       ? o.referralCode.trim().slice(0, 64)
       : "";
+  const trial =
+    typeof o.trialCode === "string"
+      ? o.trialCode.trim().slice(0, 64)
+      : "";
   return {
     amount: o.amount,
     currency: o.currency,
     referralCode: ref,
     discountPercent: clampDiscount(o.discountPercent),
+    trialCode: trial,
   };
 }
 
@@ -64,6 +71,7 @@ export function writeAdminCourseCatalog(courseId: string, meta: AdminCourseCatal
     ...meta,
     referralCode: meta.referralCode.trim().slice(0, 64),
     discountPercent: clampDiscount(meta.discountPercent),
+    trialCode: (meta.trialCode ?? "").trim().slice(0, 64),
   };
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(all));
 }

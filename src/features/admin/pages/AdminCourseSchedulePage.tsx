@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Plus, Send, Trash2 } from "@/lib/icons";
 import { toast } from "sonner";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -286,16 +285,13 @@ export default function AdminCourseSchedulePage() {
 
   if (!isUuid(courseId)) {
     return (
-      <AdminLayout>
         <div className="container mx-auto px-6">
           <p className="text-sm text-red-600">{t("admin.courses.detail.invalidId")}</p>
         </div>
-      </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6 max-w-2xl">
         <Link
           to={`/dashboard/admin/courses/${courseId}`}
@@ -539,6 +535,5 @@ export default function AdminCourseSchedulePage() {
           </>
         )}
       </div>
-    </AdminLayout>
   );
 }

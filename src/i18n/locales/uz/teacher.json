@@ -5,6 +5,8 @@
     "courseLeadFallback": "Kurs rahbari",
     "classFallback": "Sinf",
     "dashboard": {
+      "overviewTitle": "Umumiy ko'rinish",
+      "managingSubtitle": "{{name}} boshqaruvi",
       "subtitle": "O'qituvchi boshqaruv paneli",
       "roleBadge": "O'qituvchi",
       "stats": {
@@ -15,7 +17,8 @@
       },
       "attendanceQr": {
         "title": "Davomat QR (proyektor)",
-        "description": "Oq doskada ko'rsatish uchun sessiya QR kodini yarating — talabalar telefonlarida skaner qilib ro'yxatdan o'tadi."
+        "description": "Oq doskada ko'rsatish uchun sessiya QR kodini yarating — talabalar telefonlarida skaner qilib ro'yxatdan o'tadi.",
+        "cta": "Check-in ochish"
       },
       "upcomingSessions": {
         "title": "Yaqinlashayotgan sessiyalar"
@@ -88,13 +91,13 @@
       }
     },
     "courses": {
-      "description": "Yangi sinflar admin narx belgilab nashr etgunga qadar qoralama holatda qoladi.",
+      "description": "Sinflarni yarating va boshqaring. Qoralamalar admin narxi va nashrini kutadi.",
       "addClass": "Sinf qo'shish",
       "tabs": {
         "classes": "Sinflar",
-        "attendance": "Talaba davomati",
+        "attendance": "Davomat",
         "schedule": "Jadval",
-        "substitute": "O'rniga o'tuvchi o'qituvchi"
+        "substitute": "O‘rinbosar"
       },
       "loading": "Yuklanmoqda sinfes…",
       "empty": {
@@ -115,8 +118,9 @@
       "scheduleTab": {
         "intro": "Tahrirlash the planned sessions (title, date, time) for each sinf. This uses the same jadval section from the sinf setup form.",
         "loading": "Yuklanmoqda jadvals…",
-        "emptyDescription": "Create a sinf first, then come back here to set up the per-session jadval.",
+        "emptyDescription": "Create a class first, then set up session dates and times here.",
         "sessionsSummary": "{{sessions}} sessions in 6 months",
+        "sessionsSummaryFilled": "{{sessions}} sessions in 6 months · {{filled}} filled",
         "filledSuffix": " · {{filled}} filled",
         "notSetYet": "Sessions in 6 months not set yet",
         "editSchedule": "Tahrirlash jadval"
@@ -125,7 +129,12 @@
     "students": {
       "title": "Talabalar",
       "subtitle": "Talabalar registered to your sinfes.",
+      "searchPlaceholder": "Ism, email yoki sinf bo'yicha qidirish",
+      "count_one": "{{count}} talaba",
+      "count_other": "{{count}} talaba",
+      "noSearchResults": "Qidiruvga mos talaba topilmadi.",
       "table": {
+        "student": "Talaba",
         "name": "Talaba name",
         "email": "Email",
         "class": "Sinf",
@@ -175,18 +184,22 @@
     },
     "attendanceQr": {
       "title": "Davomat QR",
-      "description": "Select the sinf and the planned session from the jadval, then generate a QR. When you stop the session, that meeting is marked held for talaba enrollment. Use projector view for full screen. Talabalar sign in to check in."
+      "description": "Sinf va darsni tanlang, QR yarating va talabalar skaner qilishi uchun ko‘rsating."
     },
     "scheduleApprovals": {
       "title": "Jadval tasdiqlari",
-      "subtitle": "Review jadvals proposed by an admin, then approve or request changes on each sinf.",
+      "subtitle": "Approve or request changes on schedules proposed by admin.",
       "loading": "Yuklanmoqda your sinfes…",
       "empty": "No sinfes yet. Create a sinf first.",
+      "emptyPending": "Nothing waiting for your approval.",
+      "emptyOther": "No other classes in this list.",
       "addClass": "Add sinf",
-      "pendingSectionTitle": "Needs your approval",
+      "pendingSectionTitle": "Needs approval",
+      "pendingCount": "{{count}} need review",
       "createdDate": "Created {{date}}",
-      "allSectionTitle": "All your sinfes",
+      "allSectionTitle": "Your classes",
       "openButton": "Open",
+      "reviewButton": "Review",
       "status": {
         "actionNeeded": "Action needed",
         "approved": "Tasdiqlangan",
@@ -195,10 +208,11 @@
         "published": "Nashr etilgan"
       },
       "statusDescriptions": {
-        "scheduleApproved": "Jadval approved — waiting for admin to publish",
-        "draft": "Qoralama — admin will propose a jadval",
-        "rejected": "Rejected — admin sent feedback",
-        "default": "Open the jadval step to view or approve when ready."
+        "pending": "Admin proposed a schedule — review to approve or request changes.",
+        "scheduleApproved": "Approved — waiting for admin to publish.",
+        "draft": "Qoralama — waiting for admin to propose a schedule.",
+        "rejected": "Rejected — admin sent feedback.",
+        "default": "Open the schedule step to view details."
       }
     },
     "status": {
@@ -341,6 +355,18 @@
         "categoryLabel": "Category *",
         "categoryNotAssigned": "Not assigned",
         "categoryHint": "Assigned by admin when your instructor account was created. Contact support if this looks wrong.",
+        "levelLabel": "Level",
+        "levelPlaceholder": "Select class level",
+        "levelRequired": "Please select a class level.",
+        "levels": {
+          "beginnerA1": "Beginner (A1)",
+          "elementaryA1Plus": "Elementary (A1+)",
+          "preIntermediateB1": "Pre-Intermediate (B1)",
+          "intermediateB1Plus": "Intermediate (B1+)",
+          "upperIntermediateB2Plus": "Upper-Intermediate (B2+)",
+          "advancedC1": "Advanced (C1)",
+          "advancedC2": "Advanced (C2)"
+        },
         "aboutLabel": "About this sinf (optional)",
         "aboutPlaceholder": "What talabas will learn — a sentence or two is enough.",
         "datesSectionTitle": "Sinf dates (optional)",
@@ -455,6 +481,15 @@
         "uploadFile": "Upload file",
         "dragHere": "or drag here to upload",
         "detailsTitle": "Test details",
+        "thumbnail": {
+          "label": "Muqova rasm",
+          "optional": "Ixtiyoriy",
+          "hint": "Sinfdagi test kartochkasida ko‘rinadi.",
+          "add": "Rasm yuklash",
+          "change": "Almashtirish",
+          "remove": "Olib tashlash",
+          "previewAlt": "Test muqovasi"
+        },
         "typeLabel": "Type",
         "typePlaceholder": "Select type",
         "typeHint": "Test for practice or Placement test for assessment.",
@@ -741,63 +776,67 @@
       }
     },
     "resumeEdit": {
-      "backToClasses": "Orqaga to My Sinfes",
-      "backToResumes": "Orqaga to resumes",
+      "backToClasses": "Sinflarga qaytish",
+      "backToResumes": "Xulosalarga qaytish",
       "title": {
-        "new": "New sinf resume",
-        "edit": "Tahrirlash sinf resume"
+        "new": "Yangi xulosa",
+        "edit": "Xulosani tahrirlash"
       },
-      "intro": "Recaps and reminders appear on the talaba sinf page under the Resume tab.",
+      "intro": "Talabalar buni sinf Resume bo‘limida ko‘radi.",
       "substituteBanner": {
-        "viewingAs": "You are tahrirlashing as substitute.",
-        "courseLead": "Course lead:",
-        "hint": "You can add or tahrirlash resumes for talabas while covering this sinf."
+        "viewingAs": "O‘rinbosar sifatida tahrirlash",
+        "courseLead": "Asosiy o‘qituvchi:",
+        "hint": "Xulosa qo‘shishingiz va tahrirlashingiz mumkin. O‘chirish faqat asosiy o‘qituvchiga tegishli."
       },
-      "primaryBanner": "You are the course lead. Substitute instructors with approved cover can also add resumes in demo mode.",
+      "primaryBanner": "Asosiy o‘qituvchi — tasdiqlangan o‘rinbosarlar ham xulosani tahrirlashi mumkin.",
       "thumbnail": {
-        "label": "Thumbnail image (optional)",
-        "previewAlt": "Resume thumbnail preview",
-        "hint": "Shows on the resume cards talabas see on their sinf page."
+        "label": "Muqova rasm",
+        "optional": "Ixtiyoriy",
+        "previewAlt": "Xulosa eskizi",
+        "hint": "Sinf sahifasida xulosa yonida ko‘rinadi.",
+        "add": "Rasm yuklash",
+        "change": "Almashtirish",
+        "remove": "Olib tashlash"
       },
-      "sessionLabel": "Link to a jadvald session",
+      "sessionLabel": "Dars",
       "sessionHints": {
-        "primary": "Optional — tie this recap to a specific session or leave as whole-sinf.",
-        "substituteLocked": "Session is set from your substitute cover invite.",
-        "noSessions": "No jadvald sessions yet — recap applies to the whole sinf.",
-        "wholeClass": "Whole sinf — general recap"
+        "primary": "Bitta darsga bog‘lang yoki butun sinf uchun qoldiring.",
+        "substituteLocked": "Dars o‘rinbosar taklifidan belgilangan.",
+        "noSessions": "Jadvalda hali dars yo‘q. Butun sinf xulosasini saqlashingiz mumkin.",
+        "wholeClass": "Butun sinf"
       },
       "session": {
-        "wholeClass": "Whole sinf — general recap",
-        "placeholder": "Whole sinf or one session…",
-        "loadingAssigned": "Yuklanmoqda assigned session…"
+        "wholeClass": "Butun sinf",
+        "placeholder": "Butun sinf yoki bitta dars…",
+        "loadingAssigned": "Dars yuklanmoqda…"
       },
-      "bodyLabel": "Resume text",
-      "bodyPlaceholder": "Key points, homework, reminders for talabas…",
+      "bodyLabel": "Xulosa",
+      "bodyPlaceholder": "Asosiy nuqtalar, uy vazifasi, keyingi uchun nimalarni takrorlash…",
       "actions": {
-        "delete": "O'chirish",
-        "saveForStudents": "Saqlash for talabas"
+        "delete": "O‘chirish",
+        "saveForStudents": "Saqlash"
       },
       "deleteDialog": {
-        "title": "O'chirish this resume?",
-        "description": "Talabalar will no longer see this recap. This cannot be undone."
+        "title": "Bu xulosani o‘chirasizmi?",
+        "description": "Talabalar uni boshqa ko‘rmaydi. Bu amalni bekor qilib bo‘lmaydi."
       },
       "errors": {
-        "missingClass": "Missing sinf.",
-        "noAccess": "You don't have access to tahrirlash resumes for this sinf.",
-        "classNotFound": "Sinf not found.",
-        "emptyBody": "Write something before saving."
+        "missingClass": "Sinf ko‘rsatilmagan.",
+        "noAccess": "Bu sinfga ruxsatingiz yo‘q.",
+        "classNotFound": "Sinf topilmadi.",
+        "emptyBody": "Saqlashdan oldin matn yozing."
       },
       "toast": {
-        "notFound": "Resume not found",
-        "saveFailed": "Could not save.",
-        "deleteFailed": "Could not o'chirish resume.",
-        "deleted": "Resume o'chirishd",
-        "created": "Resume created",
-        "createdDescription": "Talabalar can now read this recap on their sinf page.",
-        "updated": "Resume updated",
-        "updatedDescription": "Your changes are saved for talabas.",
-        "invalidImage": "Please pick an image file.",
-        "uploadFailed": "Could not upload image."
+        "notFound": "Xulosa topilmadi",
+        "saveFailed": "Saqlab bo‘lmadi.",
+        "deleteFailed": "Xulosani o‘chirib bo‘lmadi.",
+        "deleted": "Xulosa o‘chirildi",
+        "created": "Xulosa yaratildi",
+        "createdDescription": "Talabalar uni Resume bo‘limida o‘qishi mumkin.",
+        "updated": "Xulosa yangilandi",
+        "updatedDescription": "Talabalar o‘zgarishlarni ko‘radi.",
+        "invalidImage": "Rasm faylini tanlang.",
+        "uploadFailed": "Rasm yuklanmadi."
       }
     },
     "roster": {
@@ -837,6 +876,7 @@
         "schedule": "Jadval",
         "resume": "Xulosa",
         "quiz": "Test",
+        "quizScores": "Test ballari",
         "attendance": "Davomat",
         "grades": "Baholar"
       },
@@ -903,41 +943,85 @@
       "sessionFallback": "Session {{n}}",
       "substituteCoverTitle": "Substitute cover · {{title}}",
       "resume": {
-        "title": "Sinf resumes",
-        "intro": "Each card is a recap talabas can read on their sinf page (Resume tab). Create or tahrirlash on a dedicated page.",
-        "newResume": "New resume",
-        "emptyTitle": "No resumes yet",
-        "emptyDescription": "Write your first recap so enrolled talabas can review it anytime.",
-        "createResume": "Create resume",
-        "wholeClassRecap": "Whole sinf recap",
-        "updated": "Updated",
-        "thumbnailAlt": "Resume thumbnail"
+        "title": "Dars xulosalari",
+        "intro": "Talabalar sinf sahifasida o‘qiydigan qisqa xulosalar.",
+        "newResume": "Yangi xulosa",
+        "emptyTitle": "Hali xulosa yo‘q",
+        "emptyDescription": "Darsdan keyin qisqa xulosa yozing — talabalar keyinroq qayta o‘qishi mumkin.",
+        "createResume": "Xulosa yaratish",
+        "wholeClassRecap": "Butun sinf",
+        "updated": "Yangilandi {{datetime}}",
+        "thumbnailAlt": "Xulosa eskizi",
+        "count_one": "{{count}} xulosa",
+        "count_other": "{{count}} xulosa"
       },
       "quiz": {
-        "title": "Test & placement tests",
-        "intro": "Multiple-choice quizzes for this sinf appear below as cards. Use Create quiz to add one, then publish, tahrirlash, or open results from each card.",
-        "createQuiz": "Create quiz",
-        "substituteRestriction": "Test management is for the course lead.",
-        "substituteRestrictionDescription": "Creating and publishing quizzes for this sinf is done by the instructor who owns the catalog listing.",
-        "localOnly": "This sinf exists only in your browser. Connect it to the API to list server-backed quizzes for this course.",
-        "yourQuizzes": "Your quizzes",
-        "fetchNoteFallback": "Test list could not be loaded. Testzes you save on this device still appear below.",
-        "fetchNoteWithError": "Test list could not be loaded ({{error}}). Testzes you save on this device still appear below.",
-        "loadError": "Could not load quizzes for this sinf.",
-        "emptyTitle": "No quizzes for this sinf yet",
-        "emptyDescription": "Your real quizzes will replace the example cards below. Create a practice quiz or placement test to get started.",
-        "exampleLayout": "Example layout (not saved — disappears when you add a quiz)",
-        "example": "Example",
+        "title": "Testlar",
+        "intro": "Ushbu sinf uchun ko‘p tanlovli testlar va placement testlar.",
+        "createQuiz": "Test yaratish",
+        "substituteRestriction": "Testlarni asosiy o‘qituvchi boshqaradi.",
+        "substituteRestrictionDescription": "Test yaratish va nashr qilish faqat sinf egasiga tegishli.",
+        "localOnly": "Bu sinf faqat shu qurilmada. Testlarni boshqarish uchun API ga ulang.",
+        "yourQuizzes": "Testlaringiz",
+        "fetchNoteFallback": "Test ro‘yxatini yuklab bo‘lmadi. Mahalliy testlar pastda ko‘rinadi.",
+        "fetchNoteWithError": "Testlarni yuklab bo‘lmadi ({{error}}). Mahalliy testlar pastda ko‘rinadi.",
+        "loadError": "Bu sinf testlarini yuklab bo‘lmadi.",
+        "emptyTitle": "Hali test yo‘q",
+        "emptyDescription": "Amaliyot yoki placement test yarating.",
         "placement": "Placement",
         "quiz": "Test",
-        "questionCount_one": "{{count}} question",
-        "questionCount_other": "{{count}} questions",
-        "publish": "Publish",
-        "results": "Results",
+        "draft": "Qoralama",
+        "published": "Nashr etilgan",
+        "questionCount_one": "{{count}} savol",
+        "questionCount_other": "{{count}} savol",
+        "count_one": "{{count}} test",
+        "count_other": "{{count}} test",
+        "publish": "Nashr qilish",
+        "results": "Natijalar",
         "toast": {
-          "publishedLocally": "Nashr etilgan on this device",
-          "published": "Test published",
-          "publishFailed": "Could not publish quiz."
+          "publishedLocally": "Shu qurilmada nashr etildi",
+          "published": "Test nashr etildi",
+          "publishFailed": "Testni nashr qilib bo‘lmadi."
+        }
+      },
+      "quizScores": {
+        "title": "Qo'lda test ballari",
+        "intro": "Ro'yxatdan o'tgan talabalar uchun test ballarini qo'lda kiriting. Test ustunini qo'shing, har bir talaba uchun 0–100 yozing va saqlang. Ballar server API paydo bo'lguncha shu qurilmada saqlanadi.",
+        "searchPlaceholder": "Ism yoki email bo'yicha qidirish",
+        "addQuiz": "Test qo'shish",
+        "deleteQuiz": "Testni o'chirish",
+        "save": "Saqlash",
+        "saveAll": "Hammasini saqlash",
+        "scorePlaceholder": "—",
+        "table": {
+          "student": "Talaba"
+        },
+        "addDialog": {
+          "title": "Test ustuni qo'shish",
+          "description": "Qisqa nom bering — u har bir talaba uchun ball ustuniga aylanadi.",
+          "label": "Test nomi",
+          "placeholder": "masalan, 2-hafta testi"
+        },
+        "deleteDialog": {
+          "title": "Test ustuni o'chirilsinmi?",
+          "description": "\"{{title}}\" va undagi barcha ballar shu qurilmadan o'chiriladi. Bu amalni qaytarib bo'lmaydi."
+        },
+        "empty": {
+          "connectApi": "Qo'lda test ballari uchun talabalarni yuklash uchun sinfni API ga ulang.",
+          "loading": "Talabalar yuklanmoqda…",
+          "error": "Test ballari uchun talabalarni yuklab bo'lmadi.",
+          "noStudents": "Hali ro'yxatdan o'tgan talabalar yo'q — baholash uchun hech kim yo'q.",
+          "noColumnsTitle": "Hali test ustunlari yo'q",
+          "noColumnsDescription": "Har bir talaba uchun ball kiritishni boshlash uchun test qo'shing.",
+          "noSearchResults": "Qidiruvga mos talaba topilmadi."
+        },
+        "toast": {
+          "saved": "Ballar saqlandi",
+          "savedAll": "Barcha ko'rinadigan ballar saqlandi",
+          "invalidScore": "0 dan 100 gacha ball kiriting yoki katakni bo'sh qoldiring.",
+          "titleRequired": "Test nomini kiriting.",
+          "columnAdded": "Test ustuni qo'shildi",
+          "columnDeleted": "Test ustuni o'chirildi"
         }
       },
       "attendance": {
@@ -964,14 +1048,16 @@
         "lastScheduled": "Last date on sinf jadval",
         "matchHint": "When a row matches the selected QR session, the Present and Checked in columns in this table use that meeting from the attendance API.",
         "tableAria": "Talaba attendance for the selected check-in meeting",
+        "verifyHint": "Tick to confirm attendance for this meeting.",
         "table": {
           "student": "Talaba",
           "email": "Email",
           "present": "Present",
           "checkedIn": "Checked in",
-          "instructorCheck": "Instructor Check"
+          "instructorCheck": "Verify"
         },
         "presentBadge": "Present",
+        "absentBadge": "—",
         "checkedInTitle": "Checked in",
         "signInToCheck": "Sign in to save o'qituvchi check",
         "toast": {
@@ -1038,11 +1124,12 @@
         "helper": "Shown on the projector and in the session log."
       },
       "generateQr": {
-        "new": "New QR for next meeting",
-        "this": "Generate QR for this meeting"
+        "new": "Yangi QR",
+        "this": "QR yaratish",
+        "pickSessionFirst": "Avval darsni tanlang."
       },
-      "projectorView": "Projector view",
-      "stopSession": "Stop session",
+      "projectorView": "Proyektor",
+      "stopSession": "To‘xtatish",
       "modality": {
         "online": "Online check-in — talabas scan from anywhere.",
         "inPerson": "In-person check-in — show QR on the projector."
@@ -1066,15 +1153,20 @@
         "closed": {
           "title": "Check-in window ended",
           "body": "Start a new QR session for the next meeting."
+        },
+        "noToken": {
+          "title": "QR bu yerdа yo‘q",
+          "body": "Sessiya ochiq, lekin kod bu tabda yo‘q. Yangi QR yarating."
         }
       },
       "emptyQr": {
         "tapGenerate": "Tap Generate below to create a QR for this meeting.",
-        "pickClass": "Pick a sinf and tap Generate to start check-in."
+        "pickClass": "Sinfni tanlang, keyin QR yarating.",
+        "pickSession": "Darsni tanlang, keyin QR yarating."
       },
       "sessionLog": {
-        "title": "Session log (this sinf)",
-        "description": "Past QR sessions for this sinf on this device."
+        "title": "Oxirgi sessiyalar",
+        "description": "Ushbu sinf uchun oldingi check-in sessiyalari."
       },
       "projector": {
         "title": "Davomat QR — projector",
@@ -1087,7 +1179,11 @@
       "toast": {
         "generateFailed": "Could not generate attendance QR",
         "stopFailed": "Could not stop attendance session"
-      }
+      },
+      "setupTitle": "Sozlash",
+      "sessionLabel": "Dars",
+      "live": "Jonli",
+      "ended": "Tugagan"
     },
     "attendancePicker": {
       "label": "Meeting (for the table below)",

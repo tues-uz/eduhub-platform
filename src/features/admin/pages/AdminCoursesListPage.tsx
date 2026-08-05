@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ExternalLink } from "@/lib/icons";
+import { ExternalLink } from "@/lib/icons";
 import { useQuery } from "@tanstack/react-query";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import { AdminReferralDiscountDialog } from "@/features/admin/components/AdminReferralDiscountDialog";
 import { eduhubCourses } from "@/api/eduhubClient";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
 import { CourseStatusBadge } from "@/features/admin/components/AdminStatusBadges";
@@ -56,6 +56,7 @@ export default function AdminCoursesListPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [referralDialogOpen, setReferralDialogOpen] = useState(false);
 
   const highlightCourseId = searchParams.get("courseId");
 
@@ -104,19 +105,27 @@ export default function AdminCoursesListPage() {
     search.trim() !== "" || statusFilter !== "all" || categoryFilter !== "all";
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6">
-        <Link
-          to="/dashboard/admin"
-          className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t("admin.shared.backToDashboard")}
-        </Link>
 
         <AdminPageHeader
           title={t("admin.shared.allClasses")}
           description={t("admin.courses.list.description")}
+          actions={
+            <Button
+              type="button"
+              size="sm"
+              className="bg-slate-900 text-white hover:bg-slate-800"
+              onClick={() => setReferralDialogOpen(true)}
+            >
+              {t("admin.courses.list.referralCodesButton")}
+            </Button>
+          }
+        />
+
+        <AdminReferralDiscountDialog
+          open={referralDialogOpen}
+          onOpenChange={setReferralDialogOpen}
+          courses={data ?? []}
         />
 
         {!isLoading && !error ? (
@@ -247,6 +256,5 @@ export default function AdminCoursesListPage() {
           </div>
         )}
       </div>
-    </AdminLayout>
   );
 }

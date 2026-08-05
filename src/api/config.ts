@@ -1,6 +1,6 @@
 /**
  * EduHub Platform API — staging base URL.
- * API: https://hqhp7j.kubeletto.app (Swagger: /swagger-ui/index.html)
+ * API: https://eduhub.kubeletto.app (Swagger: /swagger-ui/index.html)
  * Auth: login (POST /auth/login), me (GET /auth/me), refresh (POST /auth/refresh),
  * forgot-password (POST /auth/forgot-password), reset-password (POST /auth/reset-password?token=).
  * Verify request/response shapes in Swagger when the API is available.
@@ -20,6 +20,6 @@ export const EDUHUB_API_BASE_URL =
     ? fromEnv.replace(/\/+$/, "")
     : typeof import.meta !== "undefined" && import.meta.env.DEV
       ? ""
-      : "https://hqhp7j.kubeletto.app";
+      : "https://eduhub.kubeletto.app";
 
 export const EDUHUB_API_PREFIX = "/api/v1";

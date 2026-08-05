@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Award, Download, Eye, GraduationCap, Loader2, Star } from "@/lib/icons";
+import { Award, Download, Eye, Loader2, Star } from "@/lib/icons";
 import { toast } from "sonner";
 import { eduhubCompletion } from "@/api/eduhubClient";
 import type { CourseGradebookRowResponse } from "@/api/eduhubTypes";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,14 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   ATTENDANCE_ROLL_CHANGED,
   ATTENDANCE_ROLL_STORAGE_KEY,
@@ -33,7 +26,8 @@ import {
   listCourseCertificates,
 } from "@/features/courses/courseCertificatesStorage";
 import { downloadCourseCertificatePdf } from "@/features/courses/courseCertificatePdf";
-import { formatDisplayPersonName } from "@/lib/formatPersonName";
+import { formatDisplayPersonName, profileInitials } from "@/lib/formatPersonName";
+import { cn } from "@/lib/utils";
 import {
   COURSE_REVIEWS_CHANGED,
   getStudentCourseReviewSummary,
@@ -114,14 +108,19 @@ function draftFromApiRow(row?: CourseGradebookRowResponse): DraftRow {
 }
 
 function ReviewStarsRow({ rating }: { rating: number }) {
+  const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-0.5" aria-label={`${rating} out of 5 stars`}>
+    <div
+      className="flex items-center gap-0.5"
+      aria-label={t("teacher.grades.starsAriaLabel", { rating })}
+    >
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}
-          className={`h-4 w-4 shrink-0 ${
-            n <= rating ? "fill-amber-400 text-amber-400" : "text-slate-200"
-          }`}
+          className={cn(
+            "h-4 w-4 shrink-0",
+            n <= rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30",
+          )}
           aria-hidden
         />
       ))}
@@ -160,43 +159,59 @@ function StudentReviewDialog({
   const instructorDate = formatReviewDate(reviews.instructorSubmittedAt);
   const platformDate = formatReviewDate(reviews.platformSubmittedAt);
 
+  const displayName = formatDisplayPersonName(studentName);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-2xl sm:max-w-lg">
+      <DialogContent className="max-w-md rounded-xl sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Student review</DialogTitle>
+          <DialogTitle>{t("teacher.grades.reviewDialog.title")}</DialogTitle>
           <DialogDescription>
-            Feedback from {formatDisplayPersonName(studentName)} ({studentEmail}) after completing this class.
+            {t("teacher.grades.reviewDialog.description", { name: displayName })} ({studentEmail})
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-5 pt-1">
           {reviews.instructorRating != null ? (
             <section className="space-y-2">
-              <h3 className="text-sm font-medium text-foreground">Instructor rating</h3>
+              <h3 className="text-sm font-medium text-foreground">
+                {t("teacher.grades.reviewDialog.instructorRating")}
+              </h3>
               <ReviewStarsRow rating={reviews.instructorRating} />
               {reviews.instructorComment?.trim() ? (
-                <p className="text-sm leading-relaxed text-muted-foreground">{reviews.instructorComment.trim()}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {reviews.instructorComment.trim()}
+                </p>
               ) : (
-                <p className="text-sm text-muted-foreground">No comment.</p>
+                <p className="text-sm text-muted-foreground">{t("teacher.grades.reviewDialog.noComment")}</p>
               )}
               {instructorDate ? (
-                <p className="text-xs text-muted-foreground">{t("teacher.assignments.submissions.table.submitted")}{instructorDate}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("teacher.grades.reviewDialog.submitted", { date: instructorDate })}
+                </p>
               ) : null}
             </section>
           ) : (
-            <p className="text-sm text-muted-foreground">No instructor review yet.</p>
+            <p className="text-sm text-muted-foreground">
+              {t("teacher.grades.reviewDialog.noInstructorReview")}
+            </p>
           )}
           {reviews.platformRating != null ? (
-            <section className="space-y-2 border-t border-slate-100 pt-4">
-              <h3 className="text-sm font-medium text-foreground">Platform rating</h3>
+            <section className="space-y-2 border-t border-border pt-4">
+              <h3 className="text-sm font-medium text-foreground">
+                {t("teacher.grades.reviewDialog.platformRating")}
+              </h3>
               <ReviewStarsRow rating={reviews.platformRating} />
               {reviews.platformComment?.trim() ? (
-                <p className="text-sm leading-relaxed text-muted-foreground">{reviews.platformComment.trim()}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {reviews.platformComment.trim()}
+                </p>
               ) : (
-                <p className="text-sm text-muted-foreground">No comment.</p>
+                <p className="text-sm text-muted-foreground">{t("teacher.grades.reviewDialog.noComment")}</p>
               )}
               {platformDate ? (
-                <p className="text-xs text-muted-foreground">{t("teacher.assignments.submissions.table.submitted")}{platformDate}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("teacher.grades.reviewDialog.submitted", { date: platformDate })}
+                </p>
               ) : null}
             </section>
           ) : null}
@@ -229,20 +244,22 @@ function RosterEmptyState({
   const { t } = useTranslation();
   if (!isApiCourse) {
     return (
-      <p className="text-sm text-foreground/70 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-8 text-center">
+      <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center text-sm text-muted-foreground">
         {t("teacher.grades.empty.connectApi")}
-      </p>
+      </div>
     );
   }
   if (isLoading) {
-    return <p className="text-sm text-foreground/60">{t("teacher.grades.empty.loading")}</p>;
+    return <p className="text-sm text-muted-foreground">{t("teacher.grades.empty.loading")}</p>;
   }
   if (isError) {
     return <p className="text-sm text-red-600">{t("teacher.grades.empty.error")}</p>;
   }
   if (studentsLength === 0) {
     return (
-      <p className="text-sm text-foreground/70 rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-8 text-center">{t("teacher.grades.empty.noStudents")}</p>
+      <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center text-sm text-muted-foreground">
+        {t("teacher.grades.empty.noStudents")}
+      </div>
     );
   }
   return null;
@@ -610,21 +627,19 @@ export function TeacherCourseGradesPanel({
   const showTable = !effectiveLoading && !effectiveError && tableRows.length > 0;
 
   return (
-    <div>
-      <h2 className="text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
-        <GraduationCap className="h-5 w-5 text-[#1e40af]" />{t("teacher.grades.title")}</h2>
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-foreground/60 min-w-0 flex-1 max-w-2xl">
-            <span className="font-medium text-foreground/80">Total</span> = instructor score. Save scores, then publish a certificate so the student sees it under{" "}
-          <span className="font-medium text-foreground/80">Certificates</span>
-          {isApiCourse ? "." : " (demo: this browser until an API exists)."}
-        </p>
+    <div className="min-w-0 max-w-full space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+            {t("teacher.grades.title")}
+          </h2>
+          <p className="max-w-xl text-sm text-muted-foreground">{t("teacher.grades.intro")}</p>
+        </div>
         {showTable ? (
           <Button
             type="button"
-            variant="outline"
             size="sm"
-            className="shrink-0 rounded-full gap-1.5 border-[#3954d0]/40 text-[#3954d0] hover:bg-[#3954d0]/5"
+            className="shrink-0 gap-1.5 bg-teal-700 hover:bg-teal-800"
             disabled={isApiCourse ? publishAllApiCertificatesMutation.isPending : publishingId === "all"}
             onClick={() => {
               if (isApiCourse) {
@@ -639,277 +654,277 @@ export function TeacherCourseGradesPanel({
             ) : (
               <Award className="h-3.5 w-3.5" />
             )}
-            Publish all certificates
+            {t("teacher.grades.publishAll")}
           </Button>
         ) : null}
       </div>
 
       {rosterGate}
       {showTable ? (
-        <div className="space-y-2">
-          <div className="rounded-xl border border-gray-200 bg-gray-50/30 overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-            <Table className="min-w-[40rem] w-full table-auto">
-              <TableHeader>
-                <TableRow className="bg-slate-50/90 hover:bg-slate-50/90">
-                  <TableHead className="min-w-[10rem] whitespace-nowrap">{t("teacher.assignments.submissions.table.student")}</TableHead>
-                  <TableHead
-                    className="min-w-[5rem] whitespace-nowrap"
-                    title="QR check-ins vs planned schedule sessions."
-                  >
-                    Sessions
-                  </TableHead>
-                  <TableHead
-                    className="min-w-[4.75rem] whitespace-nowrap text-right"
-                    title="Auto: sessions attended ÷ planned (0–100)."
-                  >
-                    Attend. %
-                  </TableHead>
-                  <TableHead className="min-w-[6.5rem] whitespace-nowrap">Instructor</TableHead>
-                  <TableHead
-                    className="min-w-[4.25rem] whitespace-nowrap text-right"
-                    title="Average of attendance score and instructor score."
-                  >
-                    Total
-                  </TableHead>
-                  <TableHead
-                    className="min-w-[6.5rem] whitespace-nowrap"
-                    title="Student feedback from the class completion page."
-                  >
-                    Feedback
-                  </TableHead>
-                  <TableHead className="w-[1%] whitespace-nowrap text-right px-2">{t("common.actions")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tableRows.map((row) => {
-                  const draftInstructor = parseFinalScoreInput(row.draft.score);
-                  const liveTotal = computeTotalFinalScore(row.attendanceScore, draftInstructor);
-                  const canPublish = row.totalFinalScore != null && !row.published;
-                  const savingThisRow = isApiCourse
-                    ? saveApiGradeMutation.isPending && saveApiGradeMutation.variables?.row.studentId === row.studentId
-                    : savingId === row.studentId;
-                  const publishingThisRow = isApiCourse
-                    ? publishApiCertificateMutation.isPending &&
-                      publishApiCertificateMutation.variables === row.studentId
-                    : publishingId === row.studentId;
-                  const downloadingThisRow = downloadingCertId === row.studentId;
-                  return (
-                    <TableRow key={row.studentId}>
-                      <TableCell className="max-w-[14rem]">
-                        <p className="font-medium text-foreground truncate">
-                          {formatDisplayPersonName(row.fullName)}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">{row.email}</p>
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap text-sm tabular-nums align-middle">
-                        {row.plannedTotal != null ? (
-                          <span>
-                            <span className="font-medium text-foreground">{row.attended}</span>
-                            <span className="text-muted-foreground">/{row.plannedTotal}</span>
-                          </span>
-                        ) : (
-                          <span>
-                            <span className="font-medium text-foreground">{row.attended}</span>
-                            <span className="text-muted-foreground text-xs"> sess.</span>
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right align-middle tabular-nums text-sm whitespace-nowrap">
-                        {row.attendanceScore != null ? (
-                          <span className="font-medium text-foreground">{row.attendanceScore}%</span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="align-middle whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1">
-                          <Input
-                            type="number"
-                            min={0}
-                            max={100}
-                            step={0.5}
-                            inputMode="decimal"
-                            placeholder="0–100"
-                            value={row.draft.score}
-                            className="h-9 w-16 tabular-nums bg-white"
-                            onChange={(e) => updateDraft(row.studentId, { score: e.target.value })}
-                          />
-                          <span className="text-xs text-muted-foreground">%</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right align-middle tabular-nums whitespace-nowrap">
-                        {liveTotal != null ? (
-                          <span className="font-semibold text-[#1e40af]">{liveTotal}%</span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="align-middle whitespace-nowrap">
-                        {row.reviews.instructorRating != null ? (
-                          <div className="inline-flex flex-col gap-1">
-                            <div
-                              className="inline-flex flex-col gap-0.5"
-                              title={[
-                                `Instructor: ${row.reviews.instructorRating}/5`,
-                                row.reviews.instructorComment
-                                  ? `"${row.reviews.instructorComment}"`
-                                  : null,
-                                row.reviews.platformRating != null
-                                  ? `Platform: ${row.reviews.platformRating}/5`
-                                  : "Platform review pending",
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            >
-                              <span className="inline-flex items-center gap-1 text-sm font-medium text-foreground">
+        <div className="space-y-3">
+          <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card">
+            <div className="overflow-x-auto overscroll-x-contain">
+              <table className="w-max min-w-full border-separate border-spacing-0 text-sm">
+                <thead>
+                  <tr className="bg-muted">
+                    <th className="sticky left-0 z-20 min-w-[14rem] border-b border-r border-border bg-muted px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground shadow-[2px_0_6px_-2px_rgba(0,0,0,0.12)]">
+                      {t("teacher.grades.table.student")}
+                    </th>
+                    <th
+                      className="border-b border-r border-border px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap"
+                      title={t("teacher.grades.table.headerTitles.sessions")}
+                    >
+                      {t("teacher.grades.table.sessions")}
+                    </th>
+                    <th
+                      className="border-b border-r border-border px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap"
+                      title={t("teacher.grades.table.headerTitles.attendance")}
+                    >
+                      {t("teacher.grades.table.attendance")}
+                    </th>
+                    <th
+                      className="border-b border-r border-border px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap"
+                      title={t("teacher.grades.table.headerTitles.instructor")}
+                    >
+                      {t("teacher.grades.table.instructor")}
+                    </th>
+                    <th
+                      className="border-b border-r border-border px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap"
+                      title={t("teacher.grades.table.headerTitles.total")}
+                    >
+                      {t("teacher.grades.table.total")}
+                    </th>
+                    <th className="border-b border-r border-border px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">
+                      {t("teacher.grades.table.feedback")}
+                    </th>
+                    <th className="sticky right-0 z-20 border-b border-l border-border bg-muted px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground shadow-[-2px_0_6px_-2px_rgba(0,0,0,0.12)] whitespace-nowrap">
+                      {t("teacher.grades.table.actions")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tableRows.map((row) => {
+                    const draftInstructor = parseFinalScoreInput(row.draft.score);
+                    const liveTotal = computeTotalFinalScore(row.attendanceScore, draftInstructor);
+                    const canPublish = row.totalFinalScore != null && !row.published;
+                    const savingThisRow = isApiCourse
+                      ? saveApiGradeMutation.isPending &&
+                        saveApiGradeMutation.variables?.row.studentId === row.studentId
+                      : savingId === row.studentId;
+                    const publishingThisRow = isApiCourse
+                      ? publishApiCertificateMutation.isPending &&
+                        publishApiCertificateMutation.variables === row.studentId
+                      : publishingId === row.studentId;
+                    const downloadingThisRow = downloadingCertId === row.studentId;
+                    const displayName = formatDisplayPersonName(row.fullName);
+                    return (
+                      <tr key={row.studentId} className="group hover:bg-muted/20">
+                        <td className="sticky left-0 z-10 border-b border-r border-border bg-background px-3 py-2.5 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.12)] group-hover:bg-muted">
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <Avatar className="size-8 shrink-0">
+                              <AvatarFallback className="text-[11px]">
+                                {profileInitials(displayName)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-foreground">{displayName}</p>
+                              <p className="truncate text-xs text-muted-foreground">{row.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="border-b border-r border-border px-3 py-2.5 text-center text-sm tabular-nums whitespace-nowrap">
+                          {row.plannedTotal != null ? (
+                            <>
+                              <span className="font-medium text-foreground">{row.attended}</span>
+                              <span className="text-muted-foreground">/{row.plannedTotal}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="font-medium text-foreground">{row.attended}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {" "}
+                                {t("teacher.grades.feedback.sessions")}
+                              </span>
+                            </>
+                          )}
+                        </td>
+                        <td className="border-b border-r border-border px-3 py-2.5 text-right text-sm tabular-nums whitespace-nowrap">
+                          {row.attendanceScore != null ? (
+                            <span className="font-medium text-foreground">{row.attendanceScore}%</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="border-b border-r border-border px-3 py-2.5 text-center">
+                          <div className="inline-flex items-center justify-center gap-1">
+                            <Input
+                              type="number"
+                              min={0}
+                              max={100}
+                              step={0.5}
+                              inputMode="decimal"
+                              placeholder={t("teacher.grades.scorePlaceholder")}
+                              value={row.draft.score}
+                              className="h-9 w-[4.5rem] bg-background text-center tabular-nums"
+                              onChange={(e) => updateDraft(row.studentId, { score: e.target.value })}
+                            />
+                            <span className="text-xs text-muted-foreground">%</span>
+                          </div>
+                        </td>
+                        <td className="border-b border-r border-border px-3 py-2.5 text-right text-sm tabular-nums whitespace-nowrap">
+                          {liveTotal != null ? (
+                            <span className="font-semibold text-teal-800">{liveTotal}%</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="border-b border-r border-border px-3 py-2.5">
+                          {row.reviews.instructorRating != null ? (
+                            <div className="inline-flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1 text-sm font-medium tabular-nums text-foreground">
                                 <Star
                                   className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400"
                                   aria-hidden
                                 />
                                 {row.reviews.instructorRating}/5
                               </span>
-                              {row.reviews.platformRating != null ? (
-                                <span className="text-[10px] font-medium text-emerald-700">+ platform</span>
-                              ) : (
-                                <span className="text-[10px] text-muted-foreground">Platform pending</span>
-                              )}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs text-teal-800 hover:bg-teal-50 hover:text-teal-900"
+                                onClick={() =>
+                                  setReviewStudent({
+                                    name: row.fullName,
+                                    email: row.email,
+                                    reviews: isApiCourse
+                                      ? gradeReviewToSummary(row.reviews)
+                                      : getStudentCourseReviewSummary(
+                                          courseId,
+                                          row.email.trim().toLowerCase(),
+                                        ),
+                                  })
+                                }
+                              >
+                                <Eye className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                                {t("teacher.grades.feedback.readReview")}
+                              </Button>
                             </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">
+                              {t("teacher.grades.feedback.pending")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="sticky right-0 z-10 border-b border-l border-border bg-background px-2 py-2 text-center align-middle whitespace-nowrap shadow-[-2px_0_6px_-2px_rgba(0,0,0,0.12)] group-hover:bg-muted">
+                          <div className="inline-flex items-center justify-center gap-1.5">
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
-                              className="h-7 w-fit px-2 text-xs text-[#3954d0] hover:bg-[#3954d0]/5 hover:text-[#3954d0]"
-                              onClick={() =>
-                                setReviewStudent({
-                                  name: row.fullName,
-                                  email: row.email,
-                                  reviews: isApiCourse
-                                    ? gradeReviewToSummary(row.reviews)
-                                    : getStudentCourseReviewSummary(
-                                        courseId,
-                                        row.email.trim().toLowerCase(),
-                                      ),
-                                })
-                              }
+                              className="h-7 px-2.5 text-xs"
+                              disabled={savingThisRow || !row.dirty}
+                              onClick={() => {
+                                const score = parseFinalScoreInput(row.draft.score);
+                                if (score == null) {
+                                  toast.error(t("teacher.grades.invalidScore"));
+                                  return;
+                                }
+                                if (isApiCourse && row.apiRow) {
+                                  saveApiGradeMutation.mutate({ row: row.apiRow, score });
+                                  return;
+                                }
+                                if (row.localStudent) {
+                                  handleSave(row.localStudent, row.attendanceScore);
+                                }
+                              }}
                             >
-                              <Eye className="mr-1 h-3.5 w-3.5" aria-hidden />
-                              Read review
+                              {savingThisRow ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : row.instructorScore != null ? (
+                                t("teacher.grades.actions.update")
+                              ) : (
+                                t("teacher.grades.actions.save")
+                              )}
                             </Button>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Pending</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="w-[1%] whitespace-nowrap px-2 py-3 text-right align-middle">
-                        <div className="inline-flex flex-row items-center justify-end gap-1.5">
-                          <Button
-                            type="button"
-                            size="sm"
-                            className="h-7 rounded-full px-3 text-xs shrink-0"
-                            style={{ backgroundColor: "#3954d0" }}
-                            disabled={savingThisRow || !row.dirty}
-                            onClick={() => {
-                              const score = parseFinalScoreInput(row.draft.score);
-                              if (score == null) {
-                                toast.error("Enter an instructor score from 0 to 100.");
-                                return;
-                              }
-                              if (isApiCourse && row.apiRow) {
-                                saveApiGradeMutation.mutate({ row: row.apiRow, score });
-                                return;
-                              }
-                              if (row.localStudent) {
-                                handleSave(row.localStudent, row.attendanceScore);
-                              }
-                            }}
-                          >
-                            {savingThisRow ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : row.instructorScore != null ? (
-                              "Update"
+                            {row.published ? (
+                              <div className="inline-flex items-center gap-1">
+                                <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
+                                  <Award className="h-3 w-3" aria-hidden />
+                                  {t("teacher.grades.actions.done")}
+                                </span>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-2 text-xs"
+                                  disabled={downloadingThisRow}
+                                  onClick={() => {
+                                    if (isApiCourse && row.certificate) {
+                                      setDownloadingCertId(row.studentId);
+                                      void downloadCourseCertificatePdf(row.certificate, instructorName)
+                                        .then(() =>
+                                          toast.success(t("teacher.grades.toast.certificateDownloaded")),
+                                        )
+                                        .catch((e) =>
+                                          toast.error(
+                                            e instanceof Error
+                                              ? e.message
+                                              : t("teacher.grades.toast.downloadFailed"),
+                                          ),
+                                        )
+                                        .finally(() => setDownloadingCertId(null));
+                                      return;
+                                    }
+                                    void downloadPublishedCertificate(row.studentId);
+                                  }}
+                                >
+                                  {downloadingThisRow ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                                  ) : (
+                                    <Download className="h-3 w-3" aria-hidden />
+                                  )}
+                                </Button>
+                              </div>
                             ) : (
-                              "Save"
-                            )}
-                          </Button>
-                          {row.published ? (
-                            <div className="inline-flex shrink-0 items-center gap-1">
-                              <span
-                                className="inline-flex items-center gap-0.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"
-                                title="Certificate published"
-                              >
-                                <Award className="h-3 w-3" aria-hidden />
-                                Done
-                              </span>
                               <Button
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                className="h-7 shrink-0 rounded-full px-2 text-xs"
-                                disabled={downloadingThisRow}
+                                className="h-7 gap-1 px-2.5 text-xs"
+                                disabled={!canPublish || publishingThisRow}
                                 onClick={() => {
-                                  if (isApiCourse && row.certificate) {
-                                    setDownloadingCertId(row.studentId);
-                                    void downloadCourseCertificatePdf(row.certificate, instructorName)
-                                      .then(() => toast.success("Certificate downloaded"))
-                                      .catch((e) =>
-                                        toast.error(e instanceof Error ? e.message : "Could not generate certificate PDF"),
-                                      )
-                                      .finally(() => setDownloadingCertId(null));
+                                  if (isApiCourse) {
+                                    publishApiCertificateMutation.mutate(row.studentId);
                                     return;
                                   }
-                                  void downloadPublishedCertificate(row.studentId);
+                                  if (row.localStudent) {
+                                    void publishCertificate(
+                                      row.localStudent,
+                                      row.localSaved,
+                                      row.totalFinalScore,
+                                    );
+                                  }
                                 }}
                               >
-                                {downloadingThisRow ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                                {publishingThisRow ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
                                 ) : (
-                                  <Download className="h-3 w-3" aria-hidden />
+                                  <Award className="h-3 w-3 shrink-0" aria-hidden />
                                 )}
+                                {t("teacher.grades.actions.publish")}
                               </Button>
-                            </div>
-                          ) : (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="h-7 shrink-0 rounded-full px-2.5 text-xs gap-0.5"
-                              disabled={!canPublish || publishingThisRow}
-                              onClick={() => {
-                                if (isApiCourse) {
-                                  publishApiCertificateMutation.mutate(row.studentId);
-                                  return;
-                                }
-                                if (row.localStudent) {
-                                  void publishCertificate(row.localStudent, row.localSaved, row.totalFinalScore);
-                                }
-                              }}
-                            >
-                              {publishingThisRow ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <Award className="h-3 w-3" aria-hidden />
-                              )}
-                              Publish
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground px-0.5 leading-relaxed">
-            <span className="font-medium text-foreground/80">Attend. %</span> = sessions checked in via QR ÷
-            planned schedule meetings. <span className="font-medium text-foreground/80">Total</span> = instructor
-            score (attendance is informational).{" "}
-            <span className="font-medium text-foreground/80">Feedback</span> shows the student&apos;s
-            instructor rating after they complete the class survey
-            {isApiCourse ? "." : " (demo: this browser)."}
-          </p>
+          <p className="text-xs text-muted-foreground">{t("teacher.grades.footnote")}</p>
         </div>
       ) : null}
       {reviewStudent ? (

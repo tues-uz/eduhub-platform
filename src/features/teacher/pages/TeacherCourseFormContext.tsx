@@ -9,6 +9,8 @@ export type TeacherCourseFormContextValue = {
   title: string;
   setTitle: (v: string) => void;
   category: string;
+  level: string;
+  setLevel: (v: string) => void;
   description: string;
   setDescription: (v: string) => void;
   classMeetingsInSixMonths: string;

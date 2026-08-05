@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ExternalLink, Eye, Loader2 } from "@/lib/icons";
 import { toast } from "sonner";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -271,7 +270,7 @@ export default function AdminInstallmentPaymentsPage() {
   };
 
   return (
-    <AdminLayout>
+      <>
       <div className="container mx-auto max-w-4xl px-6 pb-16">
         <Link
           to="/dashboard/admin/payments"
@@ -393,6 +392,6 @@ export default function AdminInstallmentPaymentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
-  );
+      </>
+);
 }

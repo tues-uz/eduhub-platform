@@ -21,8 +21,14 @@ export interface UserResponse {
   category?: string;
   /** Parent or guardian contact from registration. */
   parentPhoneNumber?: string;
-  /** Student passport / ID document number from registration. */
+  /** Local / national passport or ID number from registration. */
   passportNumber?: string;
+  /** Optional international passport number from registration. */
+  internationalPassportNumber?: string;
+  /** Uploaded local / national passport image URL. */
+  passportImageUrl?: string;
+  /** Uploaded international passport image URL. */
+  internationalPassportImageUrl?: string;
   /** `YYYY-MM-DD` — student date of birth from registration. */
   dateOfBirth?: string;
   /** City where the student was born. */
@@ -46,8 +52,14 @@ export interface RegisterRequest {
   email: string;
   phoneNumber: string;
   parentPhoneNumber: string;
-  /** Student passport / ID document number from registration. */
+  /** Local / national passport or ID number from registration. */
   passportNumber: string;
+  /** Optional international passport number. */
+  internationalPassportNumber?: string;
+  /** Uploaded local / national passport image URL. */
+  passportImageUrl?: string;
+  /** Uploaded international passport image URL. */
+  internationalPassportImageUrl?: string;
   /** `YYYY-MM-DD` — used by admin to determine student age. */
   dateOfBirth: string;
   /** City where the student was born. */
@@ -115,6 +127,8 @@ export interface CourseRequest {
   description: string;
   thumbnailUrl?: string;
   category: string;
+  /** CEFR-style class level (e.g. beginner_a1). API may ignore until backend supports. */
+  level?: string;
   status?: CourseStatus;
   /** How many in-person/live class sessions meet within a 6‑month period (lecturer-provided). */
   classMeetingsInSixMonths?: number;
@@ -134,6 +148,8 @@ export interface CoursePricingResponse {
   referralCode?: string;
   discountPercent: number;
   discountedAmount: number;
+  /** Optional trial / free-access code for the class when returned by API. */
+  trialCode?: string;
 }
 
 export interface CourseResponse {
@@ -143,6 +159,8 @@ export interface CourseResponse {
   thumbnailUrl?: string;
   status: CourseStatus;
   category: string;
+  /** CEFR-style class level when returned by API. */
+  level?: string;
   lecturer: UserResponse;
   enrollmentCount?: number;
   pricing?: CoursePricingResponse;

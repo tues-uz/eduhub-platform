@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft } from "@/lib/icons";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { buildPayrollProofPagePath } from "@/features/admin/data/adminPayrollProofStore";
 import { useTranslation } from "react-i18next";
@@ -52,7 +51,6 @@ export default function AdminInstructorPayrollRequestsPage() {
   }, [location.hash]);
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6 max-w-3xl">
         <Link
           to="/dashboard/admin/payroll"
@@ -237,6 +235,5 @@ export default function AdminInstructorPayrollRequestsPage() {
           </Card>
         )}
       </div>
-    </AdminLayout>
   );
 }

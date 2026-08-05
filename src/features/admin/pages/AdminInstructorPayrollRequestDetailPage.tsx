@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, ChevronDown, Loader2 } from "@/lib/icons";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { PayrollInstructorProofPanel } from "@/features/admin/components/PayrollInstructorProofPanel";
 import { usePayrollRequestSchedule } from "@/features/admin/hooks/usePayrollRequestSchedule";
 import { buildPayrollProofPagePath } from "@/features/admin/data/adminPayrollProofStore";
@@ -128,30 +127,25 @@ export default function AdminInstructorPayrollRequestDetailPage() {
 
   if (!requestId) {
     return (
-      <AdminLayout>
         <div className="container mx-auto px-6 max-w-3xl py-8">
           <p className="text-sm text-slate-600">Missing submission id.</p>
           <Button asChild variant="outline" className="mt-4">
             <Link to="/dashboard/admin/payroll?tab=requests">{t("admin.shared.backToPayroll")}</Link>
           </Button>
         </div>
-      </AdminLayout>
     );
   }
 
   if (!record && requestsLoading) {
     return (
-      <AdminLayout>
         <div className="container mx-auto px-6 max-w-3xl py-8">
           <p className="text-sm text-slate-600">{t("admin.shared.loadingPayrollSubmission")}</p>
         </div>
-      </AdminLayout>
     );
   }
 
   if (!record) {
     return (
-      <AdminLayout>
         <div className="container mx-auto px-6 max-w-3xl py-8">
           <p className="text-sm font-medium text-slate-900">Submission not found</p>
           <p className="text-sm text-slate-600 mt-1">{t("admin.enrollmentApplications.detail.notFound.description")}</p>
@@ -159,14 +153,12 @@ export default function AdminInstructorPayrollRequestDetailPage() {
             <Link to="/dashboard/admin/payroll?tab=requests">{t("admin.shared.backToPayroll")}</Link>
           </Button>
         </div>
-      </AdminLayout>
     );
   }
 
   const requestedDisplay = record.requestedPayout ? formatThousandsInText(record.requestedPayout) : "—";
 
   return (
-    <AdminLayout>
       <div className="container mx-auto max-w-3xl px-6 pb-12">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <Link
@@ -587,6 +579,5 @@ export default function AdminInstructorPayrollRequestDetailPage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </AdminLayout>
   );
 }

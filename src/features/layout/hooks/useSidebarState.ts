@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 const SIDEBAR_KEY = "sidebarCollapsed";
 
 /** Set to `true` to show the sidebar collapse toggle and allow narrow rail. */
-export const SIDEBAR_COLLAPSE_ENABLED = false;
+export const SIDEBAR_COLLAPSE_ENABLED = true;
 
 function readSidebarState() {
   return localStorage.getItem(SIDEBAR_KEY) === "true";

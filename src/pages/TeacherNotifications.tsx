@@ -1,25 +1,24 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Bell, CheckCircle2, Clock, Loader2, XCircle } from "@/lib/icons";
+import { ArrowLeft, Loader2 } from "@/lib/icons";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useAuthSession } from "@/features/auth/context";
 import { eduhubNotifications } from "@/api/eduhubClient";
 import type { NotificationResponse } from "@/api/eduhubTypes";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
-function formatRelativeTime(iso: string): string {
-  const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return iso;
-  const diff = Date.now() - t;
+function formatRelativeTime(iso: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
+  const ms = new Date(iso).getTime();
+  if (Number.isNaN(ms)) return iso;
+  const diff = Date.now() - ms;
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins} min ago`;
+  if (mins < 1) return t("teacher.notifications.time.justNow");
+  if (mins < 60) return t("teacher.notifications.time.minutesAgo", { count: mins });
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
+  if (hrs < 24) return t("teacher.notifications.time.hoursAgo", { count: hrs });
   const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
+  if (days < 7) return t("teacher.notifications.time.daysAgo", { count: days });
   return new Date(iso).toLocaleDateString(undefined, { dateStyle: "medium" });
 }
 
@@ -35,36 +34,22 @@ function formatNotificationReceivedClock(iso: string): string {
   });
 }
 
-function getIcon(kind: string) {
-  switch (kind) {
-    case "schedule_proposed":
-      return <Clock className="h-5 w-5 text-[#3954d0]" />;
-    case "course_published":
-      return <CheckCircle2 className="h-5 w-5 text-green-600" />;
-    case "course_rejected":
-      return <XCircle className="h-5 w-5 text-red-500" />;
-    default:
-      return <Bell className="h-5 w-5 text-foreground/60" />;
-  }
-}
-
-function ctaLabel(href: string): string {
+function ctaLabel(href: string, t: (key: string) => string): string {
   const base = href.trim().split("?")[0].replace(/\/$/, "") || href;
-  if (/^\/dashboard\/teacher\/courses\/[^/]+$/.test(base)) return "Open this class page";
-  if (base === "/dashboard/teacher/courses") return "View my classes";
-  return "Go to linked page";
+  if (/^\/dashboard\/teacher\/courses\/[^/]+$/.test(base)) {
+    return t("teacher.notifications.cta.openClassPage");
+  }
+  if (base === "/dashboard/teacher/courses") {
+    return t("teacher.notifications.cta.viewMyClasses");
+  }
+  return t("teacher.notifications.cta.goToLinkedPage");
 }
 
 export default function TeacherNotifications() {
   const { t } = useTranslation();
-  const { user } = useAuthSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const queryKey = ["notifications"];
-
-  const [isSidebarCollapsed] = useState(
-    () => localStorage.getItem("sidebarCollapsed") === "true",
-  );
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey,
@@ -106,140 +91,128 @@ export default function TeacherNotifications() {
   });
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <DashboardSidebar />
-      <main
-        className={`min-h-[calc(100dvh-4rem)] lg:min-h-dvh pt-16 lg:pt-5 pb-20 transition-all duration-300 ${
-          isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"
-        }`}
+    <div className="flex w-full min-w-0 flex-1 flex-col gap-4 px-4 py-4 text-left lg:px-6 md:gap-6 md:py-6">
+      <Link
+        to="/dashboard/teacher"
+        className="inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
-        <div
-          className="mx-auto box-border w-full max-w-3xl px-6"
-          style={{
-            paddingLeft: "clamp(1rem, 4vw, 1.75rem)",
-            paddingRight: "clamp(1rem, 4vw, 1.75rem)",
-          }}
-        >
-          <Link
-            to="/dashboard/teacher"
-            className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground mb-6"
-          >{t("teacherSettings.backToDashboard")}</Link>
+        <ArrowLeft className="h-4 w-4 shrink-0" />
+        {t("teacherSettings.backToDashboard")}
+      </Link>
 
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">{t("common.notifications")}</h1>
-            <p className="text-foreground/70 text-sm mt-1">
-              Class schedule, publishing, and other updates.
-            </p>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <span className="rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
-                {unreadCount} unread
-              </span>
-              {unreadCount > 0 ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full"
-                  onClick={() => markAllReadMutation.mutate()}
-                  disabled={markAllReadMutation.isPending}
-                >{t("teacher.notifications.markAllRead")}</Button>
-              ) : null}
-            </div>
-          </div>
-
-          {isLoading ? (
-            <div className="flex items-center justify-center py-16 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />{t("teacher.notifications.loading")}</div>
-          ) : (
-            <>
-              <div className="space-y-3">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`w-full rounded-xl border p-5 text-left transition-colors ${
-                      notification.read
-                        ? "border-gray-200/50 bg-white/80"
-                        : "border-blue-200/50 bg-blue-50/50"
-                    }`}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5">
-                        {getIcon(notification.kind)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-3">
-                          <p
-                            className={`text-sm font-semibold leading-snug ${
-                              notification.read ? "text-foreground/80" : "text-foreground"
-                            }`}
-                          >
-                            {notification.title}
-                          </p>
-                          {!notification.read ? (
-                            <button
-                              type="button"
-                              className="text-xs font-medium text-blue-600 hover:underline shrink-0"
-                              onClick={() => markReadMutation.mutate(notification.id)}
-                            >{t("teacher.notifications.markRead")}</button>
-                          ) : null}
-                        </div>
-
-                        <p className="mt-2 text-sm leading-relaxed text-foreground/65 whitespace-pre-wrap">
-                          {notification.body}
-                        </p>
-
-                        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                          <Clock className="h-3.5 w-3.5 shrink-0 text-foreground/50" aria-hidden />
-                          <p className="min-w-0 text-foreground/70">
-                            <span className="text-foreground/50">Received </span>
-                            <span className="font-medium text-foreground/85">{formatRelativeTime(notification.createdAt)}</span>
-                            {formatNotificationReceivedClock(notification.createdAt) ? (
-                              <>
-                                <span className="text-foreground/35"> · </span>
-                                <time
-                                  dateTime={notification.createdAt}
-                                  className="tabular-nums text-foreground/60"
-                                >
-                                  {formatNotificationReceivedClock(notification.createdAt)}
-                                </time>
-                              </>
-                            ) : null}
-                          </p>
-                        </div>
-
-                        {notification.href ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="mt-3 rounded-full border-[#3954d0]/35 text-[#3954d0] hover:bg-[#3954d0]/10"
-                            onClick={() => {
-                              if (!notification.read) markReadMutation.mutate(notification.id);
-                              navigate(notification.href!);
-                            }}
-                          >
-                            {ctaLabel(notification.href)}
-                          </Button>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {notifications.length === 0 && (
-                <div className="rounded-xl border border-gray-200/50 bg-white/50 py-16 text-center">
-                  <Bell className="mx-auto mb-4 h-12 w-12 text-foreground/30" />
-                  <p className="font-medium text-foreground/70">{t("teacher.notifications.empty.title")}</p>
-                  <p className="mt-1 text-sm text-foreground/50">
-                    Schedule proposals, class publishing updates, and other notifications will appear here.
-                  </p>
-                </div>
-              )}
-            </>
-          )}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            {t("teacher.notifications.title")}
+          </h1>
+          <p className="max-w-xl text-sm text-muted-foreground">
+            {t("teacher.notifications.subtitle")}
+          </p>
         </div>
-      </main>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-md border border-border bg-muted px-2.5 py-1 text-xs font-medium tabular-nums text-foreground">
+            {t("teacher.notifications.unreadCount", { count: unreadCount })}
+          </span>
+          {unreadCount > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => markAllReadMutation.mutate()}
+              disabled={markAllReadMutation.isPending}
+            >
+              {markAllReadMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : null}
+              {t("teacher.notifications.markAllRead")}
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {t("teacher.notifications.loading")}
+        </div>
+      ) : notifications.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-10 text-left">
+          <p className="text-sm font-medium text-foreground">{t("teacher.notifications.empty.title")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t("teacher.notifications.empty.description")}
+          </p>
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {notifications.map((notification) => {
+            const clock = formatNotificationReceivedClock(notification.createdAt);
+            return (
+              <li key={notification.id}>
+                <article className="relative rounded-xl border border-border bg-card px-4 py-4 text-left transition-colors sm:px-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        {!notification.read ? (
+                          <span
+                            className="size-1.5 shrink-0 rounded-full bg-teal-600"
+                            aria-hidden
+                          />
+                        ) : null}
+                        <h2
+                          className={cn(
+                            "truncate text-sm font-semibold tracking-tight",
+                            notification.read ? "text-foreground/80" : "text-foreground",
+                          )}
+                        >
+                          {notification.title}
+                        </h2>
+                      </div>
+                      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                        {notification.body}
+                      </p>
+                    </div>
+                    <time
+                      dateTime={notification.createdAt}
+                      className="shrink-0 pt-0.5 text-xs tabular-nums text-muted-foreground"
+                      title={clock || undefined}
+                    >
+                      {formatRelativeTime(notification.createdAt, t)}
+                    </time>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                    {notification.href ? (
+                      <button
+                        type="button"
+                        className="text-xs font-medium text-teal-800 hover:underline"
+                        onClick={() => {
+                          if (!notification.read) markReadMutation.mutate(notification.id);
+                          navigate(notification.href!);
+                        }}
+                      >
+                        {ctaLabel(notification.href, t)}
+                      </button>
+                    ) : null}
+                    {!notification.read ? (
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                        onClick={() => markReadMutation.mutate(notification.id)}
+                      >
+                        {t("teacher.notifications.markRead")}
+                      </button>
+                    ) : null}
+                    {clock ? (
+                      <span className="text-xs text-muted-foreground/80">{clock}</span>
+                    ) : null}
+                  </div>
+                </article>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

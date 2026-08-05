@@ -1,7 +1,6 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Globe } from "@/lib/icons";
 import { useTranslation } from "react-i18next";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { AdminCreateStaffUserForm } from "@/features/admin/components/AdminCreateStaffUserForm";
 import { ADMIN_CONTENT_HOME, staffRoleConfigBySlug } from "@/features/admin/adminStaffRoles";
@@ -17,7 +16,6 @@ export default function AdminAddStaffUserPage() {
   }
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6 max-w-lg">
         <Link
           to="/dashboard/admin/add-user"
@@ -61,6 +59,5 @@ export default function AdminAddStaffUserPage() {
           onSuccessNavigate={config.slug === "admin-content" ? ADMIN_CONTENT_HOME : undefined}
         />
       </div>
-    </AdminLayout>
   );
 }

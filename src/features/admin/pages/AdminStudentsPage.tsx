@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Mail, MoreHorizontal, UserCheck, UserX } from "@/lib/icons";
+import { Mail, MoreHorizontal, UserCheck, UserX } from "@/lib/icons";
 import { toast } from "sonner";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { StudentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
 import { Button } from "@/components/ui/button";
@@ -108,12 +107,7 @@ export default function AdminStudentsPage() {
   };
 
   return (
-    <AdminLayout>
       <div className="container mx-auto px-6">
-        <Link to="/dashboard/admin" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
-          <ArrowLeft className="h-4 w-4" />
-          {t("admin.shared.backToDashboard")}
-        </Link>
 
         <AdminPageHeader
           title={t("adminNav.studentsRegistrations")}
@@ -209,7 +203,7 @@ export default function AdminStudentsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link to={`/dashboard/admin/enrollments?student=${r.id}`}>{t("admin.students.actions.viewEnrollments")}</Link>
+                            <Link to="/dashboard/admin/enrollment-applications">{t("admin.students.actions.viewEnrollments")}</Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleToggleStatus(r.id, r.enabled)}>
                             {r.enabled ? (
@@ -234,6 +228,5 @@ export default function AdminStudentsPage() {
           </Table>
         </div>
       </div>
-    </AdminLayout>
   );
 }

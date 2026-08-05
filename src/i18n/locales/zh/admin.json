@@ -13,6 +13,7 @@
       "clearFilters": "清除筛选",
       "clear": "清除",
       "roleBadge": "管理员",
+      "roleBadgeSuper": "超级管理员",
       "allRoles": "所有角色",
       "allStatuses": "所有状态",
       "allCategories": "所有类别",
@@ -312,6 +313,7 @@
     "courses": {
       "list": {
         "description": "Quick list by title, lecturer, category, and status. Open a class for pricing, schedule workflow, and review.",
+        "referralCodesButton": "推荐折扣码",
         "searchPlaceholder": "Search title, category, lecturer…",
         "statusDraft": "Draft (pending review)",
         "statusPublished": "已发布",
@@ -671,7 +673,7 @@
       }
     },
     "referralCodes": {
-      "description": "Set referral codes and discount percentages per class. Students enter the code at enrollment to receive the listed discount off catalog tuition.",
+      "description": "Set referral codes, discount percentages, and trial class codes per class. Students enter the referral code at enrollment for the discount.",
       "searchPlaceholder": "Search class, code, lecturer…",
       "table": {
         "class": "班级",
@@ -683,6 +685,23 @@
       },
       "setPricing": "Set pricing",
       "empty": "No classes match your search.",
+      "addDialog": {
+        "title": "推荐码、折扣与试听码",
+        "description": "可为单个班级设置，或设置适用于所有班级的通用代码。",
+        "tabClass": "班级",
+        "tabGeneral": "通用",
+        "tabTrial": "试听",
+        "referralHint": "学生报名时输入此码以获得下方折扣。",
+        "generalHint": "通用推荐码在学生输入匹配代码时可应用于任意班级。",
+        "generalReferralHint": "全平台通用推荐码。",
+        "generalDiscountHint": "匹配通用推荐码时，从该班目录价减免的百分比（0–100）。",
+        "generalTrialHint": "全平台试听码，可用于任意班级。",
+        "trialTabHint": "可为单个班级或全部班级创建试听码。",
+        "trialAppliesTo": "试听码应用于",
+        "trialCode": "试听课代码",
+        "trialPlaceholder": "例如 TRIAL-ENG-01",
+        "trialHint": "学生使用此码获得所选班级的试听访问。"
+      },
       "editDialog": {
         "title": "Edit referral code",
         "catalogSuffix": " · Catalog {{price}}",
@@ -694,10 +713,13 @@
         "discountSuffix": " (−{{percent}}%)"
       },
       "toast": {
-        "saved": "Referral code saved",
-        "savedDescription": "{{title}} updated.",
-        "saveFailed": "Could not save referral code",
-        "pricingRequired": "Set catalog pricing on the class before adding referral codes.",
+        "saved": "代码已保存",
+        "savedDescription": "{{title}} 已更新。",
+        "generalSaved": "通用推荐码已保存",
+        "trialSaved": "试听课代码已保存",
+        "trialGeneralSaved": "通用试听码已保存",
+        "saveFailed": "无法保存代码",
+        "pricingRequired": "请先为班级设置目录价格，再添加代码。",
         "discountRange": "Discount must be between 0 and 100%."
       }
     },

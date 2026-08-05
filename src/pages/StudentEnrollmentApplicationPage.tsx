@@ -38,8 +38,10 @@ import {
 import type { CourseResponse, ScheduleProposalResponse, UserResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import { computeDiscountedPrice, readAdminCourseCatalog } from "@/features/admin/utils/adminCourseCatalog";
+import { matchGeneralReferralCode } from "@/features/admin/data/generalReferralCodesStore";
 import { findActiveSpecialTuitionGrant, SPECIAL_TUITION_GRANTS_CHANGED_EVENT } from "@/features/admin/data/specialTuitionGrantsStore";
 import {
+  buildEnrollmentScheduleSessionSummaries,
   enrollmentRecordToPdfData,
   type EnrollmentApplicationPdfData,
 } from "@/features/enrollment/enrollmentApplicationPdf";
@@ -62,6 +64,7 @@ import {
   scheduleMonthRemainingSessionCounts,
   scheduleTabToPaymentMonths,
 } from "@/features/courses/classSchedulePreview";
+import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
 import { useScheduleAttendanceState } from "@/features/courses/useScheduleAttendanceState";
 import type { SessionSlotLike } from "@/features/courses/classSchedulePreview";
 import type { TuitionPlanMonths } from "@/features/enrollment/enrollmentTuitionThirds";
@@ -279,11 +282,22 @@ const StudentEnrollmentApplicationPage = () => {
     return null;
   }, [apiCourse, courseId]);
 
-  const referralDiscountApplied = useMemo(() => {
+  const appliedReferralDiscountPercent = useMemo(() => {
     const entered = referralCodeInput.trim();
-    if (!entered || !courseReferralMeta?.code) return false;
-    return entered.toLowerCase() === courseReferralMeta.code.toLowerCase();
+    if (!entered) return 0;
+    if (
+      courseReferralMeta?.code &&
+      entered.toLowerCase() === courseReferralMeta.code.toLowerCase() &&
+      courseReferralMeta.discountPercent > 0
+    ) {
+      return courseReferralMeta.discountPercent;
+    }
+    const general = matchGeneralReferralCode(entered);
+    if (general && general.discountPercent > 0) return general.discountPercent;
+    return 0;
   }, [referralCodeInput, courseReferralMeta]);
+
+  const referralDiscountApplied = appliedReferralDiscountPercent > 0;
 
   const listedTuitionBase = useMemo(() => {
     if (courseReferralMeta?.listedAmount != null && courseReferralMeta.listedAmount > 0) {
@@ -296,11 +310,11 @@ const StudentEnrollmentApplicationPage = () => {
     if (specialTuitionGrant) return 0;
     const base = listedTuitionBase;
     if (base == null || base <= 0) return base;
-    if (referralDiscountApplied && courseReferralMeta && courseReferralMeta.discountPercent > 0) {
-      return computeDiscountedPrice(base, courseReferralMeta.discountPercent);
+    if (appliedReferralDiscountPercent > 0) {
+      return computeDiscountedPrice(base, appliedReferralDiscountPercent);
     }
     return base;
-  }, [listedTuitionBase, referralDiscountApplied, courseReferralMeta, specialTuitionGrant]);
+  }, [listedTuitionBase, appliedReferralDiscountPercent, specialTuitionGrant]);
 
   const sessionTuitionQuote = useMemo(() => {
     const listed = effectiveListedTuition;
@@ -427,6 +441,7 @@ const StudentEnrollmentApplicationPage = () => {
   const proofInputRef = useRef<HTMLInputElement>(null);
   const [idCardFile, setIdCardFile] = useState<File | null>(null);
   const idCardInputRef = useRef<HTMLInputElement>(null);
+  const [cashPaymentProofUrl, setCashPaymentProofUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -570,6 +585,16 @@ const StudentEnrollmentApplicationPage = () => {
         toast.error("ID document must be 2 MB or smaller.");
         return;
       }
+    } else if (!specialTuitionGrant && paymentMethod === "CASH") {
+      const url = cashPaymentProofUrl.trim();
+      if (!url) {
+        toast.error("Paste a payment proof URL for cash payment.");
+        return;
+      }
+      if (!/^https?:\/\//i.test(url)) {
+        toast.error("Payment proof URL must start with http:// or https://");
+        return;
+      }
     }
     if (!monthlyPaymentFields) {
       toast.error("Select at least one month to pay for.");
@@ -602,10 +627,15 @@ const StudentEnrollmentApplicationPage = () => {
         toast.dismiss("enrollment-upload");
         proofUrl = proofResult.url;
         idUrl = idResult.url;
+      } else if (!specialTuitionGrant && paymentMethod === "CASH") {
+        proofUrl = cashPaymentProofUrl.trim();
       }
 
       const paymentDetailLines: string[] = [];
       paymentDetailLines.push(`Payment method: ${formatPaymentMethodLabel(paymentMethod)}`);
+      if (paymentMethod === "CASH" && proofUrl) {
+        paymentDetailLines.push(`Cash payment proof URL: ${proofUrl}`);
+      }
       paymentDetailLines.push(
         paymentPlan === "FULL"
           ? `Payment plan: ${monthlyPaymentPlanLabel(monthlyPaymentFields.selectedCount, monthlyPaymentFields.scheduleMonthCount)}`
@@ -632,9 +662,9 @@ const StudentEnrollmentApplicationPage = () => {
       if (referralEntered) {
         paymentDetailLines.push(`Referral code entered: ${referralEntered}`);
       }
-      if (referralDiscountApplied && courseReferralMeta && courseReferralMeta.discountPercent > 0) {
+      if (referralDiscountApplied && appliedReferralDiscountPercent > 0) {
         paymentDetailLines.push(
-          `Referral discount applied: ${courseReferralMeta.discountPercent}% off listed tuition`,
+          `Referral discount applied: ${appliedReferralDiscountPercent}% off listed tuition`,
         );
       }
       if (specialTuitionGrant) {
@@ -684,11 +714,18 @@ const StudentEnrollmentApplicationPage = () => {
         phoneSecondary: phoneSecondary.trim() || undefined,
         address: address.trim(),
         paymentDetailLines,
-        proofFileName: requiresVerificationUploads && file ? file.name : "Not required (cash)",
+        proofFileName:
+          requiresVerificationUploads && file
+            ? file.name
+            : paymentMethod === "CASH" && cashPaymentProofUrl.trim()
+              ? cashPaymentProofUrl.trim()
+              : "Not required (cash)",
         idFileName: requiresVerificationUploads && idCardFile ? idCardFile.name : "Not required (cash)",
         amount: downAmount,
         currency: priceCurrency,
         paymentMethod,
+        teacherName: apiCourse?.lecturer?.fullName?.trim() || undefined,
+        scheduleSessions: buildEnrollmentScheduleSessionSummaries(sessionSlotsPreview),
         paymentPlan,
         joinFromSessionNumber: sessionTuitionQuote?.joinFromMeeting ?? 1,
         scheduleSessionCount:
@@ -992,7 +1029,7 @@ const StudentEnrollmentApplicationPage = () => {
               description={
                 requiresVerificationUploads
                   ? "Choose how you pay and your plan. Review the schedule below before you transfer."
-                  : "Choose cash payment and your plan. Pay at the school office — no transfer upload needed."
+                  : "Choose cash payment and your plan. Paste a proof URL after you pay at the school office."
               }
             >
               <fieldset className="min-w-0 border-0 p-0 shadow-none">
@@ -1012,6 +1049,27 @@ const StudentEnrollmentApplicationPage = () => {
                     <span className="text-sm font-medium text-zinc-900">Cash</span>
                   </label>
                 </RadioGroup>
+                {paymentMethod === "CASH" && !specialTuitionGrant ? (
+                  <div className="mt-4">
+                    <Label htmlFor="enrollment-cash-proof-url" className="text-zinc-700">
+                      Payment proof URL
+                    </Label>
+                    <Input
+                      id="enrollment-cash-proof-url"
+                      type="url"
+                      inputMode="url"
+                      value={cashPaymentProofUrl}
+                      onChange={(e) => setCashPaymentProofUrl(e.target.value)}
+                      placeholder="https://…"
+                      autoComplete="off"
+                      required
+                      className="mt-1.5 h-11 rounded-xl border-zinc-200"
+                    />
+                    <p className="mt-1.5 text-xs text-zinc-500">
+                      Paste a link to your cash payment receipt or confirmation (http:// or https://).
+                    </p>
+                  </div>
+                ) : null}
               </fieldset>
               <fieldset className="mt-6 min-w-0 border-0 border-t border-zinc-100 p-0 pt-6 shadow-none">
                 <legend className="sr-only">Payment plan</legend>
@@ -1022,10 +1080,9 @@ const StudentEnrollmentApplicationPage = () => {
                     <p className="mt-1 text-xs leading-relaxed text-zinc-600">
                       Listed price {formatPrice(sessionTuitionQuote.listedTotal, priceCurrency)} for{" "}
                       {sessionTuitionQuote.totalSessions} meetings. See the schedule below —{" "}
-                      <span className="font-medium text-zinc-800">Finished</span> means already held (date passed or
-                      instructor took attendance); tuition starts at the first{" "}
-                      <span className="font-medium text-zinc-800">Upcoming</span> or{" "}
-                      <span className="font-medium text-zinc-800">In progress</span> meeting.
+                      <SessionTimingChip status="finished" /> means already held (date passed or instructor took
+                      attendance); tuition starts at the first <SessionTimingChip status="upcoming" /> or{" "}
+                      <SessionTimingChip status="ongoing" /> meeting.
                     </p>
                     {sessionJoin.allSessionsFinished ? (
                       <p className="mt-2 text-xs leading-relaxed text-amber-800">
@@ -1274,10 +1331,10 @@ const StudentEnrollmentApplicationPage = () => {
                       autoComplete="off"
                       className="mt-1.5 h-11 rounded-xl border-zinc-200"
                     />
-                    {referralCodeInput.trim() && courseReferralMeta?.code ? (
+                    {referralCodeInput.trim() ? (
                       referralDiscountApplied ? (
                         <p className="mt-2 text-xs text-emerald-700">
-                          Referral applied — {courseReferralMeta.discountPercent}% off listed tuition.
+                          Referral applied — {appliedReferralDiscountPercent}% off listed tuition.
                         </p>
                       ) : (
                         <p className="mt-2 text-xs text-amber-800">This code is not valid for this class.</p>

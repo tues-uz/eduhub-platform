@@ -18,7 +18,13 @@
     "logout": "Log Out",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "notifications": "Notifications"
+    "toggleSidebar": "Toggle Sidebar",
+    "notifications": "Notifications",
+    "groups": {
+      "overview": "Overview",
+      "teaching": "Teaching",
+      "account": "Account"
+    }
   },
   "teacherNav": {
     "dashboard": "Dashboard",

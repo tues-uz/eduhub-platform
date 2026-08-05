@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import type { ReceiptPdfLocale } from "@/features/enrollment/enrollmentReceiptPdfI18n";
 import {
   ArrowRight,
   Calendar,
@@ -207,7 +209,7 @@ type Props = {
   record: EnrollmentApplicationResponse | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onDownload: () => void;
+  onDownload: (locale: ReceiptPdfLocale) => void;
   downloadLoading?: boolean;
 };
 
@@ -218,10 +220,11 @@ function PaymentDetailDialogBody({
   onOpenChange,
 }: {
   r: EnrollmentApplicationResponse;
-  onDownload: () => void;
+  onDownload: (locale: ReceiptPdfLocale) => void;
   downloadLoading: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation("student");
   const enriched = enrichEnrollmentApplication(r);
   const status = STATUS_CONFIG[enriched.status];
   const StatusIcon = status.Icon;
@@ -548,7 +551,7 @@ function PaymentDetailDialogBody({
             type="button"
             className="h-11 w-full rounded-xl bg-[#3954d0] text-sm font-medium hover:bg-[#2f47b3]"
             disabled={downloadLoading}
-            onClick={onDownload}
+            onClick={() => onDownload("en")}
           >
             {downloadLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
@@ -556,10 +559,28 @@ function PaymentDetailDialogBody({
               <Download className="mr-2 h-4 w-4" aria-hidden />
             )}
             {downloadLoading
-              ? "Preparing PDF…"
+              ? t("payment.preparingPdf")
               : hasOfficial
-                ? "Download Invoice"
-                : "Download submission summary"}
+                ? t("payment.downloadInvoiceEn")
+                : t("payment.downloadPdfEn")}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 w-full rounded-xl border-zinc-300 text-sm font-medium"
+            disabled={downloadLoading}
+            onClick={() => onDownload("uz")}
+          >
+            {downloadLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Download className="mr-2 h-4 w-4" aria-hidden />
+            )}
+            {downloadLoading
+              ? t("payment.preparingPdf")
+              : hasOfficial
+                ? t("payment.downloadInvoiceUz")
+                : t("payment.downloadPdfUz")}
           </Button>
         </div>
       </DialogContent>
