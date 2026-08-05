@@ -3,7 +3,7 @@ const LAST_USED_CODE_KEY = "eduhub.adminLastActionCode";
 
 function loadStaffCodes(): Record<string, string> {
   try {
-    const raw = localStorage.getItem(STAFF_CODES_KEY);
+    const raw = sessionStorage.getItem(STAFF_CODES_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== "object") return {};
@@ -14,7 +14,7 @@ function loadStaffCodes(): Record<string, string> {
 }
 
 function saveStaffCodes(codes: Record<string, string>) {
-  localStorage.setItem(STAFF_CODES_KEY, JSON.stringify(codes));
+  sessionStorage.setItem(STAFF_CODES_KEY, JSON.stringify(codes));
 }
 
 export function normalizeAdminCode(raw: string): string {
@@ -44,7 +44,7 @@ export function registerAdminStaffCode(email: string, code: string): void {
 export function rememberLastAdminActionCode(code: string): void {
   const normalized = normalizeAdminCode(code);
   if (!isValidAdminActionCode(normalized)) return;
-  localStorage.setItem(LAST_USED_CODE_KEY, normalized);
+  sessionStorage.setItem(LAST_USED_CODE_KEY, normalized);
 }
 
 export function getDefaultAdminActionCode(email?: string): string {
@@ -52,7 +52,7 @@ export function getDefaultAdminActionCode(email?: string): string {
     const registered = getAdminStaffCode(email);
     if (registered) return registered;
   }
-  return localStorage.getItem(LAST_USED_CODE_KEY) ?? "";
+  return sessionStorage.getItem(LAST_USED_CODE_KEY) ?? "";
 }
 
 export function validateAdminActionCodeOrThrow(code: string): string {

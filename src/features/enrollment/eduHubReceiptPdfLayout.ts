@@ -242,14 +242,6 @@ export function renderEduHubReceiptPdf(
     y += 9;
     rule(doc, y, M, rightX, 0.15);
     y += 10;
-  } else if (data.isDemo && import.meta.env.DEV) {
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(FONT.notice);
-    ink(doc, MUTED);
-    doc.text(copy.demoNotice, M, y);
-    y += 9;
-    rule(doc, y, M, rightX, 0.15);
-    y += 10;
   }
 
   sectionTitle(doc, copy.receivedFrom, M, y);

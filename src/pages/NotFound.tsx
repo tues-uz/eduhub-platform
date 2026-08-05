@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Home, LayoutDashboard } from "@/lib/icons";
 
+import { getAccessToken } from "@/api/eduhubClient";
+
 const NotFound = () => {
   const { t } = useTranslation();
   const location = useLocation();
@@ -12,7 +14,7 @@ const NotFound = () => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
   }, [location.pathname]);
 
-  const isLoggedIn = typeof window !== "undefined" && (localStorage.getItem("userEmail") ?? "").length > 0;
+  const isLoggedIn = Boolean(getAccessToken());
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted px-6">

@@ -252,13 +252,4 @@ export const enrollmentApplicationStore = {
       }
     }
   },
-
-  /**
-   * DEV ONLY — clears local cache. Never called in production.
-   */
-  resetToDevDummy(): void {
-    if (!import.meta.env.DEV) return;
-    localStorage.removeItem(STORAGE_KEY);
-    emitChanged();
-  },
 };

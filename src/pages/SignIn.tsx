@@ -43,8 +43,6 @@ const SignIn = () => {
       const res = await eduhubAuth.login({ identifier: email.trim(), password });
       setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);
       const { appRole: role, staffRole } = mapApiRoleToSession(res.user.role);
-      const emailLower = res.user.email.trim().toLowerCase();
-      const fromRegistration = localStorage.getItem(`eduhub_registration_phone_${emailLower}`);
       const category =
         role === "teacher" ? resolveInstructorCategory(res.user.email, res.user.category) : undefined;
       setSessionUser({
@@ -54,7 +52,7 @@ const SignIn = () => {
         role,
         staffRole,
         avatarUrl: resolveAvatarFromAuthResponse(res.user.avatarUrl, res.user.email),
-        phoneNumber: res.user.phoneNumber ?? fromRegistration ?? localStorage.getItem("userPhone") ?? undefined,
+        phoneNumber: res.user.phoneNumber ?? undefined,
         category,
         adminCode: res.user.adminCode,
       });

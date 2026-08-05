@@ -733,12 +733,6 @@ const StudentEnrollmentApplicationPage = () => {
           (sessionSlotsPreview.length > 0 ? sessionSlotsPreview.length : undefined),
       };
 
-      try {
-        sessionStorage.setItem(enrollSuccessSessionKey(courseId, emailNorm), JSON.stringify(pdfData));
-      } catch {
-        /* storage full or private mode */
-      }
-
       navigate(`/dashboard/available-courses/enroll/${encodeURIComponent(courseId)}/success`, {
         replace: true,
         state: { pdfData },

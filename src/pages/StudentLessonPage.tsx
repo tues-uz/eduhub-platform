@@ -212,20 +212,13 @@ const StudentLessonPage = () => {
               ) : null}
             </div>
           )}
-          {/* Mock lesson: placeholder */}
           {!isApiLesson && (
             <>
-              <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-gray-900 mb-6">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center text-white/90">
-                    <div className="flex justify-center mb-3">
-                      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors cursor-pointer">
-                        <PlayCircle className="h-12 w-12 text-white" strokeWidth={1.5} />
-                      </div>
-                    </div>
-                    <p className="text-sm font-medium">Lesson video</p>
-                    <p className="text-xs text-white/70 mt-1">Click to play (demo)</p>
-                  </div>
+              <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-slate-100 border border-slate-200 mb-6 flex items-center justify-center">
+                <div className="text-center text-slate-500">
+                  <PlayCircle className="h-12 w-12 text-slate-400 mx-auto mb-2" strokeWidth={1.5} />
+                  <p className="text-sm font-medium">Video material pending upload</p>
+                  <p className="text-xs text-slate-400 mt-1">Check back once your instructor publishes the lesson media.</p>
                 </div>
               </div>
               <div className="rounded-xl border border-gray-200/50 bg-white/80 p-6 shadow-sm mb-8">

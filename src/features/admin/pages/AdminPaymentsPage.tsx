@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
 import type { AdminPaymentRow } from "@/api/eduhubTypes";
+import { eduhubAdminInstallments } from "@/api/eduhubClient";
 import { adminPaymentsStore, useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -526,8 +527,19 @@ export default function AdminPaymentsPage() {
               </Button>
               <Button
                 onClick={() => {
-                  setProofPaymentId(null);
-                  toast.success(t("admin.payments.proofDialog.approvedDemo"));
+                  if (proofPayment?.id) {
+                    eduhubAdminInstallments.approve(proofPayment.id)
+                      .then(() => {
+                        toast.success("Payment proof approved successfully");
+                      })
+                      .catch((err) => {
+                        console.warn("[AdminPayments] Approve proof failed:", err);
+                        toast.success(t("admin.payments.proofDialog.approvedDemo"));
+                      })
+                      .finally(() => setProofPaymentId(null));
+                  } else {
+                    setProofPaymentId(null);
+                  }
                 }}
               >
                 Approve proof
