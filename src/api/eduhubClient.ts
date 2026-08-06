@@ -61,6 +61,8 @@ import type {
   AdminAttendanceRowResponse,
   AdminTransactionRowResponse,
   AdminClassRowResponse,
+  AdminClassRosterRowResponse,
+  AdminSwitchStudentRequest,
   AdminCalendarEventResponse,
   AdminSupportSessionResponse,
   AdminCertificationRowResponse,
@@ -1221,6 +1223,21 @@ export const eduhubAdminTransactions = {
 
 export const eduhubAdminClasses = {
   listAll: () => request<AdminClassRowResponse[]>("/admin/classes"),
+  getRoster: (courseId: string) => request<AdminClassRosterRowResponse[]>(`/admin/classes/${courseId}/roster`),
+  assignStudent: (courseId: string, studentId: string) =>
+    request<AdminClassRosterRowResponse>(`/admin/classes/${courseId}/assign`, {
+      method: "POST",
+      body: JSON.stringify({ studentId }),
+    }),
+  switchStudent: (data: AdminSwitchStudentRequest) =>
+    request<AdminClassRosterRowResponse>("/admin/classes/switch-student", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  removeStudent: (courseId: string, studentId: string) =>
+    request<string>(`/admin/classes/${courseId}/students/${studentId}`, {
+      method: "DELETE",
+    }),
 };
 
 export const eduhubAdminCalendar = {
@@ -1229,14 +1246,33 @@ export const eduhubAdminCalendar = {
 
 export const eduhubAdminSupport = {
   listAll: () => request<AdminSupportSessionResponse[]>("/admin/support-sessions"),
+  approve: (id: string) =>
+    request<AdminSupportSessionResponse>(`/admin/support-sessions/${id}/approve`, { method: "POST" }),
+  scheduleSlot: (id: string, meetingSlot: string) =>
+    request<AdminSupportSessionResponse>(`/admin/support-sessions/${id}/schedule`, {
+      method: "POST",
+      body: JSON.stringify({ meetingSlot }),
+    }),
 };
 
 export const eduhubAdminCertifications = {
   listAll: () => request<AdminCertificationRowResponse[]>("/admin/certifications"),
+  issue: (id: string) =>
+    request<AdminCertificationRowResponse>(`/admin/certifications/${id}/issue`, { method: "POST" }),
 };
 
 export const eduhubAdminPayments = {
   listAll: () => request<AdminPaymentRowResponse[]>("/admin/payments"),
+  markPaid: (id: string, data: { paidAt?: string; paymentMethod?: string; reference?: string }) =>
+    request<AdminPaymentRowResponse>(`/admin/payments/${id}/mark-paid`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  sendReminders: (paymentIds: string[]) =>
+    request<string>("/admin/payments/remind", {
+      method: "POST",
+      body: JSON.stringify({ paymentIds }),
+    }),
 };
 
 

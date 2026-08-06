@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
 import type { AdminPaymentRow } from "@/api/eduhubTypes";
-import { eduhubAdminInstallmentPayments } from "@/api/eduhubClient";
+import { eduhubAdminInstallmentPayments, eduhubAdminPayments } from "@/api/eduhubClient";
 import { adminPaymentsStore, useAdminPayments } from "@/features/admin/data/adminPaymentsStore";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -125,7 +125,15 @@ export default function AdminPaymentsPage() {
               variant="outline"
               size="sm"
               disabled={selectedIds.length === 0}
-              onClick={() => toast.message(t("admin.payments.remindersSentDemo"), { description: `${selectedIds.length} row(s)` })}
+              onClick={async () => {
+                try {
+                  await eduhubAdminPayments.sendReminders(selectedIds);
+                  toast.success(`Payment reminders sent to ${selectedIds.length} student(s)`);
+                  setSelected({});
+                } catch (err: unknown) {
+                  toast.error((err as Error).message || "Failed to send reminders");
+                }
+              }}
             >
               Remind selected
             </Button>
@@ -380,17 +388,26 @@ export default function AdminPaymentsPage() {
                   markPaidDraft.method.trim() === "" ||
                   markPaidDraft.reference.trim() === ""
                 }
-                onClick={() => {
+                onClick={async () => {
                   const id = markPaidPaymentId;
                   if (!id || !markPaidPayment) return;
-                  adminPaymentsStore.updatePayment(id, {
-                    status: "paid",
-                    paidAt: markPaidDraft.paidAt.trim(),
-                    paymentMethod: markPaidDraft.method.trim(),
-                    reference: markPaidDraft.reference.trim(),
-                  });
-                  toast.success(t("admin.payments.markPaidDialog.markedPaidDemo"), { description: markPaidPayment.studentName });
-                  setMarkPaidPaymentId(null);
+                  try {
+                    await eduhubAdminPayments.markPaid(id, {
+                      paidAt: markPaidDraft.paidAt.trim(),
+                      paymentMethod: markPaidDraft.method.trim(),
+                      reference: markPaidDraft.reference.trim(),
+                    });
+                    adminPaymentsStore.updatePayment(id, {
+                      status: "paid",
+                      paidAt: markPaidDraft.paidAt.trim(),
+                      paymentMethod: markPaidDraft.method.trim(),
+                      reference: markPaidDraft.reference.trim(),
+                    });
+                    toast.success(`Payment marked as paid for ${markPaidPayment.studentName}`);
+                    setMarkPaidPaymentId(null);
+                  } catch (err: unknown) {
+                    toast.error((err as Error).message || "Failed to mark payment as paid");
+                  }
                 }}
               >
                 Confirm paid

@@ -12,6 +12,7 @@ import {
   ArrowUpTrayIcon,
   ArrowsPointingInIcon,
   ArrowsPointingOutIcon,
+  ArrowsRightLeftIcon,
   Bars3Icon,
   BellIcon,
   BoltIcon,
@@ -124,6 +125,7 @@ export const Archive = createIcon(ArchiveBoxIcon);
 export const ArchiveRestore = createIcon(ArchiveBoxArrowDownIcon);
 export const AlertCircle = createIcon(ExclamationCircleIcon);
 export const ArrowLeft = createIcon(ArrowLeftIcon);
+export const ArrowLeftRight = createIcon(ArrowsRightLeftIcon);
 export const ArrowRight = createIcon(ArrowRightIcon);
 export const Award = createIcon(TrophyIcon);
 export const Activity = createIcon(PresentationChartLineIcon);

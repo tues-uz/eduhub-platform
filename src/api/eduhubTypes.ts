@@ -913,6 +913,26 @@ export interface AdminClassRowResponse {
   sessionQuota: { used: number; total: number };
 }
 
+export interface AdminClassRosterRowResponse {
+  enrollmentId: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  status: string;
+  enrolledAt: string;
+  progress: number;
+}
+
+export interface AdminAssignStudentRequest {
+  studentId: string;
+}
+
+export interface AdminSwitchStudentRequest {
+  studentId: string;
+  fromCourseId?: string;
+  toCourseId: string;
+}
+
 export interface AdminCalendarEventResponse {
   id: string;
   title: string;
@@ -928,6 +948,7 @@ export interface AdminSupportSessionResponse {
   topic: string;
   status: "requested" | "scheduled";
   requestedAt: string;
+  scheduledSlot?: string;
 }
 
 export interface AdminCertificationRowResponse {
@@ -937,6 +958,7 @@ export interface AdminCertificationRowResponse {
   surveyComplete: boolean;
   courseComplete: boolean;
   eligible: boolean;
+  issued?: boolean;
 }
 
 export type StudentStatus = "trial" | "active" | "inactive";
