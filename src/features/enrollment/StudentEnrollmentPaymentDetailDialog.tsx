@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import type { ReceiptPdfLocale } from "@/features/enrollment/enrollmentReceiptPdfI18n";
 import {
   ArrowRight,
+  BookOpen,
   Calendar,
   CheckCircle2,
   Clock,
@@ -51,6 +52,11 @@ import {
 } from "@/features/enrollment/enrollmentPaymentDisplay";
 import { installmentPaymentPath } from "@/features/enrollment/enrollmentInstallmentPayments";
 import { EnrollmentPaymentHistorySection } from "@/features/enrollment/EnrollmentPaymentHistorySection";
+import { EnrollmentTrialBadge } from "@/features/enrollment/EnrollmentTrialBadge";
+import {
+  enrollmentHasTrialCode,
+  formatEnrollmentTrialCode,
+} from "@/features/enrollment/enrollmentTrial";
 import { ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
 import { ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED } from "@/features/admin/data/adminEnrollmentPaidMonthsStore";
 import { resolvePaidTuitionMonths } from "@/features/enrollment/enrollmentPaidMonths";
@@ -224,7 +230,7 @@ function PaymentDetailDialogBody({
   downloadLoading: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { t } = useTranslation("student");
+  const { t } = useTranslation();
   const enriched = enrichEnrollmentApplication(r);
   const status = STATUS_CONFIG[enriched.status];
   const StatusIcon = status.Icon;
@@ -240,6 +246,9 @@ function PaymentDetailDialogBody({
   const methodLabel = enriched.paymentMethod
     ? formatPaymentMethodLabel(enriched.paymentMethod)
     : null;
+  const isTrial = enrollmentHasTrialCode(enriched);
+  const trialCode = formatEnrollmentTrialCode(enriched);
+  const showTrialContinueCta = enriched.status === "APPROVED" && isTrial;
 
   const [instructor, setInstructor] = useState<{ name: string; avatarUrl?: string } | null>(null);
 
@@ -348,6 +357,7 @@ function PaymentDetailDialogBody({
                 <StatusIcon className="h-3.5 w-3.5" aria-hidden />
                 {status.label}
               </span>
+              {isTrial ? <EnrollmentTrialBadge /> : null}
             </div>
             <DialogDescription className="mt-0 text-sm text-zinc-600">
               Enrollment & payment details
@@ -447,6 +457,41 @@ function PaymentDetailDialogBody({
             </p>
           ) : null}
 
+          {isTrial ? (
+            <section className="mb-5">
+              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                {t("payment.trial.detailSectionTitle")}
+              </h3>
+              <div className="rounded-xl border border-violet-200/80 bg-violet-50/40 p-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-700 ring-1 ring-violet-200/80">
+                    <BookOpen className="h-4 w-4" aria-hidden />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    {trialCode ? (
+                      <>
+                        <p className="text-xs text-zinc-500">{t("payment.trial.codeLabel")}</p>
+                        <p className="mt-0.5 font-mono text-sm font-semibold text-violet-950">{trialCode}</p>
+                      </>
+                    ) : null}
+                    <p className="mt-2 text-sm leading-relaxed text-zinc-700">
+                      {enriched.status === "PENDING"
+                        ? t("payment.trial.pendingReview")
+                        : enriched.status === "APPROVED"
+                          ? t("payment.trial.approvedMessage")
+                          : t("payment.trial.rejectedMessage")}
+                    </p>
+                    {enriched.status === "APPROVED" ? (
+                      <p className="mt-2 text-xs leading-relaxed text-zinc-600">
+                        {t("payment.trial.continueHint")}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
           <section className="mb-5">
             <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
               Timeline
@@ -534,7 +579,20 @@ function PaymentDetailDialogBody({
         </div>
 
         <div className="flex shrink-0 flex-col gap-2 border-t border-zinc-100 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          {showTrialContinueCta ? (
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 w-full rounded-xl border-violet-300 text-violet-900 hover:bg-violet-50"
+            >
+              <Link to={installmentPaymentPath(enriched.id)} onClick={() => onOpenChange(false)}>
+                {t("payment.trial.payToContinue")}
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+              </Link>
+            </Button>
+          ) : null}
           {enriched.status === "APPROVED" &&
+          !showTrialContinueCta &&
           (enriched.paymentPlan === "DOWN_PAYMENT" || enriched.installmentCount != null) ? (
             <Button
               asChild
@@ -547,41 +605,47 @@ function PaymentDetailDialogBody({
               </Link>
             </Button>
           ) : null}
-          <Button
-            type="button"
-            className="h-11 w-full rounded-xl bg-[#3954d0] text-sm font-medium hover:bg-[#2f47b3]"
-            disabled={downloadLoading}
-            onClick={() => onDownload("en")}
-          >
-            {downloadLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-            ) : (
-              <Download className="mr-2 h-4 w-4" aria-hidden />
-            )}
-            {downloadLoading
-              ? t("payment.preparingPdf")
-              : hasOfficial
-                ? t("payment.downloadInvoiceEn")
-                : t("payment.downloadPdfEn")}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="h-11 w-full rounded-xl border-zinc-300 text-sm font-medium"
-            disabled={downloadLoading}
-            onClick={() => onDownload("uz")}
-          >
-            {downloadLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-            ) : (
-              <Download className="mr-2 h-4 w-4" aria-hidden />
-            )}
-            {downloadLoading
-              ? t("payment.preparingPdf")
-              : hasOfficial
-                ? t("payment.downloadInvoiceUz")
-                : t("payment.downloadPdfUz")}
-          </Button>
+          {enriched.status === "APPROVED" ? (
+            <>
+              <Button
+                type="button"
+                className="h-11 w-full rounded-xl bg-[#3954d0] text-sm font-medium hover:bg-[#2f47b3]"
+                disabled={downloadLoading}
+                onClick={() => onDownload("en")}
+              >
+                {downloadLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" aria-hidden />
+                )}
+                {downloadLoading
+                  ? t("payment.preparingPdf")
+                  : t("payment.downloadInvoiceEn")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 w-full rounded-xl border-zinc-300 text-sm font-medium"
+                disabled={downloadLoading}
+                onClick={() => onDownload("uz")}
+              >
+                {downloadLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" aria-hidden />
+                )}
+                {downloadLoading
+                  ? t("payment.preparingPdf")
+                  : t("payment.downloadInvoiceUz")}
+              </Button>
+            </>
+          ) : (
+            <p className="rounded-xl bg-zinc-50 px-3.5 py-3 text-center text-xs leading-relaxed text-zinc-600 ring-1 ring-zinc-200/80">
+              {enriched.status === "REJECTED"
+                ? t("payment.pdfNotAvailableRejected")
+                : t("payment.pdfAvailableAfterApproval")}
+            </p>
+          )}
         </div>
       </DialogContent>
   );

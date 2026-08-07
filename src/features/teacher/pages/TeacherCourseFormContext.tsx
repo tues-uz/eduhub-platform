@@ -15,11 +15,6 @@ export type TeacherCourseFormContextValue = {
   setDescription: (v: string) => void;
   classMeetingsInSixMonths: string;
   setClassMeetingsInSixMonths: (v: string) => void;
-  /** `YYYY-MM-DD` for `<input type="date" />`. */
-  classStartDate: string;
-  setClassStartDate: (v: string) => void;
-  classEndDate: string;
-  setClassEndDate: (v: string) => void;
   /** Per session: title + optional date/time; length tracks “Sessions in 6 months”. */
   classMeetingSlots: ClassMeetingSlot[];
   setClassMeetingSlots: React.Dispatch<React.SetStateAction<ClassMeetingSlot[]>>;

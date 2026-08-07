@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { AdminPayrollContractRatesPanel } from "@/features/admin/components/AdminPayrollContractRatesPanel";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { useEnrollmentInstallmentPayments } from "@/features/enrollment/enrollmentInstallmentPaymentStore";
 import { scheduleMonthOrdinalLabel } from "@/features/enrollment/enrollmentInstallmentPayments";
@@ -27,10 +28,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-type PayrollTab = "requests" | "tuition" | "proof";
+type PayrollTab = "requests" | "tuition" | "proof" | "rates";
 
 function parsePayrollTab(value: string | null): PayrollTab {
-  if (value === "tuition" || value === "proof") return value;
+  if (value === "tuition" || value === "proof" || value === "rates") return value;
   return "requests";
 }
 
@@ -279,6 +280,9 @@ export default function AdminPayrollPage() {
             </TabsTrigger>
             <TabsTrigger value="proof" className="rounded-lg px-4 data-[state=active]:shadow-sm">
               Payout proof
+            </TabsTrigger>
+            <TabsTrigger value="rates" className="rounded-lg px-4 data-[state=active]:shadow-sm">
+              {t("admin.payroll.tabs.contractRates")}
             </TabsTrigger>
           </TabsList>
 
@@ -602,6 +606,10 @@ export default function AdminPayrollPage() {
                 </TableBody>
               </Table>
             </div>
+          </TabsContent>
+
+          <TabsContent value="rates" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+            <AdminPayrollContractRatesPanel />
           </TabsContent>
         </Tabs>
       </div>

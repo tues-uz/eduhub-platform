@@ -34,10 +34,6 @@ const TeacherCourseFormDetailsPage = () => {
     setLevel,
     description,
     setDescription,
-    classStartDate,
-    setClassStartDate,
-    classEndDate,
-    setClassEndDate,
     thumbnailUrl,
     setThumbnailUrl,
     thumbnailUploading,
@@ -52,16 +48,11 @@ const TeacherCourseFormDetailsPage = () => {
   const titleRequiredError = error === "Class title is required.";
   const categoryRequiredError = error === INSTRUCTOR_CATEGORY_MISSING;
   const levelRequiredError = error === COURSE_LEVEL_REQUIRED;
-  const dateFieldErrors =
-    error === "Enter both a class start date and a class end date, or leave both empty." ||
-    error === "Class end date must be on or after the start date." ||
-    error === "Class dates are invalid.";
   const showDetailsGlobalBanner =
     Boolean(error) &&
     !titleRequiredError &&
     !categoryRequiredError &&
-    !levelRequiredError &&
-    !dateFieldErrors;
+    !levelRequiredError;
 
   const continueToSchedule = () => {
     setError("");
@@ -263,42 +254,6 @@ const TeacherCourseFormDetailsPage = () => {
               rows={4}
               className="resize-none bg-background"
             />
-          </div>
-
-          <div className="space-y-3">
-            <Label className="text-foreground">{t("teacher.courseForm.details.datesSectionTitle")}</Label>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="classStartDate" className="text-muted-foreground font-normal">
-                  {t("teacher.courseForm.details.startLabel")}
-                </Label>
-                <Input
-                  id="classStartDate"
-                  type="date"
-                  value={classStartDate}
-                  onChange={(e) => setClassStartDate(e.target.value)}
-                  className="h-11 bg-background"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="classEndDate" className="text-muted-foreground font-normal">
-                  {t("teacher.courseForm.details.endLabel")}
-                </Label>
-                <Input
-                  id="classEndDate"
-                  type="date"
-                  value={classEndDate}
-                  min={classStartDate || undefined}
-                  onChange={(e) => setClassEndDate(e.target.value)}
-                  className="h-11 bg-background"
-                />
-              </div>
-            </div>
-            {dateFieldErrors ? (
-              <p id="class-dates-error" className="text-sm text-red-600" role="alert">
-                {error}
-              </p>
-            ) : null}
           </div>
 
           <p className="text-xs text-muted-foreground">{t("teacher.courseForm.details.pricingHint")}</p>

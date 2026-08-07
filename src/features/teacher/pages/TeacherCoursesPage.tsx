@@ -9,11 +9,95 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuthSession } from "@/features/auth/context";
-import { eduhubCourses } from "@/api/eduhubClient";
+import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
+import type { CourseStatus } from "@/api/eduhubTypes";
 import type { TeacherCourse } from "../types";
 import { TeacherAttendanceSessionPanel } from "@/features/teacher/components/TeacherAttendanceSessionPanel";
 import { TeacherSubstituteCoverPanel } from "@/features/teacher/components/TeacherSubstituteCoverPanel";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import { cn } from "@/lib/utils";
+import {
+  parseOptionalPositiveInt,
+  resolveClassScheduleFormState,
+} from "@/features/teacher/pages/teacherCourseFormHelpers";
+
+function courseStatusBadge(t: TFunction, status?: CourseStatus) {
+  if (!status) return null;
+
+  const base = "absolute right-2 top-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium shadow-sm";
+
+  switch (status) {
+    case "PUBLISHED":
+      return {
+        label: t("teacher.scheduleApprovals.status.published"),
+        className: cn(base, "bg-green-100 text-green-800"),
+      };
+    case "SCHEDULE_PENDING":
+      return {
+        label: t("teacher.scheduleApprovals.status.actionNeeded"),
+        className: cn(base, "bg-amber-100 text-amber-800"),
+      };
+    case "SCHEDULE_APPROVED":
+      return {
+        label: t("teacher.courses.card.statusScheduleApproved"),
+        className: cn(base, "bg-emerald-100 text-emerald-800"),
+      };
+    case "REJECTED":
+      return {
+        label: t("teacher.scheduleApprovals.status.rejected"),
+        className: cn(base, "bg-red-100 text-red-800"),
+      };
+    case "DRAFT":
+      return {
+        label: t("teacher.scheduleApprovals.status.draft"),
+        className: cn(base, "bg-slate-100 text-slate-700"),
+      };
+    default:
+      return {
+        label: status,
+        className: cn(base, "bg-amber-100 text-amber-800"),
+      };
+  }
+}
+
+async function enrichTeacherCourses(courses: TeacherCourse[]): Promise<TeacherCourse[]> {
+  return Promise.all(
+    courses.map(async (course) => {
+      let classMeetingsInSixMonths = course.classMeetingsInSixMonths;
+      let classMeetingSlots = course.classMeetingSlots;
+
+      try {
+        const proposal = await eduhubSchedule.getProposal(course.id);
+        if (proposal) {
+          classMeetingsInSixMonths = proposal.sessionCount;
+          classMeetingSlots = proposal.sessions.map((session) => ({
+            title: session.title,
+            sessionDate: session.sessionDate,
+            sessionTime: session.sessionTime,
+          }));
+        }
+      } catch {
+        /* no proposal yet */
+      }
+
+      const resolved = resolveClassScheduleFormState(
+        {
+          classMeetingsInSixMonths,
+          classMeetingSlots,
+        },
+        course.id,
+      );
+      const resolvedCount = parseOptionalPositiveInt(resolved.meetingsSixMonthsStr);
+
+      return {
+        ...course,
+        classMeetingsInSixMonths: resolvedCount ?? classMeetingsInSixMonths,
+        classMeetingSlots: resolved.slots.length ? resolved.slots : classMeetingSlots,
+      };
+    }),
+  );
+}
 
 const TeacherCoursesPage = () => {
   const { t } = useTranslation();
@@ -39,8 +123,15 @@ const TeacherCoursesPage = () => {
             createdAt: c.createdAt,
             updatedAt: c.createdAt,
             status: c.status,
+            classMeetingsInSixMonths: c.classMeetingsInSixMonths,
+            classMeetingSlots: c.classMeetingSlots?.map((session) => ({
+              title: session.title,
+              sessionDate: session.sessionDate,
+              sessionTime: session.sessionTime,
+            })),
           }));
-          if (!cancelled) setCourses(apiCourses);
+          const enriched = await enrichTeacherCourses(apiCourses);
+          if (!cancelled) setCourses(enriched);
         } catch {
           if (!cancelled) setCourses([]);
         }
@@ -129,6 +220,8 @@ const TeacherCoursesPage = () => {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {courses.map((course) => {
                   const enrolled = course.enrollmentCount ?? 0;
+                  const statusBadge = courseStatusBadge(t, course.status);
+                  const sessionsCount = course.classMeetingsInSixMonths ?? null;
                   return (
                     <Card
                       key={course.id}
@@ -158,15 +251,9 @@ const TeacherCoursesPage = () => {
                               className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"
                               aria-hidden
                             />
-                            {course.status ? (
-                              <span
-                                className={`absolute right-2 top-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium shadow-sm ${
-                                  course.status === "PUBLISHED"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-amber-100 text-amber-800"
-                                }`}
-                              >
-                                {course.status}
+                            {statusBadge ? (
+                              <span className={statusBadge.className} title={course.status === "SCHEDULE_APPROVED" ? t("teacher.scheduleApprovals.statusDescriptions.scheduleApproved") : undefined}>
+                                {statusBadge.label}
                               </span>
                             ) : null}
                           </div>
@@ -185,23 +272,19 @@ const TeacherCoursesPage = () => {
                             <div className="flex items-center gap-2.5">
                               <CalendarDays className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
                               <span>
-                                {course.classMeetingsInSixMonths != null ? (
-                                  <>
-                                    <span className="font-medium text-foreground tabular-nums">
-                                      {course.classMeetingsInSixMonths}
-                                    </span>{" "}
-                                    sessions in 6 months
-                                  </>
+                                {sessionsCount != null ? (
+                                  t("teacher.courses.card.sessionsInSixMonths", { count: sessionsCount })
                                 ) : (
-                                  <span className="text-muted-foreground/80">Sessions in 6 months not set</span>
+                                  <span className="text-muted-foreground/80">
+                                    {t("teacher.courses.card.sessionsNotSet")}
+                                  </span>
                                 )}
                               </span>
                             </div>
                             <div className="flex items-center gap-2.5">
                               <Users className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
                               <span>
-                                <span className="font-medium text-foreground tabular-nums">{enrolled}</span>{" "}
-                                student{enrolled === 1 ? "" : "s"}
+                                {t("teacher.courses.card.studentCount", { count: enrolled })}
                               </span>
                             </div>
                           </div>

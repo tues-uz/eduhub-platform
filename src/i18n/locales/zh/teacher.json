@@ -387,7 +387,11 @@
         "dateLabel": "Date",
         "timeLabel": "Time",
         "sectionTitle": "课表",
-        "newClassInfo": "After you create this 课程, an administrator will propose session dates and times for your review.",
+        "newClassInfo": "Scheduling is set by admin after you save the class.",
+        "newClassStep1Body": "Finish details and lessons, then save the class.",
+        "newClassStep2Body": "Admin adds session counts, dates, and times.",
+        "newClassStep3Body": "You approve or request changes on this page.",
+        "newClassContinueHint": "Continue to lessons — you do not need a schedule yet.",
         "newClassNote": "Your new 课程 is saved with a minimal placeholder 课表 until admin proposes the real one.",
         "rejectionNoteTitle": "Your note to admin",
         "loading": "加载中 课表…",
@@ -994,7 +998,8 @@
         "saveAll": "全部保存",
         "scorePlaceholder": "—",
         "table": {
-          "student": "学生"
+          "student": "学生",
+          "total": "合计"
         },
         "addDialog": {
           "title": "添加测验列",
@@ -1233,7 +1238,7 @@
     },
     "grades": {
       "title": "Final scores",
-      "intro": "Total = average of attendance % and instructor score (0–100). Publish certificates when grades are final.",
+      "intro": "Total is the sum of quiz scores from the Quiz scores tab. Save here, then publish certificates.",
       "publishAll": "Publish all certificates",
       "empty": {
         "substitute": "Substitute instructors cannot 编辑 grades on this demo page.",
@@ -1253,8 +1258,7 @@
         "headerTitles": {
           "sessions": "QR check-ins on this browser vs planned sessions",
           "attendance": "Auto: sessions attended ÷ planned sessions in 6 months",
-          "instructor": "Your score 0–100",
-          "total": "Average of attendance % and instructor score"
+          "total": "Sum of saved quiz scores (Quiz scores tab)"
         }
       },
       "feedback": {
@@ -1271,7 +1275,8 @@
         "publish": "Publish",
         "done": "Done"
       },
-      "footnote": "Attend. % = sessions checked in on this browser ÷ planned sessions (课程 settings). Not synced across devices until an attendance API exists.",
+      "footnote": "Attend. % is informational. Total is the sum of quiz scores. Save to lock the grade, then publish certificates.",
+      "noQuizScores": "Enter and save quiz scores on the Quiz scores tab first.",
       "reviewDialog": {
         "title": "学生 review",
         "description": "Ratings and comments submitted by the 学生.",

@@ -13,7 +13,7 @@
       "partner": "Partner {{number}}"
     },
     "stats": {
-      "whyChooseUs": "Why Choose Us",
+      "whyChooseUs": "Our Impacts",
       "heading": "Why you should<br />join with us?",
       "students": "Students",
       "classes": "Classes",
@@ -66,34 +66,34 @@
       "learnMore": "Learn More",
       "items": {
         "onlineClasses": {
-          "title": "Online Classes",
-          "description": "Access comprehensive classes from anywhere, anytime",
-          "imageAlt": "Online learning"
+          "title": "CELTA-Certified Teachers",
+          "description": "Learn from instructors trained to internationally recognized teaching standards",
+          "imageAlt": "CELTA-certified teachers"
         },
         "expertInstructors": {
-          "title": "Expert Instructors",
-          "description": "Learn from industry professionals and academic experts",
-          "imageAlt": "Expert instructor"
+          "title": "Professional & Experienced Teachers",
+          "description": "Guided by qualified educators with real classroom and industry experience",
+          "imageAlt": "Professional and experienced teachers"
         },
         "certifications": {
-          "title": "Certifications",
-          "description": "Earn recognized certificates upon class completion",
-          "imageAlt": "Certificate"
+          "title": "Measurable Progress",
+          "description": "Track your improvement with clear milestones and regular assessments",
+          "imageAlt": "Measurable learning progress"
         },
         "careerGrowth": {
-          "title": "Career Growth",
-          "description": "Advance your career with in-demand skills",
-          "imageAlt": "Career growth"
+          "title": "International Collaboration",
+          "description": "Backed by a global partnership bringing world-class standards to your learning",
+          "imageAlt": "International collaboration"
         },
         "globalAccess": {
-          "title": "Global Access",
-          "description": "Connect with learners from around the world",
-          "imageAlt": "Global learning"
+          "title": "Exam & Career Preparation",
+          "description": "Structured paths designed to help you succeed in exams and professional goals",
+          "imageAlt": "Exam and career preparation"
         },
         "analyticsDashboard": {
-          "title": "Analytics Dashboard",
-          "description": "Track your progress and performance metrics",
-          "imageAlt": "Analytics dashboard"
+          "title": "Seamless Student-Teacher Portal",
+          "description": "Real-time updates on lessons, progress, and feedback — all in one connected account",
+          "imageAlt": "Student-teacher portal"
         }
       }
     },
@@ -202,24 +202,24 @@
       }
     },
     "highlights": {
-      "title": "Learning Highlights",
-      "subtitle": "Everything you need for a successful learning journey",
+      "title": "Beyond the Classroom",
+      "subtitle": "Practice, connect, and have fun outside regular lessons",
       "items": {
-        "interactive": {
-          "title": "Interactive Learning",
-          "description": "Engage with multimedia content, quizzes, and hands-on projects"
+        "movieNight": {
+          "title": "Movie Night",
+          "description": "Watch and discuss English films together every month"
         },
-        "goalOriented": {
-          "title": "Goal-Oriented",
-          "description": "Set and achieve your learning objectives with personalized paths"
+        "speakingClub": {
+          "title": "Speaking Club",
+          "description": "Build confidence through casual, guided conversation practice"
         },
-        "fastTrack": {
-          "title": "Fast Track",
-          "description": "Accelerate your learning with intensive programs"
+        "debateClub": {
+          "title": "Debate Club",
+          "description": "Sharpen critical thinking and public speaking through friendly debates"
         },
-        "community": {
-          "title": "Community Support",
-          "description": "Join a vibrant community of learners and mentors"
+        "fieldTrip": {
+          "title": "Field Trip",
+          "description": "Explore real-world places to practice English beyond the classroom"
         }
       }
     },

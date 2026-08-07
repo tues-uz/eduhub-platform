@@ -23,6 +23,7 @@ import type { CourseSummaryResponse } from "@/api/eduhubTypes";
 import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
 import {
   resolveStudentCourseEnrollmentDisplayStatus,
+  resolveEnrollmentRejectionNote,
   type StudentCourseEnrollmentDisplayStatus,
 } from "@/features/enrollment/studentCourseEnrollmentStatus";
 import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
@@ -33,6 +34,7 @@ import { resolveInstructorAvatarUrl } from "@/features/teacher/resolveInstructor
 import type { CourseScheduleSummary } from "@/features/student/courseScheduleSummary";
 import { formatClassDateLabel } from "@/features/courses/classSchedulePreview";
 import { resolveEnrolledStudentPreviews } from "@/features/student/enrolledStudentPreviews";
+import { TEACHER_CLASS_MAX_STUDENTS, canApplyToTeacherClass, isTeacherClassFull } from "@/features/courses/teacherClassCapacity";
 
 type AvailableCourseItem = {
   id: string;
@@ -54,6 +56,7 @@ type AvailableCourseItem = {
   thumbnailUrl?: string;
   enrollmentCount?: number;
   enrolledStudents?: StudentAvatarPreview[];
+  rejectionNote?: string;
 };
 
 function formatPrice(price: number | undefined, currency: string, t: TFunction): string {
@@ -92,23 +95,17 @@ function resolveCardTuition(
   };
 }
 
-async function enrichWithEnrolledStudents(items: AvailableCourseItem[], role?: string): Promise<AvailableCourseItem[]> {
-  const normRole = role?.trim().toUpperCase();
-  if (normRole === "STUDENT") {
-    return items;
-  }
+async function enrichWithEnrolledStudents(items: AvailableCourseItem[]): Promise<AvailableCourseItem[]> {
   return Promise.all(
     items.map(async (item) => {
       const { students, totalCount } = await resolveEnrolledStudentPreviews({
         apiCourseId: item.id,
         enrollmentCount: item.enrollmentCount,
-        role,
       });
-      if (students.length === 0) return item;
       return {
         ...item,
         enrolledStudents: students,
-        enrollmentCount: totalCount ?? item.enrollmentCount,
+        enrollmentCount: totalCount,
       };
     }),
   );
@@ -213,6 +210,11 @@ const StudentAvailableCourses = () => {
           thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
           enrollmentCount: c.enrollmentCount,
           enrollmentStatus: enrollmentStatusFor(c.id),
+          rejectionNote: resolveEnrollmentRejectionNote(
+            c.id,
+            emailNorm,
+            applicationsByCourse.get(c.id),
+          ),
           progress: enrolledData?.progress,
           status: enrolledData?.status,
           nextLesson: enrolledData?.nextLesson,
@@ -236,7 +238,7 @@ const StudentAvailableCourses = () => {
           // API down or auth issue
         }
 
-        const merged = await enrichWithInstructorAvatars(await enrichWithEnrolledStudents(apiItems, user.role));
+        const merged = await enrichWithInstructorAvatars(await enrichWithEnrolledStudents(apiItems));
         if (!cancelled) {
           setCourses(merged);
         }
@@ -365,6 +367,8 @@ const StudentAvailableCourses = () => {
                   const classEndLabel = scheduleSummary
                     ? formatClassDateLabel(scheduleSummary.classEndDate)
                     : null;
+                  const isClassFull = isTeacherClassFull(course.enrollmentCount);
+                  const canJoinClass = canApplyToTeacherClass(course.enrollmentStatus, course.enrollmentCount);
 
                   return (
                   <div
@@ -473,36 +477,54 @@ const StudentAvailableCourses = () => {
                           </div>
                         ) : null}
 
-                        {course.enrolledStudents && course.enrolledStudents.length > 0 ? (
-                          <div
-                            className="mt-3"
-                            onClick={(event) => event.stopPropagation()}
-                            onKeyDown={(event) => event.stopPropagation()}
-                          >
-                            <StudentAvatarGroup
-                              students={course.enrolledStudents}
-                              totalCount={course.enrollmentCount}
-                              size="sm"
-                            />
-                          </div>
-                        ) : null}
-
-                        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
-                          <span className="text-xs font-medium text-slate-500">{t("availableCourses.tuition")}</span>
-                          {tuitionDisplay.allSessionsFinished ? (
-                            <span className="text-sm font-medium text-slate-500">{t("availableCourses.scheduleComplete")}</span>
-                          ) : (
-                            <div className="flex flex-col items-end gap-0.5">
-                              <span className="text-sm font-bold tabular-nums tracking-tight text-slate-900">
-                                {formatPrice(tuitionDisplay.amount, course.currency ?? "USD", t)}
-                              </span>
-                              {tuitionDisplay.listedAmount ? (
-                                <span className="text-[11px] tabular-nums text-slate-400 line-through">
-                                  {formatPrice(tuitionDisplay.listedAmount, course.currency ?? "USD", t)}
-                                </span>
+                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                          <div className="flex min-w-0 flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                            <span className="text-xs font-medium text-slate-500">
+                              {t("availableCourses.studentsJoined")}
+                            </span>
+                            <div className="flex min-w-0 items-center gap-1.5">
+                              {course.enrolledStudents && course.enrolledStudents.length > 0 ? (
+                                <div
+                                  className="min-w-0 shrink"
+                                  onClick={(event) => event.stopPropagation()}
+                                  onKeyDown={(event) => event.stopPropagation()}
+                                >
+                                  <StudentAvatarGroup
+                                    students={course.enrolledStudents}
+                                    totalCount={course.enrollmentCount}
+                                    size="sm"
+                                  />
+                                </div>
                               ) : null}
+                              <span className="shrink-0 text-xs tabular-nums text-slate-700">
+                                <span className={isClassFull ? "font-semibold text-amber-700" : "font-semibold text-slate-900"}>
+                                  {course.enrollmentCount ?? 0}
+                                </span>
+                                <span className="text-slate-400"> / </span>
+                                <span className="font-medium">{TEACHER_CLASS_MAX_STUDENTS}</span>
+                              </span>
                             </div>
-                          )}
+                          </div>
+
+                          <div className="flex min-w-0 flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                            <span className="text-xs font-medium text-slate-500">{t("availableCourses.tuition")}</span>
+                            {tuitionDisplay.allSessionsFinished ? (
+                              <span className="text-xs font-medium leading-snug text-slate-500">
+                                {t("availableCourses.scheduleComplete")}
+                              </span>
+                            ) : (
+                              <div className="flex min-w-0 flex-col gap-0.5">
+                                <span className="text-xs font-bold tabular-nums tracking-tight text-slate-900 sm:text-sm">
+                                  {formatPrice(tuitionDisplay.amount, course.currency ?? "USD", t)}
+                                </span>
+                                {tuitionDisplay.listedAmount ? (
+                                  <span className="text-[10px] tabular-nums text-slate-400 line-through sm:text-[11px]">
+                                    {formatPrice(tuitionDisplay.listedAmount, course.currency ?? "USD", t)}
+                                  </span>
+                                ) : null}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -530,6 +552,15 @@ const StudentAvailableCourses = () => {
                               {t("availableCourses.viewApplication")}
                             </Button>
                           </Link>
+                        ) : !canJoinClass ? (
+                          <Button
+                            size="sm"
+                            disabled
+                            className="h-auto w-full cursor-not-allowed rounded-xl bg-slate-200 px-5 py-2.5 text-sm font-medium text-slate-500"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {t("availableCourses.classFull")}
+                          </Button>
                         ) : (
                           <Link
                             to={`/dashboard/available-courses/enroll/${encodeURIComponent(course.linkId)}`}

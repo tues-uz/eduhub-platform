@@ -6,10 +6,7 @@ import {
   type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
 import { tuitionPartsForSchedule } from "@/features/enrollment/enrollmentTuitionThirds";
-import {
-  INSTRUCTOR_REVENUE_SHARE,
-  formatMoney,
-} from "@/features/payroll/classPayrollAggregate";
+import { getInstructorRevenueShare } from "@/features/payroll/instructorRevenueShareStorage";
 
 export type PayrollMonthPayoutQuote = {
   amount: number;
@@ -61,11 +58,15 @@ export function computePayrollMonthRequestedPayout(opts: {
   slots: SessionSlotLike[];
   schedulePeriodKey: string;
   paidStudentCount: number;
+  instructorEmail?: string | null;
 }): PayrollMonthPayoutQuote | null {
-  const { listedTuitionPerStudent, currency, slots, schedulePeriodKey, paidStudentCount } = opts;
+  const { listedTuitionPerStudent, currency, slots, schedulePeriodKey, paidStudentCount, instructorEmail } =
+    opts;
   if (!listedTuitionPerStudent || listedTuitionPerStudent <= 0 || paidStudentCount <= 0 || !schedulePeriodKey) {
     return null;
   }
+
+  const instructorShare = getInstructorRevenueShare(instructorEmail);
 
   const plan = resolveSchedulePlanMonthForYearMonth(slots, schedulePeriodKey);
   if (!plan) return null;
@@ -75,7 +76,7 @@ export function computePayrollMonthRequestedPayout(opts: {
   if (!split) return null;
 
   const monthTuitionPerStudent = split.parts[plan.planMonth - 1]!;
-  const instructorSharePerStudent = Math.round(monthTuitionPerStudent * INSTRUCTOR_REVENUE_SHARE);
+  const instructorSharePerStudent = Math.round(monthTuitionPerStudent * instructorShare);
   const amount = instructorSharePerStudent * paidStudentCount;
 
   const splitLabel = split.usesScheduleSplit
@@ -91,6 +92,6 @@ export function computePayrollMonthRequestedPayout(opts: {
     instructorSharePerStudent,
     paidStudentCount,
     listedTuitionPerStudent,
-    breakdown: `${formatMoney(instructorSharePerStudent, currency)} × ${paidStudentCount} paid student${paidStudentCount === 1 ? "" : "s"} (${Math.round(INSTRUCTOR_REVENUE_SHARE * 100)}% of ${formatMoney(monthTuitionPerStudent, currency)} ${plan.tabLabel.toLowerCase()} share). Listed tuition ${formatMoney(listedTuitionPerStudent, currency)} per student, ${splitLabel}.`,
+    breakdown: `${formatMoney(instructorSharePerStudent, currency)} × ${paidStudentCount} paid student${paidStudentCount === 1 ? "" : "s"} (${Math.round(instructorShare * 100)}% of ${formatMoney(monthTuitionPerStudent, currency)} ${plan.tabLabel.toLowerCase()} share). Listed tuition ${formatMoney(listedTuitionPerStudent, currency)} per student, ${splitLabel}.`,
   };
 }

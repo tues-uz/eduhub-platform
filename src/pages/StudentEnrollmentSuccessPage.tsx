@@ -1,26 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Navigate, useLocation, useParams } from "react-router-dom";
-import { ArrowLeft, Check, ExternalLink, FileDown, FileText, User } from "@/lib/icons";
+import { ArrowLeft, Check, ExternalLink, FileText, User } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
 import {
   orderSessionSlotsChronologically,
+  resolveEnrollmentSessionTimingStatus,
   resolvePreviewSessionSlots,
+  type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
+import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
+import { useScheduleAttendanceState } from "@/features/courses/useScheduleAttendanceState";
 import {
   enrollmentApplicationStore,
   type EnrollmentApplicationRecord,
 } from "@/features/enrollment/enrollmentApplicationStore";
 import {
   buildEnrollmentScheduleSessionSummaries,
-  downloadEnrollmentApplicationPdf,
   enrollmentRecordToPdfData,
   type EnrollmentApplicationPdfData,
   type EnrollmentScheduleSessionSummary,
 } from "@/features/enrollment/enrollmentApplicationPdf";
+import { scheduleSlotKeyFromParts } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 import { formatPaymentMethodLabel } from "@/features/enrollment/enrollmentDocumentConfig";
 import { formatDisplayPersonName, formatDisplayTitle } from "@/lib/formatPersonName";
 import { cn } from "@/lib/utils";
@@ -190,8 +194,10 @@ const StudentEnrollmentSuccessPage = () => {
   const [scheduleSessions, setScheduleSessions] = useState<EnrollmentScheduleSessionSummary[]>(
     () => pdfData?.scheduleSessions ?? [],
   );
+  const [scheduleSlots, setScheduleSlots] = useState<SessionSlotLike[]>([]);
   const [tab, setTab] = useState<PanelTab>("schedule");
   const [detailsSection, setDetailsSection] = useState<DetailsSection>("contact");
+  const scheduleAttendance = useScheduleAttendanceState(courseId);
 
   useEffect(() => {
     setTeacherName(pdfData?.teacherName?.trim() || "");
@@ -200,9 +206,6 @@ const StudentEnrollmentSuccessPage = () => {
 
   useEffect(() => {
     if (!courseId || !isUuid(courseId)) return;
-    const needsTeacher = !pdfData?.teacherName?.trim();
-    const needsSchedule = !(pdfData?.scheduleSessions && pdfData.scheduleSessions.length > 0);
-    if (!needsTeacher && !needsSchedule) return;
 
     let cancelled = false;
     Promise.all([
@@ -210,22 +213,20 @@ const StudentEnrollmentSuccessPage = () => {
       eduhubSchedule.getProposal(courseId).catch(() => null),
     ]).then(([course, proposal]) => {
       if (cancelled) return;
-      if (needsTeacher) {
-        const name = course?.lecturer?.fullName?.trim();
-        if (name) setTeacherName(name);
-      }
-      if (needsSchedule) {
-        const slots = orderSessionSlotsChronologically(
-          resolvePreviewSessionSlots(courseId, course, proposal, true, null),
-        );
-        const rows = buildEnrollmentScheduleSessionSummaries(slots);
-        if (rows.length > 0) setScheduleSessions(rows);
-      }
+      const name = course?.lecturer?.fullName?.trim();
+      if (name) setTeacherName(name);
+      const slots = orderSessionSlotsChronologically(
+        resolvePreviewSessionSlots(courseId, course, proposal, true, null),
+      );
+      const visible = slots.filter((slot) => Boolean(slot.sessionDate?.trim() || slot.title?.trim()));
+      setScheduleSlots(visible);
+      const rows = buildEnrollmentScheduleSessionSummaries(slots);
+      if (rows.length > 0) setScheduleSessions(rows);
     });
     return () => {
       cancelled = true;
     };
-  }, [courseId, pdfData?.teacherName, pdfData?.scheduleSessions]);
+  }, [courseId]);
 
   if (!courseId) {
     return <Navigate to="/dashboard/available-courses" replace />;
@@ -254,12 +255,6 @@ const StudentEnrollmentSuccessPage = () => {
   const joinFrom = d.joinFromSessionNumber ?? 1;
   const meetingCount = scheduleSessions.length || d.scheduleSessionCount || 0;
   const isPending = !latestRecord || latestRecord.status === "PENDING";
-
-  const enrichedPdfData: EnrollmentApplicationPdfData = {
-    ...d,
-    teacherName: teacherName || d.teacherName,
-    scheduleSessions: scheduleSessions.length > 0 ? scheduleSessions : d.scheduleSessions,
-  };
 
   const contactRows = (
     [
@@ -383,29 +378,69 @@ const StudentEnrollmentSuccessPage = () => {
 
             <div className="mt-4 min-h-[12rem] flex-1 pb-2" role="tabpanel">
               {tab === "schedule" ? (
-                scheduleSessions.length > 0 ? (
+                scheduleSlots.length > 0 || scheduleSessions.length > 0 ? (
                   <ul className="max-h-64 overflow-y-auto overscroll-contain sm:max-h-72">
-                    {scheduleSessions.map((session, index) => (
-                      <li
-                        key={`${session.dateLabel}-${index}`}
-                        className="flex items-baseline justify-between gap-4 border-b border-zinc-100 py-2.5 last:border-0"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-zinc-900">
-                            {session.title?.trim() ||
-                              t("enrollmentSuccess.meetingFallback", { n: index + 1 })}
-                          </p>
-                          <p className="text-[13px] text-zinc-500">
-                            {[session.weekdayLabel, session.dateLabel].filter(Boolean).join(", ")}
-                          </p>
-                        </div>
-                        {session.timeLabel ? (
-                          <span className="shrink-0 text-[13px] font-medium tabular-nums text-zinc-700">
-                            {session.timeLabel}
-                          </span>
-                        ) : null}
-                      </li>
-                    ))}
+                    {(scheduleSlots.length > 0 ? scheduleSlots : []).map((slot, index) => {
+                      const summary =
+                        scheduleSessions[index] ??
+                        buildEnrollmentScheduleSessionSummaries([slot])[0];
+                      const timingStatus = resolveEnrollmentSessionTimingStatus(
+                        slot,
+                        scheduleAttendance.heldSlotKeys,
+                        scheduleAttendance.activeSlotKeys,
+                      );
+                      return (
+                        <li
+                          key={scheduleSlotKeyFromParts(slot) || `${summary?.dateLabel}-${index}`}
+                          className={cn(
+                            "flex items-start justify-between gap-4 border-b border-zinc-100 py-2.5 last:border-0",
+                            timingStatus === "finished" && "opacity-75",
+                          )}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-col items-start gap-1">
+                              <SessionTimingChip status={timingStatus} />
+                              <p className="truncate text-sm font-medium text-zinc-900">
+                                {summary?.title?.trim() ||
+                                  slot.title?.trim() ||
+                                  t("enrollmentSuccess.meetingFallback", { n: index + 1 })}
+                              </p>
+                            </div>
+                            <p className="mt-0.5 text-[13px] text-zinc-500">
+                              {[summary?.weekdayLabel, summary?.dateLabel].filter(Boolean).join(", ")}
+                            </p>
+                          </div>
+                          {summary?.timeLabel ? (
+                            <span className="shrink-0 text-[13px] font-medium tabular-nums text-zinc-700">
+                              {summary.timeLabel}
+                            </span>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                    {scheduleSlots.length === 0
+                      ? scheduleSessions.map((session, index) => (
+                          <li
+                            key={`${session.dateLabel}-${index}`}
+                            className="flex items-baseline justify-between gap-4 border-b border-zinc-100 py-2.5 last:border-0"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-zinc-900">
+                                {session.title?.trim() ||
+                                  t("enrollmentSuccess.meetingFallback", { n: index + 1 })}
+                              </p>
+                              <p className="text-[13px] text-zinc-500">
+                                {[session.weekdayLabel, session.dateLabel].filter(Boolean).join(", ")}
+                              </p>
+                            </div>
+                            {session.timeLabel ? (
+                              <span className="shrink-0 text-[13px] font-medium tabular-nums text-zinc-700">
+                                {session.timeLabel}
+                              </span>
+                            ) : null}
+                          </li>
+                        ))
+                      : null}
                   </ul>
                 ) : (
                   <p className="py-8 text-center text-sm text-zinc-400">
@@ -530,24 +565,6 @@ const StudentEnrollmentSuccessPage = () => {
               >
                 <Link to="/dashboard/available-courses">{t("enrollmentSuccess.browseMore")}</Link>
               </Button>
-            </div>
-            <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-1 sm:justify-start">
-              <button
-                type="button"
-                onClick={() => void downloadEnrollmentApplicationPdf(enrichedPdfData, "en")}
-                className="inline-flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-zinc-700"
-              >
-                <FileDown className="h-3.5 w-3.5" />
-                {t("enrollmentSuccess.downloadSummaryEn")}
-              </button>
-              <button
-                type="button"
-                onClick={() => void downloadEnrollmentApplicationPdf(enrichedPdfData, "uz")}
-                className="inline-flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-zinc-700"
-              >
-                <FileDown className="h-3.5 w-3.5" />
-                {t("enrollmentSuccess.downloadSummaryUz")}
-              </button>
             </div>
           </div>
         </div>

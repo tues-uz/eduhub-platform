@@ -123,7 +123,7 @@ const DashboardSidebar = () => {
     ? `flex w-full items-center gap-2 overflow-hidden rounded-md px-2 text-left text-sm outline-none transition-colors ${
         isCollapsed ? "h-8 justify-center" : "h-8"
       }`
-    : `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${isCollapsed ? "justify-center" : ""}`;
+    : `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all ${isCollapsed ? "justify-center" : ""}`;
 
   const iconClass = isStaffShell ? "h-4 w-4 shrink-0" : "h-5 w-5 flex-shrink-0";
 
@@ -280,13 +280,15 @@ const DashboardSidebar = () => {
       )}
 
       <aside
-        className={`fixed top-0 left-0 z-[60] h-screen border-r transition-all duration-300 lg:z-30 ${sidebarBg} ${sidebarBorder} ${
+        className={`fixed top-0 left-0 z-[60] h-screen overflow-visible border-r transition-all duration-300 lg:z-40 ${sidebarBg} ${sidebarBorder} ${
           isCollapsed ? "w-20" : "w-64"
         } ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       >
         <div className="flex h-full flex-col">
           {/* Brand / workspace header */}
-          <div className={`relative flex items-center px-2 ${isStaffShell ? "min-h-14 py-2" : "min-h-[4.5625rem] px-4"}`}>
+          <div
+            className={`relative flex items-center overflow-visible px-2 ${isStaffShell ? "min-h-14 py-2" : "min-h-[4.5625rem] px-4"}`}
+          >
             <div className="flex min-h-0 w-full items-center gap-2">
               <Link
                 to={dashboardHome}
@@ -328,7 +330,7 @@ const DashboardSidebar = () => {
                 variant="ghost"
                 size="icon"
                 onClick={toggleSidebar}
-                className="absolute top-1/2 z-10 -right-4 hidden h-8 w-8 -translate-y-1/2 rounded-full border border-black/32 bg-white hover:bg-gray-100 lg:flex"
+                className="absolute top-1/2 z-50 -right-4 hidden h-8 w-8 -translate-y-1/2 rounded-full border border-black/32 bg-white shadow-sm hover:bg-gray-100 lg:flex"
               >
                 {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
               </Button>

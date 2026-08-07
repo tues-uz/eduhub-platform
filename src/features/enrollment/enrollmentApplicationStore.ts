@@ -45,6 +45,7 @@ export type EnrollmentApplicationRecord = {
   priceCurrency?: string;
   installmentCount?: EnrollmentInstallmentCount;
   referralCode?: string;
+  trialCode?: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
   submittedAt: string;
   reviewedAt?: string;
@@ -153,6 +154,7 @@ export const enrollmentApplicationStore = {
     priceCurrency?: string;
     installmentCount?: EnrollmentInstallmentCount;
     referralCode?: string;
+    trialCode?: string;
   }): Promise<EnrollmentApplicationRecord> {
     const localRec: EnrollmentApplicationRecord = {
       ...input,

@@ -58,3 +58,12 @@ export function matchGeneralReferralCode(entered: string): GeneralReferralCodes 
   if (entered.trim().toLowerCase() !== code.toLowerCase()) return null;
   return general;
 }
+
+/** Match a student-entered code against the general trial class code (case-insensitive). */
+export function matchGeneralTrialCode(entered: string): string | null {
+  const general = readGeneralReferralCodes();
+  const code = general.trialCode.trim();
+  if (!code || !entered.trim()) return null;
+  if (entered.trim().toLowerCase() !== code.toLowerCase()) return null;
+  return code;
+}

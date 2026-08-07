@@ -45,13 +45,6 @@ function stepIndexFromPath(pathname: string): number {
   return 0;
 }
 
-/** Normalize API ISO strings to `YYYY-MM-DD` for date inputs. */
-function toDateInputValue(iso?: string): string {
-  if (!iso?.trim()) return "";
-  const d = iso.trim().slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
-}
-
 const TeacherCourseFormLayout = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -74,8 +67,6 @@ const TeacherCourseFormLayout = () => {
   const [level, setLevel] = useState("");
   const [description, setDescription] = useState("");
   const [classMeetingsInSixMonths, setClassMeetingsInSixMonths] = useState("");
-  const [classStartDate, setClassStartDate] = useState("");
-  const [classEndDate, setClassEndDate] = useState("");
   const [lessons, setLessons] = useState<TeacherLesson[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -125,8 +116,6 @@ const TeacherCourseFormLayout = () => {
               setClassMeetingsInSixMonths(meetingsSixMonthsStr);
               setClassMeetingSlots(slots);
             }
-            setClassStartDate(toDateInputValue(course.classStartDate));
-            setClassEndDate(toDateInputValue(course.classEndDate));
             return eduhubModules.getByCourse(courseId);
           })
           .then((modules) => {
@@ -291,26 +280,8 @@ const TeacherCourseFormLayout = () => {
       setError(COURSE_LEVEL_REQUIRED);
       return false;
     }
-    const startTrim = classStartDate.trim();
-    const endTrim = classEndDate.trim();
-    if ((startTrim && !endTrim) || (!startTrim && endTrim)) {
-      setError("Enter both a class start date and a class end date, or leave both empty.");
-      return false;
-    }
-    if (startTrim && endTrim) {
-      const s = new Date(`${startTrim}T12:00:00`);
-      const e = new Date(`${endTrim}T12:00:00`);
-      if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) {
-        setError("Class dates are invalid.");
-        return false;
-      }
-      if (e < s) {
-        setError("Class end date must be on or after the start date.");
-        return false;
-      }
-    }
     return true;
-  }, [title, instructorCategory, level, classStartDate, classEndDate]);
+  }, [title, instructorCategory, level]);
 
   /** Schedule is owned by admin; this step is informational / approval only. */
   const validateScheduleStep = useCallback((): boolean => {
@@ -332,24 +303,6 @@ const TeacherCourseFormLayout = () => {
     if (!level.trim()) {
       setError(COURSE_LEVEL_REQUIRED);
       return;
-    }
-    const startTrim = classStartDate.trim();
-    const endTrim = classEndDate.trim();
-    if ((startTrim && !endTrim) || (!startTrim && endTrim)) {
-      setError("Enter both a class start date and a class end date, or leave both empty.");
-      return;
-    }
-    if (startTrim && endTrim) {
-      const s = new Date(`${startTrim}T12:00:00`);
-      const e = new Date(`${endTrim}T12:00:00`);
-      if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) {
-        setError("Class dates are invalid.");
-        return;
-      }
-      if (e < s) {
-        setError("Class end date must be on or after the start date.");
-        return;
-      }
     }
     const validLessons = lessons
       .map((l, i) => ({ ...l, title: l.title.trim(), order: i }))
@@ -382,9 +335,6 @@ const TeacherCourseFormLayout = () => {
           classMeetingTitles: meetingTitlesForSave,
           classMeetingSlots: meetingSlotsForSave,
           ...(thumbTrim ? { thumbnailUrl: thumbTrim } : {}),
-          ...(startTrim && endTrim
-            ? { classStartDate: `${startTrim}T00:00:00.000Z`, classEndDate: `${endTrim}T00:00:00.000Z` }
-            : {}),
         });
         const module = await eduhubModules.create(course.id, { title: "Main", orderIndex: 0 });
         for (let i = 0; i < validLessons.length; i++) {
@@ -420,9 +370,6 @@ const TeacherCourseFormLayout = () => {
           classMeetingTitles: meetingTitlesForSave,
           classMeetingSlots: meetingSlotsForSave,
           ...(thumbTrimEdit ? { thumbnailUrl: thumbTrimEdit } : {}),
-          ...(startTrim && endTrim
-            ? { classStartDate: `${startTrim}T00:00:00.000Z`, classEndDate: `${endTrim}T00:00:00.000Z` }
-            : {}),
         });
         const modules = await eduhubModules.getByCourse(courseId);
         if (modules.length > 0) {
@@ -475,10 +422,6 @@ const TeacherCourseFormLayout = () => {
     setDescription,
     classMeetingsInSixMonths,
     setClassMeetingsInSixMonths,
-    classStartDate,
-    setClassStartDate,
-    classEndDate,
-    setClassEndDate,
     classMeetingSlots,
     setClassMeetingSlots,
     updateMeetingSlot,

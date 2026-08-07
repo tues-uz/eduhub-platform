@@ -42,6 +42,7 @@ import {
   getManualQuizScoresData,
   parseManualQuizScoreInput,
   saveManualQuizStudentScores,
+  sumManualQuizInputs,
   type ManualQuizColumn,
 } from "@/features/teacher/data/manualQuizScoresStorage";
 
@@ -101,6 +102,27 @@ function shortQuizLabel(col: ManualQuizColumn, index: number): string {
       : `#${index + 1} · ${trimmed.slice(0, 12)}…`;
   return base;
 }
+
+function computeRowTotal(
+  row: Record<string, string> | undefined,
+  cols: ManualQuizColumn[],
+): number | null {
+  return sumManualQuizInputs(row, cols);
+}
+
+function formatRowTotal(total: number | null): string {
+  if (total == null) return "—";
+  return Number.isInteger(total) ? String(total) : total.toFixed(1);
+}
+
+const QUIZ_ACTIONS_COL_CLASS =
+  "sticky right-0 z-20 w-[4.5rem] min-w-[4.5rem] border-b border-l border-border bg-background px-2 py-1.5 text-center align-middle whitespace-nowrap shadow-[-2px_0_6px_-2px_rgba(0,0,0,0.12)] group-hover:bg-muted";
+const QUIZ_ACTIONS_HEAD_CLASS =
+  "sticky right-0 z-30 w-[4.5rem] min-w-[4.5rem] border-b border-l border-border bg-muted px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground shadow-[-2px_0_6px_-2px_rgba(0,0,0,0.12)]";
+const QUIZ_TOTAL_COL_CLASS =
+  "sticky right-[4.5rem] z-20 w-14 min-w-14 border-b border-l border-border bg-background px-2 py-2 text-center align-middle tabular-nums text-sm font-semibold text-foreground group-hover:bg-muted";
+const QUIZ_TOTAL_HEAD_CLASS =
+  "sticky right-[4.5rem] z-30 w-14 min-w-14 border-b border-l border-border bg-muted px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground shadow-[-2px_0_6px_-2px_rgba(0,0,0,0.12)]";
 
 function StudentIdentityCell({ student }: { student: ManualQuizRosterStudent }) {
   const displayName = formatDisplayPersonName(student.fullName);
@@ -422,16 +444,17 @@ export function TeacherManualQuizScoresPanel({
                     </th>
                   ))
                 )}
-                <th className="sticky right-0 z-30 w-[4.5rem] min-w-[4.5rem] border-b border-l border-border bg-muted px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground shadow-[-2px_0_6px_-2px_rgba(0,0,0,0.12)]">
-                  {t("common.actions")}
+                <th className={QUIZ_TOTAL_HEAD_CLASS}>
+                  {t("teacher.roster.quizScores.table.total")}
                 </th>
+                <th className={QUIZ_ACTIONS_HEAD_CLASS}>{t("common.actions")}</th>
               </tr>
             </thead>
             <tbody>
               {filteredStudents.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={quizColSpan + 3}
+                    colSpan={quizColSpan + 4}
                     className="px-4 py-10 text-center text-sm text-muted-foreground"
                   >
                     {t("teacher.roster.quizScores.empty.noSearchResults")}
@@ -480,7 +503,10 @@ export function TeacherManualQuizScoresPanel({
                         );
                       })
                     )}
-                    <td className="sticky right-0 z-20 w-[4.5rem] min-w-[4.5rem] border-b border-l border-border bg-background px-2 py-1.5 text-center align-middle whitespace-nowrap shadow-[-2px_0_6px_-2px_rgba(0,0,0,0.12)] group-hover:bg-muted">
+                    <td className={QUIZ_TOTAL_COL_CLASS}>
+                      {formatRowTotal(computeRowTotal(draft[s.id], columns))}
+                    </td>
+                    <td className={QUIZ_ACTIONS_COL_CLASS}>
                       <Button
                         type="button"
                         variant="outline"

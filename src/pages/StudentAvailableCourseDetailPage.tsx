@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuthSession } from "@/features/auth/context";
 import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
-import { resolveStudentCourseEnrollmentDisplayStatus } from "@/features/enrollment/studentCourseEnrollmentStatus";
+import { resolveStudentCourseEnrollmentDisplayStatus, resolveEnrollmentRejectionNote } from "@/features/enrollment/studentCourseEnrollmentStatus";
 import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
 import { createPortal } from "react-dom";
 import { Link, useParams } from "react-router-dom";
@@ -40,6 +40,11 @@ import {
   listInstructorReviewsForCourse,
 } from "@/features/student/courseReviewsStorage";
 import { formatDisplayPersonName, formatDisplayTitle, profileInitials } from "@/lib/formatPersonName";
+import {
+  TEACHER_CLASS_MAX_STUDENTS,
+  canApplyToTeacherClass,
+  isTeacherClassFull,
+} from "@/features/courses/teacherClassCapacity";
 
 const MAX_CLASS_PHOTOS = 8;
 
@@ -214,6 +219,11 @@ const StudentAvailableCourseDetailPage = () => {
     [linkId, emailNorm, enrolledCourses, applicationsByCourse],
   );
   const isEnrolled = enrollmentStatus === "enrolled";
+  const rejectionNote = resolveEnrollmentRejectionNote(
+    linkId,
+    emailNorm,
+    applicationsByCourse.get(linkId),
+  );
   const enrollSuccessPath = `/dashboard/available-courses/enroll/${encodeURIComponent(linkId)}/success`;
 
   useEffect(() => {
@@ -346,6 +356,8 @@ const StudentAvailableCourseDetailPage = () => {
     (apiCourse ? resolvedSessionsSixMonths(apiCourse) : undefined) ??
     scheduleMerged?.sessionsSixMo;
   const enrollmentCount = apiCourse?.enrollmentCount;
+  const isClassFull = isTeacherClassFull(enrollmentCount);
+  const canJoinClass = canApplyToTeacherClass(enrollmentStatus, enrollmentCount);
 
   const price = apiCourse?.pricing?.discountedAmount ?? apiCourse?.pricing?.amount;
   const currency = apiCourse?.pricing?.currency ?? "USD";
@@ -403,6 +415,16 @@ const StudentAvailableCourseDetailPage = () => {
             </div>
 
             <div className="p-6 pb-28 sm:p-8 sm:pb-32">
+              {enrollmentStatus === "rejected" ? (
+                <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-950">
+                  <p className="font-medium">Your enrollment application was declined</p>
+                  <p className="mt-1 text-red-900/90">
+                    {rejectionNote
+                      ? `Reason from admin: ${rejectionNote}`
+                      : "An administrator declined your application. You can submit a new application if spots are still available."}
+                  </p>
+                </div>
+              ) : null}
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
                 <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-wide text-foreground/60">{category}</p>
@@ -501,7 +523,12 @@ const StudentAvailableCourseDetailPage = () => {
                         </dt>
                         <dd className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">
                           {enrollmentCount != null ? (
-                            enrollmentCount
+                            <>
+                              <span className={isClassFull ? "text-amber-700" : undefined}>
+                                {enrollmentCount}
+                              </span>
+                              <span className="font-normal text-zinc-400"> / {TEACHER_CLASS_MAX_STUDENTS}</span>
+                            </>
                           ) : (
                             <span className="font-normal text-zinc-400">—</span>
                           )}
@@ -861,6 +888,13 @@ const StudentAvailableCourseDetailPage = () => {
                       className="h-10 shrink-0 rounded-xl border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 shadow-sm hover:bg-zinc-50 sm:px-5"
                     >
                       <Link to={enrollSuccessPath}>View application</Link>
+                    </Button>
+                  ) : !canJoinClass ? (
+                    <Button
+                      disabled
+                      className="h-10 shrink-0 cursor-not-allowed rounded-xl border-0 bg-slate-200 px-4 text-sm font-semibold text-slate-500 sm:px-5"
+                    >
+                      Class full
                     </Button>
                   ) : (
                     <Button

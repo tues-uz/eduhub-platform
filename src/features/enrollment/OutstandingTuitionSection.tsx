@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Loader2 } from "@/lib/icons";
+import { useTranslation } from "react-i18next";
+import { ArrowRight, ChevronDown, Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
+import { EnrollmentTrialBadge } from "@/features/enrollment/EnrollmentTrialBadge";
+import {
+  enrollmentHasTrialCode,
+  formatEnrollmentTrialCode,
+} from "@/features/enrollment/enrollmentTrial";
 import { eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
@@ -32,23 +38,42 @@ type CardData = {
   currency: string;
   nextMonthLabel: string | null;
   pendingCount: number;
+  isTrial: boolean;
 };
 
 function OutstandingTuitionCard({ card }: { card: CardData }) {
+  const { t } = useTranslation();
   const progressPct =
     card.totalMonths > 0 ? Math.round((card.paidCount / card.totalMonths) * 100) : 0;
+  const trialCode = formatEnrollmentTrialCode(card.application);
 
   return (
-    <article className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-      <div className="border-b border-zinc-100 px-4 py-3.5 sm:px-5">
+    <article
+      className={cn(
+        "overflow-hidden rounded-xl border bg-white shadow-sm",
+        card.isTrial ? "border-violet-200/80" : "border-zinc-200",
+      )}
+    >
+      <div className={cn("border-b px-4 py-3.5 sm:px-5", card.isTrial ? "border-violet-100/80" : "border-zinc-100")}>
         <div className="flex flex-wrap items-start justify-between gap-2 gap-y-1">
           <h3 className="min-w-0 text-sm font-semibold leading-snug text-zinc-900">
             {card.application.courseTitle ?? card.application.courseId}
           </h3>
-          <span className="shrink-0 rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-zinc-600">
-            {card.paidCount} of {card.totalMonths} paid
-          </span>
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+            {card.isTrial ? <EnrollmentTrialBadge /> : null}
+            <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-zinc-600">
+              {card.paidCount} of {card.totalMonths} paid
+            </span>
+          </div>
         </div>
+        {card.isTrial && trialCode ? (
+          <p className="mt-2 font-mono text-[11px] text-violet-900/80">
+            {t("payment.trial.codeLabel")}: {trialCode}
+          </p>
+        ) : null}
+        {card.isTrial ? (
+          <p className="mt-2 text-xs leading-relaxed text-violet-950/85">{t("payment.trial.continueHint")}</p>
+        ) : null}
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-zinc-100">
           <div
             className="h-full rounded-full bg-[#3954d0] transition-all duration-300"
@@ -88,7 +113,7 @@ function OutstandingTuitionCard({ card }: { card: CardData }) {
           )}
         >
           <Link to={installmentPaymentPath(card.application.id)}>
-            Pay now
+            {card.isTrial ? t("payment.trial.payToContinue") : t("payment.outstandingPayNow")}
             <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
           </Link>
         </Button>
@@ -102,12 +127,14 @@ export function OutstandingTuitionSection({
 }: {
   applications: EnrollmentApplicationResponse[];
 }) {
+  const { t } = useTranslation();
   const approved = useMemo(
     () => applications.filter((a) => a.status === "APPROVED"),
     [applications],
   );
   const [cards, setCards] = useState<CardData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -172,6 +199,7 @@ export function OutstandingTuitionSection({
             ? nextPayable.monthLine || nextPayable.tabLabel
             : outstanding[0]?.monthLine || outstanding[0]?.tabLabel || null,
           pendingCount,
+          isTrial: enrollmentHasTrialCode(app),
         });
       }
       if (!cancelled) {
@@ -189,7 +217,7 @@ export function OutstandingTuitionSection({
     return (
       <div className="mb-6 flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-sm text-zinc-500">
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-        Checking remaining tuition…
+        {t("payment.outstandingChecking")}
       </div>
     );
   }
@@ -198,19 +226,38 @@ export function OutstandingTuitionSection({
 
   return (
     <section className="mb-8">
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 className="text-base font-semibold tracking-tight text-zinc-900">Remaining tuition</h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            Pay the next schedule month to unlock attendance QR for those sessions.
-          </p>
+      <button
+        type="button"
+        onClick={() => setExpanded((open) => !open)}
+        aria-expanded={expanded}
+        className="mb-3 flex w-full items-start justify-between gap-3 rounded-xl text-left transition-colors hover:bg-zinc-50/80 -mx-1 px-1 py-0.5"
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-base font-semibold tracking-tight text-zinc-900">
+              {t("payment.outstandingTitle")}
+            </h2>
+            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium tabular-nums text-zinc-600">
+              {cards.length}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-zinc-500">{t("payment.outstandingHint")}</p>
         </div>
-      </div>
-      <div className="space-y-3">
-        {cards.map((card) => (
-          <OutstandingTuitionCard key={card.application.id} card={card} />
-        ))}
-      </div>
+        <ChevronDown
+          className={cn(
+            "mt-0.5 h-5 w-5 shrink-0 text-zinc-400 transition-transform duration-200",
+            expanded && "rotate-180",
+          )}
+          aria-hidden
+        />
+      </button>
+      {expanded ? (
+        <div className="space-y-3">
+          {cards.map((card) => (
+            <OutstandingTuitionCard key={card.application.id} card={card} />
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }

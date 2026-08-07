@@ -24,9 +24,7 @@ import { useAuthSession } from "@/features/auth/context";
 import { ensureEnrollmentDocuments } from "@/features/enrollment/enrollmentApproval";
 import {
   buildEnrollmentReceiptPdfData,
-  buildEnrollmentSubmissionReceiptPdfData,
   downloadEnrollmentReceiptPdf,
-  downloadEnrollmentSubmissionReceiptPdf,
 } from "@/features/enrollment/enrollmentReceiptPdf";
 import {
   enrichEnrollmentApplication,
@@ -40,6 +38,12 @@ import { isUuid } from "@/api/utils";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { OutstandingTuitionSection } from "@/features/enrollment/OutstandingTuitionSection";
+import { TrialEnrollmentReminderSection } from "@/features/enrollment/TrialEnrollmentReminderSection";
+import { EnrollmentTrialBadge } from "@/features/enrollment/EnrollmentTrialBadge";
+import {
+  enrollmentHasTrialCode,
+  formatEnrollmentTrialCode,
+} from "@/features/enrollment/enrollmentTrial";
 import { enrollmentPaymentPlanLabelForRecord } from "@/features/enrollment/enrollmentPaymentDisplay";
 
 type PaymentStatusFilter = "all" | EnrollmentApplicationStatus;
@@ -126,20 +130,21 @@ async function downloadEnrollmentPdf(
   }
 
   let enriched = enrichEnrollmentApplication(r);
-  if (enriched.status === "APPROVED") {
-    enriched = ensureEnrollmentDocuments(enriched, listedTuition, scheduleSlots);
+  if (enriched.status !== "APPROVED") {
+    toast.error(
+      enriched.status === "REJECTED"
+        ? t("payment.pdfNotAvailableRejected")
+        : t("payment.pdfAvailableAfterApproval"),
+    );
+    return;
   }
+
+  enriched = ensureEnrollmentDocuments(enriched, listedTuition, scheduleSlots);
 
   const pdfOpts = { teacherName, listedTuition, scheduleSlots, locale };
   const official = buildEnrollmentReceiptPdfData(enriched, pdfOpts);
   if (official) {
     await downloadEnrollmentReceiptPdf(official);
-    return;
-  }
-
-  const submission = buildEnrollmentSubmissionReceiptPdfData(enriched, pdfOpts);
-  if (submission) {
-    await downloadEnrollmentSubmissionReceiptPdf(submission);
     return;
   }
 
@@ -163,6 +168,7 @@ function PaymentHistoryMobileCard({
 }) {
   const { t } = useTranslation();
   const r = enrichEnrollmentApplication(record);
+  const trialCode = formatEnrollmentTrialCode(r);
 
   return (
     <article className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
@@ -170,15 +176,23 @@ function PaymentHistoryMobileCard({
         <h3 className="min-w-0 flex-1 text-sm font-semibold leading-snug text-zinc-900">
           {r.courseTitle ?? r.courseId}
         </h3>
-        <span
-          className={cn(
-            "inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium",
-            statusStyles(r.status),
-          )}
-        >
-          {statusLabel(r.status, t)}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          {enrollmentHasTrialCode(r) ? <EnrollmentTrialBadge /> : null}
+          <span
+            className={cn(
+              "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
+              statusStyles(r.status),
+            )}
+          >
+            {statusLabel(r.status, t)}
+          </span>
+        </div>
       </div>
+      {trialCode ? (
+        <p className="mt-2 font-mono text-[11px] text-violet-900/80">
+          {t("payment.trial.codeLabel")}: {trialCode}
+        </p>
+      ) : null}
       <p className="mt-2 text-xs tabular-nums text-zinc-500">{formatSubmittedAt(r.submittedAt)}</p>
       <dl className="mt-3 space-y-2 border-t border-zinc-100 pt-3 text-xs">
         <div className="flex items-start justify-between gap-3">
@@ -282,6 +296,7 @@ const StudentPaymentInfo = () => {
         e.adminNote ?? "",
         e.invoiceNumber ?? "",
         e.receiptNumber ?? "",
+        e.trialCode ?? "",
       ]
         .join(" ")
         .toLowerCase()
@@ -326,6 +341,7 @@ const StudentPaymentInfo = () => {
           </div>
         ) : (
           <>
+            <TrialEnrollmentReminderSection applications={rows} />
             <OutstandingTuitionSection applications={rows} />
 
             <div className="mb-4 flex items-center gap-2 sm:gap-3">
@@ -420,15 +436,26 @@ const StudentPaymentInfo = () => {
                   ) : (
                   filteredRows.map((raw) => {
                     const r = enrichEnrollmentApplication(raw);
+                    const trialCode = formatEnrollmentTrialCode(r);
                     return (
                       <TableRow key={r.id} className="border-zinc-100 bg-white hover:bg-zinc-50/70">
                         <TableCell className="align-middle whitespace-nowrap px-3 py-3 text-sm tabular-nums text-zinc-700">
                           {formatSubmittedAt(r.submittedAt)}
                         </TableCell>
                         <TableCell className="min-w-0 align-middle px-3 py-3 text-sm font-medium text-zinc-900">
-                          <span className="line-clamp-2 break-words" title={r.courseTitle ?? r.courseId}>
-                            {r.courseTitle ?? r.courseId}
-                          </span>
+                          <div className="flex min-w-0 flex-col gap-1">
+                            <span className="line-clamp-2 break-words" title={r.courseTitle ?? r.courseId}>
+                              {r.courseTitle ?? r.courseId}
+                            </span>
+                            {enrollmentHasTrialCode(r) ? (
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <EnrollmentTrialBadge className="text-[10px]" />
+                                {trialCode ? (
+                                  <span className="font-mono text-[10px] text-violet-800/90">{trialCode}</span>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </div>
                         </TableCell>
                         <TableCell className="min-w-0 align-middle px-3 py-3 font-mono text-[11px] text-zinc-700">
                           {r.invoiceNumber ?? "—"}

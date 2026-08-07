@@ -77,6 +77,31 @@ function ReadOnlySessionRow({
   );
 }
 
+function NewClassSchedulePlaceholder() {
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">
+          {t("teacher.courseForm.schedule.sectionTitle")}
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          {t("teacher.courseForm.schedule.newClassInfo")}
+        </p>
+      </div>
+
+      <ul className="max-w-2xl list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
+        <li>{t("teacher.courseForm.schedule.newClassStep1Body")}</li>
+        <li>{t("teacher.courseForm.schedule.newClassStep2Body")}</li>
+        <li>{t("teacher.courseForm.schedule.newClassStep3Body")}</li>
+      </ul>
+
+      <p className="text-xs text-muted-foreground">{t("teacher.courseForm.schedule.newClassContinueHint")}</p>
+    </div>
+  );
+}
+
 export default function TeacherCourseFormSchedulePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -211,19 +236,7 @@ export default function TeacherCourseFormSchedulePage() {
           </div>
         ) : null}
 
-        {!isEdit ? (
-          <div className="flex min-h-[16rem] flex-col justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-left">
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">
-              {t("teacher.courseForm.schedule.sectionTitle")}
-            </h2>
-            <p className="mt-2 max-w-md text-sm text-muted-foreground">
-              {t("teacher.courseForm.schedule.newClassInfo")}
-            </p>
-            <p className="mt-1 max-w-md text-xs text-muted-foreground">
-              {t("teacher.courseForm.schedule.newClassNote")}
-            </p>
-          </div>
-        ) : null}
+        {!isEdit ? <NewClassSchedulePlaceholder /> : null}
 
         {isEdit && apiCourse ? (
           <div className="mb-4 flex flex-wrap items-center gap-2">

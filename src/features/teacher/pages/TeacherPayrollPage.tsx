@@ -28,9 +28,9 @@ import {
   currencyMapToFormattedLines,
   estimateInstructorAndPlatformSplitLines,
   formatMoney,
-  INSTRUCTOR_REVENUE_SHARE,
   type ClassPayrollAggregate,
 } from "@/features/payroll/classPayrollAggregate";
+import { getInstructorRevenueShare } from "@/features/payroll/instructorRevenueShareStorage";
 import {
   instructorPayrollRequestDedupeKey,
   instructorPayrollRequestStore,
@@ -477,14 +477,23 @@ export default function TeacherPayrollPage() {
                   <TableBody>
                     {filteredClassCards.map((cls) => {
                       const ck = classCardKey(cls.className, cls.course);
-                      const agg = classAggregateFromPayroll(cls);
+                      const aggBase = classAggregateFromPayroll(cls);
+                      const payrollEmail = emailNorm || cls.lecturerEmail || aggBase.lecturerEmail;
+                      const agg =
+                        payrollEmail && aggBase.lecturerEmail !== payrollEmail
+                          ? { ...aggBase, lecturerEmail: payrollEmail }
+                          : aggBase;
                       const studentRows = cls.students;
                       const totalStudents = studentRows.length > 0 ? studentRows.length : cls.enrollmentCount;
                       const paidCount = agg.paidCount;
                       const unpaidCount = agg.unpaidCount;
                       const enrolledLines = currencyMapToFormattedLines(new Map([[cls.currency, cls.totalTuition]]));
-                      const revenueSplit = estimateInstructorAndPlatformSplitLines(new Map([[cls.currency, cls.totalTuition]]));
+                      const revenueSplit = estimateInstructorAndPlatformSplitLines(
+                        new Map([[cls.currency, cls.totalTuition]]),
+                        emailNorm || cls.lecturerEmail,
+                      );
                       const summaryText = buildPayrollSummaryText(agg);
+                      const instructorShare = getInstructorRevenueShare(emailNorm || cls.lecturerEmail);
                       const paidStudentCount = paidCount;
                       const paymentCurrency = cls.currency;
                       const paidPaymentAmounts = studentRows
@@ -584,7 +593,7 @@ export default function TeacherPayrollPage() {
                                   ))}
                               <p className="mt-0.5 text-[10px] font-normal text-muted-foreground">
                                 {t("teacher.payroll.sharePercent", {
-                                  percent: Math.round(INSTRUCTOR_REVENUE_SHARE * 100),
+                                  percent: Math.round(instructorShare * 100),
                                 })}
                               </p>
                             </TableCell>
@@ -717,6 +726,7 @@ export default function TeacherPayrollPage() {
                             paymentCurrency={paymentCurrency}
                             paidPaymentAmounts={paidPaymentAmounts}
                             existingClassRequests={classPayrollRequests}
+                            instructorEmail={emailNorm || cls.lecturerEmail}
                             onSubmit={() => void onSubmitRequest(cls.courseId, cls.className, cls.course, summaryText)}
                           />
                         </Fragment>

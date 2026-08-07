@@ -382,6 +382,8 @@ export interface EnrollmentApplicationRequest {
   scheduleSessionCount?: number;
   /** Referral code entered by the student (optional). */
   referralCode?: string;
+  /** Trial class code entered by the student (optional). */
+  trialCode?: string;
 }
 
 export interface EnrollmentApplicationResponse {
@@ -405,6 +407,7 @@ export interface EnrollmentApplicationResponse {
   joinFromSessionNumber?: number;
   scheduleSessionCount?: number;
   referralCode?: string;
+  trialCode?: string;
   status: EnrollmentApplicationStatus;
   submittedAt: string;
   reviewedAt?: string;

@@ -213,7 +213,7 @@ function DashboardStatCard({
     <Link
       to={href}
       className={cn(
-        "group flex flex-1 flex-col bg-white px-5 py-5 transition-colors hover:bg-zinc-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#3954d0] sm:px-6",
+        "group flex w-full min-w-0 flex-col bg-white px-5 py-5 transition-colors hover:bg-zinc-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#3954d0] sm:px-6",
         className,
       )}
     >
@@ -236,9 +236,8 @@ function DashboardStatCard({
 
 function dashboardStatBorderClass(index: number, total: number): string {
   return cn(
-    index < total - 1 && "lg:border-r lg:border-zinc-200/80",
-    index % 2 === 0 && index < total - 1 && "max-lg:border-r max-lg:border-zinc-200/80",
-    index < 2 && "max-lg:border-b max-lg:border-zinc-200/80",
+    index < total - 1 && "sm:border-r sm:border-zinc-200/80",
+    index < total - 1 && "max-sm:border-b max-sm:border-zinc-200/80",
   );
 }
 
@@ -321,7 +320,7 @@ const StudentDashboard = () => {
 
             {/* Stats */}
             <div className="overflow-hidden rounded-2xl border border-zinc-200/80">
-              <div className="grid grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3">
                 {statCards.map((stat, index) => {
                   const href = "href" in stat && typeof stat.href === "string" ? stat.href : "/dashboard";
                   const labelKey = STAT_LABEL_KEYS[href];
@@ -393,20 +392,20 @@ const StudentDashboard = () => {
               {/* Quick Actions */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 px-4 py-6">
                 <h2 className="mb-4 text-xl font-bold leading-tight text-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("dashboard.quickActions")}</h2>
-                <div className="space-y-2">
-                  <Link to="/dashboard/available-courses">
+                <div className="flex flex-col gap-2">
+                  <Link to="/dashboard/available-courses" className="block">
                     <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                       <BookOpen className="h-4 w-4 mr-2" />
                       {t("dashboard.browseClasses")}
                     </Button>
                   </Link>
-                  <Link to="/dashboard/certificates">
+                  <Link to="/dashboard/certificates" className="block">
                     <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                       <Award className="h-4 w-4 mr-2" />
                       {t("dashboard.statsCertificates")}
                     </Button>
                   </Link>
-                  <Link to="/dashboard/progress">
+                  <Link to="/dashboard/progress" className="block">
                     <Button className="w-full justify-start rounded-2xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" variant="outline">
                       <BarChart3 className="h-4 w-4 mr-2" />
                       {t("dashboard.viewProgress")}

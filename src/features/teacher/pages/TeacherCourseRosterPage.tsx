@@ -9,7 +9,6 @@ import {
   BarChart2,
   CalendarDays,
   ClipboardList,
-  CheckCircle2,
   FileText,
   Loader2,
   Pencil,
@@ -57,11 +56,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { eduhubAttendance, eduhubCourseQuizzes, eduhubCourses, eduhubClassResumes, eduhubSchedule, eduhubSubstituteInvites, ApiError, type QuizResponse } from "@/api/eduhubClient";
+import { eduhubCourseQuizzes, eduhubCourses, eduhubClassResumes, eduhubSchedule, eduhubSubstituteInvites, ApiError, type QuizResponse } from "@/api/eduhubClient";
 import {
   isLocalOnlyQuizId,
   mergeCourseQuizListsWithLocal,
@@ -71,6 +69,7 @@ import type { CourseResponse, CourseStatus, SubstituteInviteResponse, Substitute
 import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
 import { TeacherAttendanceSessionPanel } from "@/features/teacher/components/TeacherAttendanceSessionPanel";
+import { TeacherAttendanceMatrixPanel } from "@/features/teacher/components/TeacherAttendanceMatrixPanel";
 import { TeacherCourseGradesPanel } from "@/features/teacher/components/TeacherCourseGradesPanel";
 import { TeacherCourseSchedulePanel } from "@/features/teacher/components/TeacherCourseSchedulePanel";
 import { TeacherManualQuizScoresPanel } from "@/features/teacher/components/TeacherManualQuizScoresPanel";
@@ -84,15 +83,12 @@ import {
 import {
   ATTENDANCE_MEETINGS_CHANGED,
   fetchAttendanceMeetings,
-  formatMeetingOptionLabel,
 } from "@/features/teacher/attendance/attendanceMeetingsStorage";
 import {
   ATTENDANCE_ROLL_BROADCAST,
   ATTENDANCE_ROLL_CHANGED,
   ATTENDANCE_ROLL_STORAGE_KEY,
-  countPresentForSession,
   countSessionsStudentAttended,
-  getPresentForStudent,
 } from "@/features/attendance/attendanceRollStorage";
 import type { ClassResumeResponse } from "@/api/eduhubTypes";
 import { useTeacherClassChecklist } from "@/features/teacher/hooks/useTeacherClassChecklist";
@@ -617,28 +613,6 @@ export default function TeacherCourseRosterPage() {
     () => attendanceMeetingsQuery.data ?? [],
     [attendanceMeetingsQuery.data],
   );
-
-  const overviewMeetingLabel = useMemo(() => {
-    if (!courseMeta?.id || !overviewSessionId) return null;
-    const m = attendanceMeetings.find((x) => x.sessionId === overviewSessionId);
-    return m ? formatMeetingOptionLabel(m) : null;
-  }, [courseMeta?.id, overviewSessionId, attendanceMeetings]);
-
-  const attendanceRosterQuery = useQuery({
-    queryKey: ["teacher", "attendance-roster", courseMeta?.id, overviewSessionId, attendanceUiKey],
-    queryFn: () => eduhubAttendance.roster(courseMeta!.id, overviewSessionId!),
-    enabled: Boolean(courseMeta?.id && overviewSessionId && isUuid(overviewSessionId)),
-  });
-
-  const attendanceRosterByStudent = useMemo(() => {
-    const rows = overviewSessionId ? (attendanceRosterQuery.data?.rows ?? []) : [];
-    const map = new Map<string, (typeof rows)[number]>();
-    rows.forEach((row) => {
-      map.set(row.studentId, row);
-      map.set(`email:${row.studentEmail.trim().toLowerCase()}`, row);
-    });
-    return map;
-  }, [attendanceRosterQuery.data?.rows, overviewSessionId]);
 
   useEffect(() => {
     if (!courseMeta?.id) return;
@@ -1618,177 +1592,17 @@ export default function TeacherCourseRosterPage() {
                     />
                   </section>
 
-                  <section className="space-y-4">
-                    <div className="flex flex-wrap items-end justify-between gap-3">
-                      <div className="space-y-1">
-                        <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                          {t("teacher.roster.attendance.overviewTitle")}
-                        </h2>
-                        <p className="max-w-xl text-sm text-muted-foreground">
-                          {t("teacher.roster.attendance.overviewIntro")}
-                        </p>
-                      </div>
-                      {overviewSessionId && studentsQuery.data?.length ? (
-                        <p className="text-sm tabular-nums text-muted-foreground">
-                          {t("teacher.roster.attendance.presentForMeeting")}{" "}
-                          <span className="font-medium text-foreground">
-                            {attendanceRosterQuery.data?.summary.present ??
-                              countPresentForSession(courseMeta.id, overviewSessionId)}
-                            /{studentsQuery.data.length}
-                          </span>
-                        </p>
-                      ) : null}
-                    </div>
-
-                    {!isUuid(courseId) ? (
-                      <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center text-sm text-muted-foreground">
-                        {t("teacher.roster.attendance.connectApi")}
-                      </div>
-                    ) : studentsQuery.isLoading ? (
-                      <p className="text-sm text-muted-foreground">{t("teacher.roster.attendance.loadingRoster")}</p>
-                    ) : studentsQuery.isError ? (
-                      <p className="text-sm text-red-600">{t("teacher.roster.attendance.loadStudentsError")}</p>
-                    ) : !studentsQuery.data?.length ? (
-                      <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center text-sm text-muted-foreground">
-                        {t("teacher.roster.attendance.noStudents")}
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {overviewMeetingLabel ? (
-                          <p className="text-sm text-muted-foreground">
-                            {t("teacher.roster.attendance.showingFor")}{" "}
-                            <span className="font-medium text-foreground">{overviewMeetingLabel}</span>
-                          </p>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">
-                            {t("teacher.roster.attendance.selectMeetingHint")}
-                          </p>
-                        )}
-
-                        <div
-                          className="min-w-0 overflow-hidden rounded-xl border border-border bg-card"
-                          aria-label={t("teacher.roster.attendance.tableAria")}
-                        >
-                          <div className="overflow-x-auto">
-                            <table className="w-full min-w-[36rem] border-collapse text-sm">
-                              <thead>
-                                <tr className="border-b border-border bg-muted">
-                                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                    {t("teacher.roster.attendance.table.student")}
-                                  </th>
-                                  <th className="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                    {t("teacher.roster.attendance.table.present")}
-                                  </th>
-                                  <th className="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                    {t("teacher.roster.attendance.table.checkedIn")}
-                                  </th>
-                                  <th
-                                    className="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
-                                    title={t("teacher.roster.attendance.verifyHint")}
-                                  >
-                                    {t("teacher.roster.attendance.table.instructorCheck")}
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {studentsQuery.data.map((s) => {
-                                  void attendanceUiKey;
-                                  const apiEntry =
-                                    attendanceRosterByStudent.get(s.id) ??
-                                    attendanceRosterByStudent.get(`email:${s.email.trim().toLowerCase()}`);
-                                  const localEntry =
-                                    overviewSessionId != null
-                                      ? getPresentForStudent(courseMeta.id, overviewSessionId, s.id, s.email)
-                                      : undefined;
-                                  const entry = apiEntry
-                                    ? {
-                                        checkedAt: apiEntry.checkedAt ?? "",
-                                        present: apiEntry.present,
-                                      }
-                                    : localEntry
-                                      ? { checkedAt: localEntry.checkedAt, present: true }
-                                      : undefined;
-                                  const verifyItemId = `${teacherChecklist.verifyItemId}-${s.id}`;
-                                  const canVerify = Boolean(overviewSessionId);
-                                  const displayName = formatDisplayPersonName(s.fullName);
-                                  return (
-                                    <tr
-                                      key={s.id}
-                                      className="border-b border-border last:border-b-0 hover:bg-muted/20"
-                                    >
-                                      <td className="px-3 py-2.5">
-                                        <div className="flex min-w-0 items-center gap-2.5">
-                                          <Avatar className="size-8 shrink-0">
-                                            {s.avatarUrl ? <AvatarImage src={s.avatarUrl} alt="" /> : null}
-                                            <AvatarFallback className="text-[11px]">
-                                              {profileInitials(displayName)}
-                                            </AvatarFallback>
-                                          </Avatar>
-                                          <div className="min-w-0">
-                                            <p className="truncate font-medium text-foreground">{displayName}</p>
-                                            <p className="truncate text-xs text-muted-foreground">{s.email}</p>
-                                          </div>
-                                        </div>
-                                      </td>
-                                      <td className="px-3 py-2.5 text-center">
-                                        {entry?.present ? (
-                                          <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                                            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-                                            {t("teacher.roster.attendance.presentBadge")}
-                                          </span>
-                                        ) : (
-                                          <span className="text-muted-foreground">
-                                            {t("teacher.roster.attendance.absentBadge")}
-                                          </span>
-                                        )}
-                                      </td>
-                                      <td className="px-3 py-2.5 text-right text-sm tabular-nums text-muted-foreground whitespace-nowrap">
-                                        {entry?.present && entry.checkedAt
-                                          ? new Date(entry.checkedAt).toLocaleString(undefined, {
-                                              month: "short",
-                                              day: "numeric",
-                                              hour: "2-digit",
-                                              minute: "2-digit",
-                                            })
-                                          : "—"}
-                                      </td>
-                                      <td className="px-3 py-2.5 text-center">
-                                        {teacherChecklist.ready ? (
-                                          <Checkbox
-                                            id={`teacher-verify-${verifyItemId}`}
-                                            checked={Boolean(teacherChecklist.checked[verifyItemId])}
-                                            disabled={!canVerify}
-                                            onCheckedChange={(v) =>
-                                              teacherChecklist.toggle(verifyItemId, v === true)
-                                            }
-                                            className="shrink-0"
-                                            aria-label={
-                                              canVerify
-                                                ? `Mark ${displayName} verified for this meeting`
-                                                : `Select a meeting above to verify ${displayName}`
-                                            }
-                                          />
-                                        ) : (
-                                          <Checkbox
-                                            disabled
-                                            className="shrink-0 opacity-40"
-                                            aria-label={t("teacher.roster.attendance.signInToCheck")}
-                                          />
-                                        )}
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {t("teacher.roster.attendance.verifyHint")}
-                        </p>
-                      </div>
-                    )}
-                  </section>
+                  <TeacherAttendanceMatrixPanel
+                    courseId={courseMeta.id}
+                    students={studentsQuery.data ?? []}
+                    scheduleSlotRows={attendanceScheduleSlots}
+                    attendanceMeetings={attendanceMeetings}
+                    attendanceUiKey={attendanceUiKey}
+                    teacherChecklist={teacherChecklist}
+                    isApiCourse={isUuid(courseId)}
+                    isLoading={studentsQuery.isLoading}
+                    isError={studentsQuery.isError}
+                  />
                 </TabsContent>
                 </div>
               </Tabs>

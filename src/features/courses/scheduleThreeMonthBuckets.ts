@@ -1,5 +1,22 @@
 /** Shared helpers: split a flat session list into month buckets (admin editor + instructor review). */
 
+/** Maximum sessions an admin may plan in one schedule month. */
+export const MAX_SESSIONS_PER_SCHEDULE_MONTH = 12;
+
+export function clampScheduleMonthSessionCount(n: number): number {
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(MAX_SESSIONS_PER_SCHEDULE_MONTH, Math.floor(n));
+}
+
+/** Parse month session count input; clamps to {@link MAX_SESSIONS_PER_SCHEDULE_MONTH}. */
+export function parseScheduleMonthSessionCount(raw: string): number | undefined {
+  const t = raw.trim();
+  if (!t) return undefined;
+  const n = parseInt(t, 10);
+  if (!Number.isFinite(n) || n < 0) return undefined;
+  return clampScheduleMonthSessionCount(n);
+}
+
 export type ScheduleSlotRow = {
   title?: string;
   sessionDate?: string;

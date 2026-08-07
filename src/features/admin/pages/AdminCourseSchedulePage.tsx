@@ -20,17 +20,26 @@ import { courseScheduleProposalStore } from "@/features/courses/courseSchedulePr
 import {
   adminScheduleMonthBlurb,
   adminScheduleMonthHeading,
+  clampScheduleMonthSessionCount,
   distributeSessionsIntoMonths,
+  MAX_SESSIONS_PER_SCHEDULE_MONTH,
   padScheduleSlots,
+  parseScheduleMonthSessionCount,
   type ScheduleSlotRow,
 } from "@/features/courses/scheduleThreeMonthBuckets";
 
-function parseNonNegativeInt(raw: string): number | undefined {
-  const t = raw.trim();
-  if (!t) return undefined;
-  const n = parseInt(t, 10);
-  if (!Number.isFinite(n) || n < 0) return undefined;
-  return n;
+type MonthPlanState = { count: string; sessions: ScheduleSlotRow[] };
+
+const DEFAULT_MONTH_PLANS: MonthPlanState[] = [{ count: "4", sessions: [] }];
+
+function monthPlansFromDistribution(counts: number[], buckets: ScheduleSlotRow[][]): MonthPlanState[] {
+  return counts.map((c, i) => {
+    const n = clampScheduleMonthSessionCount(c);
+    return {
+      count: String(n),
+      sessions: (buckets[i] ?? []).slice(0, n),
+    };
+  });
 }
 
 function instructorInitials(name: string): string {
@@ -45,17 +54,6 @@ function formatClassDate(iso?: string): string {
   const d = new Date(iso.trim());
   if (Number.isNaN(d.getTime())) return "—";
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(d);
-}
-
-type MonthPlanState = { count: string; sessions: ScheduleSlotRow[] };
-
-const DEFAULT_MONTH_PLANS: MonthPlanState[] = [{ count: "4", sessions: [] }];
-
-function monthPlansFromDistribution(counts: number[], buckets: ScheduleSlotRow[][]): MonthPlanState[] {
-  return counts.map((c, i) => ({
-    count: String(c),
-    sessions: buckets[i] ?? [],
-  }));
 }
 
 export default function AdminCourseSchedulePage() {
@@ -153,7 +151,7 @@ export default function AdminCourseSchedulePage() {
         sessions: [...plan.sessions],
       }));
       for (let m = 0; m < next.length; m++) {
-        const n = parseNonNegativeInt(next[m].count.trim());
+        const n = parseScheduleMonthSessionCount(next[m].count.trim());
         if (n === undefined) continue;
         const padded = padScheduleSlots(n, prev[m]?.sessions);
         if (padded.length !== next[m].sessions.length) {
@@ -185,7 +183,7 @@ export default function AdminCourseSchedulePage() {
   }, []);
 
   const monthSessionCounts = useMemo(
-    () => monthPlans.map((p) => parseNonNegativeInt(p.count.trim()) ?? 0),
+    () => monthPlans.map((p) => parseScheduleMonthSessionCount(p.count.trim()) ?? 0),
     [monthPlans],
   );
 
@@ -208,9 +206,16 @@ export default function AdminCourseSchedulePage() {
   }, []);
 
   const setMonthCount = useCallback((monthIdx: number, raw: string) => {
-    const v = raw.replace(/\D/g, "");
+    const digits = raw.replace(/\D/g, "");
+    let next = digits;
+    if (digits !== "") {
+      const n = parseInt(digits, 10);
+      if (Number.isFinite(n)) {
+        next = String(clampScheduleMonthSessionCount(n));
+      }
+    }
     setMonthPlans((prev) =>
-      prev.map((plan, i) => (i === monthIdx ? { ...plan, count: v } : plan)),
+      prev.map((plan, i) => (i === monthIdx ? { ...plan, count: next } : plan)),
     );
   }, []);
 
@@ -218,6 +223,14 @@ export default function AdminCourseSchedulePage() {
     const total = monthSessionCounts.reduce((sum, n) => sum + n, 0);
     if (total < 1) {
       toast.error(t("admin.courses.schedule.toast.minOneSession"));
+      return;
+    }
+    if (monthSessionCounts.some((n) => n > MAX_SESSIONS_PER_SCHEDULE_MONTH)) {
+      toast.error(
+        t("admin.courses.schedule.toast.maxSessionsPerMonth", {
+          max: MAX_SESSIONS_PER_SCHEDULE_MONTH,
+        }),
+      );
       return;
     }
     setSaving(true);
@@ -373,7 +386,7 @@ export default function AdminCourseSchedulePage() {
 
             <div className="space-y-4">
               {monthPlans.map((plan, monthIdx) => {
-                const sessionsCount = parseNonNegativeInt(plan.count.trim());
+                const sessionsCount = parseScheduleMonthSessionCount(plan.count.trim());
                 const sessionLabelOffset = monthSessionCounts
                   .slice(0, monthIdx)
                   .reduce((sum, n) => sum + n, 0);
@@ -413,12 +426,19 @@ export default function AdminCourseSchedulePage() {
                           id={`adminClassMeetingsM${monthIdx}`}
                           inputMode="numeric"
                           pattern="[0-9]*"
+                          min={0}
+                          max={MAX_SESSIONS_PER_SCHEDULE_MONTH}
                           value={plan.count}
                           onChange={(e) => setMonthCount(monthIdx, e.target.value)}
                           placeholder="8"
                           className="h-11 max-w-[10rem] rounded-xl bg-white text-lg font-medium tabular-nums shadow-none"
                           disabled={!canEdit}
                         />
+                        <p className="max-w-lg text-xs leading-relaxed text-slate-500">
+                          {t("admin.courses.schedule.monthSessionLimit", {
+                            max: MAX_SESSIONS_PER_SCHEDULE_MONTH,
+                          })}
+                        </p>
                         <p className="max-w-lg text-xs leading-relaxed text-slate-500">{blurb}</p>
 
                         {sessionsCount != null && sessionsCount > 0 ? (

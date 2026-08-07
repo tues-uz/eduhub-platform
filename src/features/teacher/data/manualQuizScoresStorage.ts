@@ -143,6 +143,55 @@ export function saveManualQuizStudentScores(
   saveData(courseId, data);
 }
 
+/** Sum saved quiz scores for one student (null if none entered). */
+export function computeManualQuizStudentTotal(
+  courseId: string,
+  studentId: string,
+): number | null {
+  const data = loadData(courseId);
+  return sumManualQuizValues(data.scores[studentId], data.columns);
+}
+
+/** Sum draft or saved quiz inputs for column ids (used by quiz matrix UI). */
+export function sumManualQuizInputs(
+  valuesByColumnId: Record<string, string | number | null | undefined> | undefined,
+  columns: ManualQuizColumn[],
+): number | null {
+  if (columns.length === 0) return null;
+  let sum = 0;
+  let hasAny = false;
+  for (const col of columns) {
+    const raw = valuesByColumnId?.[col.id];
+    if (raw == null) continue;
+    const n =
+      typeof raw === "number"
+        ? raw
+        : typeof raw === "string"
+          ? parseManualQuizScoreInput(raw)
+          : null;
+    if (n == null) continue;
+    sum += n;
+    hasAny = true;
+  }
+  return hasAny ? sum : null;
+}
+
+function sumManualQuizValues(
+  row: Record<string, number> | undefined,
+  columns: ManualQuizColumn[],
+): number | null {
+  if (!row || columns.length === 0) return null;
+  let sum = 0;
+  let hasAny = false;
+  for (const col of columns) {
+    const n = row[col.id];
+    if (n == null || !Number.isFinite(n)) continue;
+    sum += n;
+    hasAny = true;
+  }
+  return hasAny ? sum : null;
+}
+
 /** Clamp and validate a score for storage. Returns null if empty/invalid. */
 export function parseManualQuizScoreInput(raw: string): number | null {
   const t = raw.trim();

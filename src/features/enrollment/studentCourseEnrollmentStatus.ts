@@ -69,3 +69,23 @@ export function resolveStudentCourseEnrollmentDisplayStatus(
 
   return "not_enrolled";
 }
+
+/** Admin note when the student's latest application for this class was rejected. */
+export function resolveEnrollmentRejectionNote(
+  courseId: string,
+  emailNorm: string,
+  apiApplication?: EnrollmentApplicationResponse,
+): string | undefined {
+  if (apiApplication?.status === "REJECTED") {
+    const note = apiApplication.adminNote?.trim();
+    if (note) return note;
+  }
+  if (emailNorm) {
+    const latest = enrollmentApplicationStore.findLatestForCourseAndEmail(courseId, emailNorm);
+    if (latest?.status === "REJECTED") {
+      const note = latest.adminNote?.trim();
+      if (note) return note;
+    }
+  }
+  return undefined;
+}

@@ -6,7 +6,6 @@ import { eduhubCompletion } from "@/api/eduhubClient";
 import type { CourseGradebookRowResponse } from "@/api/eduhubTypes";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -39,20 +38,19 @@ import {
   computeTotalFinalScore,
   COURSE_FINAL_GRADES_CHANGED,
   listCourseFinalGrades,
-  parseFinalScoreInput,
   readInstructorScore,
   saveCourseFinalGrade,
   type CourseFinalGradeRecord,
 } from "@/features/teacher/data/courseFinalGradesStorage";
+import {
+  computeManualQuizStudentTotal,
+  MANUAL_QUIZ_SCORES_CHANGED,
+} from "@/features/teacher/data/manualQuizScoresStorage";
 
 export type RosterStudentRow = {
   id: string;
   fullName: string;
   email: string;
-};
-
-type DraftRow = {
-  score: string;
 };
 
 type GradeReviewSummary = {
@@ -69,9 +67,9 @@ type GradeTableRow = {
   attended: number;
   plannedTotal: number | null;
   attendanceScore: number | null;
+  quizTotal: number | null;
   instructorScore?: number | null;
   totalFinalScore: number | null;
-  draft: DraftRow;
   dirty: boolean;
   reviews: GradeReviewSummary;
   published: boolean;
@@ -93,19 +91,6 @@ type TeacherCourseGradesPanelProps = {
   /** Planned sessions in six months (from class settings). */
   plannedSessions?: number | null;
 };
-
-function draftFromRecord(record?: CourseFinalGradeRecord): DraftRow {
-  const instructor = readInstructorScore(record);
-  return {
-    score: instructor != null ? String(instructor) : "",
-  };
-}
-
-function draftFromApiRow(row?: CourseGradebookRowResponse): DraftRow {
-  return {
-    score: row?.instructorScore != null ? String(row.instructorScore) : "",
-  };
-}
 
 function ReviewStarsRow({ rating }: { rating: number }) {
   const { t } = useTranslation();
@@ -279,13 +264,13 @@ export function TeacherCourseGradesPanel({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [gradesTick, setGradesTick] = useState(0);
+  const [quizTick, setQuizTick] = useState(0);
   const [certTick, setCertTick] = useState(0);
   const [attendanceTick, setAttendanceTick] = useState(0);
   const [reviewsTick, setReviewsTick] = useState(0);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | "all" | null>(null);
   const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null);
-  const [drafts, setDrafts] = useState<Record<string, DraftRow>>({});
   const [reviewStudent, setReviewStudent] = useState<{
     name: string;
     email: string;
@@ -343,6 +328,17 @@ export function TeacherCourseGradesPanel({
   }, [courseId]);
 
   useEffect(() => {
+    const bump = (e: Event) => {
+      const ce = e as CustomEvent<{ courseId?: string }>;
+      if (!ce.detail?.courseId || ce.detail.courseId === courseId) {
+        setQuizTick((t) => t + 1);
+      }
+    };
+    window.addEventListener(MANUAL_QUIZ_SCORES_CHANGED, bump);
+    return () => window.removeEventListener(MANUAL_QUIZ_SCORES_CHANGED, bump);
+  }, [courseId]);
+
+  useEffect(() => {
     const bump = () => setCertTick((t) => t + 1);
     window.addEventListener(COURSE_CERTIFICATES_CHANGED, bump);
     return () => window.removeEventListener(COURSE_CERTIFICATES_CHANGED, bump);
@@ -372,44 +368,15 @@ export function TeacherCourseGradesPanel({
     return () => window.removeEventListener(COURSE_REVIEWS_CHANGED, bump);
   }, [courseId]);
 
-  useEffect(() => {
-    setDrafts((prev) => {
-      const next: Record<string, DraftRow> = {};
-      if (isApiCourse) {
-        for (const row of apiGradesQuery.data ?? []) {
-          next[row.studentId] = prev[row.studentId] ?? draftFromApiRow(row);
-        }
-      } else {
-        for (const s of students) {
-          next[s.id] = prev[s.id] ?? draftFromRecord(savedGrades[s.id]);
-        }
-      }
-      return next;
-    });
-  }, [apiGradesQuery.data, isApiCourse, savedGrades, students]);
-
-  const updateDraft = useCallback((studentId: string, patch: Partial<DraftRow>) => {
-    setDrafts((prev) => ({
-      ...prev,
-      [studentId]: { ...prev[studentId], ...patch },
-    }));
-  }, []);
-
   const handleSave = useCallback(
-    (student: RosterStudentRow, attendanceScore: number | null) => {
-      const draft = drafts[student.id] ?? { score: "" };
-      const instructorScore = parseFinalScoreInput(draft.score);
-      if (instructorScore == null) {
-        toast.error("Enter an instructor score from 0 to 100.");
-        return;
-      }
+    (student: RosterStudentRow, attendanceScore: number | null, quizTotal: number) => {
       setSavingId(student.id);
       try {
         const existing = savedGrades[student.id];
-        const totalFinalScore = computeTotalFinalScore(attendanceScore, instructorScore);
+        const totalFinalScore = computeTotalFinalScore(attendanceScore, quizTotal);
         const record: CourseFinalGradeRecord = {
           studentId: student.id,
-          instructorScore,
+          instructorScore: quizTotal,
           attendanceScore: attendanceScore ?? undefined,
           totalFinalScore: totalFinalScore ?? undefined,
           comment: existing?.comment,
@@ -417,14 +384,13 @@ export function TeacherCourseGradesPanel({
           updatedByEmail: instructorEmail.trim().toLowerCase() || undefined,
         };
         saveCourseFinalGrade(courseId, record);
-        setDrafts((prev) => ({ ...prev, [student.id]: draftFromRecord(record) }));
         toast.success(`Saved grades for ${student.fullName}`);
         setGradesTick((t) => t + 1);
       } finally {
         setSavingId(null);
       }
     },
-    [courseId, drafts, instructorEmail, savedGrades],
+    [courseId, instructorEmail, savedGrades],
   );
 
   const publishedCerts = useMemo(() => {
@@ -544,11 +510,11 @@ export function TeacherCourseGradesPanel({
   const apiRows = apiGradesQuery.data ?? [];
 
   const tableRows = useMemo((): GradeTableRow[] => {
+    void quizTick;
     if (isApiCourse) {
       return apiRows.map((row) => {
-        const draft = drafts[row.studentId] ?? draftFromApiRow(row);
-        const draftInstructor = parseFinalScoreInput(draft.score);
-        const liveTotal = computeTotalFinalScore(row.attendanceScore, draftInstructor);
+        const quizTotal = computeManualQuizStudentTotal(courseId, row.studentId);
+        const savedInstructor = row.instructorScore;
         return {
           studentId: row.studentId,
           fullName: row.studentName,
@@ -556,10 +522,10 @@ export function TeacherCourseGradesPanel({
           attended: row.attendanceAttended,
           plannedTotal: row.attendanceTotal,
           attendanceScore: row.attendanceScore,
-          instructorScore: row.instructorScore,
+          quizTotal,
+          instructorScore: savedInstructor,
           totalFinalScore: row.totalFinalScore,
-          draft,
-          dirty: draft.score !== (row.instructorScore != null ? String(row.instructorScore) : ""),
+          dirty: quizTotal != null && quizTotal !== savedInstructor,
           reviews: row.reviewSummary,
           published: Boolean(row.certificate),
           certificate: row.certificate,
@@ -574,11 +540,10 @@ export function TeacherCourseGradesPanel({
       const emailNorm = s.email.trim().toLowerCase();
       const reviews = getStudentCourseReviewSummary(courseId, emailNorm);
       const saved = savedGrades[s.id];
-      const draft = drafts[s.id] ?? draftFromRecord(saved);
       const savedInstructor = readInstructorScore(saved);
+      const quizTotal = computeManualQuizStudentTotal(courseId, s.id);
       const attended = countSessionsStudentAttended(courseId, s.id, s.email);
       const attendanceScore = computeAttendanceScore(attended, plannedSessions);
-      const draftInstructor = parseFinalScoreInput(draft.score);
       const savedTotal = computeTotalFinalScore(
         saved?.attendanceScore ?? attendanceScore,
         savedInstructor ?? null,
@@ -591,10 +556,10 @@ export function TeacherCourseGradesPanel({
         attended,
         plannedTotal: plannedSessions ?? null,
         attendanceScore,
+        quizTotal,
         instructorScore: savedInstructor,
         totalFinalScore: savedTotal,
-        draft,
-        dirty: draft.score !== (savedInstructor != null ? String(savedInstructor) : ""),
+        dirty: quizTotal != null && quizTotal !== savedInstructor,
         reviews,
         published: Boolean(published),
         certificate: published,
@@ -606,10 +571,10 @@ export function TeacherCourseGradesPanel({
     apiRows,
     attendanceTick,
     courseId,
-    drafts,
     isApiCourse,
     plannedSessions,
     publishedCerts,
+    quizTick,
     reviewsTick,
     savedGrades,
     students,
@@ -683,12 +648,6 @@ export function TeacherCourseGradesPanel({
                       {t("teacher.grades.table.attendance")}
                     </th>
                     <th
-                      className="border-b border-r border-border px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap"
-                      title={t("teacher.grades.table.headerTitles.instructor")}
-                    >
-                      {t("teacher.grades.table.instructor")}
-                    </th>
-                    <th
                       className="border-b border-r border-border px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap"
                       title={t("teacher.grades.table.headerTitles.total")}
                     >
@@ -704,8 +663,7 @@ export function TeacherCourseGradesPanel({
                 </thead>
                 <tbody>
                   {tableRows.map((row) => {
-                    const draftInstructor = parseFinalScoreInput(row.draft.score);
-                    const liveTotal = computeTotalFinalScore(row.attendanceScore, draftInstructor);
+                    const liveTotal = row.quizTotal;
                     const canPublish = row.totalFinalScore != null && !row.published;
                     const savingThisRow = isApiCourse
                       ? saveApiGradeMutation.isPending &&
@@ -755,25 +713,9 @@ export function TeacherCourseGradesPanel({
                             <span className="text-muted-foreground">—</span>
                           )}
                         </td>
-                        <td className="border-b border-r border-border px-3 py-2.5 text-center">
-                          <div className="inline-flex items-center justify-center gap-1">
-                            <Input
-                              type="number"
-                              min={0}
-                              max={100}
-                              step={0.5}
-                              inputMode="decimal"
-                              placeholder={t("teacher.grades.scorePlaceholder")}
-                              value={row.draft.score}
-                              className="h-9 w-[4.5rem] bg-background text-center tabular-nums"
-                              onChange={(e) => updateDraft(row.studentId, { score: e.target.value })}
-                            />
-                            <span className="text-xs text-muted-foreground">%</span>
-                          </div>
-                        </td>
                         <td className="border-b border-r border-border px-3 py-2.5 text-right text-sm tabular-nums whitespace-nowrap">
                           {liveTotal != null ? (
-                            <span className="font-semibold text-teal-800">{liveTotal}%</span>
+                            <span className="font-semibold text-teal-800">{liveTotal}</span>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
@@ -823,19 +765,18 @@ export function TeacherCourseGradesPanel({
                               variant="outline"
                               size="sm"
                               className="h-7 px-2.5 text-xs"
-                              disabled={savingThisRow || !row.dirty}
+                              disabled={savingThisRow || !row.dirty || row.quizTotal == null}
                               onClick={() => {
-                                const score = parseFinalScoreInput(row.draft.score);
-                                if (score == null) {
-                                  toast.error(t("teacher.grades.invalidScore"));
+                                if (row.quizTotal == null) {
+                                  toast.error(t("teacher.grades.noQuizScores"));
                                   return;
                                 }
                                 if (isApiCourse && row.apiRow) {
-                                  saveApiGradeMutation.mutate({ row: row.apiRow, score });
+                                  saveApiGradeMutation.mutate({ row: row.apiRow, score: row.quizTotal });
                                   return;
                                 }
                                 if (row.localStudent) {
-                                  handleSave(row.localStudent, row.attendanceScore);
+                                  handleSave(row.localStudent, row.attendanceScore, row.quizTotal);
                                 }
                               }}
                             >

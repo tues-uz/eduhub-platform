@@ -29,21 +29,17 @@ export async function fetchApiEnrolledStudentPreviews(
 export async function resolveEnrolledStudentPreviews(opts: {
   apiCourseId: string;
   enrollmentCount?: number;
-  role?: string;
-}): Promise<{ students: StudentAvatarPreview[]; totalCount?: number }> {
-  const normRole = opts.role?.trim().toUpperCase();
-  if (opts.enrollmentCount === 0 || normRole === "STUDENT") {
-    return { students: [], totalCount: opts.enrollmentCount ?? 0 };
-  }
-
+}): Promise<{ students: StudentAvatarPreview[]; totalCount: number }> {
   try {
     const students = await fetchApiEnrolledStudentPreviews(opts.apiCourseId);
-    if (students.length === 0) return { students: [] };
     return {
       students,
       totalCount: opts.enrollmentCount ?? students.length,
     };
   } catch {
-    return { students: [] };
+    return {
+      students: [],
+      totalCount: opts.enrollmentCount ?? 0,
+    };
   }
 }

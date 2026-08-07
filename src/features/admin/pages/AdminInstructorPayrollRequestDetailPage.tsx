@@ -112,7 +112,11 @@ export default function AdminInstructorPayrollRequestDetailPage() {
     if (!agg || agg.paymentCount === 0) {
       return "No tuition rows for this class in the current payment list.";
     }
-    return buildPayrollSummaryText(agg);
+    const enriched =
+      record.instructorEmailNorm && agg.lecturerEmail !== record.instructorEmailNorm
+        ? { ...agg, lecturerEmail: record.instructorEmailNorm }
+        : agg;
+    return buildPayrollSummaryText(enriched);
   }, [installmentPayments, record]);
 
   const proofHref = useMemo(() => {

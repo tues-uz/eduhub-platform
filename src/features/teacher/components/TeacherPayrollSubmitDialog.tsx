@@ -37,7 +37,11 @@ import {
   computePayrollMonthRequestedPayout,
   inferListedTuitionPerStudent,
 } from "@/features/payroll/payrollMonthPayout";
-import { INSTRUCTOR_REVENUE_SHARE, PLATFORM_REVENUE_SHARE, formatMoney } from "@/features/payroll/classPayrollAggregate";
+import { formatMoney } from "@/features/payroll/classPayrollAggregate";
+import {
+  getInstructorRevenueShare,
+  getPlatformRevenueShare,
+} from "@/features/payroll/instructorRevenueShareStorage";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
@@ -55,6 +59,7 @@ type Props = {
   paymentCurrency: string;
   paidPaymentAmounts: number[];
   existingClassRequests: InstructorPayrollRequestRecord[];
+  instructorEmail?: string;
   onSubmit: () => void;
 };
 
@@ -89,9 +94,12 @@ export function TeacherPayrollSubmitDialog({
   paymentCurrency,
   paidPaymentAmounts,
   existingClassRequests,
+  instructorEmail,
   onSubmit,
 }: Props) {
   const { t } = useTranslation();
+  const instructorShare = getInstructorRevenueShare(instructorEmail);
+  const platformShare = getPlatformRevenueShare(instructorEmail);
   const payrollSchedule = usePayrollRequestSchedule({
     classSection,
     course,
@@ -165,8 +173,8 @@ export function TeacherPayrollSubmitDialog({
       enrolledStudentCount > 0
         ? formatMoney(totalClassAmount, classPriceCurrency)
         : perStudentLabel;
-    const instructorShareAmount = Math.round(totalClassAmount * INSTRUCTOR_REVENUE_SHARE);
-    const platformShareAmount = Math.round(totalClassAmount * PLATFORM_REVENUE_SHARE);
+    const instructorShareAmount = Math.round(totalClassAmount * instructorShare);
+    const platformShareAmount = Math.round(totalClassAmount * platformShare);
     return {
       perStudentLabel,
       totalClassLabel,
@@ -174,7 +182,7 @@ export function TeacherPayrollSubmitDialog({
       platformShareLabel: formatMoney(platformShareAmount, classPriceCurrency),
       hasPrice: true,
     };
-  }, [classPriceCurrency, enrolledStudentCount, listedTuitionPerStudent]);
+  }, [classPriceCurrency, enrolledStudentCount, instructorShare, listedTuitionPerStudent]);
 
   const monthlyInstructorPayroll = useMemo(() => {
     const studentCount = paidStudentCount > 0 ? paidStudentCount : enrolledStudentCount;
@@ -190,6 +198,7 @@ export function TeacherPayrollSubmitDialog({
           slots: payrollSchedule.slots,
           schedulePeriodKey: option.id,
           paidStudentCount: studentCount,
+          instructorEmail,
         });
         if (!quote) return null;
         return {
@@ -217,6 +226,7 @@ export function TeacherPayrollSubmitDialog({
     enrolledStudentCount,
     listedTuitionPerStudent,
     paidStudentCount,
+    instructorEmail,
     payrollSchedule.slots,
     periodOptionViews,
   ]);
@@ -230,9 +240,11 @@ export function TeacherPayrollSubmitDialog({
       slots: payrollSchedule.slots,
       schedulePeriodKey: form.schedulePeriodKey,
       paidStudentCount,
+      instructorEmail,
     });
   }, [
     form?.schedulePeriodKey,
+    instructorEmail,
     listedTuitionPerStudent,
     payrollSchedule.apiCourse?.pricing?.currency,
     paymentCurrency,
@@ -347,7 +359,7 @@ export function TeacherPayrollSubmitDialog({
               </div>
               <div>
                 <dt className="text-[11px] text-slate-500">
-                  Instructor share ({Math.round(INSTRUCTOR_REVENUE_SHARE * 100)}% total)
+                  Instructor share ({Math.round(instructorShare * 100)}% total)
                 </dt>
                 <dd className="text-sm font-semibold tabular-nums text-emerald-800">
                   {monthlyInstructorPayroll?.totalFormatted ?? classPricingSummary.instructorShareLabel}
@@ -355,7 +367,7 @@ export function TeacherPayrollSubmitDialog({
               </div>
               <div>
                 <dt className="text-[11px] text-slate-500">
-                  Platform share ({Math.round(PLATFORM_REVENUE_SHARE * 100)}%)
+                  Platform share ({Math.round(platformShare * 100)}%)
                 </dt>
                 <dd className="text-sm font-semibold tabular-nums text-slate-700">
                   {classPricingSummary.platformShareLabel}

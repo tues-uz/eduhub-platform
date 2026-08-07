@@ -108,6 +108,7 @@
       "card": {
         "sessionsInSixMonths": "{{count}} sessions in 6 months",
         "sessionsNotSet": "Sessions in 6 months not set",
+        "statusScheduleApproved": "Schedule approved",
         "studentCount_one": "{{count}} student",
         "studentCount_other": "{{count}} students"
       },
@@ -403,7 +404,11 @@
         "dateLabel": "Date",
         "timeLabel": "Time",
         "sectionTitle": "Schedule",
-        "newClassInfo": "After you create the class, an admin will propose session dates for you to approve here.",
+        "newClassInfo": "Scheduling is set by admin after you save the class.",
+        "newClassStep1Body": "Finish details and lessons, then save the class.",
+        "newClassStep2Body": "Admin adds session counts, dates, and times.",
+        "newClassStep3Body": "You approve or request changes on this page.",
+        "newClassContinueHint": "Continue to lessons — you do not need a schedule yet.",
         "newClassNote": "You can continue to lessons for now.",
         "rejectionNoteTitle": "Your note to admin",
         "loading": "Loading schedule…",
@@ -1043,7 +1048,8 @@
         "noQuizzesShared": "No quizzes added yet",
         "table": {
           "no": "No.",
-          "student": "Student"
+          "student": "Student",
+          "total": "Total"
         },
         "addDialog": {
           "title": "Add quiz column",
@@ -1085,6 +1091,23 @@
         "qrIntro": "Pick a session, generate a QR, and have students scan to check in.",
         "overviewTitle": "Roster",
         "overviewIntro": "Check-ins for the session selected above.",
+        "matrixIntro": "One column per planned session from the admin schedule. Tick a cell to mark a student present manually, or use QR check-in above.",
+        "matrixSearchPlaceholder": "Search students…",
+        "matrixNoSchedule": "No class schedule yet. Ask admin to propose sessions, then approve on the Schedule tab.",
+        "matrixTableAria": "Student attendance across all planned class sessions",
+        "matrixGroupLabel": "Class schedule",
+        "matrixNoQrYet": "No QR session yet — you can still mark present manually",
+        "matrixFootnote": "QR check-ins lock the cell as present. Otherwise tick the box to record manual attendance for that session.",
+        "matrix": {
+          "no": "No.",
+          "noSearchResults": "No students match your search.",
+          "verifyStudent": "Verify {{name}}",
+          "manualPresent": "Marked present manually by instructor",
+          "manualBadge": "Manual",
+          "markPresentHint": "Mark {{name}} present for {{session}}",
+          "markPresentAria": "Mark {{name}} present for {{session}}",
+          "checkedInAt": "Checked in via QR at {{time}}"
+        },
         "connectApi": "Connect this class to the API to track enrolled students.",
         "substituteOverview": "Roster needs the course lead account.",
         "substituteOverviewDescription": "Enrollment is only available to the course lead right now.",
@@ -1289,7 +1312,7 @@
     },
     "grades": {
       "title": "Grades",
-      "intro": "Enter instructor scores, then publish certificates for students.",
+      "intro": "Total comes from saved quiz scores on the Quiz scores tab. Save here, then publish certificates.",
       "publishAll": "Publish all",
       "empty": {
         "substitute": "Substitute instructors cannot edit grades on this demo page.",
@@ -1309,8 +1332,7 @@
         "headerTitles": {
           "sessions": "Check-ins vs planned sessions",
           "attendance": "Sessions attended ÷ planned (0–100)",
-          "instructor": "Your score 0–100",
-          "total": "Instructor score (attendance is informational)"
+          "total": "Sum of saved quiz scores (Quiz scores tab)"
         }
       },
       "feedback": {
@@ -1327,8 +1349,9 @@
         "publish": "Publish",
         "done": "Done"
       },
-      "footnote": "Attend. % is informational. Total uses the instructor score. Publish so students can see certificates.",
+      "footnote": "Attend. % is informational. Total is the sum of quiz scores. Save to lock the grade, then publish certificates.",
       "invalidScore": "Enter a score from 0 to 100.",
+      "noQuizScores": "Enter and save quiz scores on the Quiz scores tab first.",
       "reviewDialog": {
         "title": "Student review",
         "description": "Ratings and comments from {{name}}.",

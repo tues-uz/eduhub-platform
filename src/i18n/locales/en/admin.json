@@ -572,9 +572,11 @@
         "sendToInstructor": "Send to instructor",
         "resendToInstructor": "Re-send to instructor",
         "monthHeading": "Sessions in {{ordinal}} month",
+        "monthSessionLimit": "Up to {{max}} sessions per month.",
         "sessionDefaultTitle": "Session {{num}}",
         "toast": {
           "minOneSession": "Add at least one session across the schedule months.",
+          "maxSessionsPerMonth": "Each schedule month allows at most {{max}} sessions.",
           "sent": "Schedule sent to instructor for approval",
           "sendFailed": "Could not send"
         },
@@ -942,7 +944,8 @@
       "tabs": {
         "instructorRequests": "Instructor requests",
         "studentTuition": "Student tuition",
-        "payoutProof": "Payout proof"
+        "payoutProof": "Payout proof",
+        "contractRates": "Contract rates"
       },
       "howItWorks": {
         "title": "How payroll works",
@@ -970,6 +973,18 @@
         "review": "Review",
         "emptyNone": "No instructor payroll submissions yet. They appear when a teacher submits from their Payroll page.",
         "emptyNoMatch": "No rows match your search or status filter."
+      },
+      "rates": {
+        "description": "Set each instructor's revenue split. Payroll quotes and payout estimates use this rate instead of the default when an override is saved.",
+        "defaultNote": "Default contract is {{split}} (instructor/platform). Instructors not listed here use the default.",
+        "searchPlaceholder": "Search instructor name or email…",
+        "contractSplit": "Contract split",
+        "default": "default",
+        "usingDefault": "Default rate",
+        "saved": "Contract rate saved",
+        "loadFailed": "Could not load instructors",
+        "emptyNoTeachers": "No instructors found.",
+        "emptyNoMatch": "No instructors match your search."
       },
       "tuition": {
         "description": "Student tuition rows for reference when validating instructor payroll. Use Payments & reminders to chase unpaid invoices.",

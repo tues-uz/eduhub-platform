@@ -15,6 +15,10 @@ import {
   type LucideIcon,
 } from "@/lib/icons";
 import { toast } from "sonner";
+import {
+  isTeacherClassFull,
+  TEACHER_CLASS_MAX_STUDENTS,
+} from "@/features/courses/teacherClassCapacity";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -38,7 +42,10 @@ import {
 import type { CourseResponse, ScheduleProposalResponse, UserResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import { computeDiscountedPrice, readAdminCourseCatalog } from "@/features/admin/utils/adminCourseCatalog";
-import { matchGeneralReferralCode } from "@/features/admin/data/generalReferralCodesStore";
+import {
+  matchGeneralReferralCode,
+  matchGeneralTrialCode,
+} from "@/features/admin/data/generalReferralCodesStore";
 import { findActiveSpecialTuitionGrant, SPECIAL_TUITION_GRANTS_CHANGED_EVENT } from "@/features/admin/data/specialTuitionGrantsStore";
 import {
   buildEnrollmentScheduleSessionSummaries,
@@ -192,6 +199,7 @@ const StudentEnrollmentApplicationPage = () => {
   const [phoneSecondary, setPhoneSecondary] = useState("");
   const [phoneSecondaryTouched, setPhoneSecondaryTouched] = useState(false);
   const [referralCodeInput, setReferralCodeInput] = useState("");
+  const [trialCodeInput, setTrialCodeInput] = useState("");
 
   useEffect(() => {
     if (!getAccessToken()) return;
@@ -298,6 +306,21 @@ const StudentEnrollmentApplicationPage = () => {
   }, [referralCodeInput, courseReferralMeta]);
 
   const referralDiscountApplied = appliedReferralDiscountPercent > 0;
+
+  const courseTrialMeta = useMemo(() => {
+    if (apiCourse?.pricing?.trialCode?.trim()) return apiCourse.pricing.trialCode.trim();
+    if (courseId && isUuid(courseId)) {
+      return readAdminCourseCatalog()[courseId]?.trialCode?.trim() ?? "";
+    }
+    return "";
+  }, [apiCourse, courseId]);
+
+  const trialCodeApplied = useMemo(() => {
+    const entered = trialCodeInput.trim();
+    if (!entered) return false;
+    if (courseTrialMeta && entered.toLowerCase() === courseTrialMeta.toLowerCase()) return true;
+    return Boolean(matchGeneralTrialCode(entered));
+  }, [trialCodeInput, courseTrialMeta]);
 
   const listedTuitionBase = useMemo(() => {
     if (courseReferralMeta?.listedAmount != null && courseReferralMeta.listedAmount > 0) {
@@ -444,6 +467,7 @@ const StudentEnrollmentApplicationPage = () => {
   const [cashPaymentProofUrl, setCashPaymentProofUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const isClassFull = isTeacherClassFull(apiCourse?.enrollmentCount);
 
   useEffect(() => {
     if (!courseId || !isUuid(courseId)) {
@@ -563,6 +587,10 @@ const StudentEnrollmentApplicationPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!courseId) return;
+    if (isTeacherClassFull(apiCourse?.enrollmentCount)) {
+      toast.error(`This class is full (${TEACHER_CLASS_MAX_STUDENTS} students). New enrollments are closed.`);
+      return;
+    }
     const emailNorm = user.email.trim().toLowerCase();
     if (!user.name.trim() || !user.email.trim() || !primaryPhone || !address.trim()) {
       toast.error("Please fill in all required fields.");
@@ -667,6 +695,13 @@ const StudentEnrollmentApplicationPage = () => {
           `Referral discount applied: ${appliedReferralDiscountPercent}% off listed tuition`,
         );
       }
+      const trialEntered = trialCodeInput.trim();
+      if (trialEntered) {
+        paymentDetailLines.push(`Trial class code entered: ${trialEntered}`);
+      }
+      if (trialCodeApplied) {
+        paymentDetailLines.push("Trial class code recognized for this application.");
+      }
       if (specialTuitionGrant) {
         paymentDetailLines.push("Special tuition grant: free enrollment for this account.");
         if (specialTuitionGrant.note.trim()) {
@@ -701,6 +736,7 @@ const StudentEnrollmentApplicationPage = () => {
           sessionTuitionQuote?.totalSessions ??
           (sessionSlotsPreview.length > 0 ? sessionSlotsPreview.length : undefined),
         referralCode: referralCodeInput.trim() || undefined,
+        trialCode: trialCodeInput.trim() || undefined,
       });
 
       const pdfData: EnrollmentApplicationPdfData = {
@@ -920,6 +956,15 @@ const StudentEnrollmentApplicationPage = () => {
                           This class is free for your account
                           {specialTuitionGrant.note.trim() ? ` (${specialTuitionGrant.note.trim()})` : ""}. No payment
                           proof is required.
+                        </p>
+                      </div>
+                    ) : null}
+                    {isClassFull ? (
+                      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950">
+                        <p className="font-medium">Class full</p>
+                        <p className="mt-1 text-amber-900/90">
+                          This class has reached the maximum of {TEACHER_CLASS_MAX_STUDENTS} students. New enrollment
+                          applications are not accepted until a spot opens.
                         </p>
                       </div>
                     ) : null}
@@ -1302,7 +1347,18 @@ const StudentEnrollmentApplicationPage = () => {
                   </div>
                 </div>
 
-                <div className="border-t border-zinc-100 pt-8">
+              </div>
+            </EnrollmentFormGroup>
+            ) : null}
+
+            <EnrollmentFormGroup
+              step={requiresVerificationUploads ? "Step 4" : "Step 3"}
+              title="Optional codes"
+              icon={CreditCard}
+              description="Enter a referral or trial class code if you have one. Both are optional."
+            >
+              <div className="space-y-8">
+                <div>
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-zinc-500" aria-hidden />
                     <h3 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500">
@@ -1336,9 +1392,43 @@ const StudentEnrollmentApplicationPage = () => {
                     ) : null}
                   </div>
                 </div>
+
+                <div className="border-t border-zinc-100 pt-8">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-zinc-500" aria-hidden />
+                    <h3 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                      Trial class code
+                    </h3>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Optional. Enter a trial code from your school for trial access to this class.
+                  </p>
+                  <div className="mt-5">
+                    <Label htmlFor="enrollment-trial" className="text-zinc-700">
+                      Trial class code
+                    </Label>
+                    <Input
+                      id="enrollment-trial"
+                      value={trialCodeInput}
+                      onChange={(e) => setTrialCodeInput(e.target.value)}
+                      placeholder="Optional"
+                      maxLength={64}
+                      autoComplete="off"
+                      className="mt-1.5 h-11 rounded-xl border-zinc-200"
+                    />
+                    {trialCodeInput.trim() ? (
+                      trialCodeApplied ? (
+                        <p className="mt-2 text-xs text-emerald-700">
+                          Trial code recognized — we will apply trial access when your enrollment is approved.
+                        </p>
+                      ) : (
+                        <p className="mt-2 text-xs text-amber-800">This trial code is not valid for this class.</p>
+                      )
+                    ) : null}
+                  </div>
+                </div>
               </div>
             </EnrollmentFormGroup>
-            ) : null}
                   </form>
                 </div>
               </div>
@@ -1374,7 +1464,7 @@ const StudentEnrollmentApplicationPage = () => {
                 form="enrollment-application-form"
                 className="h-12 w-full max-w-[200px] shrink-0 rounded-xl text-[15px] font-semibold shadow-sm transition-opacity disabled:opacity-60 sm:max-w-[220px]"
                 style={{ backgroundColor: "#3954d0" }}
-                disabled={submitting}
+                disabled={submitting || isClassFull}
               >
                 {submitting ? (
                   <>

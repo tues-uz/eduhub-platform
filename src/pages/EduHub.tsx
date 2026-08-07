@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { BookOpen, Users, Award, GraduationCap, Lightbulb, Target, Zap, Heart, ChevronUp, ArrowRight, Linkedin, Check, Star } from "@/lib/icons";
+import { BookOpen, Users, Award, GraduationCap, Target, ChevronUp, ArrowRight, Linkedin, Check, Star, PlayCircle, Megaphone, MapPin } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import EduHubHeader from "@/components/EduHubHeader";
 import Footer from "@/components/Footer";
@@ -20,29 +20,31 @@ const FEATURE_KEYS = [
   "analyticsDashboard",
 ] as const;
 
+const FEATURE_IMAGE_PARAMS = "auto=format&fit=crop&w=600&h=450&q=80";
+
 const FEATURE_IMAGES: Record<(typeof FEATURE_KEYS)[number], string> = {
-  onlineClasses: "https://picsum.photos/seed/online-learning/600/450",
-  expertInstructors: "https://picsum.photos/seed/expert-instructor/600/450",
-  certifications: "https://picsum.photos/seed/certification/600/450",
-  careerGrowth: "https://picsum.photos/seed/career/600/450",
-  globalAccess: "https://picsum.photos/seed/global/600/450",
-  analyticsDashboard: "https://picsum.photos/seed/analytics/600/450",
+  onlineClasses: `https://images.unsplash.com/photo-1509062522246-3755977927d7?${FEATURE_IMAGE_PARAMS}`,
+  expertInstructors: `https://images.unsplash.com/photo-1529390079861-591de354faf5?${FEATURE_IMAGE_PARAMS}`,
+  certifications: `https://images.unsplash.com/photo-1460925895917-afdab827c52f?${FEATURE_IMAGE_PARAMS}`,
+  careerGrowth: `https://images.unsplash.com/photo-1529156069898-49953e39b3ac?${FEATURE_IMAGE_PARAMS}`,
+  globalAccess: `https://images.unsplash.com/photo-1434030216411-0b793f4b4173?${FEATURE_IMAGE_PARAMS}`,
+  analyticsDashboard: `https://images.unsplash.com/photo-1522202176988-66273c2fd55f?${FEATURE_IMAGE_PARAMS}`,
 };
 
-const HIGHLIGHT_KEYS = ["interactive", "goalOriented", "fastTrack", "community"] as const;
+const HIGHLIGHT_KEYS = ["movieNight", "speakingClub", "debateClub", "fieldTrip"] as const;
 
 const HIGHLIGHT_ICONS = {
-  interactive: Lightbulb,
-  goalOriented: Target,
-  fastTrack: Zap,
-  community: Heart,
+  movieNight: PlayCircle,
+  speakingClub: Megaphone,
+  debateClub: Award,
+  fieldTrip: MapPin,
 } as const;
 
 const HIGHLIGHT_GRADIENTS = {
-  interactive: "from-pink-500 to-rose-500",
-  goalOriented: "from-cyan-500 to-blue-500",
-  fastTrack: "from-yellow-500 to-amber-500",
-  community: "from-red-500 to-pink-500",
+  movieNight: "from-violet-500 to-purple-500",
+  speakingClub: "from-cyan-500 to-blue-500",
+  debateClub: "from-amber-500 to-orange-500",
+  fieldTrip: "from-emerald-500 to-teal-500",
 } as const;
 
 const TEAM_MEMBERS = [
@@ -852,7 +854,7 @@ const EduHub = () => {
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
             <div className="vision-reveal-left rounded-[24px] overflow-hidden w-full h-[320px] sm:h-[400px] lg:h-[600px] relative flex-shrink-0">
               <img
-                src="https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80"
+                src="/eduhub/vision-community.png"
                 alt={t("public.vision.imageAlt")}
                 className="absolute inset-0 w-full h-full object-cover object-center"
               />
@@ -1141,17 +1143,6 @@ const EduHub = () => {
                   <div>
                     <h3 className="font-bold mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>{t("public.video.expertTitle")}</h3>
                     <p className="text-sm" style={{ color: "rgb(61, 61, 61)" }}>{t("public.video.expertDesc")}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-bold mb-1" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "1.125rem", color: "rgb(17, 17, 17)" }}>{t("public.video.flexibleTitle")}</h3>
-                    <p className="text-sm" style={{ color: "rgb(61, 61, 61)" }}>{t("public.video.flexibleDesc")}</p>
                   </div>
                 </div>
               </div>

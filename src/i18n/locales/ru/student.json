@@ -310,7 +310,27 @@
     "downloadPdfEn": "Скачать PDF (English)",
     "downloadPdfUz": "Скачать PDF (O'zbek)",
     "downloadInvoiceEn": "Скачать счёт (English)",
-    "downloadInvoiceUz": "Скачать счёт (O'zbek)"
+    "downloadInvoiceUz": "Скачать счёт (O'zbek)",
+    "pdfAvailableAfterApproval": "Invoice and receipt PDFs are available after the school approves your enrollment application.",
+    "pdfNotAvailableRejected": "This application was not approved. Official invoice and receipt PDFs are not available.",
+    "outstandingTitle": "Remaining tuition",
+    "outstandingHint": "Pay the next schedule month to unlock attendance QR for those sessions.",
+    "outstandingChecking": "Checking remaining tuition…",
+    "outstandingPayNow": "Pay now",
+    "trial": {
+      "badge": "Trial",
+      "codeLabel": "Trial class code",
+      "sectionTitle": "Trial classes",
+      "sectionHint": "Enrollments that used a trial code. Pay tuition when you're ready to continue beyond the trial.",
+      "detailSectionTitle": "Trial enrollment",
+      "pendingReview": "Your trial code was submitted with this application. After approval you'll have trial access to this class.",
+      "approvedMessage": "You're enrolled with trial access for this class.",
+      "rejectedMessage": "This application included a trial code but was not approved.",
+      "continueHint": "Pay tuition to continue in this class and unlock attendance for upcoming schedule months.",
+      "continueSubhint": "Submit a transfer when you're ready to move from trial to paid enrollment.",
+      "payToContinue": "Pay tuition to continue",
+      "loading": "Checking trial enrollments…"
+    }
   },
   "attendance": {
     "eyebrowCheckIn": "Отметка посещаемости",
