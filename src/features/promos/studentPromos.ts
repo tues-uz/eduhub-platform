@@ -1,3 +1,6 @@
+import { ApiError, eduhubMarketingPromos } from "@/api/eduhubClient";
+import type { MarketingPromo, MarketingPromoInput } from "@/api/eduhubTypes";
+
 export const STUDENT_PROMOS_CHANGED_EVENT = "eduhub-promos-changed";
 
 export type StudentPromoPlacement = "my-class" | "dashboard" | "all";
@@ -20,8 +23,7 @@ export type StudentPromo = {
 
 export type StudentPromoInput = Omit<StudentPromo, "id" | "updatedAt"> & { id?: string };
 
-// No hardcoded sample promotions. Active promotions are fetched and managed dynamically.
-
+// Active promotions are fetched from and persisted to the eduhub-api backend.
 
 function normalizePromo(raw: unknown): StudentPromo | null {
   if (!raw || typeof raw !== "object") return null;
@@ -74,15 +76,61 @@ export function readStudentPromosWithDefaults(): StudentPromo[] {
   return readStudentPromos();
 }
 
-import { eduhubPromos } from "@/api/eduhubClient";
-
 export function writeStudentPromos(promos: StudentPromo[]) {
   memoryPromos = promos;
   notifyPromosChanged();
 }
 
+function toInput(next: StudentPromo): MarketingPromoInput {
+  return {
+    title: next.title,
+    body: next.body,
+    ctaLabel: next.ctaLabel,
+    ctaUrl: next.ctaUrl,
+    imageUrl: next.imageUrl,
+    accentColor: next.accentColor,
+    placement: next.placement,
+    active: next.active,
+    sortOrder: next.sortOrder,
+    startsAt: next.startsAt,
+    endsAt: next.endsAt,
+  };
+}
 
-export function upsertStudentPromo(input: StudentPromoInput): StudentPromo {
+function replaceInMemory(replacement: StudentPromo) {
+  const all = readRawPromos();
+  const idx = all.findIndex((p) => p.id === replacement.id);
+  if (idx >= 0) {
+    all[idx] = replacement;
+  } else {
+    all.push(replacement);
+  }
+  writeStudentPromos(all);
+}
+
+/** Hydrate the local cache from the backend. Admin loads all; students fall back to the active feed. */
+export async function loadStudentPromos(): Promise<void> {
+  let fetched: MarketingPromo[] | undefined;
+  try {
+    fetched = await eduhubMarketingPromos.listAll();
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 403) {
+      try {
+        fetched = await eduhubMarketingPromos.listActive();
+      } catch {
+        return;
+      }
+    } else {
+      return;
+    }
+  }
+  if (fetched) {
+    memoryPromos = fetched.map(normalizePromo).filter((p): p is StudentPromo => p !== null);
+    notifyPromosChanged();
+  }
+}
+
+export async function upsertStudentPromo(input: StudentPromoInput): Promise<StudentPromo> {
   const all = readStudentPromos();
   const now = new Date().toISOString();
   const next: StudentPromo = {
@@ -109,18 +157,40 @@ export function upsertStudentPromo(input: StudentPromoInput): StudentPromo {
   }
   writeStudentPromos(all);
 
-  // Sync to eduhub-api backend
-  void eduhubPromos.createPromo({ code: next.title, active: next.active }).catch((e) => {
-    console.warn("[Promos] API sync failed, relying on local storage", e);
-  });
-
-  return next;
+  try {
+    let persisted: MarketingPromo;
+    if (input.id) {
+      try {
+        persisted = await eduhubMarketingPromos.updatePromo(input.id, toInput(next));
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404) {
+          persisted = await eduhubMarketingPromos.createPromo(toInput(next));
+        } else {
+          throw e;
+        }
+      }
+    } else {
+      persisted = await eduhubMarketingPromos.createPromo(toInput(next));
+    }
+    const normalized = normalizePromo(persisted);
+    if (normalized) replaceInMemory(normalized);
+    return normalized ?? next;
+  } catch (e) {
+    console.error("[Promos] Failed to persist promo", e);
+    throw e;
+  }
 }
 
-export function deleteStudentPromo(id: string) {
+export async function deleteStudentPromo(id: string): Promise<void> {
   const all = readStudentPromos().filter((p) => p.id !== id);
   writeStudentPromos(all);
-  void eduhubPromos.deletePromo(id).catch(() => {});
+  try {
+    await eduhubMarketingPromos.deletePromo(id);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return;
+    console.error("[Promos] Failed to delete promo", e);
+    throw e;
+  }
 }
 
 export function resetStudentPromosToDefaults() {

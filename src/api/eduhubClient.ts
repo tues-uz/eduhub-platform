@@ -59,7 +59,8 @@ import type {
   InstallmentPaymentManualRequest,
   QuizAttemptResponse,
   AssignmentSubmissionResponse,
-  PromoCodeResponse,
+  MarketingPromo,
+  MarketingPromoInput,
   LandingPageContentResponse,
   AdminAttendanceRowResponse,
   AdminTransactionRowResponse,
@@ -1214,24 +1215,26 @@ export const eduhubAdminInstallmentPayments = {
 
 export const eduhubAdminInstallments = eduhubAdminInstallmentPayments;
 
-/** Promo Codes API */
-export const eduhubPromos = {
-  listAll: () => request<ApiResponse<PromoCodeResponse[]>>("/admin/promos"),
+/** Marketing Promos (carousel banners) API */
+export const eduhubMarketingPromos = {
+  listAll: () => request<MarketingPromo[]>("/admin/marketing-promos"),
 
-  createPromo: (body: Partial<PromoCodeResponse>) =>
-    request<ApiResponse<PromoCodeResponse>>("/admin/promos", {
+  listActive: () => request<MarketingPromo[]>("/marketing-promos"),
+
+  createPromo: (body: MarketingPromoInput) =>
+    request<MarketingPromo>("/admin/marketing-promos", {
       method: "POST",
       body: JSON.stringify(body),
     }),
 
-  validatePromo: (code: string) =>
-    request<ApiResponse<PromoCodeResponse>>("/promos/validate", {
-      method: "POST",
-      body: JSON.stringify({ code }),
+  updatePromo: (id: string, body: MarketingPromoInput) =>
+    request<MarketingPromo>(`/admin/marketing-promos/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
     }),
 
   deletePromo: (id: string) =>
-    request<ApiResponse<void>>(`/admin/promos/${id}`, { method: "DELETE" }),
+    request<void>(`/admin/marketing-promos/${id}`, { method: "DELETE" }),
 };
 
 /** Landing Page CMS API */

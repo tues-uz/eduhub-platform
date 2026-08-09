@@ -96,19 +96,27 @@ export default function AdminPromosPage() {
     setDialogOpen(true);
   };
 
-  const savePromo = () => {
+  const savePromo = async () => {
     if (!form.title.trim()) {
       toast.error(t("admin.promos.toast.titleRequired"));
       return;
     }
-    upsertStudentPromo(form);
-    toast.success(form.id ? t("admin.promos.toast.updated") : "Promotion published");
-    setDialogOpen(false);
+    try {
+      await upsertStudentPromo(form);
+      toast.success(form.id ? t("admin.promos.toast.updated") : "Promotion published");
+      setDialogOpen(false);
+    } catch {
+      toast.error("Failed to save promo. Please try again.");
+    }
   };
 
-  const toggleActive = (promo: StudentPromo) => {
-    upsertStudentPromo({ ...promo, active: !promo.active });
-    toast.success(promo.active ? t("admin.promos.toast.hidden") : "Promotion is live");
+  const toggleActive = async (promo: StudentPromo) => {
+    try {
+      await upsertStudentPromo({ ...promo, active: !promo.active });
+      toast.success(promo.active ? t("admin.promos.toast.hidden") : "Promotion is live");
+    } catch {
+      toast.error("Failed to update promo. Please try again.");
+    }
   };
 
   return (
@@ -178,9 +186,13 @@ export default function AdminPromosPage() {
                           variant="outline"
                           size="sm"
                           className="text-red-600 hover:text-red-700"
-                          onClick={() => {
-                            deleteStudentPromo(promo.id);
-                            toast.success(t("admin.promos.toast.deleted"));
+                          onClick={async () => {
+                            try {
+                              await deleteStudentPromo(promo.id);
+                              toast.success(t("admin.promos.toast.deleted"));
+                            } catch {
+                              toast.error("Failed to delete promo. Please try again.");
+                            }
                           }}
                         >
                           <Trash2 className="h-3.5 w-3.5" />

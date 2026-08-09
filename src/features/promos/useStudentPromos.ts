@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   filterActiveStudentPromos,
+  loadStudentPromos,
   readStudentPromos,
   readStudentPromosWithDefaults,
   STUDENT_PROMOS_CHANGED_EVENT,
@@ -21,6 +22,7 @@ export function useStudentPromos() {
     };
     window.addEventListener("storage", onStorage);
     window.addEventListener(STUDENT_PROMOS_CHANGED_EVENT, refresh);
+    void loadStudentPromos();
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener(STUDENT_PROMOS_CHANGED_EVENT, refresh);

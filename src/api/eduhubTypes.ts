@@ -897,6 +897,31 @@ export interface PromoCodeResponse {
   active: boolean;
 }
 
+// Marketing Promo (carousel banner) Types
+export type MarketingPromoPlacement = "my-class" | "dashboard" | "all";
+
+export interface MarketingPromo {
+  id: string;
+  title: string;
+  body: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  imageUrl: string;
+  accentColor: string;
+  placement: MarketingPromoPlacement;
+  active: boolean;
+  sortOrder: number;
+  startsAt: string | null;
+  endsAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MarketingPromoInput = Omit<
+  MarketingPromo,
+  "id" | "createdAt" | "updatedAt"
+>;
+
 // Landing Page Content Types
 export interface LandingPageContentResponse {
   id: string;
