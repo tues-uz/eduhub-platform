@@ -32,7 +32,6 @@ import {
 } from "@/components/ui/table";
 import {
   deleteStudentPromo,
-  resetStudentPromosToDefaults,
   STUDENT_PROMO_PLACEMENT_LABELS,
   upsertStudentPromo,
   type StudentPromo,
@@ -119,15 +118,10 @@ export default function AdminPromosPage() {
           title={t("adminNav.studentPromos")}
           description={t("admin.promos.description")}
           actions={
-            <>
-              <Button type="button" variant="outline" onClick={() => resetStudentPromosToDefaults()}>
-                Reset samples
-              </Button>
-              <Button type="button" className="bg-slate-900 hover:bg-slate-800" onClick={openCreate}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add promo
-              </Button>
-            </>
+            <Button type="button" className="bg-slate-900 hover:bg-slate-800" onClick={openCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add promo
+            </Button>
           }
         />
 

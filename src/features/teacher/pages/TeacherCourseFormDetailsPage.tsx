@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { useTeacherCourseForm } from "./TeacherCourseFormContext";
 import { TeacherCourseFormStickyFooter } from "./TeacherCourseFormStickyFooter";
 import { INSTRUCTOR_CATEGORY_MISSING } from "../resolveInstructorCategory";
-import { COURSE_LEVEL_REQUIRED, COURSE_LEVELS } from "../data/courseLevels";
+import { COURSE_LEVEL_REQUIRED, useCourseLevels } from "../data/courseLevels";
 import { useTranslation } from "react-i18next";
 
 const TeacherCourseFormDetailsPage = () => {
@@ -44,6 +44,8 @@ const TeacherCourseFormDetailsPage = () => {
     setError,
     validateDetailsStep,
   } = useTeacherCourseForm();
+
+  const { levels: availableLevels } = useCourseLevels();
 
   const titleRequiredError = error === "Class title is required.";
   const categoryRequiredError = error === INSTRUCTOR_CATEGORY_MISSING;
@@ -230,9 +232,9 @@ const TeacherCourseFormDetailsPage = () => {
                 <SelectValue placeholder={t("teacher.courseForm.details.levelPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                {COURSE_LEVELS.map((item) => (
+                {availableLevels.map((item) => (
                   <SelectItem key={item.value} value={item.value}>
-                    {t(item.labelKey)}
+                    {item.labelKey ? t(item.labelKey, { defaultValue: item.label }) : item.label}
                   </SelectItem>
                 ))}
               </SelectContent>

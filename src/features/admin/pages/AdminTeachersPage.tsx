@@ -159,7 +159,12 @@ export default function AdminTeachersPage() {
               ) : (
                 filteredTeachers.map((teacher) => (
                   <TableRow key={teacher.id}>
-                    <TableCell className="font-medium text-slate-900">{teacher.fullName}</TableCell>
+                    <TableCell className="font-medium text-slate-900">
+                      <div>{teacher.fullName}</div>
+                      {teacher.category ? (
+                        <div className="text-xs text-slate-500 font-normal">{teacher.category}</div>
+                      ) : null}
+                    </TableCell>
                     <TableCell>{teacher.email}</TableCell>
                     <TableCell>{teacher.courses.length}</TableCell>
                     <TableCell className="text-right tabular-nums text-slate-800">{teacher.totalStudents}</TableCell>

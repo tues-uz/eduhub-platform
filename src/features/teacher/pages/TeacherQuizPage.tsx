@@ -47,11 +47,6 @@ import {
   type QuizResponse,
   type QuizCreateRequest,
 } from "@/api/eduhubClient";
-import {
-  buildClientOnlyQuizResponse,
-  getLocalCourseQuiz,
-  upsertLocalCourseQuiz,
-} from "@/features/teacher/data/localCourseQuizzesStorage";
 import { useTranslation } from "react-i18next";
 import { useLayoutContext } from "@/features/layout/context";
 import {
@@ -346,12 +341,7 @@ const TeacherQuizPage = () => {
       void eduhubCourseQuizzes
         .get(fromUrl, editId)
         .then((quiz) => {
-          const local = getLocalCourseQuiz(fromUrl, editId);
-          startEdit(
-            !quiz.thumbnailUrl?.trim() && local?.thumbnailUrl?.trim()
-              ? { ...quiz, thumbnailUrl: local.thumbnailUrl }
-              : quiz,
-          );
+          startEdit(quiz);
           setSearchParams(
             (prev) => {
               const next = new URLSearchParams(prev);
@@ -362,20 +352,7 @@ const TeacherQuizPage = () => {
           );
         })
         .catch(() => {
-          const local = getLocalCourseQuiz(fromUrl, editId);
-          if (local) {
-            startEdit(local);
-            setSearchParams(
-              (prev) => {
-                const next = new URLSearchParams(prev);
-                next.delete("edit");
-                return next;
-              },
-              { replace: true },
-            );
-          } else {
-            setError(t("teacher.quiz.errors.loadFailed"));
-          }
+          setError(t("teacher.quiz.errors.loadFailed"));
         })
         .finally(() => setEditLinkLoading(false));
     }
@@ -521,39 +498,17 @@ const TeacherQuizPage = () => {
 
     try {
       setLoading(true);
-      let saved: QuizResponse;
       if (editingQuizId) {
-        saved = await eduhubCourseQuizzes.update(quizCourseId, editingQuizId, payload);
+        await eduhubCourseQuizzes.update(quizCourseId, editingQuizId, payload);
       } else {
-        saved = await eduhubCourseQuizzes.create(courseId.trim(), payload);
+        await eduhubCourseQuizzes.create(courseId.trim(), payload);
       }
-      upsertLocalCourseQuiz(quizCourseId, withThumbnail(saved));
       await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", quizCourseId] });
+      toast.success(editingQuizId ? "Quiz updated" : "Quiz created");
       void navigate(`/dashboard/teacher/courses/${quizCourseId}?tab=quiz`, { replace: true });
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : "Failed to save quiz.";
-      const noLocalFallback =
-        errorMessage.includes("does not belong to the specified course") ||
-        errorMessage.includes("permission") ||
-        /forbidden/i.test(errorMessage);
-      if (!noLocalFallback) {
-        const built = buildClientOnlyQuizResponse(quizCourseId, payload, editingQuizId ?? undefined);
-        upsertLocalCourseQuiz(quizCourseId, built);
-        await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", quizCourseId] });
-        toast.info("Saved on this device only", {
-          description:
-            "This browser keeps a copy of your quiz on the class roster. The server did not confirm the save.",
-        });
-        void navigate(`/dashboard/teacher/courses/${quizCourseId}?tab=quiz`, { replace: true });
-        return;
-      }
-      if (errorMessage.includes("does not belong to the specified course")) {
-        setError("Unable to move quiz to the selected class. Please ensure you have permission for that class.");
-      } else if (errorMessage.includes("permission")) {
-        setError(errorMessage);
-      } else {
-        setError(errorMessage);
-      }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

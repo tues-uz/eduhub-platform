@@ -60,11 +60,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { eduhubCourseQuizzes, eduhubCourses, eduhubClassResumes, eduhubSchedule, eduhubSubstituteInvites, ApiError, type QuizResponse } from "@/api/eduhubClient";
-import {
-  isLocalOnlyQuizId,
-  mergeCourseQuizListsWithLocal,
-  setLocalCourseQuizPublished,
-} from "@/features/teacher/data/localCourseQuizzesStorage";
 import type { CourseResponse, CourseStatus, SubstituteInviteResponse, SubstituteInviteStatus } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
@@ -312,17 +307,14 @@ export default function TeacherCourseRosterPage() {
     queryFn: async (): Promise<{ quizzes: QuizResponse[]; fetchNote?: string }> => {
       try {
         const quizzes = await eduhubCourseQuizzes.list(courseId);
-        return { quizzes: mergeCourseQuizListsWithLocal(courseId, quizzes) };
+        return { quizzes: quizzes || [] };
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Unknown error";
         if (isCourseQuizListPermissionError(msg)) throw e;
         console.warn("[TeacherCourseRoster] course quizzes list failed:", courseId, e);
-        const merged = mergeCourseQuizListsWithLocal(courseId, []);
         return {
-          quizzes: merged,
-          fetchNote: msg.trim()
-            ? `Quiz list could not be loaded (${msg}). Quizzes you save on this device still appear below; sync with the server when the API is available.`
-            : "Quiz list could not be loaded. Quizzes you save on this device still appear below.",
+          quizzes: [],
+          fetchNote: msg.trim() ? `Quiz list could not be loaded: ${msg}` : "Quiz list could not be loaded.",
         };
       }
     },
@@ -336,15 +328,9 @@ export default function TeacherCourseRosterPage() {
       if (!isUuid(courseId)) return;
       setQuizPublishingId(quizId);
       try {
-        if (isLocalOnlyQuizId(quizId)) {
-          setLocalCourseQuizPublished(courseId, quizId, true);
-          await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", courseId] });
-          toast.success("Published on this device");
-        } else {
-          await eduhubCourseQuizzes.publish(courseId, quizId);
-          await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", courseId] });
-          toast.success("Quiz published");
-        }
+        await eduhubCourseQuizzes.publish(courseId, quizId);
+        await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", courseId] });
+        toast.success("Quiz published");
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Could not publish quiz.");
       } finally {

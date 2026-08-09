@@ -101,6 +101,7 @@
     "email": "Email",
     "phone": "Phone",
     "teachingCategory": "Teaching category",
+    "level": "Teacher level",
     "memberSince": "Member since",
     "publishedClasses": "Published classes",
     "notifications": "Notifications",

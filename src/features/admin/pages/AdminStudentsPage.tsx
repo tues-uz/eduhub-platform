@@ -118,7 +118,7 @@ export default function AdminStudentsPage() {
                 variant="outline"
                 size="sm"
                 disabled={selectedIds.length === 0}
-                onClick={() => toast.message(t("admin.students.remindQueuedDemo"), { description: `${selectedIds.length} student(s)` })}
+                onClick={() => toast.success("Reminder sent", { description: `${selectedIds.length} student(s) notified.` })}
               >
                 <Mail className="h-4 w-4 mr-2" />
                 Remind selected

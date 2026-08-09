@@ -71,10 +71,10 @@ type PeriodOptionView = ReturnType<typeof buildPayrollPeriodOptions>[number] & {
 
 function periodSubmissionStatus(
   optionId: string,
-  existingClassRequests: InstructorPayrollRequestRecord[],
+  existingClassRequests?: InstructorPayrollRequestRecord[],
 ): InstructorPayrollRequestRecord["status"] | null {
-  const match = existingClassRequests.find((request) => {
-    if (request.status === "rejected") return false;
+  const match = (existingClassRequests ?? []).find((request) => {
+    if (!request || request.status === "rejected") return false;
     return parsePayrollPeriodYearMonth(request.periodLabel, request.submittedAt) === optionId;
   });
   return match?.status ?? null;

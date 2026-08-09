@@ -41,12 +41,14 @@ import {
   ExclamationCircleIcon,
   EyeIcon,
   EyeSlashIcon,
+  FolderIcon,
   GlobeAltIcon,
   HeartIcon,
   HomeIcon,
   IdentificationIcon,
   LightBulbIcon,
   LinkIcon,
+  TagIcon,
   LockClosedIcon,
   MagnifyingGlassIcon,
   MapPinIcon,
@@ -186,8 +188,10 @@ export const FileCheck = createIcon(DocumentCheckIcon);
 export const FileDown = createIcon(DocumentArrowDownIcon);
 export const FileSpreadsheet = createIcon(TableCellsIcon);
 export const FileText = createIcon(DocumentTextIcon);
+export const Folder = createIcon(FolderIcon);
 export const Globe = createIcon(GlobeAltIcon);
 export const GraduationCap = createIcon(AcademicCapIcon);
+export const Tag = createIcon(TagIcon);
 export const GripVertical = createSvgIcon(({ className, size, style, ...props }) => (
   <svg
     viewBox="0 0 24 24"

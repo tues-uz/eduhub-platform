@@ -3,6 +3,7 @@ import { useAuthSession } from "@/features/auth/context";
 import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
 import { resolveStudentCourseEnrollmentDisplayStatus, resolveEnrollmentRejectionNote } from "@/features/enrollment/studentCourseEnrollmentStatus";
 import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
+import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import { createPortal } from "react-dom";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -34,11 +35,6 @@ import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWo
 import { formatSessionTimeLabel, resolveEnrollmentSessionTimingStatus, buildScheduleMonthTabs, sessionDateMs } from "@/features/courses/classSchedulePreview";
 import { useScheduleAttendanceState } from "@/features/courses/useScheduleAttendanceState";
 import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
-import {
-  COURSE_REVIEWS_CHANGED,
-  listInstructorReviewsForCourse,
-} from "@/features/student/courseReviewsStorage";
 import { formatDisplayPersonName, formatDisplayTitle, profileInitials } from "@/lib/formatPersonName";
 import {
   TEACHER_CLASS_MAX_STUDENTS,
@@ -174,7 +170,6 @@ const StudentAvailableCourseDetailPage = () => {
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const { isSidebarCollapsed } = useLayoutContext();
   const [, setEnrollmentStoreTick] = useState(0);
-  const [reviewsTick, setReviewsTick] = useState(0);
   const scheduleLocalTick = useAdminCourseLocalDataVersion();
   const scheduleAttendance = useScheduleAttendanceState(linkId || undefined);
 
@@ -192,16 +187,6 @@ const StudentAvailableCourseDetailPage = () => {
     window.addEventListener("storage", bump);
     return () => {
       window.removeEventListener("eduhub-enrollment-applications-changed", bump);
-      window.removeEventListener("storage", bump);
-    };
-  }, []);
-
-  useEffect(() => {
-    const bump = () => setReviewsTick((n) => n + 1);
-    window.addEventListener(COURSE_REVIEWS_CHANGED, bump);
-    window.addEventListener("storage", bump);
-    return () => {
-      window.removeEventListener(COURSE_REVIEWS_CHANGED, bump);
       window.removeEventListener("storage", bump);
     };
   }, []);
@@ -337,19 +322,17 @@ const StudentAvailableCourseDetailPage = () => {
   }, [apiCourse, linkId, scheduleProposal, sessionSlotsPreview.length, scheduleLocalTick]);
 
   const instructorReviews = useMemo(() => {
-    void reviewsTick;
-    if (!linkId) return [];
-    return listInstructorReviewsForCourse(linkId).map((review) => {
-      const authorName = formatReviewAuthorName(linkId, review.emailNorm);
+    return studentReviews.map((review) => {
+      const authorName = review.studentName?.trim() || "Student";
       return {
-        id: review.emailNorm,
+        id: review.id,
         authorName,
         rating: review.rating,
         dateLabel: formatReviewDateLabel(review.submittedAt),
         body: review.comment?.trim() || "No written comment.",
       };
     });
-  }, [linkId, reviewsTick]);
+  }, [studentReviews]);
 
   const meetings =
     apiCourse?.classMeetingsInSixMonths ??

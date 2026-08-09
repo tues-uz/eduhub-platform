@@ -5,39 +5,15 @@ import * as XLSX from "xlsx";
 import { ArrowLeft, BarChart2, FileSpreadsheet, Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { eduhubQuizzes, eduhubCourseQuizzes, type QuizResultResponse, type QuizResponse } from "@/api/eduhubClient";
-import { getLocalCourseQuiz, isLocalOnlyQuizId } from "../data/localCourseQuizzesStorage";
-import { quizAttemptStore, type QuizAttempt } from "../data/quizAttemptStore";
-import { teacherQuizStore } from "../data/teacherQuizStore";
 import { useTranslation } from "react-i18next";
-
-function mapQuizAttemptsToResults(attempts: QuizAttempt[]): QuizResultResponse[] {
-  return attempts.map((a) => ({
-    id: a.id,
-    student: { id: a.studentId || "", fullName: a.studentName, email: a.studentEmail || "" },
-    score: a.scorePercent,
-    scorePercent: a.scorePercent,
-    correctAnswers: a.correctCount,
-    correctCount: a.correctCount,
-    totalQuestions: a.totalQuestions,
-    passed: a.scorePercent >= 70,
-    completedAt: a.completedAt,
-  }));
-}
-
-interface LocalQuiz {
-  id: string;
-  title: string;
-  quizType?: "quiz" | "placement-test";
-}
 
 export default function TeacherQuizResultsPage() {
   const { t } = useTranslation();
   const { courseId, moduleId, lessonId, quizId } = useParams<{ courseId: string; moduleId: string; lessonId: string; quizId: string }>();
-  const [quiz, setQuiz] = useState<QuizResponse | LocalQuiz | null>(null);
+  const [quiz, setQuiz] = useState<QuizResponse | null>(null);
   const [results, setResults] = useState<QuizResultResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [useLocalStorage, setUseLocalStorage] = useState(false);
 
   const exportToExcel = useCallback(() => {
     const quizTitle = quiz?.title || "quiz";
@@ -68,21 +44,6 @@ export default function TeacherQuizResultsPage() {
       setLoading(true);
       setError(null);
 
-      if (courseId && quizId && isLocalOnlyQuizId(quizId)) {
-        const local = getLocalCourseQuiz(courseId, quizId);
-        if (local) {
-          setQuiz(local);
-          setResults(mapQuizAttemptsToResults(quizAttemptStore.getByQuizId(quizId)));
-          setUseLocalStorage(true);
-        } else {
-          setError(
-            "This quiz was saved only on this browser and is no longer in storage. Create it again or restore a backup if you use one.",
-          );
-        }
-        setLoading(false);
-        return;
-      }
-
       try {
         let quizPromise;
         let resultsPromise;
@@ -97,33 +58,9 @@ export default function TeacherQuizResultsPage() {
 
         const [quizData, resultsData] = await Promise.all([quizPromise, resultsPromise]);
         setQuiz(quizData);
-        setResults(resultsData);
-        setUseLocalStorage(false);
+        setResults(resultsData || []);
       } catch (err) {
-        const fallbackId = quizId || lessonId;
-        if (!fallbackId) {
-           setError(err instanceof Error ? err.message : "Failed to load quiz results");
-           setLoading(false);
-           return;
-        }
-        const localQuiz = teacherQuizStore.getById(fallbackId) as LocalQuiz | undefined;
-        if (localQuiz) {
-          const localAttempts = quizAttemptStore.getByQuizId(fallbackId);
-          setQuiz(localQuiz);
-          setResults(mapQuizAttemptsToResults(localAttempts));
-          setUseLocalStorage(true);
-        } else if (courseId && quizId) {
-          const courseLocal = getLocalCourseQuiz(courseId, quizId);
-          if (courseLocal) {
-            setQuiz(courseLocal);
-            setResults(mapQuizAttemptsToResults(quizAttemptStore.getByQuizId(quizId)));
-            setUseLocalStorage(true);
-          } else {
-            setError(err instanceof Error ? err.message : "Failed to load quiz results");
-          }
-        } else {
-          setError(err instanceof Error ? err.message : "Failed to load quiz results");
-        }
+        setError(err instanceof Error ? err.message : "Failed to load quiz results");
       } finally {
         setLoading(false);
       }

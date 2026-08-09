@@ -48,6 +48,9 @@ import type {
   PayrollRequestCreateRequest,
   PayrollRequestResponse,
   CategoryResponse,
+  CourseLevelResponse,
+  CourseLevelCreateRequest,
+  CourseLevelUpdateRequest,
   SubstituteInviteResponse,
   SubstituteInviteCreateRequest,
   InstallmentPaymentResponse,
@@ -1109,6 +1112,35 @@ export async function eduhubUploadFile(file: File, folder = "materials"): Promis
 
 export const eduhubCategories = {
   getAll: () => request<CategoryResponse[]>("/categories"),
+  getAllAdmin: () => request<CategoryResponse[]>("/categories/admin"),
+  create: (name: string) =>
+    request<CategoryResponse>("/categories/admin", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    }),
+  delete: (name: string) =>
+    request<void>(`/categories/admin/${encodeURIComponent(name)}`, {
+      method: "DELETE",
+    }),
+};
+
+export const eduhubCourseLevels = {
+  getAll: () => request<CourseLevelResponse[]>("/course-levels"),
+  getAllAdmin: () => request<CourseLevelResponse[]>("/course-levels/admin"),
+  create: (body: CourseLevelCreateRequest) =>
+    request<CourseLevelResponse>("/course-levels/admin", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  update: (id: string, body: CourseLevelUpdateRequest) =>
+    request<CourseLevelResponse>(`/course-levels/admin/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  delete: (id: string) =>
+    request<void>(`/course-levels/admin/${id}`, {
+      method: "DELETE",
+    }),
 };
 
 export const eduhubSubstituteInvites = {
@@ -1204,10 +1236,10 @@ export const eduhubPromos = {
 
 /** Landing Page CMS API */
 export const eduhubLandingPage = {
-  getContent: () => request<ApiResponse<LandingPageContentResponse[]>>("/landing-page"),
+  getContent: () => request<LandingPageContentResponse[]>("/landing-page"),
 
   updateSection: (sectionKey: string, contentJson: string) =>
-    request<ApiResponse<LandingPageContentResponse>>(`/admin/landing-page/${sectionKey}`, {
+    request<LandingPageContentResponse>(`/admin/landing-page/${sectionKey}`, {
       method: "PUT",
       body: JSON.stringify({ contentJson }),
     }),

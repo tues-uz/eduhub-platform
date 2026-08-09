@@ -189,6 +189,8 @@ export interface CourseSummaryResponse {
   thumbnailUrl?: string;
   status: CourseStatus;
   category: string;
+  /** CEFR-style class level when returned by API. */
+  level?: string;
   lecturerName: string;
   lecturerAvatarUrl?: string;
   enrollmentCount?: number;
@@ -715,6 +717,34 @@ export interface NotificationResponse {
 export interface CategoryResponse {
   id: string;
   name: string;
+  coursesCount?: number;
+  teachersCount?: number;
+}
+
+export interface CourseLevelResponse {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CourseLevelCreateRequest {
+  code: string;
+  name: string;
+  description?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface CourseLevelUpdateRequest {
+  name?: string;
+  description?: string;
+  sortOrder?: number;
+  isActive?: boolean;
 }
 
 export type SubstituteInviteStatus =

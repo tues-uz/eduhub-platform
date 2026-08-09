@@ -82,6 +82,10 @@ function normalizeContent(raw: unknown): LandingPageContent | null {
   };
 }
 
+export function normalizeLandingPageContent(raw: unknown): LandingPageContent | null {
+  return normalizeContent(raw);
+}
+
 let memoryLandingContent: LandingPageContent | null = null;
 
 function notifyChanged() {
@@ -96,16 +100,36 @@ export function readLandingPageContent(): LandingPageContent | null {
 
 import { eduhubLandingPage } from "@/api/eduhubClient";
 
-export function writeLandingPageContent(content: LandingPageContent) {
+export async function fetchLandingPageContent(): Promise<LandingPageContent | null> {
+  try {
+    const sections = await eduhubLandingPage.getContent();
+    const mainSection = sections.find((s) => s.sectionKey === "landing_main");
+    if (mainSection && mainSection.contentJson) {
+      try {
+        const parsed = JSON.parse(mainSection.contentJson);
+        const normalized = normalizeContent(parsed);
+        if (normalized) {
+          memoryLandingContent = normalized;
+          notifyChanged();
+          return normalized;
+        }
+      } catch {
+        // invalid JSON
+      }
+    }
+  } catch (e) {
+    console.warn("[LandingPageCMS] fetch failed", e);
+  }
+  return memoryLandingContent;
+}
+
+export async function writeLandingPageContent(content: LandingPageContent): Promise<void> {
   const next = normalizeContent({ ...content, updatedAt: new Date().toISOString() });
   if (!next) return;
   memoryLandingContent = next;
   notifyChanged();
 
-  // Async sync to backend REST API
-  void eduhubLandingPage.updateSection("landing_main", JSON.stringify(next)).catch((e) => {
-    console.warn("[LandingPageCMS] API sync failed", e);
-  });
+  await eduhubLandingPage.updateSection("landing_main", JSON.stringify(next));
 }
 
 export function resetLandingPageContent() {

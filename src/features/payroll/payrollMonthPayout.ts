@@ -6,6 +6,7 @@ import {
   type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
 import { tuitionPartsForSchedule } from "@/features/enrollment/enrollmentTuitionThirds";
+import { formatMoney } from "@/features/payroll/classPayrollAggregate";
 import { getInstructorRevenueShare } from "@/features/payroll/instructorRevenueShareStorage";
 
 export type PayrollMonthPayoutQuote = {

@@ -19,7 +19,6 @@ type ContentTool = {
   icon: LucideIcon;
   titleKey: string;
   descriptionKey: string;
-  demo?: boolean;
 };
 
 const QUICK_ACTIONS = [
@@ -57,7 +56,6 @@ const CONTENT_TOOLS: ContentTool[] = [
     icon: Globe,
     titleKey: "admin.contentHub.tools.landingPage.title",
     descriptionKey: "admin.contentHub.tools.landingPage.description",
-    demo: true,
   },
   {
     slug: "courses",
@@ -117,9 +115,6 @@ export default function AdminContentHubPage() {
                   <h2 className="text-lg font-semibold text-slate-900">
                     {t("admin.contentHub.featured.landingPage.title")}
                   </h2>
-                  <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-900">
-                    {t("admin.addUserRole.hub.demoBadge")}
-                  </span>
                 </div>
                 <p className="mt-1 text-sm text-slate-600">
                   {t("admin.contentHub.featured.landingPage.description")}
@@ -167,14 +162,7 @@ export default function AdminContentHubPage() {
                     <Icon className="h-5 w-5 text-slate-700" aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-slate-900">{t(tool.titleKey)}</p>
-                      {tool.demo ? (
-                        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-900">
-                          {t("admin.addUserRole.hub.demoBadge")}
-                        </span>
-                      ) : null}
-                    </div>
+                    <p className="font-semibold text-slate-900">{t(tool.titleKey)}</p>
                     <p className="mt-0.5 line-clamp-2 text-sm text-slate-600">{t(tool.descriptionKey)}</p>
                   </div>
                   <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />

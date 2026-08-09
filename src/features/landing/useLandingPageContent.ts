@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  fetchLandingPageContent,
   LANDING_PAGE_CONTENT_CHANGED_EVENT,
   readLandingPageContent,
   type LandingPageContent,
@@ -13,6 +14,10 @@ export function useLandingPageContent(): LandingPageContent | null {
   }, []);
 
   useEffect(() => {
+    void fetchLandingPageContent().then((res) => {
+      if (res) setContent(res);
+    });
+
     const onStorage = (event: StorageEvent) => {
       if (event.key === "eduhub_landing_page_content") refresh();
     };

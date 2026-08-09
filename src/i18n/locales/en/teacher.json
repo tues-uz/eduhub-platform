@@ -892,12 +892,12 @@
         },
         "primary": {
           "title": "You are the course lead.",
-          "description": "Approved substitute {{email}} has demo access to this class page for resumes and local attendance. The server enrollment list stays course-lead only until the API supports substitutes."
+          "description": "Approved substitute {{email}} has access to this class page for resumes and attendance."
         }
       },
-      "enrollmentHint": "Students enrolled from the catalog appear below when the API returns roster data.",
+      "enrollmentHint": "Students enrolled from the catalog appear below.",
       "inviteSubstitute": "Invite substitute",
-      "inviteSubstituteHint": "Covers a session when you're unavailable. Enter the Substitute's admin-registered lecturer email. Demo: in-app notifications only.",
+      "inviteSubstituteHint": "Covers a session when you're unavailable. Enter the Substitute's admin-registered lecturer email.",
       "meta": {
         "category": "Category",
         "students": "Students",
@@ -920,10 +920,10 @@
       "enrolled": {
         "title": "Enrolled students",
         "intro": "Students enrolled in this class from the catalog.",
-        "sessionsNote": "This class is set to {{count}} sessions in 6 months (from class settings); the table compares local check-ins to that target.",
-        "localOnly": "This class is stored only in your browser. Connect it to the API to load enrolled students here.",
-        "substituteNoRoster": "Enrollment list is not loaded for substitutes (API).",
-        "substituteNoRosterDescription": "The server only returns /courses/…/students for the catalog course lead. Your access here is from the approved substitute workflow (demo).",
+        "sessionsNote": "This class is set to {{count}} sessions in 6 months; the table shows recorded check-ins.",
+        "localOnly": "This class is stored locally. Connect it to load enrolled students.",
+        "substituteNoRoster": "Enrollment list is not loaded for substitutes.",
+        "substituteNoRosterDescription": "The server returns student enrollment list for the course lead. Your access is provided through the approved substitute workflow.",
         "loading": "Loading students…",
         "loadError": "Could not load enrollment list. Check permissions or try again later.",
         "empty": "No students enrolled yet.",

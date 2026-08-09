@@ -20,49 +20,8 @@ export type StudentPromo = {
 
 export type StudentPromoInput = Omit<StudentPromo, "id" | "updatedAt"> & { id?: string };
 
-const DEFAULT_PROMOS: StudentPromo[] = [
-  {
-    id: "promo-welcome",
-    title: "New classes are open for enrollment",
-    body: "Explore fresh courses and pick up where you left off this term.",
-    ctaLabel: "Browse classes",
-    ctaUrl: "/eduhub",
-    imageUrl:
-      "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1600&q=80",
-    accentColor: "#3954d0",
-    placement: "my-class",
-    active: true,
-    sortOrder: 0,
-    startsAt: null,
-    endsAt: null,
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "promo-referral",
-    title: "Refer a friend and save",
-    body: "Share EduHub with classmates — ask your admin about referral discounts.",
-    ctaLabel: "Learn more",
-    ctaUrl: "/dashboard/available-courses",
-    imageUrl:
-      "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=80",
-    accentColor: "#0f766e",
-    placement: "my-class",
-    active: true,
-    sortOrder: 1,
-    startsAt: null,
-    endsAt: null,
-    updatedAt: new Date().toISOString(),
-  },
-];
+// No hardcoded sample promotions. Active promotions are fetched and managed dynamically.
 
-function applyDefaultPromoFallbacks(promos: StudentPromo[]): StudentPromo[] {
-  const defaultsById = new Map(DEFAULT_PROMOS.map((promo) => [promo.id, promo]));
-  return promos.map((promo) => {
-    const fallback = defaultsById.get(promo.id);
-    if (!fallback || promo.imageUrl.trim()) return promo;
-    return { ...promo, imageUrl: fallback.imageUrl };
-  });
-}
 
 function normalizePromo(raw: unknown): StudentPromo | null {
   if (!raw || typeof raw !== "object") return null;
@@ -108,14 +67,11 @@ function notifyPromosChanged() {
 
 export function readStudentPromos(): StudentPromo[] {
   const stored = readRawPromos();
-  return applyDefaultPromoFallbacks(
-    [...stored].sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title)),
-  );
+  return [...stored].sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title));
 }
 
 export function readStudentPromosWithDefaults(): StudentPromo[] {
-  const stored = readStudentPromos();
-  return stored.length > 0 ? stored : [...DEFAULT_PROMOS];
+  return readStudentPromos();
 }
 
 import { eduhubPromos } from "@/api/eduhubClient";
@@ -167,9 +123,8 @@ export function deleteStudentPromo(id: string) {
   void eduhubPromos.deletePromo(id).catch(() => {});
 }
 
-
 export function resetStudentPromosToDefaults() {
-  writeStudentPromos(DEFAULT_PROMOS.map((p) => ({ ...p, updatedAt: new Date().toISOString() })));
+  writeStudentPromos([]);
 }
 
 function isWithinSchedule(promo: StudentPromo, now = new Date()): boolean {
