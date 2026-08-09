@@ -419,7 +419,7 @@ export function AdminCourseLevelsManager() {
                     onChange={(e) =>
                       setCreateForm({
                         ...createForm,
-                        code: e.target.value.toLowerCase().replace(/[^a-z0-9_\-]/g, "_"),
+                        code: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "_"),
                       })
                     }
                     maxLength={50}

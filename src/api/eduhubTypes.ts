@@ -897,6 +897,14 @@ export interface PromoCodeResponse {
   active: boolean;
 }
 
+// General referral / discount / trial code settings (single server-side row)
+export interface GeneralReferralCodeResponse {
+  referralCode?: string;
+  discountPercent: number;
+  trialCode?: string;
+  updatedAt?: string;
+}
+
 // Marketing Promo (carousel banner) Types
 export type MarketingPromoPlacement = "my-class" | "dashboard" | "all";
 

@@ -39,10 +39,11 @@ import {
   eduhubEnrollmentApplications,
   getAccessToken,
 } from "@/api/eduhubClient";
-import type { CourseResponse, ScheduleProposalResponse, UserResponse } from "@/api/eduhubTypes";
+import type { CourseResponse, GeneralReferralCodeResponse, ScheduleProposalResponse, UserResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
-import { computeDiscountedPrice, readAdminCourseCatalog } from "@/features/admin/utils/adminCourseCatalog";
+import { computeDiscountedPrice } from "@/features/admin/utils/adminCourseCatalog";
 import {
+  loadGeneralReferralCodes,
   matchGeneralReferralCode,
   matchGeneralTrialCode,
 } from "@/features/admin/data/generalReferralCodesStore";
@@ -211,6 +212,17 @@ const StudentEnrollmentApplicationPage = () => {
       });
   }, []);
 
+  const [generalCodes, setGeneralCodes] = useState<GeneralReferralCodeResponse | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    loadGeneralReferralCodes().then((codes) => {
+      if (mounted) setGeneralCodes(codes);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   useEffect(() => {
     if (phoneSecondaryTouched) return;
     const parentPhone = apiUser?.parentPhoneNumber?.trim();
@@ -277,18 +289,8 @@ const StudentEnrollmentApplicationPage = () => {
         listedAmount: pricing.amount,
       };
     }
-    if (courseId && isUuid(courseId)) {
-      const meta = readAdminCourseCatalog()[courseId];
-      if (meta) {
-        return {
-          code: meta.referralCode,
-          discountPercent: meta.discountPercent,
-          listedAmount: meta.amount,
-        };
-      }
-    }
     return null;
-  }, [apiCourse, courseId]);
+  }, [apiCourse]);
 
   const appliedReferralDiscountPercent = useMemo(() => {
     const entered = referralCodeInput.trim();
@@ -300,27 +302,24 @@ const StudentEnrollmentApplicationPage = () => {
     ) {
       return courseReferralMeta.discountPercent;
     }
-    const general = matchGeneralReferralCode(entered);
+    const general = matchGeneralReferralCode(entered, generalCodes);
     if (general && general.discountPercent > 0) return general.discountPercent;
     return 0;
-  }, [referralCodeInput, courseReferralMeta]);
+  }, [referralCodeInput, courseReferralMeta, generalCodes]);
 
   const referralDiscountApplied = appliedReferralDiscountPercent > 0;
 
   const courseTrialMeta = useMemo(() => {
     if (apiCourse?.pricing?.trialCode?.trim()) return apiCourse.pricing.trialCode.trim();
-    if (courseId && isUuid(courseId)) {
-      return readAdminCourseCatalog()[courseId]?.trialCode?.trim() ?? "";
-    }
     return "";
-  }, [apiCourse, courseId]);
+  }, [apiCourse]);
 
   const trialCodeApplied = useMemo(() => {
     const entered = trialCodeInput.trim();
     if (!entered) return false;
     if (courseTrialMeta && entered.toLowerCase() === courseTrialMeta.toLowerCase()) return true;
-    return Boolean(matchGeneralTrialCode(entered));
-  }, [trialCodeInput, courseTrialMeta]);
+    return matchGeneralTrialCode(entered, generalCodes);
+  }, [trialCodeInput, courseTrialMeta, generalCodes]);
 
   const listedTuitionBase = useMemo(() => {
     if (courseReferralMeta?.listedAmount != null && courseReferralMeta.listedAmount > 0) {

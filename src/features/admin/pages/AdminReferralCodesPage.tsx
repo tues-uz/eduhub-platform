@@ -8,7 +8,6 @@ import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { AdminReferralDiscountDialog } from "@/features/admin/components/AdminReferralDiscountDialog";
 import { useTranslation } from "react-i18next";
 import { CourseStatusBadge } from "@/features/admin/components/AdminStatusBadges";
-import { readAdminCourseCatalog } from "@/features/admin/utils/adminCourseCatalog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -47,21 +46,18 @@ export default function AdminReferralCodesPage() {
     queryFn: fetchMergedAdminCourses,
   });
 
-  const localCatalog = useMemo(() => readAdminCourseCatalog(), [data, dialogOpen]);
-
   const filteredCourses = useMemo(() => {
     if (!data?.length) return [] as CourseSummaryResponse[];
     const q = search.trim().toLowerCase();
     if (!q) return data;
     return data.filter((c) => {
-      const local = localCatalog[c.id];
-      const ref = c.pricing?.referralCode ?? local?.referralCode ?? "";
-      const trial = c.pricing?.trialCode ?? local?.trialCode ?? "";
+      const ref = c.pricing?.referralCode ?? "";
+      const trial = c.pricing?.trialCode ?? "";
       const disc = c.pricing?.discountPercent != null ? `${c.pricing.discountPercent}%` : "";
       const hay = [c.title, c.lecturerName ?? "", c.status ?? "", ref, disc, trial].join(" ").toLowerCase();
       return hay.includes(q);
     });
-  }, [data, search, localCatalog]);
+  }, [data, search]);
 
   const openCreate = () => {
     setEditCourseId(null);
@@ -129,16 +125,13 @@ export default function AdminReferralCodesPage() {
                 ) : (
                   filteredCourses.map((course) => {
                     const pricing = course.pricing;
-                    const local = localCatalog[course.id];
                     const hasCatalog = pricing != null && pricing.amount >= 0;
-                    const referral = pricing?.referralCode?.trim() || local?.referralCode?.trim() || "";
-                    const trial = pricing?.trialCode?.trim() || local?.trialCode?.trim() || "";
+                    const referral = pricing?.referralCode?.trim() || "";
+                    const trial = pricing?.trialCode?.trim() || "";
                     const discount =
                       pricing && pricing.discountPercent > 0
                         ? `${pricing.discountPercent}%`
-                        : local && local.discountPercent > 0
-                          ? `${local.discountPercent}%`
-                          : "—";
+                        : "—";
                     return (
                       <TableRow key={course.id}>
                         <TableCell className="max-w-[240px] font-medium text-slate-900">

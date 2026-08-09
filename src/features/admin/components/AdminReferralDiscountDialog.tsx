@@ -1,22 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { eduhubAdmin } from "@/api/eduhubClient";
-import type { CourseSummaryResponse } from "@/api/eduhubTypes";
+import { eduhubAdmin, eduhubReferralCodes } from "@/api/eduhubClient";
+import type { CourseSummaryResponse, GeneralReferralCodeResponse } from "@/api/eduhubTypes";
 import {
   AdminActionCodeField,
   useAdminActionCodeState,
 } from "@/features/admin/components/AdminActionCodeField";
 import { validateAdminActionCodeOrThrow } from "@/features/admin/adminStaffCode";
 import {
-  readGeneralReferralCodes,
-  writeGeneralReferralCodes,
-} from "@/features/admin/data/generalReferralCodesStore";
-import {
   computeDiscountedPrice,
-  readAdminCourseCatalog,
-  writeAdminCourseCatalog,
 } from "@/features/admin/utils/adminCourseCatalog";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +32,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+
+const GENERAL_CODE_QUERY_KEY = ["promo", "general-code"];
 
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat(undefined, {
@@ -75,6 +71,13 @@ export function AdminReferralDiscountDialog({
   const [trialInput, setTrialInput] = useState("");
   const [adminActionCode, setAdminActionCode] = useAdminActionCodeState();
 
+  const { data: generalCodes } = useQuery<GeneralReferralCodeResponse | null>({
+    queryKey: GENERAL_CODE_QUERY_KEY,
+    queryFn: () => eduhubReferralCodes.getGeneral().catch(() => null),
+    enabled: open,
+    staleTime: 30_000,
+  });
+
   const pricedCourses = useMemo(
     () => courses.filter((c) => c.pricing != null && c.pricing.amount >= 0),
     [courses],
@@ -107,9 +110,8 @@ export function AdminReferralDiscountDialog({
   useEffect(() => {
     if (!open) return;
     if (scope === "general") {
-      const general = readGeneralReferralCodes();
-      setReferralInput(general.referralCode);
-      setDiscountInput(String(general.discountPercent));
+      setReferralInput(generalCodes?.referralCode ?? "");
+      setDiscountInput(String(generalCodes?.discountPercent ?? 0));
       return;
     }
     if (scope === "class") {
@@ -118,25 +120,19 @@ export function AdminReferralDiscountDialog({
         setDiscountInput("0");
         return;
       }
-      const local = readAdminCourseCatalog()[selected.id];
-      setReferralInput(selected.pricing.referralCode ?? local?.referralCode ?? "");
-      setDiscountInput(String(selected.pricing.discountPercent ?? local?.discountPercent ?? 0));
+      setReferralInput(selected.pricing.referralCode ?? "");
+      setDiscountInput(String(selected.pricing.discountPercent ?? 0));
     }
-  }, [open, scope, selected]);
+  }, [open, scope, selected, generalCodes]);
 
   useEffect(() => {
     if (!open || scope !== "trial") return;
     if (trialScope === "general") {
-      setTrialInput(readGeneralReferralCodes().trialCode);
+      setTrialInput(generalCodes?.trialCode ?? "");
       return;
     }
-    if (!trialSelected?.pricing) {
-      setTrialInput("");
-      return;
-    }
-    const local = readAdminCourseCatalog()[trialSelected.id];
-    setTrialInput(trialSelected.pricing.trialCode ?? local?.trialCode ?? "");
-  }, [open, scope, trialScope, trialSelected]);
+    setTrialInput(trialSelected?.pricing?.trialCode ?? "");
+  }, [open, scope, trialScope, trialSelected, generalCodes]);
 
   const pricePreview = useMemo(() => {
     if (scope !== "class" || !selected?.pricing) return null;
@@ -159,11 +155,9 @@ export function AdminReferralDiscountDialog({
       if (scope === "trial") {
         const trialCode = trialInput.trim().slice(0, 64);
         if (trialScope === "general") {
-          const current = readGeneralReferralCodes();
-          writeGeneralReferralCodes({
-            referralCode: current.referralCode,
-            discountPercent: current.discountPercent,
+          await eduhubReferralCodes.updateGeneral({
             trialCode,
+            adminActionCode: code,
           });
           return { kind: "trialGeneral" as const };
         }
@@ -171,11 +165,8 @@ export function AdminReferralDiscountDialog({
         if (!trialSelected?.pricing) {
           throw new Error(t("admin.referralCodes.toast.pricingRequired"));
         }
-        const local = readAdminCourseCatalog()[trialSelected.id];
-        const referralCode =
-          trialSelected.pricing.referralCode ?? local?.referralCode ?? "";
-        const discountPercent =
-          trialSelected.pricing.discountPercent ?? local?.discountPercent ?? 0;
+        const referralCode = trialSelected.pricing.referralCode ?? "";
+        const discountPercent = trialSelected.pricing.discountPercent ?? 0;
 
         await eduhubAdmin.reviewCourse(trialSelected.id, {
           decision: "APPROVE",
@@ -185,14 +176,6 @@ export function AdminReferralDiscountDialog({
           discountPercent,
           trialCode: trialCode || undefined,
           adminActionCode: code,
-        });
-
-        writeAdminCourseCatalog(trialSelected.id, {
-          amount: trialSelected.pricing.amount,
-          currency: trialSelected.pricing.currency,
-          referralCode,
-          discountPercent,
-          trialCode,
         });
 
         return { kind: "trialClass" as const, title: trialSelected.title };
@@ -206,11 +189,10 @@ export function AdminReferralDiscountDialog({
       const discountPercent = Math.round(dp);
 
       if (scope === "general") {
-        const current = readGeneralReferralCodes();
-        writeGeneralReferralCodes({
+        await eduhubReferralCodes.updateGeneral({
           referralCode,
           discountPercent,
-          trialCode: current.trialCode,
+          adminActionCode: code,
         });
         return { kind: "general" as const };
       }
@@ -219,8 +201,7 @@ export function AdminReferralDiscountDialog({
         throw new Error(t("admin.referralCodes.toast.pricingRequired"));
       }
 
-      const local = readAdminCourseCatalog()[selected.id];
-      const trialCode = selected.pricing.trialCode ?? local?.trialCode ?? "";
+      const trialCode = selected.pricing.trialCode ?? "";
 
       await eduhubAdmin.reviewCourse(selected.id, {
         decision: "APPROVE",
@@ -230,14 +211,6 @@ export function AdminReferralDiscountDialog({
         discountPercent,
         trialCode: trialCode || undefined,
         adminActionCode: code,
-      });
-
-      writeAdminCourseCatalog(selected.id, {
-        amount: selected.pricing.amount,
-        currency: selected.pricing.currency,
-        referralCode,
-        discountPercent,
-        trialCode,
       });
 
       return { kind: "class" as const, title: selected.title };
@@ -257,6 +230,7 @@ export function AdminReferralDiscountDialog({
         });
       }
       queryClient.invalidateQueries({ queryKey: ["admin", "courses", "list"] });
+      queryClient.invalidateQueries({ queryKey: GENERAL_CODE_QUERY_KEY });
       onOpenChange(false);
     },
     onError: (e: Error) => {

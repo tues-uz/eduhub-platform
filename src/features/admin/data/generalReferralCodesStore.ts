@@ -1,69 +1,47 @@
-const STORAGE_KEY = "eduhub_general_referral_codes";
+/**
+ * General referral / discount / trial codes — server-side source of truth.
+ *
+ * The single settings row lives in `general_referral_code` (Flyway V32), managed
+ * by admins via `PATCH /admin/referral-codes/general` and read by students via
+ * `GET /referral-codes/general` to preview discounts at enrollment.
+ * Shared per-tab cache keeps repeated reads off the API while staying fresh
+ * within a session; there is intentionally NO local-storage write path anymore.
+ */
+import { eduhubReferralCodes } from "@/api/eduhubClient";
+import type { GeneralReferralCodeResponse } from "@/api/eduhubTypes";
 
-export type GeneralReferralCodes = {
-  referralCode: string;
-  discountPercent: number;
-  trialCode: string;
-  updatedAt: string;
-};
+let cachedPromise: Promise<GeneralReferralCodeResponse | null> | null = null;
 
-const EMPTY: GeneralReferralCodes = {
-  referralCode: "",
-  discountPercent: 0,
-  trialCode: "",
-  updatedAt: "",
-};
-
-function clampDiscount(n: unknown): number {
-  if (typeof n !== "number" || !Number.isFinite(n)) return 0;
-  return Math.max(0, Math.min(100, Math.round(n)));
-}
-
-export function readGeneralReferralCodes(): GeneralReferralCodes {
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...EMPTY };
-    const parsed = JSON.parse(raw) as Partial<GeneralReferralCodes>;
-    return {
-      referralCode: typeof parsed.referralCode === "string" ? parsed.referralCode.trim().slice(0, 64) : "",
-      discountPercent: clampDiscount(parsed.discountPercent),
-      trialCode: typeof parsed.trialCode === "string" ? parsed.trialCode.trim().slice(0, 64) : "",
-      updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : "",
-    };
-  } catch {
-    return { ...EMPTY };
+export function loadGeneralReferralCodes(): Promise<GeneralReferralCodeResponse | null> {
+  if (!cachedPromise) {
+    cachedPromise = eduhubReferralCodes
+      .getGeneral()
+      .catch(() => null);
   }
+  return cachedPromise;
 }
 
-export function writeGeneralReferralCodes(input: {
-  referralCode: string;
-  discountPercent: number;
-  trialCode: string;
-}): GeneralReferralCodes {
-  const next: GeneralReferralCodes = {
-    referralCode: input.referralCode.trim().slice(0, 64),
-    discountPercent: clampDiscount(input.discountPercent),
-    trialCode: input.trialCode.trim().slice(0, 64),
-    updatedAt: new Date().toISOString(),
-  };
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  return next;
+export function invalidateGeneralReferralCodes() {
+  cachedPromise = null;
 }
 
 /** Match a student-entered code against the general referral code (case-insensitive). */
-export function matchGeneralReferralCode(entered: string): GeneralReferralCodes | null {
-  const general = readGeneralReferralCodes();
-  const code = general.referralCode.trim();
+export function matchGeneralReferralCode(
+  entered: string,
+  config: GeneralReferralCodeResponse | null | undefined,
+): GeneralReferralCodeResponse | null {
+  const code = config?.referralCode?.trim();
   if (!code || !entered.trim()) return null;
   if (entered.trim().toLowerCase() !== code.toLowerCase()) return null;
-  return general;
+  return config ?? null;
 }
 
 /** Match a student-entered code against the general trial class code (case-insensitive). */
-export function matchGeneralTrialCode(entered: string): string | null {
-  const general = readGeneralReferralCodes();
-  const code = general.trialCode.trim();
-  if (!code || !entered.trim()) return null;
-  if (entered.trim().toLowerCase() !== code.toLowerCase()) return null;
-  return code;
+export function matchGeneralTrialCode(
+  entered: string,
+  config: GeneralReferralCodeResponse | null | undefined,
+): boolean {
+  const code = config?.trialCode?.trim();
+  if (!code || !entered.trim()) return false;
+  return entered.trim().toLowerCase() === code.toLowerCase();
 }

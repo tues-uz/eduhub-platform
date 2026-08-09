@@ -71,6 +71,7 @@ import type {
   AdminSupportSessionResponse,
   AdminCertificationRowResponse,
   AdminPaymentRowResponse,
+  GeneralReferralCodeResponse,
 } from "./eduhubTypes";
 
 
@@ -815,6 +816,24 @@ export const eduhubAdmin = {
 };
 
 export const eduhubAdminOverview = eduhubAdmin;
+
+/** Referral / discount / trial codes */
+export const eduhubReferralCodes = {
+  /** General (single server-side row) settings; visible to authenticated users so enrollment can preview discounts. */
+  getGeneral: () => request<GeneralReferralCodeResponse>("/referral-codes/general"),
+
+  /** Admin-only update of the general referral/discount/trial code settings. */
+  updateGeneral: (body: {
+    referralCode?: string;
+    discountPercent?: number;
+    trialCode?: string;
+    adminActionCode?: string;
+  }) =>
+    request<GeneralReferralCodeResponse>("/admin/referral-codes/general", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+};
 
 export const eduhubPayroll = {
   getClasses: () => request<PayrollClassSummaryResponse[]>("/payroll/classes"),

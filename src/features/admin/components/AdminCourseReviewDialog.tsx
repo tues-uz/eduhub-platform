@@ -128,6 +128,7 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
         currency: DEFAULT_CURRENCY,
         referralCode: referralInput.trim().slice(0, 64),
         discountPercent,
+        trialCode: detail?.pricing?.trialCode ?? undefined,
         adminActionCode: code,
       });
       courseReviewAuditStore.record(courseId, decision, code);
