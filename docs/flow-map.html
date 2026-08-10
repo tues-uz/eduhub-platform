@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EduHub Flow Map</title>
+    <style>
+      :root {
+        --bg: #f1f5f9;
+        --card: #fff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --border: #e2e8f0;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.55;
+      }
+      header {
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        color: #fff;
+        padding: 1.25rem 1.5rem;
+      }
+      header h1 { margin: 0; font-size: 1.4rem; }
+      header p { margin: 0.3rem 0 0; opacity: 0.92; font-size: 0.9rem; }
+      .shell {
+        display: flex;
+        min-height: calc(100vh - 76px);
+      }
+      nav {
+        width: 210px;
+        flex-shrink: 0;
+        background: #fff;
+        border-right: 1px solid var(--border);
+        padding: 0.85rem 0.65rem;
+        position: sticky;
+        top: 0;
+        align-self: flex-start;
+        max-height: 100vh;
+        overflow-y: auto;
+      }
+      nav .label {
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 0.6rem 0.45rem 0.25rem;
+      }
+      nav a {
+        display: block;
+        padding: 0.38rem 0.5rem;
+        border-radius: 8px;
+        color: var(--text);
+        text-decoration: none;
+        font-size: 0.8rem;
+      }
+      nav a:hover { background: #f1f5f9; }
+      main {
+        flex: 1;
+        min-width: 0;
+        padding: 1.25rem 1.5rem 4rem;
+        max-width: 960px;
+      }
+      .intro, .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.1rem 1.25rem 1.3rem;
+        margin-bottom: 1rem;
+      }
+      .intro h2, .card h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+      .intro p, .card .desc { margin: 0 0 0.75rem; color: var(--muted); font-size: 0.85rem; }
+      .intro ul { margin: 0; padding-left: 1.1rem; font-size: 0.84rem; color: var(--muted); }
+      .legend { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.65rem; }
+      .badge {
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.18rem 0.5rem;
+        border-radius: 999px;
+      }
+      .badge-s { background: #eff6ff; color: #2563eb; }
+      .badge-t { background: #ecfdf5; color: #059669; }
+      .badge-a { background: #fffbeb; color: #d97706; }
+      .phase { margin-bottom: 2rem; scroll-margin-top: 0.75rem; }
+      .phase-title {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin-bottom: 0.85rem;
+      }
+      .phase-num {
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 50%;
+        background: #1e40af;
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.78rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .phase-title h2 { margin: 0; font-size: 1.05rem; }
+      .phase-title p { margin: 0; color: var(--muted); font-size: 0.82rem; }
+      .card-tags { margin-bottom: 0.5rem; display: flex; gap: 0.3rem; flex-wrap: wrap; }
+      .diagram-wrap {
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
+        padding: 0.5rem 0 0.75rem;
+        -webkit-overflow-scrolling: touch;
+      }
+      .diagram-wrap .mermaid {
+        display: flex;
+        justify-content: center;
+        min-width: min(100%, 520px);
+      }
+      .diagram-wrap svg {
+        max-width: none !important;
+        height: auto !important;
+      }
+      .step-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--muted);
+        margin: 0.75rem 0 0.4rem;
+      }
+      .steps {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+      .step-chip {
+        font: inherit;
+        font-size: 0.76rem;
+        padding: 0.32rem 0.55rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #f8fafc;
+        cursor: help;
+        text-align: left;
+      }
+      .step-chip:hover, .step-chip.active {
+        border-color: #93c5fd;
+        background: #eff6ff;
+        box-shadow: 0 0 0 2px #bfdbfe;
+      }
+      .step-chip .route { display: block; font-size: 0.62rem; color: var(--muted); margin-top: 0.08rem; }
+      .step-chip .sidebar { display: block; font-size: 0.68rem; color: #1e40af; font-weight: 600; margin-top: 0.12rem; }
+      .page-ref { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 0.75rem; }
+      .page-ref th, .page-ref td { border: 1px solid var(--border); padding: 0.4rem 0.55rem; text-align: left; vertical-align: top; }
+      .page-ref th { background: #f8fafc; font-weight: 600; }
+      .page-ref code { font-size: 0.68rem; color: var(--muted); }
+      .timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+      .timeline .step-chip { width: 100%; }
+      /* Floating preview — does NOT steal layout width */
+      #preview-float {
+        position: fixed;
+        right: 16px;
+        top: 88px;
+        width: 280px;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.15);
+        padding: 0.85rem;
+        z-index: 200;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(12px);
+        transition: opacity 0.15s, transform 0.15s;
+      }
+      #preview-float.show {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateX(0);
+      }
+      #preview-float .cap { font-weight: 600; font-size: 0.85rem; margin: 0 0 0.25rem; }
+      #preview-float .sidebar { font-size: 0.72rem; color: #1e40af; font-weight: 600; margin: 0 0 0.2rem; }
+      #preview-float .route { font-size: 0.68rem; color: var(--muted); margin: 0 0 0.5rem; word-break: break-all; }
+      #preview-float img {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        display: block;
+      }
+      @media (max-width: 900px) {
+        .shell { flex-direction: column; }
+        nav {
+          width: 100%;
+          position: static;
+          max-height: none;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.2rem;
+        }
+        nav .label { width: 100%; }
+        main { max-width: none; padding-bottom: 6rem; }
+        #preview-float {
+          right: 8px;
+          left: 8px;
+          width: auto;
+          top: auto;
+          bottom: 12px;
+          max-height: 42vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>EduHub Flow Map</h1>
+      <p>Full flows by phase · hover any step chip to preview the page</p>
+    </header>
+
+    <div class="shell">
+      <nav>
+        <div class="label">Overview</div>
+        <a href="#overview">Full journey</a>
+        <a href="#timeline">12-step timeline</a>
+        <div class="label">Phase 1</div>
+        <a href="#phase-1">Accounts</a>
+        <div class="label">Phase 2</div>
+        <a href="#phase-2">Publish class</a>
+        <div class="label">Phase 3</div>
+        <a href="#phase-3">Enroll and pay</a>
+        <div class="label">Phase 4</div>
+        <a href="#phase-4">Learn in class</a>
+        <div class="label">Phase 5</div>
+        <a href="#phase-5">Finish</a>
+        <div class="label">Extra</div>
+        <a href="#extra">Password and substitute</a>
+      </nav>
+
+      <main>
+        <div class="intro">
+          <h2>How to read</h2>
+          <ul>
+            <li><strong>Arrow between two roles</strong> = they interact (approval, payment, message)</li>
+            <li><strong>Yellow note</strong> = solo step — shows the <strong>sidebar page name</strong></li>
+            <li><strong>Hover a step chip</strong> = real page screenshot + exact sidebar menu path</li>
+            <li>Previews are PNG captures from the live app UI. Refresh them with <code>npm run capture:flow-screenshots</code> (dev server on port 8081).</li>
+          </ul>
+          <div class="legend">
+            <span class="badge badge-s">Student sidebar</span>
+            <span class="badge badge-t">Teacher sidebar</span>
+            <span class="badge badge-a">Admin sidebar</span>
+          </div>
+          <table class="page-ref">
+            <thead>
+              <tr><th>Role</th><th>Sidebar page (menu name)</th><th>Path</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Student</td><td>Dashboard · My Class · Available Classes · Payment history · Quiz · Certificates</td><td><code>/dashboard …</code></td></tr>
+              <tr><td>Teacher</td><td>Dashboard · All Student · Attendance QR · Class › My Class · Add New Class · Schedule approvals · Payroll</td><td><code>/dashboard/teacher …</code></td></tr>
+              <tr><td>Admin</td><td>Dashboard · People · Classes › All classes &amp; schedules · Enrollment applications · Operations › Payments · Payroll</td><td><code>/dashboard/admin …</code></td></tr>
+              <tr><td>Public</td><td>Create Account · Sign In</td><td><code>/register · /signin</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- FULL JOURNEY -->
+        <section class="phase" id="overview">
+          <div class="phase-title">
+            <div class="phase-num">★</div>
+            <div>
+              <h2>Full journey (all roles)</h2>
+              <p>One class from start to finish</p>
+            </div>
+          </div>
+          <div class="card">
+            <p class="desc">Each note and arrow names the real sidebar page from the app.</p>
+            <div class="diagram-wrap">
+              <pre class="mermaid">
+sequenceDiagram
+    participant S as Student
+    participant T as Teacher
+    participant A as Admin
+
+    Note over T: Teacher - Class - Add New Class (details + lessons)
+    Note over A: Admin - Classes - propose schedule
+    A->>T: Schedule sent for instructor review
+    Note over T: Teacher - Schedule approvals
+    T->>A: Schedule approved
+    Note over A: Admin publishes class
+    A->>S: Class live in Available Classes
+
+    Note over S: Public - Create Account then Sign In
+    Note over S: Student - Available Classes - Join Class
+    S->>A: Submit enrollment application
+    Note over A: Admin - Classes - Enrollment applications
+    A->>S: Approved - appears in My Class
+
+    Note over S: Student - Payment history
+    S->>A: Pay tuition + upload proof
+    Note over A: Admin - Operations - Payments and reminders
+    A->>S: Payment confirmed
+
+    Note over T: Teacher - Attendance QR
+    T->>S: Show QR at session
+    S->>T: Scan QR from My Class session
+    Note over S: Student - My Class - lessons and Quiz
+
+    Note over S: Student - Certificates
+    Note over T: Teacher - Payroll
+    T->>A: Submit payroll request
+    Note over A: Admin - Operations - Payroll
+    A->>T: Approved + bank proof
+              </pre>
+            </div>
+            <p class="step-label">Hover steps (sidebar page names)</p>
+            <div class="steps">
+              <button type="button" class="step-chip" data-preview="flow-screenshots/teacher-course-new.png" data-route="/dashboard/teacher/courses/new" data-sidebar="Teacher › Class › Add New Class" data-caption="Add New Class"><strong>Add New Class</strong><span class="sidebar">Teacher sidebar › Class › Add New Class</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/register.png" data-route="/register" data-sidebar="Public › Create Account" data-caption="Create Account"><strong>Create Account</strong><span class="sidebar">Public page (not in sidebar)</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/available-classes.png" data-route="/dashboard/available-courses" data-sidebar="Student › Available Classes" data-caption="Available Classes"><strong>Available Classes</strong><span class="sidebar">Student sidebar › Available Classes</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/enrollment-form.png" data-route="/dashboard/available-courses/enroll" data-sidebar="From Available Classes › Join Class" data-caption="Join Class form"><strong>Join Class</strong><span class="sidebar">Opened from Available Classes</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/student-payment.png" data-route="/dashboard/payment" data-sidebar="Student › Payment history" data-caption="Payment history"><strong>Payment history</strong><span class="sidebar">Student sidebar › Payment history</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/teacher-attendance.png" data-route="/dashboard/teacher/attendance" data-sidebar="Teacher › Attendance QR" data-caption="Attendance QR"><strong>Attendance QR</strong><span class="sidebar">Teacher sidebar › Attendance QR</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/student-certificates.png" data-route="/dashboard/certificates" data-sidebar="Student › Certificates" data-caption="Certificates"><strong>Certificates</strong><span class="sidebar">Student sidebar › Certificates</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/teacher-payroll.png" data-route="/dashboard/teacher/payroll" data-sidebar="Teacher › Payroll" data-caption="Payroll"><strong>Payroll</strong><span class="sidebar">Teacher sidebar › Payroll</span></button>
+            </div>
+          </div>
+        </section>
+
+        <!-- TIMELINE -->
+        <section class="phase" id="timeline">
+          <div class="phase-title">
+            <div class="phase-num">#</div>
+            <div><h2>12-step timeline</h2><p>Same story, step by step</p></div>
+          </div>
+          <div class="card">
+            <ol class="timeline">
+              <li><button type="button" class="step-chip" data-preview="flow-screenshots/teacher-course-new.png" data-route="/dashboard/teacher/courses/new" data-sidebar="Teacher › Class › Add New Class" data-caption="Add New Class"><strong>1.</strong> Teacher creates class<span class="sidebar">Teacher sidebar › Class › Add New Class</span></button></li>
+              <li><button type="button" class="step-chip" data-preview="flow-screenshots/admin-course-schedule.png" data-route="/dashboard/admin/courses" data-sidebar="Admin › Classes › All classes &amp; schedules" data-caption="Propose schedule"><strong>2.</strong> Admin proposes schedule<span class="sidebar">Admin sidebar › Classes › All classes &amp; schedules › Schedule</span></button></li>
+              <li><button type="button" class="step-chip" data-preview="flow-screenshots/teacher-schedule-approvals.png" data-route="/dashboard/teacher/schedule" data-sidebar="Teacher › Schedule approvals" data-caption="Schedule approvals"><strong>3.</strong> Teacher approves schedule<span class="sidebar">Teacher sidebar › Schedule approvals</span></button></li>
+              <li><button type="button" class="step-chip" data-preview="flow-screenshots/admin-course-schedule.png" data-route="/dashboard/admin/courses" data-sidebar="Admin › Classes › publish class" data-caption="Publish class"><strong>4.</strong> Admin publishes class<span class="sidebar">Admin sidebar › Classes › All classes &amp; schedules › Publish</span></button></li>
+              <li><button type="button" class="step-chip" data-preview="flow-screenshots/register.png" data-route="/register" data-sidebar="Public › Create Account + Sign In" data-caption="Create Account"><strong>5.</strong> Student registers and signs in<span class="sidebar">/register then Sign In</span></button></li>
+              <li><button type="button" class="step-chip" data-preview="flow-screenshots/enrollment-form.png" data-route="/dashboard/available-courses/enroll" data-sidebar="Student › Available Classes › Join Class" data-caption="Join Class"><strong>6.</strong> Student applies to class<span class="sidebar">From Available Classes › Join Class</span></button></li>
+              <li><button type="button" class="step-chip" data-preview="flow-screenshots/admin-enrollment.png" data-route="/dashboard/admin/enrollment-applications" data-sidebar="Admin › Classes › Enrollment applications" data-caption="Enrollment applications"><strong>7.</strong> Admin approves enrollment<span class="sidebar">Admin sidebar › Classes › Enrollment applications</span></button></li>
+              <li><button type="button" class="step-chip" data-preview="flow-screenshots/student-payment.png" data-route="/dashboard/payment" data-sidebar="Student › Payment history" data-caption="Payment history"><strong>8.</strong> Student pays tuition<span class="sidebar">Student sidebar › Payment history</span></button></li>
+              <li><button type="button" class="step-chip" data-preview="flow-screenshots/teacher-attendance.png" data-route="/dashboard/teacher/attendance" data-sidebar="Teacher › Attendance QR" data-caption="Attendance QR"><strong>9.</strong> Session + QR check-in<span class="sidebar">Teacher › Attendance QR · Student › My Class</span></button></li>
+              <li><button type="button" class="step-chip" data-preview="flow-screenshots/student-course.png" data-route="/dashboard/courses" data-sidebar="Student › My Class" data-caption="My Class"><strong>10.</strong> Finish lessons and course<span class="sidebar">Student sidebar › My Class (+ Quiz)</span></button></li>
+              <li><button type="button" class="step-chip" data-preview="flow-screenshots/student-certificates.png" data-route="/dashboard/certificates" data-sidebar="Student › Certificates" data-caption="Certificates"><strong>11.</strong> Download certificate<span class="sidebar">Student sidebar › Certificates</span></button></li>
+              <li><button type="button" class="step-chip" data-preview="flow-screenshots/admin-payroll.png" data-route="/dashboard/admin/payroll" data-sidebar="Admin › Operations › Payroll" data-caption="Payroll"><strong>12.</strong> Teacher payroll approved<span class="sidebar">Teacher › Payroll · Admin › Operations › Payroll</span></button></li>
+            </ol>
+          </div>
+        </section>
+
+        <!-- PHASE 1 -->
+        <section class="phase" id="phase-1">
+          <div class="phase-title">
+            <div class="phase-num">1</div>
+            <div><h2>Get an account</h2></div>
+          </div>
+
+          <div class="card">
+            <div class="card-tags"><span class="badge badge-s">Student</span><span class="badge badge-t">Teacher</span><span class="badge badge-a">Admin</span></div>
+            <h3>Who registers how?</h3>
+            <div class="diagram-wrap">
+              <pre class="mermaid">
+flowchart LR
+    subgraph Student
+        R["Public: Create Account"] --> SD["Student sidebar: Dashboard"]
+    end
+    subgraph Teacher
+        AT["Admin sidebar: Add staff"] --> TI["Public: Sign In"] --> TD["Teacher sidebar: Dashboard"]
+    end
+    subgraph Admin
+        AA["Admin sidebar: Add staff"] --> SI["Public: Sign In"] --> AD["Admin sidebar: Dashboard"]
+    end
+              </pre>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-tags"><span class="badge badge-s">Student</span></div>
+            <h3>Student register</h3>
+            <div class="diagram-wrap">
+              <pre class="mermaid">
+sequenceDiagram
+    participant S as Student
+
+    Note over S: Public page Create Account
+    Note over S: Step 1 Personal details
+    Note over S: Step 2 Education and password
+    Note over S: Student sidebar Dashboard
+              </pre>
+            </div>
+            <div class="steps">
+              <button type="button" class="step-chip" data-preview="flow-screenshots/register.png" data-route="/register" data-sidebar="Public › Create Account" data-caption="Create Account"><strong>Create Account</strong><span class="sidebar">/register</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/signin.png" data-route="/signin" data-sidebar="Public › Sign In" data-caption="Sign In"><strong>Sign In</strong><span class="sidebar">/signin</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/student-dashboard.png" data-route="/dashboard" data-sidebar="Student › Dashboard" data-caption="Dashboard"><strong>Dashboard</strong><span class="sidebar">Student sidebar › Dashboard</span></button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-tags"><span class="badge badge-t">Teacher</span><span class="badge badge-a">Admin</span></div>
+            <h3>Teacher and admin first login</h3>
+            <div class="diagram-wrap">
+              <pre class="mermaid">
+sequenceDiagram
+    participant A as Admin
+    participant U as Teacher or Staff
+
+    Note over A: Admin sidebar People Add staff
+    A->>U: Send login email + password
+    Note over U: Public page Sign In
+    opt First login
+        Note over U: Change password page
+    end
+    Note over U: Teacher or Admin sidebar Dashboard
+              </pre>
+            </div>
+            <div class="steps">
+              <button type="button" class="step-chip" data-preview="flow-screenshots/admin-add-user.png" data-route="/dashboard/admin/add-user" data-sidebar="Admin › People › Add staff" data-caption="Add staff"><strong>Add staff</strong><span class="sidebar">Admin sidebar › Add staff</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/signin.png" data-route="/signin" data-sidebar="Public › Sign In" data-caption="Sign In"><strong>Sign In</strong><span class="sidebar">/signin</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/teacher-dashboard.png" data-route="/dashboard/teacher" data-sidebar="Teacher › Dashboard" data-caption="Dashboard"><strong>Teacher Dashboard</strong><span class="sidebar">Teacher sidebar › Dashboard</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/admin-dashboard.png" data-route="/dashboard/admin" data-sidebar="Admin › Dashboard" data-caption="Dashboard"><strong>Admin Dashboard</strong><span class="sidebar">Admin sidebar › Dashboard</span></button>
+            </div>
+          </div>
+        </section>
+
+        <!-- PHASE 2 -->
+        <section class="phase" id="phase-2">
+          <div class="phase-title">
+            <div class="phase-num">2</div>
+            <div><h2>Schedule &amp; publish a class</h2></div>
+          </div>
+          <div class="card">
+            <div class="diagram-wrap">
+              <pre class="mermaid">
+sequenceDiagram
+    participant T as Teacher
+    participant A as Admin
+    participant S as Student
+
+    Note over T: Teacher saves class draft (details + lessons)
+    Note over A: Admin proposes schedule on class schedule page
+    A->>T: Schedule pending instructor approval
+
+    alt Teacher approves
+        T->>A: Schedule approved
+        Note over A: Admin publishes class
+        A->>S: Student Available Classes
+    else Teacher requests changes
+        T->>A: Rejection note
+        Note over A: Admin revises and re-proposes
+    end
+              </pre>
+            </div>
+            <div class="steps">
+              <button type="button" class="step-chip" data-preview="flow-screenshots/teacher-course-new.png" data-route="/dashboard/teacher/courses/new" data-sidebar="Teacher › Class › Add New Class" data-caption="Add New Class"><strong>Add New Class</strong><span class="sidebar">Teacher sidebar › Class › Add New Class</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/admin-course-schedule.png" data-route="/dashboard/admin/courses" data-sidebar="Admin › Classes › All classes &amp; schedules" data-caption="Propose schedule"><strong>Propose schedule</strong><span class="sidebar">Admin sidebar › Classes › All classes &amp; schedules › Schedule</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/teacher-schedule-approvals.png" data-route="/dashboard/teacher/schedule" data-sidebar="Teacher › Schedule approvals" data-caption="Schedule approvals"><strong>Schedule approvals</strong><span class="sidebar">Teacher sidebar › Schedule approvals</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/available-classes.png" data-route="/dashboard/available-courses" data-sidebar="Student › Available Classes" data-caption="Available Classes"><strong>Available Classes</strong><span class="sidebar">Student sidebar › Available Classes (after admin publish)</span></button>
+            </div>
+          </div>
+        </section>
+
+        <!-- PHASE 3 -->
+        <section class="phase" id="phase-3">
+          <div class="phase-title">
+            <div class="phase-num">3</div>
+            <div><h2>Enroll and pay</h2></div>
+          </div>
+
+          <div class="card">
+            <h3>Join a class</h3>
+            <div class="diagram-wrap">
+              <pre class="mermaid">
+sequenceDiagram
+    participant S as Student
+    participant A as Admin
+
+    Note over S: Student Available Classes
+    Note over S: Open class then Join Class
+    S->>A: Submit enrollment form
+    Note over S: Waiting on Dashboard or Available Classes
+
+    alt Approved
+        A->>S: Enrolled - Student My Class
+    else Rejected
+        A->>S: Rejected
+        Note over S: Apply again from Available Classes
+    end
+              </pre>
+            </div>
+            <div class="steps">
+              <button type="button" class="step-chip" data-preview="flow-screenshots/available-classes.png" data-route="/dashboard/available-courses" data-sidebar="Student › Available Classes" data-caption="Available Classes"><strong>Available Classes</strong><span class="sidebar">Student sidebar › Available Classes</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/enrollment-form.png" data-route="/dashboard/available-courses/enroll" data-sidebar="Join Class (from Available Classes)" data-caption="Join Class"><strong>Join Class</strong><span class="sidebar">Enrollment form (not a sidebar item)</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/admin-enrollment.png" data-route="/dashboard/admin/enrollment-applications" data-sidebar="Admin › Classes › Enrollment applications" data-caption="Enrollment applications"><strong>Enrollment applications</strong><span class="sidebar">Admin sidebar › Classes › Enrollment applications</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/student-course.png" data-route="/dashboard/courses" data-sidebar="Student › My Class" data-caption="My Class"><strong>My Class</strong><span class="sidebar">Student sidebar › My Class</span></button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Pay tuition</h3>
+            <div class="diagram-wrap">
+              <pre class="mermaid">
+sequenceDiagram
+    participant S as Student
+    participant A as Admin
+
+    Note over S: Student Payment history
+    S->>A: Pay + upload proof
+    Note over A: Admin Operations Payments and reminders
+    A->>S: Marked paid in Payment history
+              </pre>
+            </div>
+            <div class="steps">
+              <button type="button" class="step-chip" data-preview="flow-screenshots/student-payment.png" data-route="/dashboard/payment" data-sidebar="Student › Payment history" data-caption="Payment history"><strong>Payment history</strong><span class="sidebar">Student sidebar › Payment history</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/admin-payments.png" data-route="/dashboard/admin/payments" data-sidebar="Admin › Operations › Payments &amp; reminders" data-caption="Payments &amp; reminders"><strong>Payments &amp; reminders</strong><span class="sidebar">Admin sidebar › Operations › Payments &amp; reminders</span></button>
+            </div>
+          </div>
+        </section>
+
+        <!-- PHASE 4 -->
+        <section class="phase" id="phase-4">
+          <div class="phase-title">
+            <div class="phase-num">4</div>
+            <div><h2>Learn in class</h2></div>
+          </div>
+
+          <div class="card">
+            <h3>Each session</h3>
+            <div class="diagram-wrap">
+              <pre class="mermaid">
+sequenceDiagram
+    participant T as Teacher
+    participant S as Student
+
+    Note over T: Teacher sidebar Attendance QR
+    T->>S: Show QR at session
+    S->>T: Scan QR from Student My Class
+    Note over T: My Class roster attendance and notes
+    Note over S: Student My Class lessons and Quiz sidebar
+              </pre>
+            </div>
+            <div class="steps">
+              <button type="button" class="step-chip" data-preview="flow-screenshots/teacher-attendance.png" data-route="/dashboard/teacher/attendance" data-sidebar="Teacher › Attendance QR" data-caption="Attendance QR"><strong>Attendance QR</strong><span class="sidebar">Teacher sidebar › Attendance QR</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/student-course.png" data-route="/dashboard/courses" data-sidebar="Student › My Class" data-caption="My Class"><strong>My Class</strong><span class="sidebar">Student sidebar › My Class (+ Quiz)</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/teacher-my-class.png" data-route="/dashboard/teacher/courses" data-sidebar="Teacher › Class › My Class" data-caption="My Class roster"><strong>My Class roster</strong><span class="sidebar">Teacher sidebar › Class › My Class</span></button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-tags"><span class="badge badge-t">Teacher</span></div>
+            <h3>Teacher daily tasks</h3>
+            <div class="diagram-wrap">
+              <pre class="mermaid">
+flowchart LR
+    A["Teacher Class My Class roster"] --> B["Teacher Attendance QR"]
+    B --> C["My Class session notes tab"]
+    C --> D["My Class quiz scores tab"]
+    D --> E["Teacher All Student progress"]
+              </pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- PHASE 5 -->
+        <section class="phase" id="phase-5">
+          <div class="phase-title">
+            <div class="phase-num">5</div>
+            <div><h2>Finish</h2></div>
+          </div>
+
+          <div class="card">
+            <h3>Certificate</h3>
+            <div class="diagram-wrap">
+              <pre class="mermaid">
+sequenceDiagram
+    participant S as Student
+
+    Note over S: Finish sessions in Student My Class
+    Note over S: Rate course from My Class
+    Note over S: Student sidebar Certificates
+    Note over S: Download PDF certificate
+              </pre>
+            </div>
+            <div class="steps">
+              <button type="button" class="step-chip" data-preview="flow-screenshots/student-certificates.png" data-route="/dashboard/certificates" data-sidebar="Student › Certificates" data-caption="Certificates"><strong>Certificates</strong><span class="sidebar">Student sidebar › Certificates</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/student-course.png" data-route="/dashboard/courses" data-sidebar="Student › My Class" data-caption="My Class"><strong>My Class</strong><span class="sidebar">Finish lessons first in My Class</span></button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Payroll</h3>
+            <div class="diagram-wrap">
+              <pre class="mermaid">
+sequenceDiagram
+    participant T as Teacher
+    participant A as Admin
+
+    Note over T: Teacher sidebar Payroll
+    T->>A: Submit payroll request
+    Note over A: Admin Operations Payroll
+    A->>T: Upload bank receipt
+    Note over T: Download proof from Teacher Payroll
+              </pre>
+            </div>
+            <div class="steps">
+              <button type="button" class="step-chip" data-preview="flow-screenshots/teacher-payroll.png" data-route="/dashboard/teacher/payroll" data-sidebar="Teacher › Payroll" data-caption="Payroll"><strong>Payroll</strong><span class="sidebar">Teacher sidebar › Payroll</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/admin-payroll.png" data-route="/dashboard/admin/payroll" data-sidebar="Admin › Operations › Payroll" data-caption="Payroll"><strong>Payroll</strong><span class="sidebar">Admin sidebar › Operations › Payroll</span></button>
+            </div>
+          </div>
+        </section>
+
+        <!-- EXTRA -->
+        <section class="phase" id="extra">
+          <div class="phase-title">
+            <div class="phase-num">+</div>
+            <div><h2>Extra flows</h2></div>
+          </div>
+
+          <div class="card">
+            <h3>Forgot password</h3>
+            <div class="diagram-wrap">
+              <pre class="mermaid">
+sequenceDiagram
+    participant U as User
+
+    Note over U: Public Sign In Forgot password link
+    Note over U: Forgot password page enter email
+    Note over U: Open reset link from email
+    Note over U: Set new password then Sign In
+              </pre>
+            </div>
+            <div class="steps">
+              <button type="button" class="step-chip" data-preview="flow-screenshots/signin.png" data-route="/forgot-password" data-sidebar="Public › Forgot password (from Sign In)" data-caption="Forgot password"><strong>Forgot password</strong><span class="sidebar">Public page · linked from Sign In</span></button>
+              <button type="button" class="step-chip" data-preview="flow-screenshots/signin.png" data-route="/signin" data-sidebar="Public › Sign In" data-caption="Sign In"><strong>Sign In</strong><span class="sidebar">/signin</span></button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Substitute teacher cover</h3>
+            <div class="diagram-wrap">
+              <pre class="mermaid">
+sequenceDiagram
+    participant T1 as Primary Teacher
+    participant A as Admin
+    participant T2 as Substitute
+
+    Note over T1: Teacher requests cover from My Class
+    T1->>A: Submit substitute request
+    Note over A: Admin Operations Substitute cover requests
+    A->>T2: Send substitute invite
+    alt Accepts
+        Note over T2: Teacher Attendance QR or My Class session
+        T2->>A: Session covered
+    else Declines
+        T2->>A: Decline
+        Note over A: Admin Substitute cover requests find another
+    end
+              </pre>
+            </div>
+            <div class="steps">
+              <button type="button" class="step-chip" data-preview="flow-screenshots/admin-substitute.png" data-route="/dashboard/admin/substitute-requests" data-sidebar="Admin › Operations › Substitute cover requests" data-caption="Substitute cover requests"><strong>Substitute cover requests</strong><span class="sidebar">Admin sidebar › Operations › Substitute cover requests</span></button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="preview-float" aria-hidden="true">
+      <p class="cap" id="pf-cap"></p>
+      <p class="sidebar" id="pf-sidebar"></p>
+      <p class="route" id="pf-route"></p>
+      <img id="pf-img" src="" alt="" />
+    </div>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "neutral",
+        securityLevel: "loose",
+        sequence: {
+          actorMargin: 70,
+          messageMargin: 42,
+          boxMargin: 10,
+          mirrorActors: false,
+          wrap: true,
+          useMaxWidth: false,
+        },
+        flowchart: { useMaxWidth: false, htmlLabels: true, curve: "basis" },
+      });
+
+      const float = document.getElementById("preview-float");
+      const pfImg = document.getElementById("pf-img");
+      const pfCap = document.getElementById("pf-cap");
+      const pfSidebar = document.getElementById("pf-sidebar");
+      const pfRoute = document.getElementById("pf-route");
+      let active = null;
+      let hideTimer = null;
+
+      function show(chip) {
+        clearTimeout(hideTimer);
+        const src = chip.dataset.preview;
+        if (!src) return;
+        if (active) active.classList.remove("active");
+        active = chip;
+        chip.classList.add("active");
+        pfImg.src = src;
+        pfImg.alt = chip.dataset.caption || "";
+        pfCap.textContent = chip.dataset.caption || "";
+        pfSidebar.textContent = chip.dataset.sidebar || "";
+        pfRoute.textContent = chip.dataset.route || "";
+        float.classList.add("show");
+        float.setAttribute("aria-hidden", "false");
+      }
+
+      function hide(delay = 120) {
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => {
+          if (active) active.classList.remove("active");
+          active = null;
+          float.classList.remove("show");
+          float.setAttribute("aria-hidden", "true");
+          pfImg.src = "";
+        }, delay);
+      }
+
+      document.querySelectorAll(".step-chip[data-preview]").forEach((chip) => {
+        chip.addEventListener("mouseenter", () => show(chip));
+        chip.addEventListener("mouseleave", () => hide(180));
+        chip.addEventListener("focus", () => show(chip));
+        chip.addEventListener("blur", () => hide(0));
+      });
+
+      float.addEventListener("mouseenter", () => clearTimeout(hideTimer));
+      float.addEventListener("mouseleave", () => hide(0));
+    </script>
+  </body>
+</html>

@@ -10,6 +10,7 @@ import {
   IdCard,
   MapPin,
   GraduationCap,
+  Globe,
   AlertCircle,
   ArrowLeft,
   Check,
@@ -33,6 +34,10 @@ import type { UserRole } from "@/features/auth/types";
 import { cn } from "@/lib/utils";
 
 type SignUpStep = 1 | 2;
+type StudentAffiliation = "internal" | "external";
+
+/** Stored in `latestSchool` when the student selects internal affiliation. */
+const TUES_UNIVERSITY_SCHOOL_NAME = "TUES University";
 
 const PASSPORT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
 const PASSPORT_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
@@ -66,10 +71,10 @@ function PassportImageField({
 }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>
-        {label}
+      <Label htmlFor={id} className="inline-flex flex-wrap items-baseline gap-x-1.5">
+        <span>{label}</span>
         {optionalLabel ? (
-          <span className="ml-1 font-normal text-foreground/50">({optionalLabel})</span>
+          <span className="font-normal text-foreground/50">{optionalLabel}</span>
         ) : null}
       </Label>
       <input
@@ -131,6 +136,7 @@ function PassportImageField({
 const SignUp = () => {
   const { t } = useTranslation();
   const [step, setStep] = useState<SignUpStep>(1);
+  const [studentAffiliation, setStudentAffiliation] = useState<StudentAffiliation | "">("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -216,20 +222,15 @@ const SignUp = () => {
   const validateStep1 = (): boolean => {
     if (
       !formData.fullName.trim() ||
-      !formData.email.trim() ||
-      !formData.passportNumber.trim() ||
       !formData.phoneNational.trim() ||
       !formData.parentPhoneNational.trim()
     ) {
       setError(t("auth.signUp.completeStep"));
       return false;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+    const email = formData.email.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError(t("auth.signUp.invalidEmail"));
-      return false;
-    }
-    if (!localPassportFile) {
-      setError(t("auth.signUp.passportImageRequired"));
       return false;
     }
     return true;
@@ -246,6 +247,34 @@ const SignUp = () => {
     setStep(1);
   };
 
+  const selectStudentAffiliation = (affiliation: StudentAffiliation) => {
+    setStudentAffiliation(affiliation);
+    setFormData((prev) => ({
+      ...prev,
+      latestSchool:
+        affiliation === "internal" ? TUES_UNIVERSITY_SCHOOL_NAME : "",
+    }));
+  };
+
+  const resolveLatestSchool = (): string => {
+    if (studentAffiliation === "internal") {
+      return TUES_UNIVERSITY_SCHOOL_NAME;
+    }
+    return formData.latestSchool.trim();
+  };
+
+  const validateStep2 = (): boolean => {
+    if (!studentAffiliation) {
+      setError(t("auth.signUp.studentAffiliationRequired"));
+      return false;
+    }
+    if (studentAffiliation === "external" && !formData.latestSchool.trim()) {
+      setError(t("auth.signUp.latestSchoolRequired"));
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -260,15 +289,16 @@ const SignUp = () => {
       return;
     }
 
-    if (!localPassportFile) {
-      setError(t("auth.signUp.passportImageRequired"));
-      setStep(1);
+    if (!validateStep2()) {
       return;
     }
+
+    const latestSchool = resolveLatestSchool();
 
     setIsLoading(true);
     try {
       const internationalPassport = formData.internationalPassportNumber.trim();
+      const localPassport = formData.passportNumber.trim();
       const phoneNumber = composeInternationalPhone(
         getCountryByIso(formData.phoneCountryIso).dial,
         formData.phoneNational,
@@ -279,16 +309,16 @@ const SignUp = () => {
       );
       const res = await eduhubAuth.register({
         fullName: formData.fullName,
-        email: formData.email,
+        ...(formData.email.trim() ? { email: formData.email.trim() } : {}),
         phoneNumber,
         parentPhoneNumber,
-        passportNumber: formData.passportNumber.trim(),
+        ...(localPassport ? { passportNumber: localPassport } : {}),
         ...(internationalPassport
           ? { internationalPassportNumber: internationalPassport }
           : {}),
         dateOfBirth: formData.dateOfBirth,
         birthCity: formData.birthCity,
-        latestSchool: formData.latestSchool,
+        latestSchool,
         password: formData.password,
         role: "STUDENT",
       });
@@ -296,16 +326,22 @@ const SignUp = () => {
       setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);
 
       try {
-        const { url: passportImageUrl } = await eduhubUploadFile(localPassportFile, "passport-ids");
+        let passportImageUrl: string | undefined;
+        if (localPassportFile) {
+          const uploaded = await eduhubUploadFile(localPassportFile, "passport-ids");
+          passportImageUrl = uploaded.url;
+        }
         let internationalPassportImageUrl: string | undefined;
         if (internationalPassportFile) {
           const uploaded = await eduhubUploadFile(internationalPassportFile, "passport-ids");
           internationalPassportImageUrl = uploaded.url;
         }
-        await eduhubAuth.updateProfile({
-          passportImageUrl,
-          ...(internationalPassportImageUrl ? { internationalPassportImageUrl } : {}),
-        });
+        if (passportImageUrl || internationalPassportImageUrl) {
+          await eduhubAuth.updateProfile({
+            ...(passportImageUrl ? { passportImageUrl } : {}),
+            ...(internationalPassportImageUrl ? { internationalPassportImageUrl } : {}),
+          });
+        }
       } catch {
         toast({
           title: t("auth.signUp.passportImageUploadFailed"),
@@ -317,7 +353,7 @@ const SignUp = () => {
       setSessionUser({
         id: res.user.id,
         name: res.user.fullName,
-        email: res.user.email,
+        email: res.user.email ?? formData.email.trim(),
         role,
         avatarUrl: res.user.avatarUrl,
         phoneNumber: res.user.phoneNumber ?? phoneNumber,
@@ -498,45 +534,88 @@ const SignUp = () => {
                       </p>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">{t("auth.signUp.fullName")}</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
-                        <Input
-                          id="fullName"
-                          name="fullName"
-                          type="text"
-                          placeholder={t("auth.signUp.fullNamePlaceholder")}
-                          value={formData.fullName}
-                          onChange={handleChange}
-                          className="h-11 rounded-xl border-gray-200 pl-10"
-                          required
-                          autoComplete="name"
-                        />
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">{t("auth.signUp.fullName")}</Label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
+                          <Input
+                            id="fullName"
+                            name="fullName"
+                            type="text"
+                            placeholder={t("auth.signUp.fullNamePlaceholder")}
+                            value={formData.fullName}
+                            onChange={handleChange}
+                            className="h-11 rounded-xl border-gray-200 pl-10"
+                            required
+                            autoComplete="name"
+                          />
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">{t("auth.signUp.email")}</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          placeholder={t("auth.signUp.emailPlaceholder")}
-                          value={formData.email}
-                          onChange={handleChange}
-                          className="h-11 rounded-xl border-gray-200 pl-10"
-                          required
-                          autoComplete="email"
-                        />
-                      </div>
+                      <PhoneWithCountryCode
+                        id="phoneNumber"
+                        label={t("auth.signUp.yourPhone")}
+                        countryIso={formData.phoneCountryIso}
+                        nationalNumber={formData.phoneNational}
+                        onCountryChange={(iso) =>
+                          setFormData((prev) => ({ ...prev, phoneCountryIso: iso }))
+                        }
+                        onNationalChange={(value) =>
+                          setFormData((prev) => ({ ...prev, phoneNational: value }))
+                        }
+                        placeholder={t("auth.signUp.yourPhonePlaceholder")}
+                        required
+                        countryAriaLabel={t("auth.signUp.countryCode")}
+                      />
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="passportNumber">{t("auth.signUp.passportLocal")}</Label>
+                        <Label htmlFor="email" className="inline-flex flex-wrap items-baseline gap-x-1.5">
+                          <span>{t("auth.signUp.email")}</span>
+                          <span className="font-normal text-foreground/50">
+                            {t("auth.signUp.optional")}
+                          </span>
+                        </Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            placeholder={t("auth.signUp.emailPlaceholder")}
+                            value={formData.email}
+                            onChange={handleChange}
+                            className="h-11 rounded-xl border-gray-200 pl-10"
+                            autoComplete="email"
+                          />
+                        </div>
+                      </div>
+                      <PhoneWithCountryCode
+                        id="parentPhoneNumber"
+                        label={t("auth.signUp.parentPhone")}
+                        countryIso={formData.parentPhoneCountryIso}
+                        nationalNumber={formData.parentPhoneNational}
+                        onCountryChange={(iso) =>
+                          setFormData((prev) => ({ ...prev, parentPhoneCountryIso: iso }))
+                        }
+                        onNationalChange={(value) =>
+                          setFormData((prev) => ({ ...prev, parentPhoneNational: value }))
+                        }
+                        placeholder={t("auth.signUp.parentPhonePlaceholder")}
+                        required
+                        countryAriaLabel={t("auth.signUp.countryCode")}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="passportNumber" className="inline-flex flex-wrap items-baseline gap-x-1.5">
+                          <span>{t("auth.signUp.passportLocal")}</span>
+                          <span className="font-normal text-foreground/50">
+                            {t("auth.signUp.optional")}
+                          </span>
+                        </Label>
                         <div className="relative">
                           <IdCard className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
                           <Input
@@ -547,16 +626,18 @@ const SignUp = () => {
                             value={formData.passportNumber}
                             onChange={handleChange}
                             className="h-11 rounded-xl border-gray-200 pl-10"
-                            required
                             autoComplete="off"
                           />
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="internationalPassportNumber">
-                          {t("auth.signUp.passportInternational")}
-                          <span className="ml-1 font-normal text-foreground/50">
-                            ({t("auth.signUp.optional")})
+                        <Label
+                          htmlFor="internationalPassportNumber"
+                          className="inline-flex flex-wrap items-baseline gap-x-1.5"
+                        >
+                          <span>{t("auth.signUp.passportInternational")}</span>
+                          <span className="font-normal text-foreground/50">
+                            {t("auth.signUp.optional")}
                           </span>
                         </Label>
                         <div className="relative">
@@ -579,6 +660,7 @@ const SignUp = () => {
                       <PassportImageField
                         id="localPassportImage"
                         label={t("auth.signUp.passportLocalImage")}
+                        optionalLabel={t("auth.signUp.optional")}
                         file={localPassportFile}
                         previewUrl={localPassportPreview}
                         inputRef={localPassportInputRef}
@@ -618,39 +700,6 @@ const SignUp = () => {
                         replaceLabel={t("auth.signUp.passportImageReplace")}
                         removeLabel={t("auth.signUp.passportImageRemove")}
                         hint={t("auth.signUp.passportImageHint")}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <PhoneWithCountryCode
-                        id="phoneNumber"
-                        label={t("auth.signUp.yourPhone")}
-                        countryIso={formData.phoneCountryIso}
-                        nationalNumber={formData.phoneNational}
-                        onCountryChange={(iso) =>
-                          setFormData((prev) => ({ ...prev, phoneCountryIso: iso }))
-                        }
-                        onNationalChange={(value) =>
-                          setFormData((prev) => ({ ...prev, phoneNational: value }))
-                        }
-                        placeholder={t("auth.signUp.yourPhonePlaceholder")}
-                        required
-                        countryAriaLabel={t("auth.signUp.countryCode")}
-                      />
-                      <PhoneWithCountryCode
-                        id="parentPhoneNumber"
-                        label={t("auth.signUp.parentPhone")}
-                        countryIso={formData.parentPhoneCountryIso}
-                        nationalNumber={formData.parentPhoneNational}
-                        onCountryChange={(iso) =>
-                          setFormData((prev) => ({ ...prev, parentPhoneCountryIso: iso }))
-                        }
-                        onNationalChange={(value) =>
-                          setFormData((prev) => ({ ...prev, parentPhoneNational: value }))
-                        }
-                        placeholder={t("auth.signUp.parentPhonePlaceholder")}
-                        required
-                        countryAriaLabel={t("auth.signUp.countryCode")}
                       />
                     </div>
 
@@ -713,22 +762,114 @@ const SignUp = () => {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="latestSchool">{t("auth.signUp.latestSchool")}</Label>
-                      <div className="relative">
-                        <GraduationCap className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
-                        <Input
-                          id="latestSchool"
-                          name="latestSchool"
-                          type="text"
-                          placeholder={t("auth.signUp.latestSchoolPlaceholder")}
-                          value={formData.latestSchool}
-                          onChange={handleChange}
-                          className="h-11 rounded-xl border-gray-200 pl-10"
-                          required
-                          autoComplete="organization"
-                        />
+                    <div className="space-y-3">
+                      <div>
+                        <Label>{t("auth.signUp.studentAffiliation")}</Label>
+                        <p className="mt-1 text-xs text-foreground/55">
+                          {t("auth.signUp.studentAffiliationHint")}
+                        </p>
                       </div>
+
+                      <div
+                        className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                        role="radiogroup"
+                        aria-label={t("auth.signUp.studentAffiliation")}
+                      >
+                        {(
+                          [
+                            {
+                              value: "internal" as const,
+                              title: t("auth.signUp.studentAffiliationInternal"),
+                              subtitle: t("auth.signUp.studentAffiliationInternalTitle"),
+                              hint: t("auth.signUp.studentAffiliationInternalHint"),
+                              icon: GraduationCap,
+                            },
+                            {
+                              value: "external" as const,
+                              title: t("auth.signUp.studentAffiliationExternal"),
+                              subtitle: t("auth.signUp.studentAffiliationExternalTitle"),
+                              hint: t("auth.signUp.studentAffiliationExternalHint"),
+                              icon: Globe,
+                            },
+                          ] as const
+                        ).map((option) => {
+                          const selected = studentAffiliation === option.value;
+                          const Icon = option.icon;
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              role="radio"
+                              aria-checked={selected}
+                              onClick={() => selectStudentAffiliation(option.value)}
+                              className={cn(
+                                "relative flex h-full min-h-[7.5rem] flex-col rounded-xl border p-4 text-left transition-all",
+                                selected
+                                  ? "border-[#1e40af]/40 bg-[#eff3ff]/70 ring-2 ring-[#1e40af]/25"
+                                  : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/80",
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  "absolute right-3 top-3 inline-flex size-5 items-center justify-center rounded-full border transition-colors",
+                                  selected
+                                    ? "border-[#1e40af] bg-[#1e40af] text-white"
+                                    : "border-gray-300 bg-white text-transparent",
+                                )}
+                                aria-hidden
+                              >
+                                <Check className="h-3 w-3" strokeWidth={3} />
+                              </span>
+                              <span
+                                className={cn(
+                                  "mb-3 inline-flex size-9 items-center justify-center rounded-full",
+                                  selected ? "bg-[#1e40af]/10 text-[#1e40af]" : "bg-gray-100 text-foreground/55",
+                                )}
+                              >
+                                <Icon className="h-4 w-4" />
+                              </span>
+                              <span className="text-sm font-semibold text-foreground">{option.title}</span>
+                              <span
+                                className={cn(
+                                  "mt-0.5 text-sm font-medium",
+                                  selected ? "text-[#1e40af]" : "text-foreground/75",
+                                )}
+                              >
+                                {option.subtitle}
+                              </span>
+                              <span className="mt-1.5 text-xs leading-snug text-foreground/55">{option.hint}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {studentAffiliation === "external" ? (
+                        <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50/60 p-4">
+                          <Label htmlFor="latestSchool">{t("auth.signUp.latestSchoolExternalLabel")}</Label>
+                          <div className="relative">
+                            <GraduationCap className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
+                            <Input
+                              id="latestSchool"
+                              name="latestSchool"
+                              type="text"
+                              placeholder={t("auth.signUp.latestSchoolPlaceholder")}
+                              value={formData.latestSchool}
+                              onChange={handleChange}
+                              className="h-11 rounded-xl border-gray-200 bg-white pl-10"
+                              required
+                              autoComplete="organization"
+                            />
+                          </div>
+                        </div>
+                      ) : studentAffiliation === "internal" ? (
+                        <div className="rounded-xl border border-[#1e40af]/20 bg-[#eff3ff]/50 px-4 py-3">
+                          <p className="text-sm font-medium text-[#1e40af]">
+                            {t("auth.signUp.studentAffiliationInternalConfirmed", {
+                              university: TUES_UNIVERSITY_SCHOOL_NAME,
+                            })}
+                          </p>
+                        </div>
+                      ) : null}
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

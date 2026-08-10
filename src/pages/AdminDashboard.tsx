@@ -126,7 +126,7 @@ const AdminDashboard = () => {
                 </Button>
               </div>
               {recentUsers.length > 0 ? (
-                <div className="px-6 pb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center border-b border-slate-200">
+                <div className="px-6 py-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center border-b border-slate-200">
                   <Input
                     placeholder={t("admin.shared.searchNameEmailRole")}
                     value={userSearch}

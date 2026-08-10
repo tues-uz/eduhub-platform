@@ -12,16 +12,78 @@
       "title": "Our Valuable Partners",
       "partner": "Partner {{number}}"
     },
+    "aboutPage": {
+      "badge": "About EduHub",
+      "title": "Learning with purpose at TUES University",
+      "titleLine1": "Learning with purpose",
+      "titleLine2": "at TUES University",
+      "subtitle": "EduHub is the language and training center under TISU, helping learners build real skills through international standards and a supportive community.",
+      "storyTitle": "Who we are",
+      "storyBody1": "EDUHUB is an educational center working under TISU, a leading private university in Uzbekistan. We offer modern, high-quality language education designed for students, professionals, and lifelong learners.",
+      "storyBody2": "Our team combines experienced instructors, structured programs, and a connected student portal so every learner can progress with confidence — in the classroom and beyond.",
+      "ctaTitle": "Ready to start your journey?",
+      "ctaBody": "Create your account and explore programs designed for language growth, academic support, and career preparation.",
+      "ctaButton": "Register now",
+      "sections": {
+        "intro": "Our point of view / 01",
+        "story": "Who we are / 02",
+        "direction": "Mission & direction / 03",
+        "pillars": "What we stand for / 04",
+        "cta": "Next step / 05"
+      },
+      "statementBefore": "The best learning centers do not separate language from opportunity. We build both as ",
+      "statementAccent": "one connected experience",
+      "statementAfter": "—clear enough to trust, practical enough to grow.",
+      "tags": ["Language", "Training", "Community", "Growth"],
+      "marquee": ["IELTS preparation", "Business English", "Academic writing", "Small-group classes"],
+      "collageBadge": "Learn\nGrow\nSucceed",
+      "ctaAvailable": "Accepting new registrations"
+    },
+    "programPages": {
+      "badge": "Programs",
+      "nextStepTitle": "Ready to join?",
+      "nextStepBody": "Register to apply for classes and track your learning in one place.",
+      "register": "Register",
+      "aboutLink": "About EduHub",
+      "languageTraining": {
+        "title": "Language Training Program",
+        "subtitle": "Build confident communication through structured English programs led by qualified instructors.",
+        "overviewTitle": "What you will gain",
+        "overviewBody": "From foundational skills to exam preparation, our language programs combine classroom practice, feedback, and measurable progress.",
+        "audienceTitle": "Who it is for",
+        "audienceBody": "Students, professionals, and learners preparing for study abroad, international exams, or workplace communication.",
+        "highlights": [
+          "Small-group classes with CELTA-certified and experienced teachers",
+          "Levels from beginner to advanced with clear learning milestones",
+          "Speaking, writing, and exam-focused tracks including IELTS preparation",
+          "Connected student portal for schedules, progress, and feedback"
+        ]
+      },
+      "academicServices": {
+        "title": "Academic Services",
+        "subtitle": "Support for academic writing, university readiness, and structured learning beyond the language classroom.",
+        "overviewTitle": "What we offer",
+        "overviewBody": "Academic services help learners strengthen study skills, complete university requirements, and prepare for international academic environments.",
+        "audienceTitle": "Who it is for",
+        "audienceBody": "TUES University students, external learners, and anyone who needs guided academic support alongside language development.",
+        "highlights": [
+          "Academic writing and presentation support",
+          "Guidance for university-level study habits and research skills",
+          "Workshops and consultation sessions with experienced staff",
+          "Flexible options for internal and external students"
+        ]
+      }
+    },
     "stats": {
       "whyChooseUs": "Our Impacts",
       "heading": "Why you should<br />join with us?",
       "students": "Students",
       "classes": "Classes",
-      "classesHeading": "500+ Classes",
-      "wideVariety": "Wide variety",
-      "teachers": "Teachers",
-      "completionRate": "Completion Rate",
-      "yearsExcellence": "Years of Excellence",
+      "classesHeading": "20+",
+      "wideVariety": "Courses & services offered",
+      "teachers": "Graduates",
+      "completionRate": "Professional & experienced teachers",
+      "yearsExcellence": "International teachers",
       "tags": {
         "language": "Language",
         "business": "Business",
@@ -53,6 +115,9 @@
         "callOperator": "Call Operator",
         "callOperatorLine1": "Call",
         "callOperatorLine2": "Operator",
+        "learningSupportOfficer": "Learning Support Officer",
+        "learningSupportOfficerLine1": "Learning Support",
+        "learningSupportOfficerLine2": "Officer",
         "adminNavigator": "Administrative Navigator",
         "adminNavigatorLine1": "Administrative",
         "adminNavigatorLine2": "Navigator"
@@ -183,21 +248,88 @@
       "badge": "Blog",
       "title": "Insights & Updates",
       "readMore": "Read More",
+      "article": {
+        "backToHome": "Back to home",
+        "publishedOn": "Published {{date}}"
+      },
+      "articles": {
+        "awardingDay": {
+          "title": "More Than a Certificate: Celebrating Progress at EDUHUB Awarding Day",
+          "date": "April 2026",
+          "certificatePhotoAlt": "EDUHUB students receiving a certificate at Awarding Day",
+          "groupPhotoAlt": "EDUHUB students and staff celebrating together at Awarding Day",
+          "paragraphs": [
+            "Every learning journey is made up of small steps. A new word learned, a sentence spoken with more confidence, a difficult lesson finally understood, and the courage to keep showing up are all part of the process. At EDUHUB, we believe that these small moments of progress deserve to be recognized and celebrated. Every three months, EDUHUB holds its Awarding Day, a special occasion dedicated to students who have successfully completed their current learning level and are ready to take the next step in their journey. The event brings together students, teachers, and the EDUHUB community to celebrate their achievements and the progress they have made throughout the learning period.",
+            "For our students, receiving a certificate is more than simply marking the completion of a level. Behind every certificate are weeks of attending classes, completing assignments, practicing new skills, overcoming challenges, and gradually becoming more confident in using what they have learned. Moving up to the next level is a reflection of their consistency and commitment to learning. Awarding Day gives students an opportunity to pause and appreciate how far they have come, while also sharing the excitement of reaching a new stage with their classmates and teachers. It is a moment filled with smiles, proud faces, congratulations, and memories that become part of their learning experience at EDUHUB.",
+            "At EDUHUB, we believe that education is not only about reaching the final destination, but also about appreciating every step along the way. Each new level brings new challenges, new knowledge, and new opportunities for students to grow both academically and personally. Through Awarding Day, we hope to create a learning community where students feel proud of their achievements and motivated to continue moving forward. The certificates may represent the level they have completed, but the confidence, skills, friendships, and experiences they gain along the way are what make the journey truly meaningful. Every milestone is worth celebrating, and every step forward is another reason to keep learning."
+          ]
+        },
+        "ieltsBritishCouncil": {
+          "title": "EDUHUB and British Council Team Up to Offer IELTS at TISU",
+          "date": "April 2026",
+          "registrationRoomPhotoAlt": "IELTS registration room at TISU with British Council signage",
+          "paragraphs": [
+            "Termez, Uzbekistan — EDUHUB has announced a new partnership with the British Council in Uzbekistan to host official IELTS testing sessions at Termez University of Economics and Services (TISU), beginning April 2026.",
+            "Under the agreement, IELTS test sessions are held twice a month at the TISU main campus, giving students and professionals in the Termez region direct access to one of the world's most widely recognized English language proficiency exams.",
+            "The British Council, a UK-based international organization with a longstanding presence in Uzbekistan, administers IELTS globally in accordance with standardized international testing protocols. The organization states its mission as building connections, understanding, and trust between people in the UK and countries worldwide.",
+            "Candidates can register for upcoming test sessions through the following channels:",
+            "The collaboration is part of EDUHUB's broader effort to expand access to internationally recognized qualifications for learners in the Surkhandarya region.",
+            "For test dates and further updates, candidates are encouraged to check the British Council website regularly."
+          ],
+          "registrationList": {
+            "afterParagraph": 3,
+            "items": [
+              {
+                "label": "Online registration",
+                "text": "ieltsregistration.britishcouncil.org",
+                "url": "https://ieltsregistration.britishcouncil.org"
+              },
+              {
+                "label": "Phone",
+                "text": "+998 71 205 06 60",
+                "url": "tel:+998712050660"
+              },
+              {
+                "label": "Email",
+                "text": "info@britishcouncil.uz",
+                "url": "mailto:info@britishcouncil.uz"
+              },
+              {
+                "label": "Telegram",
+                "text": "@british_council_uz_admin",
+                "url": "https://t.me/british_council_uz_admin"
+              }
+            ]
+          }
+        },
+        "bloombergLab": {
+          "title": "Bloomberg Lab at TISU: Preparing Students for a Career in Global Finance",
+          "date": "7 May 2026",
+          "labPhotoAlt": "Students learning in the Bloomberg Lab at TISU",
+          "labClassroomPhotoAlt": "Bloomberg Finance Lab at Termiz University of Economics and Service",
+          "labCertificatesPhotoAlt": "Students with certificates at the Bloomberg Finance Lab at TISU",
+          "paragraphs": [
+            "In an increasingly competitive global financial industry, students need more than theoretical knowledge to build successful careers. Bloomberg is one of the world's leading providers of financial data, news, and technology, giving professionals and students access to information used to understand financial markets, investment, and economic developments. Through Bloomberg for Education, universities can bring real-world financial data and learning resources into the academic environment, helping students develop practical skills and a stronger understanding of the financial industry.",
+            "Recognizing the importance of practical financial education, Termiz University of Economics and Service (TISU) has established a Bloomberg Lab, providing students with an opportunity to explore financial markets and work with Bloomberg tools in an academic setting. The lab supports students in developing practical knowledge in areas such as financial markets, investment analysis, and economic data. Through Bloomberg's educational and certification programs, students can further strengthen their knowledge and gain credentials that complement their academic background. These opportunities allow students to connect what they learn in the classroom with the tools, data, and practices used in the professional financial industry.",
+            "As part of its commitment to expanding international learning opportunities, TISU has also collaborated with EMU University Tashkent, creating opportunities for students to gain practical exposure beyond their regular classroom experience. Through this collaboration, EMU students had the opportunity to participate in Bloomberg-related learning activities at TISU and develop their understanding of financial markets using Bloomberg resources. The initiative reflects a shared commitment to preparing students for the global job market by combining academic education with practical, industry-relevant experience. By gaining exposure to internationally recognized financial tools and learning opportunities, students are better equipped to pursue future careers in finance, business, economics, and other related fields."
+          ]
+        }
+      },
       "posts": {
         "languagePrograms": {
-          "title": "New Language Programs Launch This Semester",
-          "description": "Discover our expanded offerings in business English, academic writing, and conversation practice—designed for busy professionals and students.",
-          "imageAlt": "Green Fern"
+          "title": "More Than a Certificate: Celebrating Progress at EDUHUB Awarding Day",
+          "description": "April 2026",
+          "imageAlt": "EDUHUB students receiving a certificate at Awarding Day"
         },
         "successStories": {
-          "title": "EduHub Student Success Stories: From Classroom to Career",
-          "description": "Read how our graduates are using their language skills and certifications to advance in international roles and higher education.",
-          "imageAlt": "Yellow Flower"
+          "title": "EDUHUB and British Council Team Up to Offer IELTS at TISU",
+          "description": "April 2026",
+          "imageAlt": "IELTS registration room at TISU with British Council signage"
         },
         "workshops": {
-          "title": "Upcoming Workshops and Cultural Exchange Events",
-          "description": "Join speaking clubs, exam prep sessions, and partner events with TISU—stay updated on dates and how to register.",
-          "imageAlt": "Orange Flower"
+          "title": "Bloomberg Lab at TISU: Preparing Students for a Career in Global Finance",
+          "description": "7 May 2026",
+          "imageAlt": "Students with certificates at the Bloomberg Finance Lab at TISU"
         }
       }
     },
@@ -229,6 +361,7 @@
       "button": "Get started — it's free"
     },
     "scrollToTop": "Scroll to top",
+    "telegramSupport": "Contact EduHub on Telegram",
     "footer": {
       "subscribe": "Subscribe",
       "emailPlaceholder": "Enter your email",

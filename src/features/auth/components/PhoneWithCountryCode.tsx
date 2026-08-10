@@ -50,27 +50,29 @@ export function PhoneWithCountryCode({
       >
         <Select value={countryIso} onValueChange={onCountryChange}>
           <SelectTrigger
-            aria-label={countryAriaLabel}
+            aria-label={`${countryAriaLabel}: ${selected.name} ${selected.dial}`}
             className={cn(
-              "h-full w-auto shrink-0 rounded-none border-0 border-r border-gray-200 bg-transparent px-2.5 shadow-none",
+              "h-full w-[3.75rem] shrink-0 justify-center gap-0 rounded-none border-0 border-r border-gray-200 bg-transparent px-1.5 shadow-none",
               "focus:ring-0 focus:ring-offset-0 focus:outline-none",
               "[&>span]:line-clamp-none",
+              "[&>svg]:ml-0.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:shrink-0 [&>svg]:opacity-40",
             )}
           >
             <SelectValue>
-              <span className="flex items-center gap-1.5 text-sm">
-                <span aria-hidden>{selected.flag}</span>
-                <span className="tabular-nums">{selected.dial}</span>
+              <span className="text-base leading-none" aria-hidden>
+                {selected.flag}
               </span>
             </SelectValue>
           </SelectTrigger>
           <SelectContent className="max-h-64">
             {COUNTRY_DIAL_CODES.map((c) => (
               <SelectItem key={c.iso} value={c.iso}>
-                <span className="flex items-center gap-2">
-                  <span aria-hidden>{c.flag}</span>
-                  <span className="tabular-nums text-muted-foreground">{c.dial}</span>
-                  <span className="truncate">{c.name}</span>
+                <span className="flex items-center gap-2 text-sm">
+                  <span className="text-base leading-none" aria-hidden>
+                    {c.flag}
+                  </span>
+                  <span className="tabular-nums text-foreground/60">{c.dial}</span>
+                  <span>{c.name}</span>
                 </span>
               </SelectItem>
             ))}

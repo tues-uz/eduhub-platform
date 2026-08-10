@@ -78,7 +78,6 @@ function CertificateCard({
           </p>
           <p className="mt-0.5 text-3xl font-bold tabular-nums tracking-tight text-zinc-900">
             {certificate.totalFinalScore}
-            <span className="text-lg font-semibold text-zinc-900">%</span>
           </p>
         </div>
 

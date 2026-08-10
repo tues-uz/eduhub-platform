@@ -2,6 +2,7 @@ import { Facebook, Twitter, Instagram, Linkedin, Youtube, Mail, Phone, MapPin, A
 import { useLocation } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { isPublicLandingPage } from "@/app/routes";
 
 type FooterLinkKey =
   | "about"
@@ -44,7 +45,7 @@ const SOCIAL_KEYS = ["facebook", "twitter", "instagram", "linkedin", "youtube"] 
 const Footer = () => {
   const { t } = useTranslation();
   const location = useLocation();
-  const isEduHubPage = location.pathname === "/eduhub" || location.pathname.startsWith("/eduhub/");
+  const isEduHubPage = isPublicLandingPage(location.pathname);
   const isJournalPage = location.pathname === "/journal" || location.pathname.startsWith("/journal/");
   const [email, setEmail] = useState("");
 
@@ -321,7 +322,7 @@ const Footer = () => {
           </div>
 
           <div className="mt-10 pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-            <a href="/eduhub" className="shrink-0">
+            <a href="/" className="shrink-0">
               <img src="/logo-eduhub.png" alt="EduHub" className="h-8 w-auto object-contain opacity-90" />
             </a>
             <p className="text-sm text-center" style={{ color: creamMuted }}>

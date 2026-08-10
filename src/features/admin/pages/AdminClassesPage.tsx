@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { ClassStatusBadge } from "@/features/admin/components/AdminStatusBadges";
-import { eduhubAdmin, eduhubAdminClasses } from "@/api/eduhubClient";
+import { ClassStatusBadge, PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
+import { eduhubAdmin, eduhubAdminClasses, eduhubAdminPayments } from "@/api/eduhubClient";
 import type {
   ClassStatus,
   AdminClassRowResponse as AdminClassRow,
   AdminClassRosterRowResponse as RosterRow,
+  AdminPaymentRowResponse,
+  PaymentStatus,
   UserResponse,
 } from "@/api/eduhubTypes";
 import { Loader2, UserPlus, ArrowLeftRight, Trash2, Users } from "@/lib/icons";
@@ -37,6 +39,63 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+function parsePaymentStatus(value: string | undefined): PaymentStatus | null {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "paid" || normalized === "pending" || normalized === "overdue") {
+    return normalized;
+  }
+  return null;
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function paymentMatchesClass(payment: AdminPaymentRowResponse, classRow: AdminClassRow): boolean {
+  const className = classRow.name.trim().toLowerCase();
+  const course = classRow.course.trim().toLowerCase();
+  const paymentClass = payment.className.trim().toLowerCase();
+  const paymentCourse = payment.course.trim().toLowerCase();
+  return (
+    paymentClass === className ||
+    paymentCourse === course ||
+    paymentClass === course ||
+    paymentCourse === className
+  );
+}
+
+const PAYMENT_STATUS_PRIORITY: Record<PaymentStatus, number> = {
+  overdue: 3,
+  pending: 2,
+  paid: 1,
+};
+
+function resolvePaymentStatusFromPayments(
+  studentEmail: string,
+  classRow: AdminClassRow,
+  payments: AdminPaymentRowResponse[],
+): PaymentStatus | null {
+  const email = normalizeEmail(studentEmail);
+  const matching = payments.filter(
+    (payment) => normalizeEmail(payment.studentEmail) === email && paymentMatchesClass(payment, classRow),
+  );
+  if (matching.length === 0) return null;
+
+  let best: PaymentStatus | null = null;
+  let bestPriority = 0;
+  for (const payment of matching) {
+    const status = parsePaymentStatus(payment.status);
+    if (!status) continue;
+    const priority = PAYMENT_STATUS_PRIORITY[status];
+    if (priority > bestPriority) {
+      bestPriority = priority;
+      best = status;
+    }
+  }
+  return best;
+}
+
 export default function AdminClassesPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
@@ -48,6 +107,7 @@ export default function AdminClassesPage() {
   // Roster Modal state
   const [activeClass, setActiveClass] = useState<AdminClassRow | null>(null);
   const [roster, setRoster] = useState<RosterRow[]>([]);
+  const [rosterPayments, setRosterPayments] = useState<AdminPaymentRowResponse[]>([]);
   const [loadingRoster, setLoadingRoster] = useState(false);
   const [students, setStudents] = useState<UserResponse[]>([]);
   const [selectedStudentToAssign, setSelectedStudentToAssign] = useState<string>("");
@@ -82,14 +142,19 @@ export default function AdminClassesPage() {
     }
   }, [activeClass]);
 
-  const loadRoster = useCallback(async (courseId: string) => {
+  const loadRoster = useCallback(async (classRow: AdminClassRow) => {
     setLoadingRoster(true);
     try {
-      const data = await eduhubAdminClasses.getRoster(courseId);
-      setRoster(data || []);
+      const [rosterData, paymentsData] = await Promise.all([
+        eduhubAdminClasses.getRoster(classRow.id),
+        eduhubAdminPayments.listAll().catch(() => [] as AdminPaymentRowResponse[]),
+      ]);
+      setRoster(rosterData || []);
+      setRosterPayments(paymentsData || []);
     } catch (err: unknown) {
       toast.error((err as Error).message || "Failed to load class roster");
       setRoster([]);
+      setRosterPayments([]);
     } finally {
       setLoadingRoster(false);
     }
@@ -100,7 +165,7 @@ export default function AdminClassesPage() {
     setSelectedStudentToAssign("");
     setSwitchingStudentId(null);
     setTargetCourseId("");
-    loadRoster(c.id);
+    loadRoster(c);
   };
 
   const handleAssignStudent = async () => {
@@ -110,7 +175,7 @@ export default function AdminClassesPage() {
       await eduhubAdminClasses.assignStudent(activeClass.id, selectedStudentToAssign);
       toast.success("Student assigned to class successfully");
       setSelectedStudentToAssign("");
-      await loadRoster(activeClass.id);
+      await loadRoster(activeClass);
       await fetchClasses();
     } catch (err: unknown) {
       toast.error((err as Error).message || "Failed to assign student");
@@ -131,7 +196,7 @@ export default function AdminClassesPage() {
       toast.success("Student switched to new class cohort successfully");
       setSwitchingStudentId(null);
       setTargetCourseId("");
-      await loadRoster(activeClass.id);
+      await loadRoster(activeClass);
       await fetchClasses();
     } catch (err: unknown) {
       toast.error((err as Error).message || "Failed to switch class");
@@ -146,7 +211,7 @@ export default function AdminClassesPage() {
     try {
       await eduhubAdminClasses.removeStudent(activeClass.id, studentId);
       toast.success(`Removed ${studentName} from roster`);
-      await loadRoster(activeClass.id);
+      await loadRoster(activeClass);
       await fetchClasses();
     } catch (err: unknown) {
       toast.error((err as Error).message || "Failed to remove student from class");
@@ -176,6 +241,18 @@ export default function AdminClassesPage() {
     const enrolledStudentIds = new Set(roster.map((r) => r.studentId));
     return students.filter((s) => !enrolledStudentIds.has(s.id));
   }, [students, roster]);
+
+  const rosterPaymentStatusByStudentId = useMemo(() => {
+    if (!activeClass) return new Map<string, PaymentStatus>();
+    const map = new Map<string, PaymentStatus>();
+    for (const row of roster) {
+      const fromApi = parsePaymentStatus(row.paymentStatus);
+      const fromPayments = resolvePaymentStatusFromPayments(row.studentEmail, activeClass, rosterPayments);
+      const status = fromApi ?? fromPayments;
+      if (status) map.set(row.studentId, status);
+    }
+    return map;
+  }, [activeClass, roster, rosterPayments]);
 
   return (
     <div className="container mx-auto px-6">
@@ -348,13 +425,14 @@ export default function AdminClassesPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Enrolled Date</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>{t("admin.classesRosters.rosterDialog.paidStatus")}</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loadingRoster ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-slate-500">
+                    <TableCell colSpan={6} className="h-24 text-center text-slate-500">
                       <div className="flex items-center justify-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <span>Loading roster...</span>
@@ -363,12 +441,17 @@ export default function AdminClassesPage() {
                   </TableRow>
                 ) : roster.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-slate-500">
+                    <TableCell colSpan={6} className="h-24 text-center text-slate-500">
                       No students enrolled in this class yet. Select a student above to assign them.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  roster.map((r) => (
+                  roster.map((r) => {
+                    const paidStatus =
+                      parsePaymentStatus(r.paymentStatus) ??
+                      rosterPaymentStatusByStudentId.get(r.studentId) ??
+                      null;
+                    return (
                     <TableRow key={r.enrollmentId || r.studentId}>
                       <TableCell className="font-medium text-slate-900">{r.studentName}</TableCell>
                       <TableCell className="text-slate-600 text-sm">{r.studentEmail}</TableCell>
@@ -379,6 +462,13 @@ export default function AdminClassesPage() {
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
                           {r.status}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        {paidStatus ? (
+                          <PaymentStatusBadge status={paidStatus} />
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -448,7 +538,8 @@ export default function AdminClassesPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

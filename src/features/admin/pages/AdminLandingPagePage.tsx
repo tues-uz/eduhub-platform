@@ -35,11 +35,11 @@ function buildDefaultsFromI18n(t: (key: string, options?: { returnObjects?: bool
       button: t("public.cta.button"),
     },
     stats: {
-      students: "50,000+",
-      classes: "500+",
-      teachers: "200+",
-      completionRate: "95%",
-      yearsExcellence: "10+",
+      students: "300+",
+      classes: "20+",
+      teachers: "100+",
+      completionRate: "15+",
+      yearsExcellence: "3",
     },
     updatedAt: new Date().toISOString(),
   };

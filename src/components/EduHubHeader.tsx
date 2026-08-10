@@ -18,6 +18,7 @@ import {
   type UiLanguageCode,
 } from "@/features/settings/languagePreference";
 import i18n from "@/i18n";
+import { appRoutes } from "@/app/routes";
 
 const SHORT_LANGUAGE_LABEL: Record<UiLanguageCode, string> = {
   en: "En",
@@ -53,7 +54,7 @@ const EduHubHeader = () => {
         <div className="flex items-center justify-between h-[80px] relative">
           {/* Logo */}
           <div className="flex items-center gap-4">
-            <Link to="/eduhub" className="flex items-center py-1">
+            <Link to={appRoutes.home} className="flex items-center py-1">
               <img
                 src="/logo-eduhub.png"
                 alt="EduHub Logo"
@@ -66,7 +67,7 @@ const EduHubHeader = () => {
           <nav className="hidden lg:flex items-center gap-10 absolute left-1/2 transform -translate-x-1/2" data-framer-name="Links">
             <div>
               <Link
-                to="/eduhub"
+                to={appRoutes.home}
                 className="block py-2 px-2 text-sm font-medium transition-colors hover:opacity-80"
                 style={{ color: "rgb(109, 109, 109)" }}
                 onMouseEnter={(e) => {
@@ -81,7 +82,7 @@ const EduHubHeader = () => {
             </div>
             <div>
               <Link
-                to="/eduhub"
+                to={appRoutes.about}
                 className="block py-2 px-2 text-sm font-medium transition-colors hover:opacity-80"
                 style={{ color: "rgb(109, 109, 109)" }}
                 onMouseEnter={(e) => {
@@ -112,11 +113,11 @@ const EduHubHeader = () => {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-white border border-foreground/10 rounded-2xl">
-                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-100">
-                    {t("nav.languageTraining")}
+                  <DropdownMenuItem asChild className="cursor-pointer hover:bg-gray-100">
+                    <Link to={appRoutes.programsLanguageTraining}>{t("nav.languageTraining")}</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-100">
-                    {t("nav.academicServices")}
+                  <DropdownMenuItem asChild className="cursor-pointer hover:bg-gray-100">
+                    <Link to={appRoutes.programsAcademicServices}>{t("nav.academicServices")}</Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -188,35 +189,33 @@ const EduHubHeader = () => {
           <div className="lg:hidden py-4 border-t border-foreground/10">
             <nav className="flex flex-col gap-4">
               <Link
-                to="/eduhub"
+                to={appRoutes.home}
                 className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {t("nav.home")}
               </Link>
               <Link
-                to="/eduhub"
+                to={appRoutes.about}
                 className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {t("nav.about")}
               </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors w-full text-left flex items-center justify-between">
-                    {t("nav.program")}
-                    <ChevronDown className="h-4 w-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white border border-foreground/10 rounded-2xl">
-                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>
-                    {t("nav.languageTraining")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>
-                    {t("nav.academicServices")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Link
+                to={appRoutes.programsLanguageTraining}
+                className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t("nav.languageTraining")}
+              </Link>
+              <Link
+                to={appRoutes.programsAcademicServices}
+                className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t("nav.academicServices")}
+              </Link>
               <div className="pt-4 border-t border-foreground/10 space-y-3">
                 {/* Language Switcher - Mobile */}
                 <div className="flex items-center justify-between py-2">

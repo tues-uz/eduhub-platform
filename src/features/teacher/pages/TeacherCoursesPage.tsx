@@ -233,14 +233,14 @@ const TeacherCoursesPage = () => {
                         className="block flex flex-1 flex-col rounded-t-xl outline-none transition-colors hover:bg-gray-100/40 focus-visible:ring-2 focus-visible:ring-[#1e40af]/30 focus-visible:ring-inset"
                       >
                         <div className="px-2 pt-2">
-                          <div className="relative h-44 w-full overflow-hidden rounded-xl bg-gray-200 sm:h-56">
+                          <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-200">
                             {course.thumbnailUrl ? (
                               <img
                                 src={course.thumbnailUrl}
                                 alt=""
                                 loading="lazy"
                                 decoding="async"
-                                className="h-full w-full object-cover"
+                                className="absolute inset-0 h-full w-full object-cover"
                               />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center" aria-hidden>

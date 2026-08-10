@@ -417,7 +417,10 @@
       },
       "openRoster": "Open roster",
       "openRosterDemo": "Open roster (demo)",
-      "empty": "No classes match your search or filters."
+      "empty": "No classes match your search or filters.",
+      "rosterDialog": {
+        "paidStatus": "Payment status"
+      }
     },
     "enrollments": {
       "description": "Class enrollment, roster assignment, and waitlist promotion. Server validates capacity and payment rules.",

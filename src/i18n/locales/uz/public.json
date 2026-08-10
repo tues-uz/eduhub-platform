@@ -12,16 +12,78 @@
       "title": "Bizning qimmatli hamkorlarimiz",
       "partner": "Hamkor {{number}}"
     },
+    "aboutPage": {
+      "badge": "EduHub haqida",
+      "title": "TUES Universityda maqsadli o'qish",
+      "titleLine1": "Maqsadli o'qish",
+      "titleLine2": "TUES Universityda",
+      "subtitle": "EduHub — TISU qoshidagi til va o'quv markazi bo'lib, xalqaro standartlar va qo'llab-quvvatlovchi jamoa orqali haqiqiy ko'nikmalarni shakllantiradi.",
+      "storyTitle": "Biz kim",
+      "storyBody1": "EDUHUB — O'zbekistondagi yetakchi xususiy universitet TISU qoshidagi ta'lim markazi. Talabalar, mutaxassislar va umrbod o'rganuvchilar uchun zamonaviy va sifatli til ta'limini taklif etamiz.",
+      "storyBody2": "Jamoa tajribali o'qituvchilar, tuzilgan dasturlar va yagona talaba portali bilan har bir o'rganuvchining sinf va undan tashqarida ishonchli rivojlanishini ta'minlaydi.",
+      "ctaTitle": "Yo'lingizni boshlashga tayyormisiz?",
+      "ctaBody": "Hisob yarating va til rivojlanishi, akademik yordam va kasbiy tayyorgarlik uchun dasturlarni ko'rib chiqing.",
+      "ctaButton": "Ro'yxatdan o'tish",
+      "sections": {
+        "intro": "Bizning nuqtai nazarimiz / 01",
+        "story": "Biz kim / 02",
+        "direction": "Missiya va yo'nalish / 03",
+        "pillars": "Bizning tamoyillarimiz / 04",
+        "cta": "Keyingi qadam / 05"
+      },
+      "statementBefore": "Eng yaxshi o'quv markazlari tilni imkoniyatdan ajratmaydi. Biz ikkalasini ham ",
+      "statementAccent": "bir bog'langan tajriba",
+      "statementAfter": " sifatida quramiz — ishonch uchun yetarlicha aniq, o'sish uchun yetarlicha amaliy.",
+      "tags": ["Til", "O'qitish", "Jamoa", "O'sish"],
+      "marquee": ["IELTS tayyorgarligi", "Business English", "Akademik yozuv", "Kichik guruhlar"],
+      "collageBadge": "O'rgan\nO's\nErish",
+      "ctaAvailable": "Yangi ro'yxatdan o'tishlar ochiq"
+    },
+    "programPages": {
+      "badge": "Dasturlar",
+      "nextStepTitle": "Qo'shilishga tayyormisiz?",
+      "nextStepBody": "Darslarga ariza berish va o'qishingizni bir joyda kuzatish uchun ro'yxatdan o'ting.",
+      "register": "Ro'yxatdan o'tish",
+      "aboutLink": "EduHub haqida",
+      "languageTraining": {
+        "title": "Til o'qitish dasturi",
+        "subtitle": "Malakali o'qituvchilar rahbarligidagi tuzilgan ingliz tili dasturlari orqali ishonchli muloqot.",
+        "overviewTitle": "Nima olasiz",
+        "overviewBody": "Asosiy ko'nikmalardan imtihon tayyorgarligigacha — dasturlarimiz amaliyot, fikr-mulohaza va o'lchanadigan progressni birlashtiradi.",
+        "audienceTitle": "Kimlar uchun",
+        "audienceBody": "Chet elda o'qish, xalqaro imtihonlar yoki ish muloqoti uchun tayyorlanayotgan talabalar va mutaxassislar.",
+        "highlights": [
+          "CELTA sertifikatli va tajribali o'qituvchilar bilan kichik guruhlar",
+          "Boshlang'ichdan ilg'or darajagacha aniq bosqichlar",
+          "Gapirish, yozish va IELTS tayyorgarligi yo'nalishlari",
+          "Jadval, progress va fikr-mulohaza uchun talaba portali"
+        ]
+      },
+      "academicServices": {
+        "title": "Akademik xizmatlar",
+        "subtitle": "Akademik yozuv, universitetga tayyorgarlik va til sinfidan tashqari tuzilgan o'qish yordami.",
+        "overviewTitle": "Nima taklif etamiz",
+        "overviewBody": "Akademik xizmatlar o'qish ko'nikmalarini mustahkamlash, universitet talablarini bajarish va xalqaro muhitga tayyorlanishga yordam beradi.",
+        "audienceTitle": "Kimlar uchun",
+        "audienceBody": "TUES University talabalari, tashqi o'rganuvchilar va til rivojlanishi bilan birga akademik yordam kerak bo'lganlar.",
+        "highlights": [
+          "Akademik yozuv va taqdimot yordami",
+          "Universitet darajasidagi o'qish va tadqiqot ko'nikmalari",
+          "Tajribali xodimlar bilan seminar va maslahatlar",
+          "Ichki va tashqi talabalar uchun moslashuvchan variantlar"
+        ]
+      }
+    },
     "stats": {
       "whyChooseUs": "Nega bizni tanlash kerak",
       "heading": "Nega biz bilan<br />qo'shilishingiz kerak?",
       "students": "Talabalar",
       "classes": "Darslar",
-      "classesHeading": "500+ dars",
-      "wideVariety": "Keng tanlov",
-      "teachers": "O'qituvchilar",
-      "completionRate": "Tugatish darajasi",
-      "yearsExcellence": "Yillik tajriba",
+      "classesHeading": "20+",
+      "wideVariety": "Kurslar va xizmatlar",
+      "teachers": "Bitiruvchilar",
+      "completionRate": "Professional va tajribali o'qituvchilar",
+      "yearsExcellence": "Xalqaro o'qituvchilar",
       "tags": {
         "language": "Til",
         "business": "Biznes",
@@ -53,6 +115,9 @@
         "callOperator": "Call-operator",
         "callOperatorLine1": "Call",
         "callOperatorLine2": "Operator",
+        "learningSupportOfficer": "O'quv yordam xodimi",
+        "learningSupportOfficerLine1": "O'quv yordam",
+        "learningSupportOfficerLine2": "xodimi",
         "adminNavigator": "Ma'muriy navigator",
         "adminNavigatorLine1": "Ma'muriy",
         "adminNavigatorLine2": "Navigator"
@@ -229,6 +294,7 @@
       "button": "Boshlash — bepul"
     },
     "scrollToTop": "Yuqoriga aylantirish",
+    "telegramSupport": "EduHub bilan Telegram orqali bog'lanish",
     "footer": {
       "subscribe": "Obuna bo'lish",
       "emailPlaceholder": "Emailingizni kiriting",
