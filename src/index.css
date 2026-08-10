@@ -134,6 +134,29 @@
         width: fit-content;
     }
 
+    @keyframes hero-gallery-scroll {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(-50%);
+        }
+    }
+
+    .hero-gallery-scroll {
+        animation: hero-gallery-scroll 20s linear infinite;
+    }
+
+    .hero-gallery-item {
+        transition: transform 0.3s ease, filter 0.3s ease;
+    }
+
+    .hero-gallery-item:hover {
+        transform: scale(1.05);
+        filter: brightness(1.1);
+    }
+
     @keyframes slideUp {
         0% {
             transform: translateY(0);

@@ -386,14 +386,14 @@ const StudentAvailableCourses = () => {
                     }}
                     className="relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md transition-shadow hover:shadow-lg"
                   >
-                    <div className="relative mx-3 mt-3 flex h-52 shrink-0 overflow-hidden rounded-xl bg-gray-100 sm:h-56">
+                    <div className="relative mx-3 mt-3 aspect-square shrink-0 overflow-hidden rounded-xl bg-gray-100">
                       {course.thumbnailUrl ? (
                         <img
                           src={course.thumbnailUrl}
                           alt=""
                           loading="lazy"
                           decoding="async"
-                          className="h-full w-full object-cover"
+                          className="absolute inset-0 h-full w-full object-cover"
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center" aria-hidden>
@@ -465,19 +465,19 @@ const StudentAvailableCourses = () => {
                           ) : null}
                         </div>
 
-                        {scheduleSummary ? (
-                          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                            <span className="text-xs font-medium text-slate-500">{t("availableCourses.sessions")}</span>
-                            <span className="text-xs tabular-nums text-slate-700">
-                              <span className="font-semibold text-slate-900">{scheduleSummary.reached}</span>
-                              <span className="text-slate-400"> / </span>
-                              <span className="font-medium">{scheduleSummary.total}</span>
-                              <span className="text-slate-500"> {t("availableCourses.sessionsLabel")}</span>
-                            </span>
-                          </div>
-                        ) : null}
+                        <div className={`mt-3 grid gap-3 ${scheduleSummary ? "grid-cols-2" : "grid-cols-1"}`}>
+                          {scheduleSummary ? (
+                            <div className="flex min-w-0 flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                              <span className="text-xs font-medium text-slate-500">{t("availableCourses.sessions")}</span>
+                              <span className="text-xs tabular-nums text-slate-700">
+                                <span className="font-semibold text-slate-900">{scheduleSummary.reached}</span>
+                                <span className="text-slate-400"> / </span>
+                                <span className="font-medium">{scheduleSummary.total}</span>
+                                <span className="text-slate-500"> {t("availableCourses.sessionsLabel")}</span>
+                              </span>
+                            </div>
+                          ) : null}
 
-                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
                           <div className="flex min-w-0 flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
                             <span className="text-xs font-medium text-slate-500">
                               {t("availableCourses.studentsJoined")}
@@ -505,7 +505,9 @@ const StudentAvailableCourses = () => {
                               </span>
                             </div>
                           </div>
+                        </div>
 
+                        <div className="mt-3">
                           <div className="flex min-w-0 flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
                             <span className="text-xs font-medium text-slate-500">{t("availableCourses.tuition")}</span>
                             {tuitionDisplay.allSessionsFinished ? (

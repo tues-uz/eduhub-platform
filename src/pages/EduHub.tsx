@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { BookOpen, Users, Award, GraduationCap, Target, ChevronUp, ArrowRight, Linkedin, Check, Star, PlayCircle, Megaphone, MapPin } from "@/lib/icons";
+import { BookOpen, Users, Award, GraduationCap, Target, ChevronUp, ArrowRight, Linkedin, Check, Star, PlayCircle, Megaphone, MapPin, Telegram } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import EduHubHeader from "@/components/EduHubHeader";
+import { HeroInfiniteScrollGallery } from "@/components/HeroInfiniteScrollGallery";
 import Footer from "@/components/Footer";
 import { useLandingPageContent } from "@/features/landing/useLandingPageContent";
+import { appRoutes } from "@/app/routes";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -21,6 +23,8 @@ const FEATURE_KEYS = [
 ] as const;
 
 const FEATURE_IMAGE_PARAMS = "auto=format&fit=crop&w=600&h=450&q=80";
+
+const EDUHUB_TELEGRAM_URL = "https://t.me/eduhub_tisu_admin";
 
 const FEATURE_IMAGES: Record<(typeof FEATURE_KEYS)[number], string> = {
   onlineClasses: `https://images.unsplash.com/photo-1509062522246-3755977927d7?${FEATURE_IMAGE_PARAMS}`,
@@ -55,7 +59,7 @@ const TEAM_MEMBERS = [
   { name: "Abdurazakova Samira", nameLine1: "Abdurazakova", nameLine2: "Samira", roleKey: "learningExperienceManager", image: "/eduhub/5.png" },
   { name: "Jurakulova Yulduz", nameLine1: "Jurakulova", nameLine2: "Yulduz", roleKey: "callOperator", image: "/eduhub/6.png" },
   { name: "Tursunova Yuliroz", nameLine1: "Tursunova", nameLine2: "Yuliroz", roleKey: "adminNavigator", image: "/eduhub/7.png" },
-  { name: "Amirov Jamshid", nameLine1: "Amirov", nameLine2: "Jamshid", roleKey: "callOperator", image: "/eduhub/8.png" },
+  { name: "Sardor Khusanovich", nameLine1: "Sardor", nameLine2: "Khusanovich", roleKey: "learningSupportOfficer", image: "/eduhub/8.png" },
 ] as const;
 
 type TeamRoleKey = (typeof TEAM_MEMBERS)[number]["roleKey"];
@@ -66,6 +70,7 @@ const ROLE_LINE_KEYS: Record<TeamRoleKey, { line1: string; line2: string }> = {
   orgExcellenceManager: { line1: "orgExcellenceLine1", line2: "orgExcellenceLine2" },
   learningExperienceManager: { line1: "learningExperienceLine1", line2: "learningExperienceLine2" },
   callOperator: { line1: "callOperatorLine1", line2: "callOperatorLine2" },
+  learningSupportOfficer: { line1: "learningSupportOfficerLine1", line2: "learningSupportOfficerLine2" },
   adminNavigator: { line1: "adminNavigatorLine1", line2: "adminNavigatorLine2" },
 };
 
@@ -81,13 +86,12 @@ const REVIEW_META: Record<(typeof REVIEW_KEYS)[number], { name: string; rating: 
 };
 
 
-const BLOG_POST_KEYS = ["languagePrograms", "successStories", "workshops"] as const;
-
-const BLOG_IMAGES = {
-  languagePrograms: "https://framerusercontent.com/images/iY9yzf6jj5xEzAY4OnAslUkNlrs.jpeg",
-  successStories: "https://framerusercontent.com/images/Bn1przMMEo1Gy185OXSiWZPiy8c.jpeg",
-  workshops: "https://framerusercontent.com/images/4FZjdsBmWWHU4pj8TT0nUi9q4.jpeg",
-} as const;
+import {
+  BLOG_IMAGES,
+  BLOG_POST_KEYS,
+  blogArticlePath,
+  blogPostHasArticlePage,
+} from "@/features/landing/blogPosts";
 
 function reviewIndexLabel(index: number): string {
   return String(index + 1).padStart(2, "0");
@@ -124,6 +128,13 @@ function ReviewStars({
   );
 }
 
+const PARTNER_LOGOS = [
+  { name: "Oxford University Press", logo: "/partnership/1.png" },
+  { name: "IELTS", logo: "/partnership/2.png" },
+  { name: "University of Cambridge", logo: "/partnership/3.png" },
+  { name: "British Council", logo: "/partnership/4.png" },
+] as const;
+
 const EduHub = () => {
   const { t } = useTranslation();
   const landingContent = useLandingPageContent();
@@ -150,35 +161,35 @@ const EduHub = () => {
     () => [
       {
         icon: GraduationCap,
-        value: landingContent?.stats.students ?? "50,000+",
+        value: landingContent?.stats.students ?? "300+",
         label: t("public.stats.students"),
         color: "text-blue-500",
         bento: "wide" as const,
       },
       {
         icon: BookOpen,
-        value: landingContent?.stats.classes ?? "500+",
+        value: landingContent?.stats.classes ?? "20+",
         label: t("public.stats.classes"),
         color: "text-purple-500",
         bento: "normal" as const,
       },
       {
         icon: Users,
-        value: landingContent?.stats.teachers ?? "200+",
+        value: landingContent?.stats.teachers ?? "100+",
         label: t("public.stats.teachers"),
         color: "text-green-500",
         bento: "normal" as const,
       },
       {
         icon: Award,
-        value: landingContent?.stats.completionRate ?? "95%",
+        value: landingContent?.stats.completionRate ?? "15+",
         label: t("public.stats.completionRate"),
         color: "text-orange-500",
         bento: "accent" as const,
       },
       {
         icon: Target,
-        value: landingContent?.stats.yearsExcellence ?? "10+",
+        value: landingContent?.stats.yearsExcellence ?? "3",
         label: t("public.stats.yearsExcellence"),
         color: "text-amber-600",
         bento: "normal" as const,
@@ -256,6 +267,7 @@ const EduHub = () => {
         description: t(`public.blog.posts.${key}.description`),
         imageAlt: t(`public.blog.posts.${key}.imageAlt`),
         image: BLOG_IMAGES[key],
+        href: blogPostHasArticlePage(key) ? blogArticlePath(key) : "/journal",
       })),
     [t],
   );
@@ -292,19 +304,17 @@ const EduHub = () => {
         });
       });
 
-      // —— Hero: 4 image cards stagger ——
-      const heroCards = root.querySelectorAll(".hero-card-item");
-      if (heroCards.length) {
-        gsap.set(heroCards, { opacity: 0, y: 56 });
-        const heroGrid = root.querySelector(".hero-cards-reveal");
-        gsap.to(heroCards, {
+      // —— Hero: infinite scroll gallery fade-up ——
+      const heroGallery = root.querySelector(".hero-cards-reveal");
+      if (heroGallery) {
+        gsap.set(heroGallery, { opacity: 0, y: 40 });
+        gsap.to(heroGallery, {
           opacity: 1,
           y: 0,
           duration: 0.85,
-          stagger: 0.1,
           ease,
           scrollTrigger: {
-            trigger: heroGrid ?? heroCards[0],
+            trigger: heroGallery,
             start: "top 88%",
             toggleActions: "play none none none",
           },
@@ -470,16 +480,7 @@ const EduHub = () => {
               </div>
             </div>
 
-            {/* People Cards - scroll reveal */}
-            <div
-              className="hero-cards-reveal grid grid-cols-4 gap-4 w-full max-w-7xl mx-auto"
-              style={{ height: '380px' }}
-            >
-              <div className="hero-card-item relative rounded-[16px] transition-all duration-300 bg-contain bg-bottom bg-no-repeat" style={{ backgroundImage: 'url(/edu1.png)', backgroundColor: '#E5E7EB', height: '100%' }} />
-              <div className="hero-card-item relative rounded-[16px] transition-all duration-300 bg-contain bg-bottom bg-no-repeat" style={{ backgroundImage: 'url(/edu2.png)', backgroundColor: '#E5E7EB', height: '100%' }} />
-              <div className="hero-card-item relative rounded-[16px] transition-all duration-300 bg-contain bg-bottom bg-no-repeat" style={{ backgroundImage: 'url(/edu3.png)', backgroundColor: '#E5E7EB', height: '100%' }} />
-              <div className="hero-card-item relative rounded-[16px] transition-all duration-300 bg-contain bg-bottom bg-no-repeat" style={{ backgroundImage: 'url(/edu4.png)', backgroundColor: '#E5E7EB', height: '100%' }} />
-            </div>
+            <HeroInfiniteScrollGallery />
           </div>
         </div>
       </section>
@@ -504,28 +505,16 @@ const EduHub = () => {
           >
             <ul className="flex items-center gap-4 list-none m-0 p-0 animate-scroll w-max">
               {[1, 2, 3].map((set) =>
-                [
-                  { name: t("public.partners.partner", { number: 1 }), logo: "/partnership/1.png" },
-                  { name: t("public.partners.partner", { number: 2 }), logo: "/partnership/2.png" },
-                  { name: t("public.partners.partner", { number: 3 }), logo: "/partnership/3.png" },
-                  { name: t("public.partners.partner", { number: 4 }), logo: "/partnership/4.png" },
-                ].map((partner, index) => (
+                PARTNER_LOGOS.map((partner, index) => (
                   <li key={`set-${set}-${index}`} className="flex-shrink-0">
-                    <div className="flex items-center justify-center p-4 transition-all duration-300 hover:opacity-80" style={{ minWidth: '120px' }}>
+                    <div
+                      className="flex h-20 min-w-[140px] items-center justify-center rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 transition-all duration-300 hover:border-slate-200 hover:bg-white"
+                    >
                       <img
                         src={partner.logo}
                         alt={partner.name}
-                        className="max-w-[100px] h-12 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          const parent = e.currentTarget.parentElement;
-                          if (parent && !parent.querySelector('.fallback-text')) {
-                            const fallback = document.createElement('div');
-                            fallback.className = 'fallback-text text-foreground/70 font-semibold';
-                            fallback.textContent = partner.name;
-                            parent.appendChild(fallback);
-                          }
-                        }}
+                        className="h-12 max-w-[110px] object-contain mix-blend-multiply"
+                        loading="lazy"
                       />
                     </div>
                   </li>
@@ -564,7 +553,7 @@ const EduHub = () => {
           >
             {/* Row 1: wide card (2 cols) + one card — lg and up */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Wide card - 50,000+ Students (blue-500 like scroll-to-top button) */}
+              {/* Wide card - 300+ Students (blue-500 like scroll-to-top button) */}
               <div
                 className="stats-card rounded-[16px] min-h-[200px] lg:min-h-[260px] flex flex-col justify-center transition-all duration-300 lg:col-span-2 bg-blue-500"
               >
@@ -577,7 +566,7 @@ const EduHub = () => {
                   </h3>
                 </div>
               </div>
-              {/* Card 2 - 500+ Classes (Framer-style: title + pills for movement animation) */}
+              {/* Card 2 - 20+ courses & services (Framer-style: title + pills for movement animation) */}
               <div
                 className="stats-card rounded-[16px] min-h-[200px] lg:min-h-[260px] flex flex-col transition-all duration-300 overflow-visible"
                 style={{ backgroundColor: "rgb(242, 241, 241)" }}
@@ -663,7 +652,7 @@ const EduHub = () => {
                 </div>
               </div>
             </div>
-            {/* Row 2: subgrid — 3 equal cards (200+ Teachers, 95% Completion, 10+ Years) */}
+            {/* Row 2: subgrid — 3 equal cards (100+ Graduates, 15+ Teachers, 3 International teachers) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {stats.slice(2, 5).map((stat) => {
                 const isAccent = stat.bento === "accent";
@@ -788,7 +777,7 @@ const EduHub = () => {
               </p>
               <div className="hidden lg:block">
               <Link
-                to="/eduhub"
+                to={appRoutes.about}
                 className="mt-auto self-start inline-flex items-center gap-2 px-6 py-3 rounded-[37px] font-semibold text-white transition-opacity hover:opacity-90 w-fit mx-auto lg:mx-0 shrink-0"
                 style={{ backgroundColor: "#3954d0" }}
               >
@@ -836,7 +825,7 @@ const EduHub = () => {
 
           <div className="mt-8 text-center lg:hidden">
             <Link
-              to="/eduhub"
+              to={appRoutes.about}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-[37px] font-semibold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: "#3954d0" }}
             >
@@ -1173,12 +1162,12 @@ const EduHub = () => {
             </h2>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 items-stretch">
             {blogPosts.map((post) => (
-            <div key={post.key}>
+            <div key={post.key} className="h-full">
             <Link
-              to="/journal"
-              className="group block rounded-[24px] overflow-hidden transition-shadow duration-300 hover:shadow-[0_10px_15px_rgba(0,0,0,0.15)]"
+              to={post.href}
+              className="group flex h-full flex-col rounded-[24px] overflow-hidden transition-shadow duration-300 hover:shadow-[0_10px_15px_rgba(0,0,0,0.15)]"
               style={{ background: "linear-gradient(336deg, rgb(250,250,250) 0%, rgb(255,255,255) 54%, rgb(238,238,238) 100%)" }}
             >
               <div className="rounded-[20px] overflow-hidden p-2">
@@ -1190,8 +1179,8 @@ const EduHub = () => {
                   />
                 </div>
               </div>
-              <div className="p-5 pt-0">
-                <h5 className="text-lg font-semibold mb-2 group-hover:underline" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
+              <div className="flex flex-1 flex-col p-5 pt-0">
+                <h5 className="mb-2 min-h-[5.0625rem] text-lg font-semibold leading-normal group-hover:underline" style={{ fontFamily: "'DM Sans', sans-serif", color: "rgb(61, 61, 61)" }}>
                   {post.title}
                 </h5>
                 <p className="text-sm leading-relaxed" style={{ color: "rgb(153, 153, 153)" }}>
@@ -1201,18 +1190,6 @@ const EduHub = () => {
             </Link>
             </div>
             ))}
-          </div>
-
-          <div className="flex justify-center">
-            <div>
-            <Link
-              to="/journal"
-              className="inline-flex items-center justify-center rounded-[40px] px-6 py-3.5 font-medium transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "rgb(0, 0, 0)", color: "rgb(255, 255, 255)", boxShadow: "rgba(0,0,0,0.15) 0px 4px 8px 0px" }}
-            >
-              {t("public.blog.readMore")}
-            </Link>
-          </div>
           </div>
         </div>
       </section>
@@ -1300,17 +1277,30 @@ const EduHub = () => {
         </div>
       </section>
 
-      {/* Floating Scroll to Top Button */}
-      <button
-        onClick={scrollToTop}
-        className={`fixed bottom-8 right-8 z-[100] w-14 h-14 text-white rounded-full shadow-2xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center hover:scale-110 border-2 border-white hover:opacity-90 ${
-          showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
-        }`}
-        style={{ backgroundColor: '#199eff' }}
-        aria-label={t("public.scrollToTop")}
-      >
-        <ChevronUp className="h-7 w-7" />
-      </button>
+      {/* Floating support + scroll actions */}
+      <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-center gap-3">
+        <a
+          href={EDUHUB_TELEGRAM_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white text-white shadow-2xl transition-all duration-300 hover:scale-110 hover:opacity-90 hover:shadow-2xl"
+          style={{ backgroundColor: "#0088cc" }}
+          aria-label={t("public.telegramSupport")}
+        >
+          <Telegram className="h-7 w-7" />
+        </a>
+        <button
+          type="button"
+          onClick={scrollToTop}
+          className={`flex h-14 w-14 items-center justify-center rounded-full border-2 border-white text-white shadow-2xl transition-all duration-300 hover:scale-110 hover:opacity-90 hover:shadow-2xl ${
+            showScrollTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
+          }`}
+          style={{ backgroundColor: "#199eff" }}
+          aria-label={t("public.scrollToTop")}
+        >
+          <ChevronUp className="h-7 w-7" />
+        </button>
+      </div>
 
       <Footer />
     </div>

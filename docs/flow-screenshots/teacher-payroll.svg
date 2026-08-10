@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="300" viewBox="0 0 480 300">
+  <rect width="480" height="300" fill="#f8fafc"/>
+  <rect width="480" height="40" fill="#059669"/>
+  <text x="16" y="26" fill="#fff" font-family="system-ui,sans-serif" font-size="14" font-weight="600">Teacher Payroll</text>
+  <rect x="12" y="52" width="72" height="236" rx="8" fill="#e2e8f0"/>
+  <rect x="96" y="52" width="372" height="48" rx="8" fill="#fff" stroke="#e2e8f0"/>
+  <rect x="96" y="112" width="180" height="80" rx="8" fill="#fff" stroke="#e2e8f0"/>
+  <rect x="288" y="112" width="180" height="80" rx="8" fill="#fff" stroke="#e2e8f0"/>
+  <rect x="96" y="204" width="372" height="84" rx="8" fill="#fff" stroke="#e2e8f0"/>
+  <text x="96" y="292" fill="#64748b" font-family="system-ui,sans-serif" font-size="11">/dashboard/teacher/payroll</text>
+</svg>

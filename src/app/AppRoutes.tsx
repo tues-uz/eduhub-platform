@@ -2,6 +2,9 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import StudentDashboardLayout from "@/layouts/StudentDashboardLayout";
 import TeacherDashboardLayout from "@/layouts/TeacherDashboardLayout";
 import EduHub from "@/pages/EduHub";
+import EduHubAboutPage from "@/pages/EduHubAboutPage";
+import EduHubProgramPage from "@/pages/EduHubProgramPage";
+import EduHubBlogArticlePage from "@/pages/EduHubBlogArticlePage";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
 import VerifyEmail from "@/pages/VerifyEmail";
@@ -94,6 +97,17 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path={appRoutes.home} element={<EduHub />} />
+      <Route path="/eduhub" element={<Navigate to={appRoutes.home} replace />} />
+      <Route path={appRoutes.about} element={<EduHubAboutPage />} />
+      <Route
+        path={appRoutes.programsLanguageTraining}
+        element={<EduHubProgramPage variant="languageTraining" />}
+      />
+      <Route
+        path={appRoutes.programsAcademicServices}
+        element={<EduHubProgramPage variant="academicServices" />}
+      />
+      <Route path="/blog/:slug" element={<EduHubBlogArticlePage />} />
       <Route path={appRoutes.signIn} element={<SignIn />} />
       <Route path={appRoutes.register} element={<SignUp />} />
       <Route path={appRoutes.changePassword} element={<ChangePassword />} />

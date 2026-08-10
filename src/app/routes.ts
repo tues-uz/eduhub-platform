@@ -4,6 +4,9 @@ import { dashboardHomeByStaffRole } from "@/features/admin/adminStaffRoles";
 
 export const appRoutes = {
   home: "/",
+  about: "/about",
+  programsLanguageTraining: "/programs/language-training",
+  programsAcademicServices: "/programs/academic-services",
   signIn: "/signin",
   register: "/register",
   changePassword: "/change-password",
@@ -19,6 +22,17 @@ export const appRoutes = {
   dashboardAdminAnalytic: "/dashboard/admin/analytic",
   dashboardTeacher: "/dashboard/teacher",
 } as const;
+
+export function isPublicLandingPage(pathname: string): boolean {
+  return (
+    pathname === appRoutes.home ||
+    pathname === appRoutes.about ||
+    pathname === appRoutes.programsLanguageTraining ||
+    pathname === appRoutes.programsAcademicServices ||
+    pathname === "/eduhub" ||
+    pathname.startsWith("/eduhub/")
+  );
+}
 
 export function dashboardHomeByRole(role: UserRole, staffRole?: AdminStaffRole) {
   if (role === "admin") return dashboardHomeByStaffRole(staffRole);

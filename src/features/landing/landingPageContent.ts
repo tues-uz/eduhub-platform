@@ -72,11 +72,11 @@ function normalizeContent(raw: unknown): LandingPageContent | null {
       button: trimText(cta.button, 80) || "Get started",
     },
     stats: {
-      students: trimText(stats.students, 40) || "50,000+",
-      classes: trimText(stats.classes, 40) || "500+",
-      teachers: trimText(stats.teachers, 40) || "200+",
-      completionRate: trimText(stats.completionRate, 40) || "95%",
-      yearsExcellence: trimText(stats.yearsExcellence, 40) || "10+",
+      students: trimText(stats.students, 40) || "300+",
+      classes: trimText(stats.classes, 40) || "20+",
+      teachers: trimText(stats.teachers, 40) || "100+",
+      completionRate: trimText(stats.completionRate, 40) || "15+",
+      yearsExcellence: trimText(stats.yearsExcellence, 40) || "3",
     },
     updatedAt: typeof o.updatedAt === "string" ? o.updatedAt : new Date().toISOString(),
   };

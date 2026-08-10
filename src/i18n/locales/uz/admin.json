@@ -504,7 +504,10 @@
       },
       "openRoster": "Ro'yxatni ochish",
       "openRosterDemo": "Open roster (demo)",
-      "empty": "No classes match your search or filters."
+      "empty": "No classes match your search or filters.",
+      "rosterDialog": {
+        "paidStatus": "To'lov holati"
+      }
     },
     "enrollments": {
       "description": "Class enrollment, roster assignment, and waitlist promotion. Server validates capacity and payment rules.",

@@ -49,11 +49,11 @@ export interface AdminCreateUserResponse {
 
 export interface RegisterRequest {
   fullName: string;
-  email: string;
+  email?: string;
   phoneNumber: string;
   parentPhoneNumber: string;
   /** Local / national passport or ID number from registration. */
-  passportNumber: string;
+  passportNumber?: string;
   /** Optional international passport number. */
   internationalPassportNumber?: string;
   /** Uploaded local / national passport image URL. */
@@ -987,6 +987,7 @@ export interface AdminClassRosterRowResponse {
   status: string;
   enrolledAt: string;
   progress: number;
+  paymentStatus?: PaymentStatus;
 }
 
 export interface AdminAssignStudentRequest {

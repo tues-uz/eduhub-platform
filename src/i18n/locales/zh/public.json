@@ -12,16 +12,78 @@
       "title": "我们的重要合作伙伴",
       "partner": "合作伙伴 {{number}}"
     },
+    "aboutPage": {
+      "badge": "关于 EduHub",
+      "title": "在 TUES University 有目标地学习",
+      "titleLine1": "有目标地学习",
+      "titleLine2": "在 TUES University",
+      "subtitle": "EduHub 是 TISU 旗下的语言与培训中心，通过国际标准和支持性社区帮助学习者掌握实用技能。",
+      "storyTitle": "我们是谁",
+      "storyBody1": "EDUHUB 是乌兹别克斯坦领先私立大学 TISU 旗下的教育中心，为学生、职场人士和终身学习者提供现代高质量语言教育。",
+      "storyBody2": "我们的团队汇聚经验丰富的教师、结构化课程和统一的学生门户，让每位学习者在课堂内外都能自信进步。",
+      "ctaTitle": "准备好开始了吗？",
+      "ctaBody": "创建账户，探索专为语言提升、学术支持和职业准备设计的课程。",
+      "ctaButton": "立即注册",
+      "sections": {
+        "intro": "我们的观点 / 01",
+        "story": "我们是谁 / 02",
+        "direction": "使命与方向 / 03",
+        "pillars": "我们的立场 / 04",
+        "cta": "下一步 / 05"
+      },
+      "statementBefore": "最好的学习中心不会将语言与机会割裂。我们将两者构建为",
+      "statementAccent": "一个连贯的体验",
+      "statementAfter": "——足够清晰以建立信任，足够实用以促进成长。",
+      "tags": ["语言", "培训", "社区", "成长"],
+      "marquee": ["IELTS 备考", "商务英语", "学术写作", "小班教学"],
+      "collageBadge": "学习\n成长\n成功",
+      "ctaAvailable": "正在接受新注册"
+    },
+    "programPages": {
+      "badge": "课程",
+      "nextStepTitle": "准备加入了吗？",
+      "nextStepBody": "注册即可申请课程，并在一处跟踪学习进度。",
+      "register": "注册",
+      "aboutLink": "关于 EduHub",
+      "languageTraining": {
+        "title": "语言培训项目",
+        "subtitle": "通过合格教师带领的结构化英语课程，建立自信的沟通能力。",
+        "overviewTitle": "您将获得",
+        "overviewBody": "从基础技能到考试准备，我们的语言课程结合课堂练习、反馈和可衡量的进步。",
+        "audienceTitle": "适合人群",
+        "audienceBody": "准备出国留学、国际考试或职场沟通的学生与职场人士。",
+        "highlights": [
+          "CELTA 认证及经验丰富教师的小班教学",
+          "从初级到高级，学习里程碑清晰",
+          "口语、写作及 IELTS 备考方向",
+          "学生门户统一管理课表、进度与反馈"
+        ]
+      },
+      "academicServices": {
+        "title": "学术服务",
+        "subtitle": "学术写作、大学准备及语言课堂外的结构化学习支持。",
+        "overviewTitle": "我们提供",
+        "overviewBody": "学术服务帮助学习者加强学习技能、完成大学要求，并为国际学术环境做好准备。",
+        "audienceTitle": "适合人群",
+        "audienceBody": "TUES University 学生、外部学习者，以及需要学术支持与语言发展并重的任何人。",
+        "highlights": [
+          "学术写作与演示支持",
+          "大学级学习习惯与研究技能指导",
+          "与经验丰富的工作人员开展工作坊与咨询",
+          "校内外学生灵活选择"
+        ]
+      }
+    },
     "stats": {
       "whyChooseUs": "为什么选择我们",
       "heading": "为什么您应该<br />加入我们？",
       "students": "学生",
       "classes": "课程",
-      "classesHeading": "500+ 课程",
-      "wideVariety": "种类丰富",
-      "teachers": "教师",
-      "completionRate": "完成率",
-      "yearsExcellence": "年卓越经验",
+      "classesHeading": "20+",
+      "wideVariety": "课程与服务",
+      "teachers": "毕业生",
+      "completionRate": "专业且经验丰富的教师",
+      "yearsExcellence": "国际教师",
       "tags": {
         "language": "语言",
         "business": "商业",
@@ -53,6 +115,9 @@
         "callOperator": "电话接线员",
         "callOperatorLine1": "电话",
         "callOperatorLine2": "接线员",
+        "learningSupportOfficer": "学习支持专员",
+        "learningSupportOfficerLine1": "学习支持",
+        "learningSupportOfficerLine2": "专员",
         "adminNavigator": "行政导航员",
         "adminNavigatorLine1": "行政",
         "adminNavigatorLine2": "导航员"
@@ -229,6 +294,7 @@
       "button": "立即开始 — 免费"
     },
     "scrollToTop": "回到顶部",
+    "telegramSupport": "通过 Telegram 联系 EduHub",
     "footer": {
       "subscribe": "订阅",
       "emailPlaceholder": "输入您的邮箱",
