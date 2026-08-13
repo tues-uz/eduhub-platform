@@ -145,7 +145,7 @@
     }
 
     .hero-gallery-scroll {
-        animation: hero-gallery-scroll 20s linear infinite;
+        animation: hero-gallery-scroll 40s linear infinite;
     }
 
     .hero-gallery-item {

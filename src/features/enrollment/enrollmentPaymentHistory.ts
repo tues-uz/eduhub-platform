@@ -51,14 +51,38 @@ export function resolvedMonthsPaidLabel(
   scheduleMonthCount: number,
 ): string {
   if (scheduleMonthCount <= 0) return "Monthly payment";
+  if (paidMonths.size === 0) return "Unpaid";
   if (paidMonths.size >= scheduleMonthCount || paidMonths.size >= 3) return "Full payment";
-  if (paidMonths.size === 1) {
-    const m = Math.max(...paidMonths);
-    if (m === 1) return "First month";
-    if (m === 2) return "Second month";
-    if (m === 3) return "Third month";
-  }
+  const highest = Math.max(...paidMonths);
+  if (highest === 1) return "First month";
+  if (highest === 2) return "Second month";
+  if (highest === 3) return "Third month";
   return `${paidMonths.size} of ${scheduleMonthCount} months paid`;
+}
+
+/** Stable key for i18n of month-coverage payment badges. */
+export type MonthsPaidCoverageKey =
+  | "full"
+  | "first"
+  | "second"
+  | "third"
+  | "unpaid"
+  | "partial";
+
+export function resolvedMonthsPaidCoverageKey(
+  paidMonths: ReadonlySet<TuitionPlanMonths>,
+  scheduleMonthCount: number,
+): MonthsPaidCoverageKey {
+  if (paidMonths.size === 0) return "unpaid";
+  if (scheduleMonthCount > 0 && (paidMonths.size >= scheduleMonthCount || paidMonths.size >= 3)) {
+    return "full";
+  }
+  if (paidMonths.size >= 3) return "full";
+  const highest = Math.max(...paidMonths);
+  if (highest === 1) return "first";
+  if (highest === 2) return "second";
+  if (highest === 3) return "third";
+  return "partial";
 }
 
 export type EnrollmentTablePaymentSummary = {

@@ -17,6 +17,7 @@ import {
   pickStoredMeetingForScheduleSlot,
   type StoredAttendanceMeeting,
 } from "@/features/teacher/attendance/attendanceMeetingsStorage";
+import { scheduleSlotKeyFromParts } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 import {
   ATTENDANCE_ROLL_BROADCAST,
   ATTENDANCE_ROLL_CHANGED,
@@ -33,6 +34,29 @@ export type ApprovedScheduleSlotOption = {
   sessionTime?: string;
   title?: string;
 };
+
+function meetingForScheduleSlot(
+  meetings: StoredAttendanceMeeting[],
+  slot: ApprovedScheduleSlotOption,
+): StoredAttendanceMeeting | null {
+  const hasSlotParts = Boolean(
+    slot.sessionDate?.trim() || slot.sessionTime?.trim() || slot.title?.trim() || slot.label?.trim(),
+  );
+  const slotKey = hasSlotParts
+    ? scheduleSlotKeyFromParts({
+        sessionDate: slot.sessionDate,
+        sessionTime: slot.sessionTime,
+        title: slot.title ?? slot.label,
+      })
+    : undefined;
+  return pickStoredMeetingForScheduleSlot(
+    meetings,
+    slot.label,
+    slot.sessionDate,
+    slot.index,
+    slotKey,
+  );
+}
 
 type Props = {
   courseId: string;
@@ -220,7 +244,7 @@ export function AttendanceOverviewQrPicker({
         const idx = Number.parseInt(v.slice("schedule-slot-".length), 10);
         const slot = scheduleSlots.find((s) => s.index === idx);
         if (!slot) return;
-        const picked = pickStoredMeetingForScheduleSlot(meetings, slot.label, slot.sessionDate);
+        const picked = meetingForScheduleSlot(meetings, slot);
         if (picked) {
           setPendingScheduleSelectValue(null);
           onScheduleSlotIntent?.(null);
@@ -265,11 +289,29 @@ export function AttendanceOverviewQrPicker({
               <SelectLabel className="text-xs font-semibold text-muted-foreground">
                 Planned sessions
               </SelectLabel>
-              {scheduleSlots.map((s) => (
-                <SelectItem key={`sched-${s.index}`} value={`schedule-slot-${s.index}`}>
-                  {s.label}
-                </SelectItem>
-              ))}
+              {scheduleSlots.map((s) => {
+                const existing = meetingForScheduleSlot(meetings, s);
+                const qrOpen = existing?.status === "OPEN";
+                return (
+                  <SelectItem key={`sched-${s.index}`} value={`schedule-slot-${s.index}`}>
+                    <span className="flex min-w-0 items-center justify-between gap-2">
+                      <span className="min-w-0 truncate">{s.label}</span>
+                      {existing ? (
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
+                            qrOpen
+                              ? "bg-teal-100 text-teal-800 ring-1 ring-teal-200/80"
+                              : "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80",
+                          )}
+                        >
+                          {qrOpen ? "QR active" : "QR created"}
+                        </span>
+                      ) : null}
+                    </span>
+                  </SelectItem>
+                );
+              })}
             </SelectGroup>
           ) : null}
           {hasQrMeetings ? (

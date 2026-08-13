@@ -882,11 +882,29 @@
         "quiz": "测验",
         "quizScores": "测验分数",
         "attendance": "考勤",
-        "grades": "成绩"
+        "grades": "成绩",
+        "photos": "照片"
+      },
+      "photos": {
+        "title": "Class photos",
+        "intro": "Add up to eight images of the classroom, materials, or sessions. Students see these on the class page.",
+        "galleryAria": "Class photo upload slots",
+        "photoAlt": "Class photo {{n}}",
+        "addSlot": "Add photo {{n}}",
+        "replace": "Replace",
+        "removeAria": "Remove photo {{n}}",
+        "uploading": "Uploading…",
+        "countHint": "{{count}} of {{max}} photos added",
+        "toastInvalidType": "Please choose an image file (JPEG, PNG, WebP, etc.).",
+        "toastTooLarge": "Image must be 8 MB or smaller.",
+        "toastUploaded": "Photo uploaded",
+        "toastUploadFailed": "Photo upload failed",
+        "toastRemoved": "Photo removed"
       },
       "enrolled": {
         "title": "Enrolled 学生s",
         "intro": "Everyone signed up for this 课程 in the platform. Local-only 课程es won't show rows until the 课程 exists on the server.",
+        "shareHint": "你的分成是已付金额的 {{instructorPct}}%（合同 {{split}}）。",
         "sessionsNote": "This 课程 is set to {{count}} sessions in 6 months (from 课程 settings); the table compares local check-ins to that target.",
         "localOnly": "This 课程 is stored only in your browser. Connect it to the API to load enrolled 学生s here.",
         "substituteNoRoster": "Enrollment list is not loaded for substitutes (API).",
@@ -897,8 +915,21 @@
         "table": {
           "name": "Name",
           "email": "Email",
+          "status": "Status",
+          "amountPaid": "已付金额",
+          "yourShare": "你的分成 ({{pct}}%)",
+          "yourShareTitle": "Instructor share of amount paid ({{pct}}%)",
           "sessionsTitle": "Check-ins recorded on this browser vs planned 课程 meetings in six months (课程 settings).",
           "sessionsInSixMonths": "Sessions in 6 months *"
+        },
+        "paymentCoverage": {
+          "paidWithDetail": "已付 · {{detail}}",
+          "full": "全款",
+          "first": "第一个月",
+          "second": "第二个月",
+          "third": "第三个月",
+          "partial": "部分付款",
+          "unpaid": "未付款"
         },
         "footnote": "* Sessions in 6 months is the planned total from 课程 settings. The first number is how many distinct sessions this 学生 checked into on this browser only."
       },

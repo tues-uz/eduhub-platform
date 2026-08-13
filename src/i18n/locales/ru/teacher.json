@@ -882,13 +882,31 @@
         "quiz": "Тест",
         "quizScores": "Оценки за тесты",
         "attendance": "Посещаемость",
-        "grades": "Оценки"
+        "grades": "Оценки",
+        "photos": "Фото"
+      },
+      "photos": {
+        "title": "Class photos",
+        "intro": "Add up to eight images of the classroom, materials, or sessions. Students see these on the class page.",
+        "galleryAria": "Class photo upload slots",
+        "photoAlt": "Class photo {{n}}",
+        "addSlot": "Add photo {{n}}",
+        "replace": "Replace",
+        "removeAria": "Remove photo {{n}}",
+        "uploading": "Uploading…",
+        "countHint": "{{count}} of {{max}} photos added",
+        "toastInvalidType": "Please choose an image file (JPEG, PNG, WebP, etc.).",
+        "toastTooLarge": "Image must be 8 MB or smaller.",
+        "toastUploaded": "Photo uploaded",
+        "toastUploadFailed": "Photo upload failed",
+        "toastRemoved": "Photo removed"
       },
       "enrolled": {
         "title": "Enrolled студентs",
         "intro": "Everyone signed up for this класс in the platform. Local-only классes won't show rows until the класс exists on the server.",
-        "sessionsNote": "This класс is set to {{count}} sessions in 6 months (from класс settings); the table compares local check-ins to that target.",
-        "localOnly": "This класс is stored only in your browser. Connect it to the API to load enrolled студентs here.",
+        "shareHint": "Your share is {{instructorPct}}% of amount paid (contract {{split}}).",
+        "sessionsNote": "This class is set to {{count}} sessions in 6 months (from класс settings); the table compares local check-ins to that target.",
+        "localOnly": "This class is stored only in your browser. Connect it to the API to load enrolled студентs here.",
         "substituteNoRoster": "Enrollment list is not loaded for substitutes (API).",
         "substituteNoRosterDescription": "The server only returns /courses/…/студентs for the catalog course lead. Your access here is from the approved substitute workflow (demo).",
         "loading": "Загрузка студентs…",
@@ -897,8 +915,21 @@
         "table": {
           "name": "Name",
           "email": "Email",
+          "status": "Status",
+          "amountPaid": "Сумма оплаты",
+          "yourShare": "Ваша доля ({{pct}}%)",
+          "yourShareTitle": "Instructor share of amount paid ({{pct}}%)",
           "sessionsTitle": "Check-ins recorded on this browser vs planned класс meetings in six months (класс settings).",
           "sessionsInSixMonths": "Sessions in 6 months *"
+        },
+        "paymentCoverage": {
+          "paidWithDetail": "Paid · {{detail}}",
+          "full": "Full payment",
+          "first": "First month",
+          "second": "Second month",
+          "third": "Third month",
+          "partial": "Partial payment",
+          "unpaid": "Unpaid"
         },
         "footnote": "* Sessions in 6 months is the planned total from класс settings. The first number is how many distinct sessions this студент checked into on this browser only."
       },

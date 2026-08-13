@@ -116,6 +116,7 @@
     "sessions": "课程节数",
     "sessionsLabel": "节课",
     "tuition": "学费",
+    "externalTuitionNote": "External student tuition (+50,000).",
     "scheduleComplete": "课表已完整",
     "free": "免费",
     "continueLearning": "继续学习",
@@ -130,7 +131,9 @@
     "emptyNoMatchHint": "请尝试其他搜索词。",
     "myClass": "我的班级",
     "clearFilters": "清除筛选",
-    "defaultCategory": "课程"
+    "defaultCategory": "课程",
+    "dayPatternOdd": "单日",
+    "dayPatternEven": "双日"
   },
   "classSearch": {
     "placeholder": "搜索课程…",

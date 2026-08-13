@@ -5,6 +5,7 @@
  */
 
 import type { ClassMeetingSlot } from "@/features/teacher/types";
+import { writePublicCourseScheduleCache } from "@/features/courses/publicCourseScheduleCache";
 
 export const COURSE_SCHEDULE_PROPOSAL_STORAGE_KEY = "eduhub-schedule-proposal";
 
@@ -47,6 +48,7 @@ export const courseScheduleProposalStore = {
       updatedAt: new Date().toISOString(),
     };
     saveAll(all);
+    writePublicCourseScheduleCache(courseId, proposal.classMeetingSlots);
     try {
       window.dispatchEvent(new CustomEvent("eduhub-schedule-proposal-saved", { detail: { courseId } }));
     } catch {

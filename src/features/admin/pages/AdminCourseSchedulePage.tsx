@@ -7,6 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { eduhubAdmin, eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 import type { ScheduleProposalResponse } from "@/api/eduhubTypes";
@@ -27,8 +43,63 @@ import {
   parseScheduleMonthSessionCount,
   type ScheduleSlotRow,
 } from "@/features/courses/scheduleThreeMonthBuckets";
+import {
+  resolveScheduleDayPattern,
+  setStoredScheduleDayPattern,
+  type ScheduleDayPattern,
+} from "@/features/courses/scheduleDayPattern";
 
 type MonthPlanState = { count: string; sessions: ScheduleSlotRow[] };
+/** Odd = Mon/Wed/Fri; Even = Tue/Thu/Sat (common language-school day patterns). */
+type DayPattern = ScheduleDayPattern;
+
+const DAY_PATTERN_HOURS = ["08:00", "10:00", "13:00", "16:00"] as const;
+type DayPatternHour = (typeof DAY_PATTERN_HOURS)[number];
+
+function isDayPatternHour(value: string): value is DayPatternHour {
+  return (DAY_PATTERN_HOURS as readonly string[]).includes(value);
+}
+
+function toLocalDateInputValue(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function parseLocalDateInput(value: string | undefined): Date | null {
+  if (!value?.trim()) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function formatSessionDayName(sessionDate: string | undefined): string | null {
+  const d = parseLocalDateInput(sessionDate);
+  if (!d) return null;
+  return new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(d);
+}
+
+function matchesDayPattern(d: Date, pattern: DayPattern): boolean {
+  const day = d.getDay(); // 0 Sun … 6 Sat
+  if (pattern === "odd") return day === 1 || day === 3 || day === 5;
+  return day === 2 || day === 4 || day === 6;
+}
+
+function collectPatternDates(start: Date, count: number, pattern: DayPattern): string[] {
+  const out: string[] = [];
+  if (count <= 0) return out;
+  const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  // Cap search so we don't loop forever on bad input.
+  for (let guard = 0; out.length < count && guard < count * 14 + 60; guard += 1) {
+    if (matchesDayPattern(cursor, pattern)) {
+      out.push(toLocalDateInputValue(cursor));
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return out;
+}
 
 const DEFAULT_MONTH_PLANS: MonthPlanState[] = [{ count: "4", sessions: [] }];
 
@@ -69,6 +140,11 @@ export default function AdminCourseSchedulePage() {
   const [error, setError] = useState("");
   const [proposal, setProposal] = useState<ScheduleProposalResponse | null>(null);
   const [scheduleRejectionNote, setScheduleRejectionNote] = useState<string | undefined>();
+  const [dayPattern, setDayPattern] = useState<DayPattern | null>(null);
+  const [dayPatternDraft, setDayPatternDraft] = useState<DayPattern>("odd");
+  const [dayPatternStartDraft, setDayPatternStartDraft] = useState("");
+  const [dayPatternHourDraft, setDayPatternHourDraft] = useState<DayPatternHour>("08:00");
+  const [dayPatternDialogOpen, setDayPatternDialogOpen] = useState(false);
   const [scheduleBoundsFallback, setScheduleBoundsFallback] = useState<{
     start?: string;
     end?: string;
@@ -120,11 +196,23 @@ export default function AdminCourseSchedulePage() {
           const flat = padScheduleSlots(count, proposalData.sessions.map(mapSession));
           const { counts, buckets } = distributeSessionsIntoMonths(flat, { emptyEditorDefaults: true });
           setMonthPlans(monthPlansFromDistribution(counts, buckets));
+          setDayPattern(
+            resolveScheduleDayPattern(
+              courseId,
+              flat.map((s) => s.sessionDate),
+            ),
+          );
         } else {
           const count = course.classMeetingsInSixMonths ?? 12;
           const flat = padScheduleSlots(count, course.classMeetingSlots?.map(mapSession));
           const { counts, buckets } = distributeSessionsIntoMonths(flat, { emptyEditorDefaults: true });
           setMonthPlans(monthPlansFromDistribution(counts, buckets));
+          setDayPattern(
+            resolveScheduleDayPattern(
+              courseId,
+              flat.map((s) => s.sessionDate),
+            ),
+          );
         }
       })
       .catch(() => {
@@ -205,6 +293,79 @@ export default function AdminCourseSchedulePage() {
     });
   }, []);
 
+  const resolveDayPatternStartDefault = useCallback(() => {
+    const existingDates = monthPlans
+      .flatMap((plan, m) => plan.sessions.slice(0, monthSessionCounts[m] ?? 0))
+      .map((s) => s.sessionDate)
+      .filter((d): d is string => !!d?.trim())
+      .sort();
+    return (
+      toDateInputValue(existingDates[0]) ||
+      toDateInputValue(scheduleBoundsFallback.start) ||
+      toLocalDateInputValue(new Date())
+    );
+  }, [monthPlans, monthSessionCounts, scheduleBoundsFallback.start]);
+
+  const resolveDayPatternHourDefault = useCallback((): DayPatternHour => {
+    const existingTimes = monthPlans
+      .flatMap((plan, m) => plan.sessions.slice(0, monthSessionCounts[m] ?? 0))
+      .map((s) => s.sessionTime?.trim() ?? "")
+      .filter(Boolean);
+    const match = existingTimes.find(isDayPatternHour);
+    return match ?? "08:00";
+  }, [monthPlans, monthSessionCounts]);
+
+  const applyDayPattern = useCallback(
+    (pattern: DayPattern, startDateInput: string, hour: DayPatternHour) => {
+      const total = monthSessionCounts.reduce((sum, n) => sum + n, 0);
+      if (total <= 0) {
+        toast.error(t("admin.courses.schedule.toast.minOneSession"));
+        return false;
+      }
+
+      const start = parseLocalDateInput(startDateInput);
+      if (!start) {
+        toast.error(t("admin.courses.schedule.toast.dayPatternStartRequired"));
+        return false;
+      }
+
+      const dates = collectPatternDates(start, total, pattern);
+      if (dates.length < total) {
+        toast.error(t("admin.courses.schedule.toast.dayPatternFillFailed"));
+        return false;
+      }
+
+      setMonthPlans((prev) => {
+        let offset = 0;
+        return prev.map((plan, m) => {
+          const n = monthSessionCounts[m] ?? 0;
+          const sessions = padScheduleSlots(n, plan.sessions).map((slot, i) => ({
+            ...slot,
+            sessionDate: dates[offset + i] ?? slot.sessionDate ?? "",
+            sessionTime: hour,
+          }));
+          offset += n;
+          return { ...plan, sessions };
+        });
+      });
+      setDayPattern(pattern);
+      setStoredScheduleDayPattern(courseId, pattern);
+      setScheduleBoundsFallback((prev) => ({
+        ...prev,
+        start: toDateInputValue(startDateInput) || prev.start,
+      }));
+      toast.success(
+        t(
+          pattern === "odd"
+            ? "admin.courses.schedule.toast.dayPatternOddApplied"
+            : "admin.courses.schedule.toast.dayPatternEvenApplied",
+        ),
+      );
+      return true;
+    },
+    [courseId, monthSessionCounts, t],
+  );
+
   const setMonthCount = useCallback((monthIdx: number, raw: string) => {
     const digits = raw.replace(/\D/g, "");
     let next = digits;
@@ -261,6 +422,16 @@ export default function AdminCourseSchedulePage() {
           sessionTime: s.sessionTime ?? "",
         })),
       });
+      const patternToPersist =
+        dayPattern ??
+        resolveScheduleDayPattern(
+          courseId,
+          merged.map((s) => s.sessionDate),
+        );
+      if (patternToPersist) {
+        setStoredScheduleDayPattern(courseId, patternToPersist);
+        setDayPattern(patternToPersist);
+      }
       const flatBack = padScheduleSlots(
         result.sessionCount,
         result.sessions.map((s) => ({
@@ -385,6 +556,137 @@ export default function AdminCourseSchedulePage() {
             </div>
 
             <div className="space-y-4">
+              {courseStatus !== "SCHEDULE_PENDING" ? (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                      {t("admin.courses.schedule.dayPattern.label")}
+                    </p>
+                    <p className="max-w-md text-xs leading-relaxed text-slate-500">
+                      {t("admin.courses.schedule.dayPattern.hint")}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10 shrink-0 rounded-xl border-slate-200 bg-white"
+                    onClick={() => {
+                      setDayPatternDraft(dayPattern ?? "odd");
+                      setDayPatternStartDraft(resolveDayPatternStartDefault());
+                      setDayPatternHourDraft(resolveDayPatternHourDefault());
+                      setDayPatternDialogOpen(true);
+                    }}
+                  >
+                    {dayPattern === "odd"
+                      ? t("admin.courses.schedule.dayPattern.odd")
+                      : dayPattern === "even"
+                        ? t("admin.courses.schedule.dayPattern.even")
+                        : t("admin.courses.schedule.dayPattern.openButton")}
+                  </Button>
+                </div>
+              ) : null}
+
+              <Dialog
+                open={dayPatternDialogOpen}
+                onOpenChange={setDayPatternDialogOpen}
+              >
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>{t("admin.courses.schedule.dayPattern.dialogTitle")}</DialogTitle>
+                    <DialogDescription>
+                      {t("admin.courses.schedule.dayPattern.dialogDescription")}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="admin-day-pattern-start">
+                        {t("admin.courses.schedule.dayPattern.courseStart")}
+                      </Label>
+                      <Input
+                        id="admin-day-pattern-start"
+                        type="date"
+                        value={dayPatternStartDraft}
+                        onChange={(e) => setDayPatternStartDraft(e.target.value)}
+                        className="bg-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="admin-day-pattern-select">
+                        {t("admin.courses.schedule.dayPattern.label")}
+                      </Label>
+                      <Select
+                        value={dayPatternDraft}
+                        onValueChange={(v) => setDayPatternDraft(v as DayPattern)}
+                      >
+                        <SelectTrigger id="admin-day-pattern-select" className="bg-white">
+                          <SelectValue
+                            placeholder={t("admin.courses.schedule.dayPattern.placeholder")}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="odd">
+                            {t("admin.courses.schedule.dayPattern.oddDetail")}
+                          </SelectItem>
+                          <SelectItem value="even">
+                            {t("admin.courses.schedule.dayPattern.evenDetail")}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="admin-day-pattern-hour">
+                        {t("admin.courses.schedule.dayPattern.hour")}
+                      </Label>
+                      <Select
+                        value={dayPatternHourDraft}
+                        onValueChange={(v) => {
+                          if (isDayPatternHour(v)) setDayPatternHourDraft(v);
+                        }}
+                      >
+                        <SelectTrigger id="admin-day-pattern-hour" className="bg-white">
+                          <SelectValue
+                            placeholder={t("admin.courses.schedule.dayPattern.hourPlaceholder")}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DAY_PATTERN_HOURS.map((hour) => (
+                            <SelectItem key={hour} value={hour}>
+                              {hour}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter className="gap-2 sm:gap-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setDayPatternDialogOpen(false)}
+                    >
+                      {t("common.cancel")}
+                    </Button>
+                    <Button
+                      type="button"
+                      className="bg-slate-900 hover:bg-slate-800"
+                      onClick={() => {
+                        if (
+                          applyDayPattern(
+                            dayPatternDraft,
+                            dayPatternStartDraft,
+                            dayPatternHourDraft,
+                          )
+                        ) {
+                          setDayPatternDialogOpen(false);
+                        }
+                      }}
+                    >
+                      {t("admin.courses.schedule.dayPattern.apply")}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
               {monthPlans.map((plan, monthIdx) => {
                 const sessionsCount = parseScheduleMonthSessionCount(plan.count.trim());
                 const sessionLabelOffset = monthSessionCounts
@@ -456,6 +758,7 @@ export default function AdminCourseSchedulePage() {
                               {Array.from({ length: sessionsCount }, (_, i) => {
                                 const slot = plan.sessions[i] ?? { title: "", sessionDate: "", sessionTime: "" };
                                 const globalNum = sessionLabelOffset + i + 1;
+                                const dayName = formatSessionDayName(slot.sessionDate);
                                 return (
                                   <div
                                     key={`${monthIdx}-${i}`}
@@ -484,6 +787,11 @@ export default function AdminCourseSchedulePage() {
                                           className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500"
                                         >
                                           Date
+                                          {dayName ? (
+                                            <span className="ml-1.5 font-medium normal-case tracking-normal text-slate-700">
+                                              · {dayName}
+                                            </span>
+                                          ) : null}
                                         </label>
                                         <Input
                                           id={`admin-meeting-date-${monthIdx}-${i}`}

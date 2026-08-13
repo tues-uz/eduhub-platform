@@ -1,0 +1,4090 @@
+{
+  "language": {
+    "title": "Til",
+    "displayLanguage": "Ko'rsatish tili",
+    "description": "EduHub bo'ylab ishlatiladigan tilni tanlang. Tarjimalar vaqt o'tishi bilan qo'shiladi.",
+    "selectPlaceholder": "Tilni tanlang"
+  },
+  "nav": {
+    "home": "Bosh sahifa",
+    "about": "Biz haqimizda",
+    "program": "Dastur",
+    "languageTraining": "Til o'rgatish dasturi",
+    "academicServices": "Akademik xizmatlar",
+    "register": "Ro'yxatdan o'tish",
+    "signIn": "Kirish"
+  },
+  "sidebar": {
+    "logout": "Chiqish",
+    "openMenu": "Menyuni ochish",
+    "closeMenu": "Menyuni yopish",
+    "notifications": "Bildirishnomalar",
+    "groups": {
+      "overview": "Umumiy",
+      "teaching": "O'qitish",
+      "account": "Hisob"
+    }
+  },
+  "teacherNav": {
+    "dashboard": "Boshqaruv paneli",
+    "allStudent": "Barcha talabalar",
+    "attendanceQr": "Davomat QR",
+    "class": "Sinflar",
+    "myClass": "Mening sinflarim",
+    "addNewClass": "Yangi sinf qo'shish",
+    "scheduleApprovals": "Jadval tasdiqlari",
+    "notifications": "Bildirishnomalar",
+    "payroll": "Ish haqi",
+    "settings": "Sozlamalar"
+  },
+  "studentNav": {
+    "dashboard": "Boshqaruv paneli",
+    "myClass": "Mening sinflarim",
+    "availableClasses": "Mavjud sinflar",
+    "paymentHistory": "To'lovlar tarixi",
+    "quiz": "Test",
+    "certificates": "Sertifikatlar",
+    "settings": "Sozlamalar"
+  },
+  "adminNav": {
+    "dashboard": "Boshqaruv paneli",
+    "notifications": "Bildirishnomalar",
+    "people": "Odamlar",
+    "studentsRegistrations": "Talabalar va ro'yxatdan o'tish",
+    "teachers": "O'qituvchilar",
+    "staff": "Xodimlar",
+    "users": "Foydalanuvchilar",
+    "addUserRole": "Foydalanuvchi rolini qo'shish",
+    "classes": "Sinflar",
+    "allClassesSchedules": "Barcha sinflar va jadvallar",
+    "enrollmentsWaitlist": "Yozilishlar va kutish ro'yxati",
+    "enrollmentApplications": "Yozilish arizalari",
+    "classesRosters": "Sinflar va ro'yxatlar",
+    "studentPromos": "Talaba aksiyalari",
+    "referralCodes": "Referral va chegirma kodlari",
+    "specialTuition": "Maxsus to'lov imtiyozlari",
+    "operations": "Operatsiyalar",
+    "paymentsReminders": "To'lovlar va eslatmalar",
+    "scheduleMonthPayments": "Jadval oylik to'lovlari",
+    "payroll": "Ish haqi",
+    "transactions": "Tranzaksiyalar",
+    "attendanceProgress": "Davomat va progress",
+    "placementTests": "Joylashtirish testlari",
+    "certifications": "Sertifikatlash",
+    "calendar": "Kalendar",
+    "supportSessions": "Qo'llab-quvvatlash sessiyalari",
+    "substituteRequests": "O'rniga o'tish so'rovlari",
+    "integrations": "Integratsiyalar",
+    "reports": "Hisobotlar",
+    "settings": "Sozlamalar"
+  },
+  "teacherSettings": {
+    "backToDashboard": "O'qituvchi paneliga qaytish",
+    "title": "Sozlamalar",
+    "subtitle": "O'qituvchi profilingiz va afzalliklaringizni boshqaring.",
+    "profile": "Profil",
+    "profilePicture": "Profil rasmi",
+    "profilePictureHint": "Sinflaringiz va talaba ko'rinishlarida ko'rsatiladi. JPEG, PNG yoki WebP. Maks. 8 MB.",
+    "uploading": "Yuklanmoqda…",
+    "changePhoto": "Rasmni almashtirish",
+    "uploadPhoto": "Rasm yuklash",
+    "remove": "O'chirish",
+    "displayName": "Ko'rsatiladigan ism",
+    "displayNamePlaceholder": "Ismingiz",
+    "accountDetails": "Hisob ma'lumotlari",
+    "accountDetailsHint": "O'qitish kategoriyasi admin tomonidan belgilanadi. Tuzatish kerak bo'lsa, qo'llab-quvvatlash bilan bog'laning.",
+    "fullName": "To'liq ism",
+    "email": "Email",
+    "phone": "Telefon",
+    "teachingCategory": "O'qitish kategoriyasi",
+    "memberSince": "A'zo bo'lgan sana",
+    "publishedClasses": "Nashr etilgan sinflar",
+    "notifications": "Bildirishnomalar",
+    "emailNotifications": "Email bildirishnomalar",
+    "emailNotificationsHint": "EduHubdan e'lonlar va hisob yangilanishlari.",
+    "payrollUpdates": "Ish haqi yangilanishlari",
+    "payrollUpdatesHint": "Admin sizning yuborishlaringiz bo'yicha to'lovni ko'rib chiqqanda.",
+    "scheduleApprovals": "Jadval tasdiqlari",
+    "scheduleApprovalsHint": "Yangi sinf jadvali ko'rib chiqish uchun yuborilganda.",
+    "changePassword": "Parolni o'zgartirish",
+    "saveChanges": "O'zgarishlarni saqlash"
+  },
+  "common": {
+    "loading": "Yuklanmoqda…",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "back": "Orqaga",
+    "edit": "Tahrirlash",
+    "delete": "O'chirish",
+    "add": "Qo'shish",
+    "search": "Qidirish",
+    "filter": "Filtr",
+    "close": "Yopish",
+    "confirm": "Tasdiqlash",
+    "yes": "Ha",
+    "no": "Yo'q",
+    "view": "Ko'rish",
+    "viewAll": "Hammasini ko'rish",
+    "submit": "Yuborish",
+    "continue": "Davom etish",
+    "retry": "Qayta urinish",
+    "refresh": "Yangilash",
+    "actions": "Amallar",
+    "status": "Holat",
+    "date": "Sana",
+    "name": "Ism",
+    "description": "Tavsif",
+    "optional": "Ixtiyoriy",
+    "required": "Majburiy",
+    "none": "Yo'q",
+    "all": "Hammasi",
+    "error": "Xatolik yuz berdi",
+    "noResults": "Natija topilmadi",
+    "comingSoon": "Tez orada",
+    "dashboard": "Boshqaruv paneli",
+    "home": "Bosh sahifa",
+    "settings": "Sozlamalar",
+    "notifications": "Bildirishnomalar",
+    "profile": "Profil",
+    "signOut": "Chiqish",
+    "notAvailable": "—"
+  },
+  "notFound": {
+    "title": "Voy! Sahifa topilmadi",
+    "description": "Qidirayotgan sahifangiz mavjud emas yoki ko'chirilgan.",
+    "returnHome": "Bosh sahifaga qaytish"
+  },
+  "auth": {
+    "signIn": {
+      "title": "Xush kelibsiz",
+      "subtitle": "O'qishni davom ettirish uchun hisobingizga kiring",
+      "emailOrPhone": "Email yoki telefon raqami",
+      "emailOrPhonePlaceholder": "Email yoki telefon raqamingizni kiriting",
+      "password": "Parol",
+      "passwordPlaceholder": "Parolingizni kiriting",
+      "rememberMe": "Meni eslab qol",
+      "forgotPassword": "Parolni unutdingizmi?",
+      "submit": "Kirish",
+      "submitting": "Kirilmoqda...",
+      "noAccount": "Hisobingiz yo'qmi?",
+      "signUp": "Ro'yxatdan o'tish",
+      "welcome": "Xush kelibsiz!",
+      "signedInAs": "{{name}} sifatida kirdingiz",
+      "signedInAsDemo": "{{name}} sifatida kirdingiz",
+      "passwordChangeRequired": "Parolni o'zgartirish talab qilinadi",
+      "passwordChangeRequiredDesc": "Davom etishdan oldin parolingizni o'zgartirishingiz kerak.",
+      "failed": "Kirish muvaffaqiyatsiz",
+      "invalidCredentials": "Noto'g'ri email yoki parol. Qayta urinib ko'ring.",
+      "invalidCredentialsShort": "Noto'g'ri email yoki parol.",
+      "logoAlt": "EduHub"
+    },
+    "signUp": {
+      "title": "Hisob yaratish",
+      "subtitle": "Bizga qo'shiling va o'qish safaringizni bugun boshlang",
+      "backToSignIn": "Kirish sahifasiga qaytish",
+      "personalDetails": "Shaxsiy ma'lumotlar",
+      "personalDetailsHint": "Aloqa va shaxsni tasdiqlash ma'lumotlari",
+      "educationAccount": "Ta'lim va hisob",
+      "educationAccountHint": "Ma'lumotlar va kirish ma'lumotlari",
+      "stepsAria": "Ro'yxatdan o'tish bosqichlari",
+      "continue": "Davom etish",
+      "back": "Orqaga",
+      "completeStep": "Iltimos, ushbu bosqichdagi majburiy maydonlarni to'ldiring.",
+      "invalidEmail": "Iltimos, yaroqli email kiriting.",
+      "fullName": "To'liq ism",
+      "fullNamePlaceholder": "To'liq ismingizni kiriting",
+      "email": "Email manzili",
+      "emailPlaceholder": "Emailingizni kiriting",
+      "passportNumber": "Pasport raqami",
+      "passportPlaceholder": "Pasport raqami",
+      "passportLocal": "Mahalliy pasport",
+      "passportLocalPlaceholder": "Milliy / mahalliy pasport raqami",
+      "passportInternational": "Xalqaro pasport",
+      "passportInternationalPlaceholder": "Xalqaro pasport raqami",
+      "optional": "ixtiyoriy",
+      "passportLocalImage": "Mahalliy pasport rasmi",
+      "passportInternationalImage": "Xalqaro pasport rasmi",
+      "passportImageHint": "JPEG, PNG yoki WebP · max 8 MB",
+      "passportImageBrowse": "Rasm yuklash",
+      "passportImageReplace": "Almashtirish",
+      "passportImageRemove": "O'chirish",
+      "passportImageRequired": "Iltimos, mahalliy pasport rasmini yuklang.",
+      "passportImageInvalidType": "JPEG, PNG yoki WebP rasm tanlang.",
+      "passportImageTooLarge": "Rasm 8 MB dan kichik bo'lishi kerak.",
+      "passportImageUploadFailed": "Pasport rasmini yuklab bo'lmadi. Keyinroq sozlamalardan urinib ko'ring.",
+      "yourPhone": "Telefon raqamingiz",
+      "yourPhonePlaceholder": "Raqamingiz",
+      "parentPhone": "Ota-ona telefon raqami",
+      "parentPhonePlaceholder": "Ota-ona / vasiylik",
+      "countryCode": "Mamlakat kodi",
+      "dateOfBirth": "Tug'ilgan sana",
+      "bornCity": "Tug'ilgan shahar",
+      "bornCityPlaceholder": "Tug'ilgan shahar",
+      "latestSchool": "Oxirgi maktab, universitet yoki muassasa",
+      "latestSchoolPlaceholder": "Eng so'nggi maktab, universitet yoki muassasangiz",
+      "latestSchoolExternalLabel": "Muassasa nomi",
+      "latestSchoolRequired": "Maktab, universitet yoki muassasa nomini kiriting.",
+      "studentAffiliation": "Maktab yoki universitet",
+      "studentAffiliationHint": "TUES University talabasimi yoki boshqa muassasadanmisiz?",
+      "studentAffiliationInternal": "Ichki",
+      "studentAffiliationInternalTitle": "TUES University",
+      "studentAffiliationInternalHint": "TUES University talabasisiz",
+      "studentAffiliationInternalConfirmed": "{{university}} ichki talabasi sifatida ro'yxatdan o'tasiz.",
+      "faculty": "Fakultet",
+      "facultyPlaceholder": "masalan, Muhandislik fakulteti",
+      "facultyHint": "TUES Universitydagi fakultet yoki bo'limingizni kiriting.",
+      "facultyRequired": "Fakultetingizni kiriting.",
+      "studentAffiliationExternal": "Tashqi",
+      "studentAffiliationExternalTitle": "Boshqa muassasa",
+      "studentAffiliationExternalHint": "Boshqa maktab, universitet yoki tashkilotdan",
+      "studentAffiliationRequired": "Ichki yoki tashqi talabalikni tanlang.",
+      "password": "Parol",
+      "passwordPlaceholder": "Parol yarating",
+      "confirmPassword": "Parolni tasdiqlang",
+      "confirmPasswordPlaceholder": "Parolni tasdiqlang",
+      "termsPrefix": "Men quyidagilarga roziman:",
+      "termsOfService": "Xizmat ko'rsatish shartlari",
+      "termsAnd": "va",
+      "privacyPolicy": "Maxfiylik siyosati",
+      "submit": "Hisob yaratish",
+      "submitting": "Hisob yaratilmoqda...",
+      "hasAccount": "Allaqachon hisobingiz bormi?",
+      "signIn": "Kirish",
+      "passwordsMismatch": "Parollar mos kelmaydi",
+      "welcome": "Xush kelibsiz!",
+      "accountCreated": "Hisobingiz yaratildi.",
+      "registerFailed": "Ro'yxatdan o'tish muvaffaqiyatsiz. Qayta urinib ko'ring.",
+      "logoAlt": "EduHub"
+    },
+    "forgotPassword": {
+      "title": "Parolni unutdingizmi?",
+      "subtitle": "Emailingizni kiriting va parolni tiklash havolasini yuboramiz.",
+      "email": "Email manzili",
+      "emailPlaceholder": "Email manzilingizni kiriting",
+      "submit": "Tiklash havolasini yuborish",
+      "submitting": "Yuborilmoqda...",
+      "backToSignIn": "Kirish sahifasiga qaytish",
+      "successTitle": "Emailingizni tekshiring",
+      "successMessage": "<strong>{{email}}</strong> uchun hisob mavjud bo'lsa, parolni tiklash havolasi yuborildi. Havola qisqa vaqt ichida amal qiladi.",
+      "successHint": "Xat kelmadimi? Spam papkasini tekshiring yoki xuddi shu email bilan qayta urinib ko'ring.",
+      "sendAgain": "Qayta yuborish",
+      "toastTitle": "Emailingizni tekshiring",
+      "toastDescription": "Ushbu manzil uchun hisob mavjud bo'lsa, parolni tiklash ko'rsatmalarini yubordik.",
+      "logoAlt": "EduHub"
+    },
+    "resetPassword": {
+      "invalidLinkTitle": "Noto'g'ri tiklash havolasi",
+      "invalidLinkDesc": "Bu parolni tiklash havolasi yo'q yoki noto'g'ri. Yangisini so'rang.",
+      "requestNewLink": "Yangi havola so'rash",
+      "title": "Parolni tiklash",
+      "subtitle": "Hisobingiz uchun yangi parol tanlang.",
+      "newPassword": "Yangi parol",
+      "newPasswordPlaceholder": "Yangi parolni kiriting",
+      "confirmPassword": "Yangi parolni tasdiqlang",
+      "confirmPasswordPlaceholder": "Yangi parolni tasdiqlang",
+      "submit": "Parolni tiklash",
+      "submitting": "Yangilanmoqda...",
+      "requestAnotherLink": "Yangi tiklash havolasini so'rash",
+      "successTitle": "Parol yangilandi",
+      "successDesc": "Parolingiz muvaffaqiyatli tiklandi. Endi yangi parol bilan kirishingiz mumkin.",
+      "goToSignIn": "Kirish sahifasiga o'tish",
+      "toastTitle": "Parol tiklandi",
+      "toastDescription": "Parolingiz yangilandi. Endi tizimga kirishingiz mumkin.",
+      "missingToken": "Noto'g'ri yoki yo'q tiklash havolasi. Yangi parol tiklash emailini so'rang.",
+      "passwordsMismatch": "Parollar mos kelmaydi",
+      "passwordTooShort": "Parol kamida 8 ta belgidan iborat bo'lishi kerak",
+      "resetFailed": "Parolni tiklash muvaffaqiyatsiz. Havola muddati o'tgan bo'lishi mumkin — yangisini so'rang."
+    },
+    "changePassword": {
+      "title": "Parolni o'zgartirish",
+      "subtitle": "Davom etishdan oldin parolingizni o'zgartirishingiz kerak",
+      "currentPassword": "Joriy parol",
+      "currentPasswordPlaceholder": "Joriy parolni kiriting",
+      "newPassword": "Yangi parol",
+      "newPasswordPlaceholder": "Yangi parolni kiriting",
+      "confirmPassword": "Yangi parolni tasdiqlang",
+      "confirmPasswordPlaceholder": "Yangi parolni tasdiqlang",
+      "submit": "Parolni o'zgartirish",
+      "submitting": "Parol o'zgartirilmoqda...",
+      "passwordsMismatch": "Yangi parollar mos kelmaydi",
+      "passwordTooShort": "Parol kamida 8 ta belgidan iborat bo'lishi kerak",
+      "sameAsCurrent": "Yangi parol joriy paroldan farq qilishi kerak",
+      "stillRequired": "Parolni o'zgartirish hali talab qilinadi. Boshqa parol tanlang.",
+      "changeFailed": "Parolni o'zgartirish muvaffaqiyatsiz. Joriy parolingizni tekshiring.",
+      "toastTitle": "Parol o'zgartirildi",
+      "toastDescription": "Parolingiz muvaffaqiyatli yangilandi."
+    },
+    "verifyEmail": {
+      "loadingTitle": "Emailingiz tasdiqlanmoqda...",
+      "loadingDesc": "Email manzilingizni tasdiqlash uchun kuting.",
+      "successTitle": "Email tasdiqlandi!",
+      "successDesc": "Email manzilingizni tasdiqlaganingiz uchun rahmat. Endi hisobingizga kirishingiz mumkin.",
+      "goToSignIn": "Kirish sahifasiga o'tish",
+      "failedTitle": "Tasdiqlash muvaffaqiyatsiz",
+      "backToSignIn": "Kirish sahifasiga qaytish",
+      "noToken": "Tasdiqlash tokeni berilmagan.",
+      "verifyFailed": "Emailni tasdiqlash muvaffaqiyatsiz. Havola muddati o'tgan bo'lishi mumkin."
+    }
+  },
+  "pageHeader": {
+    "backToClass": "Darsga qaytish",
+    "backToMyClass": "Mening darsimga qaytish",
+    "notifications": "Bildirishnomalar",
+    "assignments": "Topshiriqlar",
+    "schedule": "Jadval",
+    "progress": "Progress",
+    "congratulations": "Tabriklaymiz",
+    "attendanceCheckIn": "Davomatni belgilash",
+    "appName": "EduHub"
+  },
+  "settings": {
+    "subtitle": "Hisobingiz va sozlamalaringizni boshqaring.",
+    "profile": "Profil",
+    "profilePicture": "Profil rasmi",
+    "profilePictureHint": "JPEG, PNG yoki WebP. Maks. 8 MB.",
+    "uploading": "Yuklanmoqda…",
+    "changePhoto": "Rasmni almashtirish",
+    "uploadPhoto": "Rasm yuklash",
+    "remove": "Olib tashlash",
+    "displayName": "Ko'rsatiladigan ism",
+    "displayNamePlaceholder": "Ismingiz",
+    "emailPlaceholder": "email@example.com",
+    "registrationDetails": "Ro'yxatdan o'tish ma'lumotlari",
+    "registrationDetailsHint": "Hisob yaratganingizda taqdim etilgan ma'lumotlar. Tuzatish kerak bo'lsa, qo'llab-quvvatlash bilan bog'laning.",
+    "fullName": "To'liq ism",
+    "emailAddress": "Email manzili",
+    "yourPhone": "Telefon raqamingiz",
+    "parentPhone": "Ota-ona telefon raqami",
+    "passportNumber": "Mahalliy pasport",
+    "passportInternational": "Xalqaro pasport",
+    "passportLocalImage": "Mahalliy pasport rasmi",
+    "passportInternationalImage": "Xalqaro pasport rasmi",
+    "dateOfBirth": "Tug'ilgan sana",
+    "bornCity": "Tug'ilgan shahar",
+    "latestSchool": "Oxirgi maktab, universitet yoki muassasa",
+    "notifications": "Bildirishnomalar",
+    "emailNotifications": "Email bildirishnomalari",
+    "emailNotificationsHint": "EduHub yangiliklari va hisob yangilanishlarini email orqali oling.",
+    "classReminders": "Dars eslatmalari",
+    "classRemindersHint": "Topshiriqlar va jonli darslar uchun eslatmalar.",
+    "saveChanges": "O'zgarishlarni saqlash",
+    "toastInvalidImage": "Iltimos, rasm faylini tanlang (JPEG, PNG, WebP va h.k.).",
+    "toastImageTooLarge": "Rasm 8 MB yoki undan kichik bo'lishi kerak.",
+    "toastAvatarUpdated": "Profil rasmi yangilandi",
+    "toastAvatarUploadFailed": "Profil rasmini yuklab bo'lmadi",
+    "toastAvatarRemoved": "Profil rasmi olib tashlandi",
+    "toastSaved": "Sozlamalar saqlandi"
+  },
+  "dashboard": {
+    "welcome": "Salom {{name}}, xush kelibsiz",
+    "subtitle": "Bugun darslaringizda nima bo'layotgani",
+    "statsClassesEnrolled": "Yozilgan darslar",
+    "statsCertificates": "Sertifikatlar",
+    "statsProgress": "Progress",
+    "upcomingSchedule": "Yaqinlashayotgan jadval",
+    "viewAll": "Hammasini ko'rish",
+    "loadingSchedule": "Jadvalingiz yuklanmoqda…",
+    "noEnrolledTitle": "Hali darslarga yozilmagansiz",
+    "noEnrolledHint": "Yaqinlashayotgan darslarni ko'rish uchun darsga yoziling.",
+    "browseClasses": "Darslarni ko'rish",
+    "noSessionsTitle": "Rejalashtirilgan darslar yo'q",
+    "noSessionsHint": "O'qituvchingiz tez orada dars jadvalini e'lon qilishi mumkin.",
+    "viewMyClass": "Mening darsim",
+    "quickActions": "Tezkor harakatlar",
+    "viewProgress": "Progressni ko'rish",
+    "recentActivity": "So'nggi faoliyat",
+    "noRecentActivity": "Hozircha faoliyat yo'q.",
+    "overallProgress": "Umumiy progress",
+    "completionRate": "Tugatish darajasi",
+    "classesCompleted": "Tugatilgan darslar",
+    "avgScore": "O'rtacha ball",
+    "live": "Jonli",
+    "today": "Bugun",
+    "tomorrow": "Ertaga",
+    "tba": "Aniqlanmagan"
+  },
+  "courses": {
+    "title": "Mening darsim",
+    "subtitle": "Yozilgan darslaringiz haqida ma'lumot. O'rganishni davom eting yoki tugatilgan darslarni ko'rib chiqing.",
+    "moreClasses": "Ko'proq darslar",
+    "totalEnrolled": "Jami yozilgan",
+    "inProgress": "Jarayonda",
+    "completed": "Tugatilgan",
+    "searchPlaceholder": "Dars nomi, o'qituvchi yoki kategoriya bo'yicha qidirish...",
+    "filterAll": "Hammasi",
+    "filterInProgress": "Jarayonda",
+    "filterAlmostComplete": "Deyarli tugallangan",
+    "filterCompleted": "Tugatilgan",
+    "classesFound_one": "{{count}} dars topildi",
+    "classesFound_other": "{{count}} dars topildi",
+    "joined": "Qo'shilgan: {{date}}",
+    "instructor": "O'qituvchi",
+    "schedule": "Jadval",
+    "sessions": "darslar",
+    "upNext": "Keyingisi",
+    "yourProgress": "Sizning progressingiz",
+    "reviewClass": "Darsni ko'rib chiqish",
+    "continueLearning": "O'rganishni davom etish",
+    "emptyTitle": "Filtrlaringizga mos darslar yo'q.",
+    "emptyHint": "Boshqa qidiruv yoki holat filtrini sinab ko'ring.",
+    "clearFilters": "Filtrlarni tozalash",
+    "lesson_one": "dars",
+    "lesson_other": "dars"
+  },
+  "availableCourses": {
+    "title": "Mavjud darslar",
+    "subtitle": "EduHub'dagi darslarni ko'ring va yoziling. O'qituvchilar belgilagan narxlari ko'rsatiladi.",
+    "searchPlaceholder": "Dars nomi, o'qituvchi yoki kategoriya bo'yicha qidirish...",
+    "allCategories": "Barcha kategoriyalar",
+    "starts": "Boshlanishi",
+    "ends": "Tugashi",
+    "tba": "Aniqlanmagan",
+    "instructor": "O'qituvchi",
+    "sessions": "Darslar",
+    "sessionsLabel": "dars",
+    "tuition": "To'lov",
+    "externalTuitionNote": "External student tuition (+50,000).",
+    "scheduleComplete": "Jadval tugallangan",
+    "free": "Bepul",
+    "continueLearning": "O'rganishni davom etish",
+    "viewApplication": "Arizani ko'rish",
+    "applyAgain": "Qayta ariza berish",
+    "joinClass": "Darsga qo'shilish",
+    "module_one": "modul",
+    "module_other": "modul",
+    "emptyNoClassesTitle": "Hali darslar mavjud emas. O'qituvchilar o'z panelidan dars yaratishi mumkin.",
+    "emptyNoClassesHint": "Keyinroq qaytib keling yoki o'qituvchingizdan dars e'lon qilishini so'rang.",
+    "emptyNoMatchTitle": "Qidiruvingizga mos darslar yo'q.",
+    "emptyNoMatchHint": "Boshqa qidiruvni sinab ko'ring.",
+    "myClass": "Mening darsim",
+    "clearFilters": "Filtrlarni tozalash",
+    "defaultCategory": "Dars",
+    "dayPatternOdd": "Toq kun",
+    "dayPatternEven": "Juft kun"
+  },
+  "classSearch": {
+    "placeholder": "Darslarni qidirish…",
+    "ariaLabel": "Darslarni qidirish",
+    "loading": "Darslar yuklanmoqda…",
+    "myClass": "Mening darsim",
+    "browse": "Ko'rish",
+    "noMatch": "“{{query}}” ga mos darslar yo'q.",
+    "viewAllResults": "Barcha natijalarni ko'rish"
+  },
+  "promo": {
+    "label": "Aksiya",
+    "ariaLabel": "Aksiyalar",
+    "goToPromotion": "{{index}}-aksiyaga o'tish",
+    "previous": "Oldingi aksiya",
+    "next": "Keyingi aksiya"
+  },
+  "starRating": {
+    "star_one": "{{count}} yulduz",
+    "star_other": "{{count}} yulduz"
+  },
+  "assignments": {
+    "subtitle": "Dars topshiriqlaringizni ko'ring va bajaring.",
+    "pending": "{{count}} kutilmoqda",
+    "completed": "{{count}} bajarilgan",
+    "loading": "Topshiriqlar yuklanmoqda...",
+    "loadFailed": "Topshiriqlarni yuklab bo'lmadi",
+    "empty": "Yozilgan darslaringizda topshiriqlar topilmadi.",
+    "graded": "Baholangan",
+    "submitted": "Topshirilgan",
+    "noDueDate": "Muddat belgilanmagan",
+    "due": "Muddat: {{date}}",
+    "submittedAt": "Topshirilgan: {{date}}",
+    "overdue": "Muddati o'tgan",
+    "daysLeft_one": "{{count}} kun qoldi",
+    "daysLeft_other": "{{count}} kun qoldi",
+    "viewSubmission": "Topshirilgan ishni ko'rish",
+    "closed": "Yopilgan",
+    "start": "Boshlash",
+    "priorityHigh": "YUQORI",
+    "priorityMedium": "O'RTA",
+    "priorityLow": "PAST"
+  },
+  "schedulePage": {
+    "subtitle": "Yaqinlashayotgan darslar va topshiriq muddatlari.",
+    "viewCalendar": "Kalendarni ko'rish",
+    "due": "Muddat: {{date}}",
+    "join": "Qo'shilish",
+    "open": "Ochish"
+  },
+  "progressPage": {
+    "subtitle": "Barcha darslardagi o'rganish progressingizni kuzating.",
+    "overallCompletion": "Umumiy tugatish",
+    "classesCompleted": "Tugatilgan darslar",
+    "avgScore": "O'rtacha ball",
+    "byClass": "Dars bo'yicha",
+    "empty": "Siz hali hech qanday darsga yozilmagansiz."
+  },
+  "notificationsPage": {
+    "subtitle": "So'nggi faoliyatingiz va yangilanishlar.",
+    "unread": "{{count}} o'qilmagan",
+    "markAllRead": "Hammasini o'qilgan deb belgilash",
+    "searchPlaceholder": "Bildirishnomalarni qidirish…",
+    "filterAllTypes": "Barcha turlar",
+    "filterEnrollment": "Yozilish",
+    "filterClass": "Dars",
+    "filterPayment": "To'lov",
+    "filterCertificate": "Sertifikat",
+    "filterSchedule": "Jadval",
+    "filterAttendance": "Davomat",
+    "filterOther": "Boshqa",
+    "filterAll": "Hammasi",
+    "filterUnread": "O'qilmagan",
+    "filterRead": "O'qilgan",
+    "count_one": "{{count}} bildirishnoma",
+    "count_other": "{{count}} bildirishnoma",
+    "loading": "Bildirishnomalar yuklanmoqda…",
+    "emptyTitle": "Hali bildirishnomalar yo'q.",
+    "emptyHint": "Yozilish qarorlari va boshqa yangilanishlar shu yerda paydo bo'ladi.",
+    "noMatchTitle": "Filtrlaringizga mos bildirishnomalar yo'q.",
+    "noMatchHint": "Qidiruv yoki filtrlarni o'zgartirib ko'ring.",
+    "clearFilters": "Filtrlarni tozalash"
+  },
+  "certificates": {
+    "subtitle1": "O'qituvchingiz yakuniy ballardan keyin e'lon qilgan sertifikatlar.",
+    "subtitle2": "PDF yuklab olishdan oldin dars tugatish sahifasida o'qituvchi va Edu Hub haqida fikr bildiring.",
+    "earned_one": "{{count}} sertifikat olingan",
+    "earned_other": "{{count}} sertifikat olingan",
+    "awaitingFeedback": "{{count}} fikr kutilmoqda",
+    "loading": "Sertifikatlar yuklanmoqda…",
+    "loadFailed": "Sertifikatlarni yuklab bo'lmadi. Keyinroq qayta urinib ko'ring.",
+    "emptyTitle": "Hali sertifikatlar yo'q",
+    "emptyHint": "O'qituvchingiz yakuniy ballni saqlab, dars Baholar bo'limidan sertifikatni e'lon qilgandan keyin ular shu yerda paydo bo'ladi.",
+    "ready": "Tayyor",
+    "feedbackRequired": "Fikr talab qilinadi",
+    "finalScore": "Yakuniy ball",
+    "issued": "Berilgan sana",
+    "instructor": "O'qituvchi",
+    "downloadPdf": "PDF yuklab olish",
+    "downloadLocked": "Yuklab olish qulflangan",
+    "completionPageLink": "Dars tugatish sahifasi",
+    "submitFeedbackHint": "— yuklab olish uchun fikr bildiring.",
+    "toastDownloaded": "Sertifikat yuklab olindi",
+    "toastDownloadFailed": "Sertifikat PDF yaratib bo'lmadi"
+  },
+  "quiz": {
+    "loading": "Testlar yuklanmoqda…",
+    "emptyTitle": "Hali testlar yo'q",
+    "emptyDescription": "O'qituvchingiz yozilgan darslaringizga test qo'shganda, ular shu yerda paydo bo'ladi.",
+    "goToMyClass": "Mening darsimga o'tish",
+    "subtitle": "Testni tanlang va ko'p tanlovli savollarga javob bering (A, B, C, D).",
+    "completed": "Tugatilgan",
+    "questions_one": "{{count}} savol",
+    "questions_other": "{{count}} savol",
+    "done": "Tayyor",
+    "start": "Boshlash",
+    "questionProgress": "Savol {{current}} / {{total}}",
+    "submitting": "Yuborilmoqda...",
+    "nextQuestion": "Keyingi savol",
+    "submit": "Yuborish",
+    "completeTitle": "Test tugadi!",
+    "yourScore": "Sizning ballingiz",
+    "correctCount": "{{total}} ta savoldan {{correct}} tasi to'g'ri.",
+    "backToQuizzes": "Testlarga qaytish",
+    "submitFailed": "Testni yuborib bo'lmadi. Qayta urinib ko'ring."
+  },
+  "placementTests": {
+    "loading": "Daraja testlari yuklanmoqda…",
+    "loadFailedTitle": "Daraja testlarini yuklab bo'lmadi",
+    "loadFailedHint": "Ulanishni tekshirib, qayta urinib ko'ring.",
+    "tryAgain": "Qayta urinish",
+    "emptyTitle": "Hali daraja testlari yo'q",
+    "emptyDescription": "Maktabingiz daraja testlarini e'lon qilganda, ular shu yerda paydo bo'ladi.",
+    "browseClasses": "Darslarni ko'rish",
+    "subtitle": "Darsni boshlashdan oldin darajangizni baholang.",
+    "completed": "Tugatilgan",
+    "assessingLevel": "Daraja baholanmoqda",
+    "retake": "Qayta topshirish",
+    "startNow": "Hozir boshlash",
+    "nextStep": "Keyingi qadam",
+    "submitTest": "Testni yuborish",
+    "submitting": "Yuborilmoqda...",
+    "cancel": "Bekor qilish",
+    "greatJob": "Ajoyib ish!",
+    "completedMessage": "Siz {{title}} ni muvaffaqiyatli tugatdingiz.",
+    "yourScore": "Sizning ballingiz",
+    "exploreMyClass": "Mening darsimni ko'rish",
+    "submitFailed": "Daraja testini yuborib bo'lmadi. Qayta urinib ko'ring."
+  },
+  "payment": {
+    "subtitle": "Yozilish arizalari uchun to'lov tarixi, hisob-fakturalar va kvitansiyalar. Rasmiy raqamlar maktab arizangizni tasdiqlagandan keyin beriladi.",
+    "availableClasses": "Mavjud darslar",
+    "loading": "Arizalar yuklanmoqda...",
+    "emptyTitle": "Hali to'lov faoliyati yo'q",
+    "emptyHint": "Yozilib, o'tkazma dalilini yuklaganingizda, arizalaringiz shu yerda ko'rsatiladi.",
+    "browseClasses": "Darslarni ko'rish",
+    "searchPlaceholder": "Dars, hisob-faktura, kvitansiya, holat bo'yicha qidirish…",
+    "filterAllStatuses": "Barcha holatlar",
+    "filterPending": "Ko'rib chiqilmoqda",
+    "filterApproved": "Tasdiqlangan",
+    "filterRejected": "Rad etilgan",
+    "noMatch": "Qidiruv yoki filtrga mos to'lovlar yo'q.",
+    "submitted": "Yuborilgan",
+    "class": "Dars",
+    "invoiceNumber": "Hisob-faktura #",
+    "receiptNumber": "Kvitansiya #",
+    "status": "Holat",
+    "actions": "Harakatlar",
+    "details": "Tafsilotlar",
+    "viewDetails": "Tafsilotlarni ko'rish",
+    "invoice": "Hisob-faktura",
+    "receipt": "Kvitansiya",
+    "toastPdfFailed": "PDF yaratib bo'lmadi",
+    "toastPdfFailedHint": "Ushbu ariza uchun to'lov summasi yo'q.",
+    "installmentsLeft": "· {{count}} bo'lib to'lov qoldi",
+    "preparingPdf": "PDF tayyorlanmoqda…",
+    "downloadPdfEn": "PDF yuklab olish (English)",
+    "downloadPdfUz": "PDF yuklab olish (O'zbek)",
+    "downloadInvoiceEn": "Hisob-faktura yuklab olish (English)",
+    "downloadInvoiceUz": "Hisob-faktura yuklab olish (O'zbek)",
+    "pdfAvailableAfterApproval": "Invoice and receipt PDFs are available after the school approves your enrollment application.",
+    "pdfNotAvailableRejected": "This application was not approved. Official invoice and receipt PDFs are not available.",
+    "outstandingTitle": "Remaining tuition",
+    "outstandingHint": "Pay the next schedule month to unlock attendance QR for those sessions.",
+    "outstandingChecking": "Checking remaining tuition…",
+    "outstandingPayNow": "Pay now",
+    "trial": {
+      "badge": "Trial",
+      "codeLabel": "Trial class code",
+      "sectionTitle": "Trial classes",
+      "sectionHint": "Enrollments that used a trial code. Pay tuition when you're ready to continue beyond the trial.",
+      "detailSectionTitle": "Trial enrollment",
+      "pendingReview": "Your trial code was submitted with this application. After approval you'll have trial access to this class.",
+      "approvedMessage": "You're enrolled with trial access for this class.",
+      "rejectedMessage": "This application included a trial code but was not approved.",
+      "continueHint": "Pay tuition to continue in this class and unlock attendance for upcoming schedule months.",
+      "continueSubhint": "Submit a transfer when you're ready to move from trial to paid enrollment.",
+      "payToContinue": "Pay tuition to continue",
+      "loading": "Checking trial enrollments…"
+    }
+  },
+  "attendance": {
+    "eyebrowCheckIn": "Davomatni belgilash",
+    "invalidLinkTitle": "Noto'g'ri belgilash havolasi",
+    "invalidLinkDescription": "Bu QR-kodda dars ma'lumotlari yo'q. Darsdagi kodni skanerlang yoki o'qituvchingizdan qayta ko'rsatishini so'rang.",
+    "backToDashboard": "Bosh sahifaga qaytish",
+    "almostThere": "Deyarli tayyor",
+    "signInTitle": "Belgilash uchun kiring",
+    "signInDescription": "Talaba hisobingiz bilan kiring, shunda skaner siz bilan bog'lanadi va davomat qayd etiladi.",
+    "signInAndCheckIn": "Kirish va belgilash",
+    "maybeLater": "Keyinroq",
+    "youreIn": "Siz qo'shildingiz!",
+    "classCheckIn": "Dars belgilash",
+    "alreadyCheckedIn": "Allaqachon belgilangan",
+    "checkInComplete": "Belgilash tugallandi!",
+    "tuitionRequired": "To'lov talab qilinadi",
+    "somethingWrong": "Nimadir noto'g'ri ketdi",
+    "checkInClosed": "Belgilash yopilgan",
+    "recording": "Qayd etilmoqda...",
+    "checkingAccess": "Kirish tekshirilmoqda...",
+    "gettingReady": "Tayyorlanmoqda...",
+    "couldNotLoadSession": "Bu darsni yuklab bo'lmadi.",
+    "loadingSession": "Dars sessiyasi yuklanmoqda, biroz kuting.",
+    "payScheduleMonth": "Ushbu jadval oyini to'lash",
+    "checkInClosedSince": "Belgilash yopilgan{{since}}. Dars hali davom etsa, o'qituvchingizdan yangi QR so'rang.",
+    "since": " {{time}} dan beri",
+    "alreadyOnRoster": "Siz ushbu sessiya ro'yxatidasiz.",
+    "attendanceSaved": "Ajoyib — davomatingiz dars ro'yxatida saqlandi.",
+    "savingCheckIn": "Belgilash saqlanmoqda...",
+    "checkingTuition": "Ushbu sessiya uchun to'lov tekshirilmoqda...",
+    "oneMoment": "Bir lahza...",
+    "studentCheckIn": "Talaba belgilash",
+    "qrForStudentsTitle": "Bu QR talabalar uchun",
+    "qrForStudentsDescription": "Belgilashni yakunlash uchun talaba hisobi bilan kiring yoki o'qituvchi Davomat QR vositasini oching.",
+    "attendanceQrLink": "Davomat QR",
+    "signInAsStudent": "Talaba sifatida kirish",
+    "teacherQrTool": "O'qituvchi QR vositasi",
+    "toastAlreadyRecorded": "Davomat allaqachon qayd etilgan",
+    "toastRecorded": "Davomat belgilash qayd etildi",
+    "toastRecordedHint": "O'qituvchingiz endi bu belgilashni davomat ro'yxatida ko'radi.",
+    "loadSessionFailed": "Davomat sessiyasini yuklab bo'lmadi.",
+    "recordFailed": "Davomat belgilashni qayd etib bo'lmadi."
+  },
+  "courseDetail": {
+    "loading": "Dars yuklanmoqda…",
+    "notFound": "Dars topilmadi.",
+    "backToMyClass": "Mening darsimga qaytish",
+    "enrollmentPending": "Yozilish ko'rib chiqilmoqda",
+    "enrollmentRejected": "Yozilish tasdiqlanmadi",
+    "enrollmentRequired": "Yozilish talab qilinadi",
+    "enrollmentPendingHint": "Administrator arizangizni ko'rib chiqmoqda. Tasdiqlangandan keyin darsni ochishingiz mumkin.",
+    "enrollmentRejectedHint": "Joriy arizangiz bilan bu darsga kira olmaysiz. Tafsilotlar uchun Bildirishnomalarni tekshiring yoki qayta ariza berish uchun Mavjud darslarni ko'ring.",
+    "enrollmentRequiredHint": "Mavjud darslardan kirish so'rang va administrator tasdiqlashini kuting.",
+    "browseClasses": "Darslarni ko'rish",
+    "notifications": "Bildirishnomalar",
+    "joined": "Qo'shilgan: {{date}}",
+    "modules": "modul",
+    "taughtBy": "O'qituvchi",
+    "yourProgress": "Sizning progressingiz",
+    "tuition": "To'lov",
+    "free": "Bepul",
+    "classStatistics": "Dars statistikasi",
+    "lessons": "Darslar",
+    "studentsJoined": "Qo'shilgan talabalar",
+    "totalSessions": "Jami darslar",
+    "schedule": "Jadval",
+    "starts": "Boshlanishi: {{date}}",
+    "ends": "Tugashi: {{date}}",
+    "tabContentShort": "Kontent",
+    "tabContent": "Dars kontenti",
+    "tabResume": "Resume",
+    "tabQuiz": "Test",
+    "tabAttendance": "Davomat",
+    "scanQr": "QR skanerlash",
+    "scanAttendanceQr": "Davomat QR skanerlash",
+    "classContent": "Dars kontenti",
+    "continueLesson": "Davom etish: {{title}}",
+    "completed": "Tugatilgan",
+    "view": "Ko'rish",
+    "start": "Boshlash",
+    "completePreviousLesson": "Avval oldingi darsni tugating",
+    "placementQuizTitle": "Daraja testi / Test",
+    "placementQuizHint": "O'qituvchingiz testlari Test bo'limida ham paydo bo'ladi. Tayyor bo'lganda testni boshlang.",
+    "openQuizTab": "Test bo'limini ochish",
+    "enrollForResume": "O'qituvchi resume va qayta ko'rib chiqish eslatmalarini o'qish uchun avval darsga yoziling.",
+    "resumeRecapsHint": "O'qituvchingiz eslatmalari (eng yangisi birinchi).",
+    "classResume": "Dars resume",
+    "generalRecap": "Umumiy qayta ko'rib chiqish",
+    "updated": "Yangilangan: {{date}}",
+    "resumeThumbnailAlt": "Resume miniatyurasi",
+    "noResumesTitle": "Hali dars resume yo'q",
+    "noResumesHint": "O'qituvchingiz ushbu dars uchun eslatma e'lon qilganda, ular shu yerda paydo bo'ladi.",
+    "enrollForQuiz": "O'qituvchi testlarini ko'rish uchun avval darsga yoziling.",
+    "quizBrowserOnly": "Bu dars faqat brauzerda saqlangan. Platformaga ulanganda o'qituvchi testlari shu yerda yuklanadi.",
+    "quizCatalogHint": "Testlar serverdagi katalog darslari uchun yuklanadi. O'qituvchi testlarini bu yerda topshirish uchun Mening darsimdan dars oching.",
+    "loadingQuizzes": "Testlar yuklanmoqda…",
+    "quizLoadFailed": "Ushbu dars uchun testlarni yuklab bo'lmadi.",
+    "quizPublishedHint": "Ushbu dars uchun e'lon qilingan testlar. To'liq test sahifasida topshirish uchun Boshlash ni tanlang.",
+    "noQuizzesYet": "Hali testlar yo'q. O'qituvchingiz tez orada mashq testi yoki daraja testi qo'shishi mumkin.",
+    "placement": "Daraja",
+    "quiz": "Test",
+    "question_one": "savol",
+    "question_other": "savol",
+    "done": "Tayyor",
+    "startQuizAria": "Testni boshlash: {{title}}",
+    "enrollForAttendance": "Davomat yozuvlari va sessiya belgilash uchun avval darsga yoziling.",
+    "sessionCheckIns": "Sessiya belgilashlari",
+    "sessionCheckInsHint": "Dars boshlanganda Scan QR ni bosing va kamerani ekrandagi kodga qarating. Belgilash faqat to'lov qilgan jadval oylaringiz uchun mavjud.",
+    "payRemainingMonth": "Qolgan oyni to'lash",
+    "noCheckInsTitle": "Hali belgilashlar yo'q",
+    "noCheckInsHint": "Skaner qilgan sessiyalar quyidagi ro'yxatda paydo bo'ladi.",
+    "tableClass": "Dars",
+    "tableLecturer": "O'qituvchi",
+    "tableMeeting": "Uchrashuv",
+    "tableCheckedIn": "Belgilangan",
+    "upcomingSchedule": "Yaqinlashayotgan jadval",
+    "thisClass": "Bu dars",
+    "scheduleSidebarHint": "Dars davri va tasdiqlangan jadval. Semestrning shu qismi uchun rejalashtirilgan har bir sessiyani ko'rish uchun pastdan oy tanlang.",
+    "classPeriod": "Dars davri",
+    "scheduledSessions": "Rejalashtirilgan darslar",
+    "acrossMonths_one": "{{count}} oy davomida",
+    "acrossMonths_other": "{{count}} oy davomida",
+    "onYourSchedule": " jadvalingizda",
+    "date": "Sana",
+    "time": "Vaqt",
+    "notSet": "Belgilanmagan",
+    "dateTimeTba": "Sana va vaqt e'lon qilinadi",
+    "classMeeting": "Dars uchrashuvi",
+    "lesson_one": "dars",
+    "lesson_other": "dars",
+    "student_one": "talaba",
+    "student_other": "talaba",
+    "session_one": "sessiya",
+    "session_other": "sessiya",
+    "scannerAlign": "QR-kodni ramka ichiga joylashtiring",
+    "scannerNotAttendance": "Bu QR davomat belgilash havolasi emas.",
+    "scannerTryAgain": "Dars davomat QR-kodini skanerlang.",
+    "scannerDetected": "Davomat QR aniqlandi. Belgilash ochilmoqda…",
+    "scannerReadFailed": "Bu QR havolasini o'qib bo'lmadi.",
+    "scannerClearerQr": "Aniqroq QR bilan qayta urinib ko'ring.",
+    "scannerRequestingCamera": "Kamera ruxsati so'ralmoqda…",
+    "scannerNoCamera": "Bu brauzerda kamera qo'llab-quvvatlanmaydi.",
+    "scannerUnsupported": "Bu brauzerda QR aniqlash qo'llab-quvvatlanmaydi. Mobil Chrome/Edge dan foydalaning yoki havolani qo'lda oching.",
+    "scannerPermissionDenied": "Kamera ruxsati rad etildi yoki mavjud emas. Brauzer sozlamalarida ruxsat bering.",
+    "scannerUnableStart": "Kamerani ishga tushirib bo'lmadi",
+    "scannerCameraFailed": "Kamerani ishga tushirib bo'lmadi"
+  },
+  "lesson": {
+    "loading": "Dars yuklanmoqda…",
+    "notFound": "Dars topilmadi.",
+    "backToClass": "Darsga qaytish",
+    "enrollmentPending": "Yozilish ko'rib chiqilmoqda",
+    "enrollmentRejected": "Yozilish tasdiqlanmadi",
+    "enrollmentRequired": "Yozilish talab qilinadi",
+    "enrollmentPendingHint": "Administrator arizangizni ko'rib chiqmoqda. Tasdiqlangandan keyin dars kontenti ochiladi.",
+    "enrollmentRejectedHint": "Bu dars darslariga kira olmaysiz. Tafsilotlar uchun Bildirishnomalarni tekshiring.",
+    "enrollmentRequiredHint": "Avval Mavjud darslardan kirish so'rang.",
+    "defaultDescription": "Bu dars asosiy tushunchalar va amaliy qo'llanmalarni qamrab oladi. Yuqoridagi videoni tomosha qiling va o'rganishni mustahkamlash uchun quyidagi resurslardan foydalaning. Har qanday bo'limni to'xtatib, qayta ko'rishingiz mumkin.",
+    "minRead": "{{count}} daqiqa o'qish",
+    "min": "{{count}} daqiqa",
+    "lessonContent": "Dars kontenti",
+    "markComplete": "Tugatilgan deb belgilash",
+    "completed": "Tugatilgan",
+    "resources": "Resurslar",
+    "noResources": "Bu dars uchun qo'shimcha resurslar yo'q.",
+    "previousLesson": "Oldingi dars",
+    "nextLesson": "Keyingi dars"
+  },
+  "courseResume": {
+    "notFound": "Bu resume topilmadi yoki olib tashlangan bo'lishi mumkin.",
+    "backToClass": "Darsga qaytish",
+    "loading": "Dars xulosasi yuklanmoqda…"
+  },
+  "completion": {
+    "preview": "Ko'rib chiqish",
+    "myClasses": "Mening darslarim",
+    "scheduleComplete": "Jadval tugallandi",
+    "finishedSessions": "Siz barcha sessiyalarni tugatdingiz",
+    "withInstructor": " {{instructor}} bilan",
+    "submitReviewsHint": ". Sertifikatni yuklab olish uchun quyida ikkala fikrni ham yuboring.",
+    "feedbackComplete": "Fikr yuborildi —",
+    "downloadCertificate": "sertifikatingizni yuklab oling",
+    "rateInstructor": "O'qituvchingizni baholang",
+    "instructorSubtitle": "Ushbu dars uchun {{instructor}} o'qituvchiligiga fikr bildiring.",
+    "instructorSubtitleGeneric": "Ushbu dars o'qituvchiligiga fikr bildiring.",
+    "ratePlatform": "Edu Hub ni baholang",
+    "platformSubtitle": "Platforma ushbu dars uchun qanday ishlaganini ayting.",
+    "ratingHintInstructor": "1 yomon, 5 a'lo.",
+    "ratingHintPlatform": "Jadval, materiallar va qo'llab-quvvatlashni yaxshilashga yordam beradi.",
+    "yourRating": "Sizning bahoingiz",
+    "yourReview": "Sizning fikringiz",
+    "submittedThanks": "Yuborildi — rahmat",
+    "className": "Dars nomi",
+    "classNameHint": "Ushbu dars uchun fikr yozuvingizda ko'rsatiladi.",
+    "reviewOptional": "Fikringiz (ixtiyoriy)",
+    "reviewPlaceholder": "Batafsil fikr bildiring…",
+    "rateTitle": "{{title}} ni baholang",
+    "ratingOutOf": "5 dan {{count}}",
+    "backToMyClasses": "Mening darslarimga qaytish",
+    "openClassDetails": "Dars tafsilotlarini ochish",
+    "toastChooseRating": "1 dan 5 gacha baho tanlang.",
+    "toastSaved": "Fikr saqlandi.",
+    "toastSaveFailed": "Fikrni saqlab bo'lmadi.",
+    "submitting": "Yuborilmoqda…"
+  },
+  "enrollmentSuccess": {
+    "enrollment": "Yozilish",
+    "applicationSent": "Ariza yuborildi",
+    "backToCatalog": "Katalog",
+    "backToAvailableAria": "Mavjud darslarga qaytish",
+    "allSet": "Hammasi tayyor",
+    "applicationReceived": "Ariza qabul qilindi",
+    "receivedMessage": "Yozilish so'rovingiz va ilovalaringiz qabul qilindi. Administrator to'lov va ID ni tekshiradi va sizga xabar beradi.",
+    "receivedMessageShort": "So'rovingiz maktabda. To'lov va ID tekshiriladi, keyin sizga xabar beramiz.",
+    "submitted": "Yuborilgan: {{date}}",
+    "pendingReview": "Ko'rib chiqilmoqda",
+    "submittedStatus": "Yuborilgan",
+    "courseSection": "Dars",
+    "title": "Sarlavha",
+    "classReference": "Dars havolasi",
+    "tuitionReference": "To'lov",
+    "teacher": "O'qituvchi",
+    "scheduleSection": "Dars jadvali",
+    "scheduleSummary": "Darslar",
+    "scheduleUnavailable": "Bu dars uchun jadval ma'lumotlari mavjud emas.",
+    "meetingsCount_one": "{{count}} dars",
+    "meetingsCount_other": "{{count}} dars",
+    "fromMeeting": "{{n}}-darsdan",
+    "meetingFallback": "{{n}}-dars",
+    "showMoreSchedule": "Yana {{count}} ta ko'rsatish",
+    "showLessSchedule": "Kamroq ko'rsatish",
+    "nextStepsTitle": "Keyingi qadamlar",
+    "nextStep1": "Maktab to'lovingiz va hujjatlaringizni ko'rib chiqadi.",
+    "nextStep2": "Tasdiqlanganda yoki biror narsa yetishmasa, sizga xabar keladi.",
+    "nextStep3": "Tasdiqdan keyin darsga qo'shilasiz va davomat QR kodini skanerlaysiz.",
+    "yourDetails": "Sizning ma'lumotlaringiz",
+    "fullName": "To'liq ism",
+    "email": "Email",
+    "phone": "Telefon",
+    "additionalPhone": "Qo'shimcha telefon",
+    "address": "Manzil",
+    "paymentSection": "To'lov",
+    "documentsSection": "Hujjatlar",
+    "paymentProof": "To'lov dalili",
+    "identification": "Shaxsni tasdiqlash",
+    "downloadSummary": "Yuborish xulosasini yuklab olish",
+    "downloadSummaryEn": "PDF (English)",
+    "downloadSummaryUz": "PDF (O'zbek)",
+    "paymentDetails": "To'lov tafsilotlari",
+    "trackPayment": "To'lov holatini kuzatish",
+    "browseMore": "Ko'proq darslarni ko'rish",
+    "showDetails": "To'liq arizani ko'rish",
+    "hideDetails": "To'liq arizani yashirish",
+    "applicationSummary": "Ariza xulosasi",
+    "showDetailsHint": "Aloqa, to'lov va yuklangan hujjatlar",
+    "hideDetailsHint": "Yig'ish uchun bosing"
+  },
+  "installmentPayment": {
+    "loading": "To'lov tafsilotlari yuklanmoqda…",
+    "backToPaymentHistory": "To'lov tarixi",
+    "backToPaymentHistoryButton": "To'lov tarixiga qaytish",
+    "remainingTuition": "Qolgan o'quv to'lovi",
+    "paymentRecorded": "To'lov qayd etildi",
+    "awaitingSchoolReview": "Maktab ko'rib chiqishini kutmoqda",
+    "awaitingSchoolReviewHint": "Moliya bo'limi o'tkazmangizni tasdiqlaydi. Bu oy uchun QR davomat tasdiqlangandan keyin ochiladi.",
+    "scheduleMonth": "Jadval oyi",
+    "amount": "Summa",
+    "status": "Holat",
+    "pendingVerification": "Tasdiqlash kutilmoqda",
+    "openClass": "Darsni ochish",
+    "allMonthsPaid": "Barcha oylar to'langan",
+    "fullAttendanceActive": "{{courseTitle}} — to'liq davomatga kirish faol.",
+    "allPaidHint": "Ushbu dars uchun boshqa to'lov talab qilinmaydi. Har bir jadval oyi uchun QR davomatni skanerlash mumkin.",
+    "payScheduleMonth": "Jadval oyini to'lash",
+    "scheduleMonths": "Jadval oylari",
+    "progressAllPaid_one": "Barcha {{count}} jadval oyi to'langan",
+    "progressAllPaid_other": "Barcha {{count}} jadval oyi to'langan",
+    "progressPartial": "{{paid}}/{{total}} jadval oyi to'langan",
+    "paymentProgress": "To'lov jarayoni",
+    "monthsProgress": "{{paid}}/{{total}} oy",
+    "chooseMonthTitle": "To'lash uchun oyni tanlang",
+    "chooseMonthHint": "O'quv to'lovini o'tkazayotgan jadval oyini tanlang. Administrator to'lovni tasdiqlagandan keyin QR davomat ochiladi.",
+    "session_one": "{{count}} dars",
+    "session_other": "{{count}} dars",
+    "paidQrAllowed": "To'langan · QR ruxsat etilgan",
+    "awaitingAdminReview": "Administrator ko'rib chiqishini kutmoqda",
+    "payToUnlockQr": "QR ochish uchun to'lang",
+    "amountDue": "To'lanadigan summa",
+    "forMonthSessions": "{{month}} uchun · {{count}} dars",
+    "howDidYouPay": "Qanday to'ladingiz?",
+    "paymentMethodTransfer": "O'tkazma",
+    "paymentMethodCash": "Naqd pul",
+    "bankTransferDetails": "Bank o'tkazmasi tafsilotlari",
+    "transferReceipt": "O'tkazma kvitansiyasi",
+    "receiptHint": "Yakunlangan o'tkazmani ko'rsatadigan skrinshot yoki PDF.",
+    "replace": "Almashtirish",
+    "uploadReceipt": "Kvitansiyani yuklash",
+    "uploadReceiptHint": "PNG, JPG yoki PDF · maks. 2 MB",
+    "cashPayHint": "{{amount}} miqdorini maktab ofisida naqd pul bilan to'lang, keyin moliya tasdiqlashi va davomatni ochishi uchun yuboring.",
+    "submitting": "Yuborilmoqda…",
+    "submitPaymentFor": "{{month}} uchun to'lovni yuborish",
+    "pendingReviewHint": "{{month}} uchun o'tkazmangiz tasdiqlash kutilmoqda. Moliya bo'limi tasdiqlagandan keyin QR davomat ochiladi.",
+    "toast": {
+      "proofTooLarge": "Dalil fayli 2 MB yoki undan kichik bo'lishi kerak.",
+      "alreadyPaid": "Bu oy allaqachon to'langan.",
+      "alreadyPending": "Bu oy uchun to'lov allaqachon ko'rib chiqilmoqda.",
+      "uploadReceiptRequired": "Bank o'tkazmasi kvitansiyasini yuklang.",
+      "uploadingReceipt": "Kvitansiya yuklanmoqda…",
+      "submitted": "To'lov yuborildi",
+      "submittedHint": "O'tkazmangizni tekshiramiz va ushbu oy uchun davomatni ochamiz.",
+      "submitFailed": "To'lovni yuborib bo'lmadi."
+    }
+  },
+  "status": {
+    "inProgress": "Jarayonda",
+    "almostComplete": "Deyarli tugallangan",
+    "completed": "Tugatilgan"
+  },
+  "teacher": {
+    "fallbackName": "O'qituvchi",
+    "instructorFallback": "O'qituvchi",
+    "courseLeadFallback": "Kurs rahbari",
+    "classFallback": "Sinf",
+    "dashboard": {
+      "overviewTitle": "Umumiy ko'rinish",
+      "managingSubtitle": "{{name}} boshqaruvi",
+      "subtitle": "O'qituvchi boshqaruv paneli",
+      "roleBadge": "O'qituvchi",
+      "stats": {
+        "activeClasses": "Faol sinflar",
+        "totalStudents": "Jami talabalar",
+        "pendingGrading": "Baholanishi kerak",
+        "collectedPayments": "Yig'ilgan to'lovlar"
+      },
+      "attendanceQr": {
+        "title": "Davomat QR (proyektor)",
+        "description": "Oq doskada ko'rsatish uchun sessiya QR kodini yarating — talabalar telefonlarida skaner qilib ro'yxatdan o'tadi.",
+        "cta": "Check-in ochish"
+      },
+      "upcomingSessions": {
+        "title": "Yaqinlashayotgan sessiyalar"
+      },
+      "classesTable": {
+        "title": "O'qitilayotgan sinflar",
+        "loading": "Sinflar yuklanmoqda…",
+        "emptyPrefix": "Hali sinflar yo'q.",
+        "createFirstClass": "Birinchi sinfingizni yarating",
+        "lessonCount": "{{count}} dars",
+        "header": {
+          "class": "Sinf",
+          "students": "Talabalar",
+          "progress": "Progress",
+          "completion": "Tugallanish",
+          "actions": "Amallar"
+        },
+        "action": {
+          "editClass": "Sinfni tahrirlash",
+          "manageStudents": "Talabalarni boshqarish"
+        }
+      },
+      "pendingGrading": {
+        "title": "Baholanishi kerak",
+        "subtitle": "Talaba topshiriqlarini ko'rib chiqing va baholang",
+        "gradeButton": "Baholash",
+        "priority": {
+          "high": "high",
+          "medium": "medium",
+          "low": "low"
+        }
+      }
+    },
+    "notifications": {
+      "title": "Bildirishnomalar",
+      "subtitle": "Sinf jadvali, nashr etish va boshqa yangilanishlar.",
+      "unreadCount": "{{count}} o'qilmagan",
+      "markAllRead": "Hammasini o'qilgan deb belgilash",
+      "loading": "Bildirishnomalar yuklanmoqda…",
+      "markRead": "O'qilgan deb belgilash",
+      "receivedPrefix": "Qabul qilindi",
+      "time": {
+        "justNow": "Hozirgina",
+        "minutesAgo": "{{count}} min ago",
+        "hoursAgo_one": "{{count}} hour ago",
+        "hoursAgo_other": "{{count}} hours ago",
+        "daysAgo_one": "{{count}} day ago",
+        "daysAgo_other": "{{count}} days ago"
+      },
+      "cta": {
+        "openClassPage": "Open this sinf page",
+        "viewMyClasses": "View my sinfes",
+        "goToLinkedPage": "Go to linked page"
+      },
+      "empty": {
+        "title": "Hali bildirishnomalar yo'q.",
+        "description": "Jadval takliflari, sinf nashr yangilanishlari va boshqa bildirishnomalar shu yerda paydo bo'ladi."
+      }
+    },
+    "placeholder": {
+      "fallbackTitle": "O'qituvchi",
+      "comingSoon": "This section is coming soon.",
+      "backToDashboard": "Orqaga to Boshqaruv paneli",
+      "sections": {
+        "courses": "My Sinf",
+        "assignments": "Assignments",
+        "students": "Talabalar",
+        "schedule": "Jadval",
+        "settings": "Settings"
+      }
+    },
+    "courses": {
+      "description": "Sinflarni yarating va boshqaring. Qoralamalar admin narxi va nashrini kutadi.",
+      "addClass": "Sinf qo'shish",
+      "tabs": {
+        "classes": "Sinflar",
+        "attendance": "Davomat",
+        "schedule": "Jadval",
+        "substitute": "O‘rinbosar"
+      },
+      "loading": "Yuklanmoqda sinfes…",
+      "empty": {
+        "title": "No sinfes yet",
+        "description": "Create your first sinf and add lessons with PDF materials or video links.",
+        "cta": "Add your first sinf"
+      },
+      "card": {
+        "sessionsInSixMonths": "{{count}} sessions in 6 months",
+        "sessionsNotSet": "Sessions in 6 months not set",
+        "studentCount_one": "{{count}} talaba",
+        "studentCount_other": "{{count}} talabas"
+      },
+      "attendanceTab": {
+        "intro": "Name each meeting and generate a QR; past meetings stay on this device. Full-page tool:",
+        "attendanceQrLink": "Davomat QR"
+      },
+      "scheduleTab": {
+        "intro": "Tahrirlash the planned sessions (title, date, time) for each sinf. This uses the same jadval section from the sinf setup form.",
+        "loading": "Yuklanmoqda jadvals…",
+        "emptyDescription": "Create a class first, then set up session dates and times here.",
+        "sessionsSummary": "{{sessions}} sessions in 6 months",
+        "sessionsSummaryFilled": "{{sessions}} sessions in 6 months · {{filled}} filled",
+        "filledSuffix": " · {{filled}} filled",
+        "notSetYet": "Sessions in 6 months not set yet",
+        "editSchedule": "Tahrirlash jadval"
+      }
+    },
+    "students": {
+      "title": "Talabalar",
+      "subtitle": "Talabalar registered to your sinfes.",
+      "searchPlaceholder": "Ism, email yoki sinf bo'yicha qidirish",
+      "count_one": "{{count}} talaba",
+      "count_other": "{{count}} talaba",
+      "noSearchResults": "Qidiruvga mos talaba topilmadi.",
+      "table": {
+        "student": "Talaba",
+        "name": "Talaba name",
+        "email": "Email",
+        "class": "Sinf",
+        "enrolledDate": "Enrolled date"
+      },
+      "empty": "No talabas registered yet."
+    },
+    "assignments": {
+      "title": "Topshiriqlar",
+      "subtitle": "Manage assignments and review talaba submissions.",
+      "tabs": {
+        "assignments": "My Assignments",
+        "submissions": "Pending Submissions"
+      },
+      "empty": {
+        "title": "No assignments yet",
+        "description": "Assignments will appear here once you create them for your sinfes."
+      },
+      "table": {
+        "title": "Title",
+        "class": "Sinf",
+        "dueDate": "Due Date",
+        "priority": "Priority",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "actions": {
+        "publish": "Publish",
+        "view": "View",
+        "review": "Review"
+      },
+      "submissions": {
+        "empty": {
+          "title": "No pending submissions",
+          "description": "All talaba submissions have been graded."
+        },
+        "table": {
+          "student": "Talaba",
+          "assignment": "Assignment",
+          "submitted": "Yuborishted"
+        }
+      },
+      "deleteDialog": {
+        "title": "O'chirish this assignment?",
+        "description": "This will permanently remove the assignment. Talabalar will no longer see it."
+      }
+    },
+    "attendanceQr": {
+      "title": "Davomat QR",
+      "description": "Sinf va darsni tanlang, QR yarating va talabalar skaner qilishi uchun ko‘rsating."
+    },
+    "scheduleApprovals": {
+      "title": "Jadval tasdiqlari",
+      "subtitle": "Approve or request changes on schedules proposed by admin.",
+      "loading": "Yuklanmoqda your sinfes…",
+      "empty": "No sinfes yet. Create a sinf first.",
+      "emptyPending": "Nothing waiting for your approval.",
+      "emptyOther": "No other classes in this list.",
+      "addClass": "Add sinf",
+      "pendingSectionTitle": "Needs approval",
+      "pendingCount": "{{count}} need review",
+      "createdDate": "Created {{date}}",
+      "allSectionTitle": "Your classes",
+      "openButton": "Open",
+      "reviewButton": "Review",
+      "status": {
+        "actionNeeded": "Action needed",
+        "approved": "Tasdiqlangan",
+        "rejected": "Rejected",
+        "draft": "Qoralama",
+        "published": "Nashr etilgan"
+      },
+      "statusDescriptions": {
+        "pending": "Admin proposed a schedule — review to approve or request changes.",
+        "scheduleApproved": "Approved — waiting for admin to publish.",
+        "draft": "Qoralama — waiting for admin to propose a schedule.",
+        "rejected": "Rejected — admin sent feedback.",
+        "default": "Open the schedule step to view details."
+      }
+    },
+    "status": {
+      "published": "Nashr etilgan",
+      "draft": "Qoralama",
+      "high": "HIGH",
+      "medium": "MEDIUM",
+      "low": "LOW"
+    },
+    "substitute": {
+      "status": {
+        "pendingSubstitute": "Waiting for substitute",
+        "pendingPrimary": "Waiting for your approval",
+        "pendingAdmin": "With admin for final approval",
+        "approved": "Tasdiqlangan",
+        "declinedBySubstitute": "Declined by substitute",
+        "rejectedByPrimary": "Rejected by primary instructor",
+        "rejectedByAdmin": "Rejected by admin",
+        "cancelledByPrimary": "Cancelled"
+      },
+      "coverChip": {
+        "substituteCover": "Substitute cover",
+        "admin": "Cover · admin",
+        "instructor": "Cover · instructor",
+        "substitute": "Cover · substitute"
+      }
+    },
+    "substitutePanel": {
+      "empty": {
+        "title": "No substitute cover requests",
+        "description": "When you invite a substitute from a sinf page, requests appear here for you and the substitute to review."
+      },
+      "summary": {
+        "needsResponse": "{{count}} request needs your response.",
+        "needsResponse_other": "{{count}} requests need your response.",
+        "track": "Track substitute invitations and approval status for your sinfes."
+      },
+      "card": {
+        "courseLead": "Course lead:",
+        "substitute": "Substitute:"
+      },
+      "role": {
+        "youAreSubstitute": "You are the substitute",
+        "youInvited": "You invited",
+        "participant": "Participant"
+      },
+      "updated": "Updated {{datetime}}",
+      "actions": {
+        "review": "Review",
+        "viewDetails": "View details",
+        "openClass": "Open sinf"
+      }
+    },
+    "substituteSummary": {
+      "labels": {
+        "course": "Course",
+        "from": "From",
+        "session": "Session",
+        "date": "date"
+      },
+      "invitedSubstitute": "Invited substitute",
+      "theirNote": "Their note"
+    },
+    "substituteReview": {
+      "backToNotifications": "Orqaga to notifications",
+      "backButton": "Bildirishnomalar",
+      "title": "Cover request",
+      "subtitle": "Review details and respond when you are ready.",
+      "statusLabel": "Status",
+      "substituteDecideHint": "If you accept, the primary instructor will be asked to approve before admin finalizes.",
+      "acceptInvite": "Accept invite",
+      "declineInvite": "Decline invite",
+      "primaryDecideHint": "The substitute has accepted. Approve to send this cover request to admin for final approval.",
+      "approveCover": "Approve cover",
+      "reject": "Reject",
+      "noAccess": "This cover request is not linked to your instructor account, or you have already responded.",
+      "errors": {
+        "missingId": "Missing request id.",
+        "notFound": "This cover request could not be found on this device."
+      },
+      "toast": {
+        "acceptFailed": "Could not accept invite",
+        "accepted": "You accepted the cover invite",
+        "declined": "Invite declined",
+        "forwardedToAdmin": "Forwarded to admin for final approval",
+        "coverNotApproved": "Cover not approved",
+        "approveFailed": "Could not approve cover request"
+      },
+      "readonlyMessages": {
+        "waitingSubstitute": "Waiting for the substitute to accept or decline.",
+        "waitingPrimary": "Waiting for the primary instructor to approve.",
+        "nothingToConfirm": "There is nothing for you to confirm on this request right now."
+      }
+    },
+    "courseForm": {
+      "title": {
+        "edit": "Tahrirlash Sinf",
+        "new": "Add New Sinf"
+      },
+      "steps": {
+        "ariaLabel": "Sinf setup steps",
+        "details": "1 · Details",
+        "schedule": "2 · Jadval approval",
+        "lessons": "3 · Lessons"
+      },
+      "errors": {
+        "classNotFound": "Sinf not found.",
+        "uploadFailed": "Upload failed",
+        "titleRequired": "Sinf title is required.",
+        "categoryMissing": "Your teaching category is not set. Contact an administrator to assign it before creating a sinf.",
+        "datesBothOrNeither": "Enter both a sinf start date and a sinf end date, or leave both empty.",
+        "datesInvalid": "Sinf dates are invalid.",
+        "endBeforeStart": "Sinf end date must be on or after the start date.",
+        "lessonRequired": "Add at least one lesson with a title and PDF or video URL for this sinf.",
+        "saveFailed": "Failed to save. Please try again."
+      },
+      "toast": {
+        "invalidImageType": "Please choose an image file (JPEG, PNG, WebP, etc.).",
+        "imageTooLarge": "Image must be 8 MB or smaller.",
+        "thumbnailUploaded": "Thumbnail uploaded",
+        "thumbnailUploadFailed": "Thumbnail upload failed",
+        "pdfReadingTimeFailed": "Could not estimate reading time (link may be private or unsupported). Enter it manually (e.g. 5 min read)."
+      },
+      "dialog": {
+        "completeLesson": {
+          "title": "Complete the current lesson first",
+          "description": "Please add a title and video or PDF content before adding another lesson."
+        },
+        "removeLesson": {
+          "title": "Remove this lesson?",
+          "description": "This will remove the lesson from the sinf. You can add it again later."
+        }
+      },
+      "details": {
+        "replaceImage": "Replace image",
+        "addCoverImage": "Add cover image",
+        "instructorLabel": "Instructor",
+        "classNameLabel": "Sinf name *",
+        "classNamePlaceholder": "e.g. Introduction to Economics",
+        "categoryLabel": "Category *",
+        "categoryNotAssigned": "Not assigned",
+        "categoryHint": "Assigned by admin when your instructor account was created. Contact support if this looks wrong.",
+        "levelLabel": "Level",
+        "levelPlaceholder": "Select class level",
+        "levelRequired": "Please select a class level.",
+        "levels": {
+          "beginnerA1": "Beginner (A1)",
+          "elementaryA1Plus": "Elementary (A1+)",
+          "preIntermediateB1": "Pre-Intermediate (B1)",
+          "intermediateB1Plus": "Intermediate (B1+)",
+          "upperIntermediateB2Plus": "Upper-Intermediate (B2+)",
+          "advancedC1": "Advanced (C1)",
+          "advancedC2": "Advanced (C2)"
+        },
+        "aboutLabel": "About this sinf (optional)",
+        "aboutPlaceholder": "What talabas will learn — a sentence or two is enough.",
+        "datesSectionTitle": "Sinf dates (optional)",
+        "datesSectionHint": "When this run starts and ends. Leave blank if not decided yet.",
+        "startLabel": "Sinf starts",
+        "endLabel": "Sinf ends",
+        "pricingTitle": "Pricing",
+        "pricingHint": "Set by an admin after you save this sinf and they publish it.",
+        "continueToSchedule": "Continue to jadval"
+      },
+      "schedule": {
+        "status": {
+          "awaitingApproval": "Awaiting your approval",
+          "approved": "Jadval approved",
+          "draft": "Qoralama"
+        },
+        "sessionLabel": "Session {{num}}",
+        "dateLabel": "Date",
+        "timeLabel": "Time",
+        "sectionTitle": "Jadval",
+        "newClassInfo": "Scheduling is set by admin after you save the class.",
+        "newClassStep1Body": "Finish details and lessons, then save the class.",
+        "newClassStep2Body": "Admin adds session counts, dates, and times.",
+        "newClassStep3Body": "You approve or request changes on this page.",
+        "newClassContinueHint": "Continue to lessons — you do not need a schedule yet.",
+        "newClassNote": "Your new sinf is saved with a minimal placeholder jadval until admin proposes the real one.",
+        "rejectionNoteTitle": "Your note to admin",
+        "loading": "Yuklanmoqda jadval…",
+        "noProposal": "When an admin proposes a jadval for this sinf, session rows will appear here for your approval.",
+        "sessionsInSixMonths": "Sessions in 6 months",
+        "proposedBy": "Proposed by {{name}}. Talaba attendance expectations follow this plan once approved.",
+        "month1Heading": "Sessions in 1st month",
+        "month2Heading": "Sessions in 2nd month",
+        "month3Heading": "Sessions in 3rd month",
+        "perSessionDetails": "Per-session details",
+        "noSessionRows": "No session rows yet — waiting for admin.",
+        "saving": "Saving…",
+        "approveSchedule": "Approve jadval",
+        "requestChanges": "Request changes",
+        "approvedNote": "Jadval approved. The admin can now set pricing and publish the sinf.",
+        "continueToLessons": "Continue to lessons",
+        "rejectDialog": {
+          "title": "Request jadval changes",
+          "description": "Describe what should change (days, times, session count). Admin will revise and send a new proposal.",
+          "placeholder": "e.g. Wednesday evenings don't work — can we move to Thursday?",
+          "send": "Send to admin"
+        },
+        "toast": {
+          "approved": "Jadval approved",
+          "approveFailed": "Could not approve jadval",
+          "rejected": "Feedback sent to admin",
+          "rejectFailed": "Could not reject jadval"
+        }
+      },
+      "lessons": {
+        "title": "Lessons (PDF or video link)",
+        "addLesson": "Add lesson",
+        "minimize": "Minimize",
+        "expand": "Expand",
+        "lessonLabel": "Lesson {{n}}",
+        "removeLessonTitle": "Remove lesson",
+        "titleLabel": "Lesson title",
+        "titlePlaceholder": "e.g. Supply and Demand",
+        "contentTypeLabel": "Content type",
+        "contentType": {
+          "videoLink": "Video link",
+          "videoUpload": "Video upload",
+          "pdfLink": "PDF link",
+          "pdfUpload": "PDF upload"
+        },
+        "uploadedPrefix": "Uploaded:",
+        "urlPlaceholders": {
+          "video": "https://youtube.com/…",
+          "pdf": "https://… or Google Drive PDF link"
+        },
+        "preview": "Preview",
+        "pdfPreview": "PDF Preview",
+        "removeVideoTitle": "Remove video link",
+        "removePdfTitle": "Remove PDF link",
+        "videoPreviewTitle": "Video preview",
+        "pdfPreviewTitle": "PDF preview",
+        "durationLabel": "Duration (optional)",
+        "durationHint": {
+          "pdf": "Estimated reading time for the PDF.",
+          "video": "Length of the video."
+        },
+        "durationPlaceholders": {
+          "pdf": "e.g. 5 min read",
+          "video": "e.g. 12 min"
+        },
+        "getFromLink": "Get from link",
+        "estimate": "Estimate",
+        "editSchedule": "Tahrirlash jadval",
+        "saving": "Saving…",
+        "saveChanges": "Saqlash changes",
+        "createClass": "Create sinf",
+        "createDialog": {
+          "title": "Create this sinf?",
+          "description": "Your sinf is saved as a draft. An admin will set pricing and publish it after reviewing your jadval and lessons.",
+          "confirm": "Create sinf"
+        }
+      }
+    },
+    "quiz": {
+      "loading": "Yuklanmoqda quiz…",
+      "backToQuizzes": "Orqaga to sinf quizzes",
+      "title": {
+        "edit": "Tahrirlash quiz",
+        "create": "Create quiz"
+      },
+      "form": {
+        "questionImageAlt": "Question",
+        "changeImage": "Change",
+        "addImageAriaLabel": "Add image to the current question.",
+        "findAndInsertMedia": "Find and insert media",
+        "uploadFile": "Upload file",
+        "dragHere": "or drag here to upload",
+        "detailsTitle": "Test details",
+        "thumbnail": {
+          "label": "Muqova rasm",
+          "optional": "Ixtiyoriy",
+          "hint": "Sinfdagi test kartochkasida ko‘rinadi.",
+          "add": "Rasm yuklash",
+          "change": "Almashtirish",
+          "remove": "Olib tashlash",
+          "previewAlt": "Test muqovasi"
+        },
+        "typeLabel": "Type",
+        "typePlaceholder": "Select type",
+        "typeHint": "Test for practice or Placement test for assessment.",
+        "classLabel": "Sinf",
+        "classPlaceholder": "Select sinf",
+        "noClass": "No sinf",
+        "classLockedHint": "Sinf is locked for this quiz.",
+        "classPickerHint": "Yuklanmoqda…",
+        "titleLabels": {
+          "placement": "Placement test title *",
+          "quiz": "Test title *"
+        },
+        "titlePlaceholder": "e.g. Economics Placement Test",
+        "release": {
+          "label": "Release date and time",
+          "date": "Date",
+          "time": "Time",
+          "selectDate": "Select date",
+          "selectTime": "Select time"
+        },
+        "releaseHint": "When this placement test becomes available to talabas.",
+        "questionsTitle": "Questions (multiple choice)",
+        "addQuestion": "Add question",
+        "questionActions": {
+          "expand": "Expand",
+          "minimize": "Minimize",
+          "remove": "Remove question"
+        },
+        "questionLabel": "Question {{n}}",
+        "pointsLabel": "{{n}} pts",
+        "questionTextLabel": "Question text *",
+        "questionTextPlaceholder": "e.g. What is the main focus of microeconomics?",
+        "questionImageLabel": "Image for this question",
+        "timeLimit": {
+          "label": "Time limit",
+          "choose": "Choose…",
+          "seconds": "{{sec}} s"
+        },
+        "options": {
+          "title": "Options (check the correct answer)",
+          "option": "Option {{letter}}"
+        },
+        "saveChanges": "Saqlash changes",
+        "createQuiz": "Create quiz"
+      },
+      "types": {
+        "quiz": "Test",
+        "placementTest": "Placement test"
+      },
+      "errors": {
+        "titleRequired": "Test title is required.",
+        "questionRequired": "Add at least one question.",
+        "questionIncomplete": "Each question needs text, at least two options, and one correct answer.",
+        "classRequired": "Please select a sinf for this quiz.",
+        "saveFailed": "Failed to save quiz.",
+        "loadFailed": "Could not load quiz."
+      },
+      "toast": {
+        "savedLocally": "Saqlashd on this device only",
+        "savedLocallyDescription": "Connect to the API to sync quizzes across devices."
+      },
+      "dialog": {
+        "removeQuestion": {
+          "title": "Remove this question?",
+          "description": "This question will be removed from the quiz."
+        }
+      }
+    },
+    "quizResults": {
+      "loading": "Yuklanmoqda quiz results...",
+      "backLink": "Orqaga to sinf quizzes",
+      "title": "quiz results — {{title}}",
+      "subtitle": "Talaba attempts and scores for this quiz.",
+      "localDataBadge": "(Showing local data)",
+      "exportButton": "Export to Excel",
+      "exportTitle": "Export to Excel spreadsheet",
+      "empty": "No attempts yet. Results appear here after talabas complete the quiz.",
+      "checkedInTitle": "When the talaba finished the quiz",
+      "errors": {
+        "notFound": "Test not found",
+        "loadFailed": "Failed to load quiz results",
+        "localStorage": "Could not read quiz results from local storage."
+      },
+      "table": {
+        "no": "No.",
+        "student": "Talaba",
+        "email": "Email",
+        "score": "Score",
+        "correct": "Correct",
+        "fillingDate": "Filling date"
+      }
+    },
+    "payroll": {
+      "title": "Ish haqi",
+      "subtitle": "Your sinfes and linked talaba payments. Yuborish monthly payroll when jadval months are complete.",
+      "tabs": {
+        "payroll": "Ish haqi",
+        "submissions": "My submissions"
+      },
+      "summary": {
+        "classes": "Your sinfes",
+        "paymentRows": "payment row(s)",
+        "classesCount": "sinf(es)",
+        "totalInView": "Total in view"
+      },
+      "searchPlaceholder": "Search sinf, talaba, invoice…",
+      "empty": {
+        "signIn": "Sign in with a profile that has instructor sinfes to see payroll.",
+        "loading": "Yuklanmoqda your sinfes…",
+        "noMatch": "No sinfes match your search.",
+        "noClasses": "No active sinfes yet. Create a sinf and wait for enrollment."
+      },
+      "table": {
+        "class": "Sinf",
+        "students": "Talabalar",
+        "invoices": "Invoices",
+        "totalTuition": "Total tuition",
+        "yourShare": "Your share",
+        "request": "Request",
+        "action": "Action"
+      },
+      "demo": {
+        "badge": "Demo",
+        "scheduleComplete": "3-month jadval complete — submit payroll per month."
+      },
+      "adminNotePrefix": "Admin: {{note}}",
+      "invoiceSummary": "{{paid}} paid · {{unpaid}} unpaid",
+      "sharePercent": "{{percent}}% of tuition",
+      "requestStatus": {
+        "pendingReview": "Pending review",
+        "approved": "Tasdiqlangan",
+        "declined": "Declined",
+        "ready": "Ready"
+      },
+      "actions": {
+        "viewPayout": "View payout",
+        "submitPayroll": "Yuborish payroll"
+      },
+      "expandAria": {
+        "hide": "Hide talaba payments",
+        "show": "Show talaba payments"
+      },
+      "enrolledSection": {
+        "title": "Enrolled talabas"
+      },
+      "enrolledTable": {
+        "student": "Talaba",
+        "amount": "Amount",
+        "status": "Status",
+        "due": "Due",
+        "paid": "Paid",
+        "loading": "Yuklanmoqda enrolled talabas…",
+        "empty": "No enrolled talabas for this sinf yet."
+      },
+      "status": {
+        "enrolled": "Enrolled"
+      },
+      "submissions": {
+        "title": "My submissions",
+        "subtitle": "Track your monthly submissions and admin review status.",
+        "viewNotifications": "View notifications",
+        "stats": {
+          "total": "Total submissions",
+          "pending": "Pending",
+          "search": "Search"
+        },
+        "searchPlaceholder": "Sinf, period, status…",
+        "empty": {
+          "none": "No payroll submissions yet.",
+          "noMatch": "No submissions match your search."
+        },
+        "table": {
+          "class": "Sinf",
+          "period": "Period",
+          "requested": "Requested",
+          "status": "Status",
+          "bankReceipt": "Bank receipt",
+          "submitted": "Yuborishted",
+          "adminNote": "Admin note"
+        },
+        "enrolledSubtitle": "{{count}} enrolled",
+        "viewReceipt": "View receipt",
+        "viewStatus": "View status"
+      },
+      "submissionStatus": {
+        "approved": "Tasdiqlangan",
+        "notApproved": "Not approved",
+        "pending": "Pending"
+      },
+      "time": {
+        "justNow": "Just now",
+        "minutesAgo": "{{count}} min ago",
+        "hoursAgo_one": "{{count}} hour ago",
+        "hoursAgo_other": "{{count}} hours ago",
+        "daysAgo_one": "{{count}} day ago",
+        "daysAgo_other": "{{count}} days ago"
+      },
+      "toast": {
+        "selectPeriod": "Select a jadval period",
+        "submitFailed": "Could not submit payroll request",
+        "submitted": "Ish haqi request sent"
+      }
+    },
+    "payrollPayout": {
+      "title": "Payout information",
+      "description": "Your submission details and any bank transfer receipt uploaded by admin.",
+      "fields": {
+        "yourSubmission": "Your submission",
+        "status": "Status",
+        "scheduleMonth": "Jadval month",
+        "requestedPayout": "Requested payout",
+        "payoutDetails": "Payout details",
+        "reviewed": "Reviewed",
+        "adminReference": "Admin reference",
+        "adminNote": "Admin note"
+      },
+      "noSubmission": "No payroll submission on file for this sinf yet.",
+      "sections": {
+        "payoutNotes": "Payout notes from admin",
+        "bankReceipt": "Bank transfer receipt (from admin)"
+      },
+      "wrongFileWarning": "Filename suggests this may not be a bank receipt PDF. Open to verify before relying on it.",
+      "receipt": {
+        "uploadedByAdmin": "Uploaded by EduHub admin",
+        "released": "Released",
+        "attached": "Attached",
+        "pdfTitle": "Bank transfer receipt PDF",
+        "imageAlt": "Bank transfer receipt from admin",
+        "downloadPdf": "Download PDF",
+        "openPdfTab": "Open PDF in new tab",
+        "openReceipt": "Open receipt",
+        "pendingApproved": "Tasdiqlangan — waiting for admin to attach the bank transfer receipt.",
+        "pendingNotYet": "Receipt not available yet. Admin uploads it after processing your payout."
+      }
+    },
+    "payrollSubmit": {
+      "title": "Yuborish payroll for approval",
+      "description": "Choose a completed jadval month and submit your requested payout to admin.",
+      "pricing": {
+        "title": "Sinf pricing",
+        "listedTuition": "Listed tuition (per talaba)",
+        "totalClassPrice": "Total sinf price",
+        "payrollSubmissions": "Ish haqi submissions",
+        "instructorShare": "Instructor share",
+        "platformShare": "Platform share"
+      },
+      "monthlyPayout": {
+        "count": "{{count}} jadval month(s)",
+        "label": "Instructor payout per jadval month"
+      },
+      "pricingHints": {
+        "noTuition": "Admin-listed tuition is not set for this sinf yet.",
+        "noStudents": "No enrolled talabas yet — payout preview uses listed tuition × 0."
+      },
+      "period": {
+        "label": "Jadval period",
+        "loading": "Yuklanmoqda sinf jadval…",
+        "placeholder": "Select jadval month"
+      },
+      "noApprovedMonths": "No approved jadval months ready for payroll yet.",
+      "payoutSection": {
+        "requested": "Requested payout for this month",
+        "previewOnly": "(preview only — confirm before submitting)",
+        "breakdown": "Breakdown"
+      },
+      "payoutDetails": {
+        "label": "Payout details (optional)",
+        "placeholder": "Bank account, payment method, or other details for admin"
+      },
+      "notes": {
+        "label": "Notes to admin (optional)",
+        "placeholder": "Any context admin should know when reviewing this submission"
+      },
+      "systemSummaryPrefix": "System summary:",
+      "submitToAdmin": "Yuborish to admin",
+      "toast": {
+        "scheduleNotReady": "Jadval not ready for payroll",
+        "scheduleNotReadyDescription": "Ish haqi is submitted per month from the sinf jadval admin created and you approved. Publish that jadval first.",
+        "selectMonth": "Select a jadval month",
+        "selectMonthDescription": "Choose a month where all sessions are finished.",
+        "alreadySubmitted": "Month already submitted",
+        "monthNotReady": "Month not ready for payroll",
+        "meetingsNotComplete": "Meetings not complete"
+      }
+    },
+    "resumeEdit": {
+      "backToClasses": "Sinflarga qaytish",
+      "backToResumes": "Xulosalarga qaytish",
+      "title": {
+        "new": "Yangi xulosa",
+        "edit": "Xulosani tahrirlash"
+      },
+      "intro": "Talabalar buni sinf Resume bo‘limida ko‘radi.",
+      "substituteBanner": {
+        "viewingAs": "O‘rinbosar sifatida tahrirlash",
+        "courseLead": "Asosiy o‘qituvchi:",
+        "hint": "Xulosa qo‘shishingiz va tahrirlashingiz mumkin. O‘chirish faqat asosiy o‘qituvchiga tegishli."
+      },
+      "primaryBanner": "Asosiy o‘qituvchi — tasdiqlangan o‘rinbosarlar ham xulosani tahrirlashi mumkin.",
+      "thumbnail": {
+        "label": "Muqova rasm",
+        "optional": "Ixtiyoriy",
+        "previewAlt": "Xulosa eskizi",
+        "hint": "Sinf sahifasida xulosa yonida ko‘rinadi.",
+        "add": "Rasm yuklash",
+        "change": "Almashtirish",
+        "remove": "Olib tashlash"
+      },
+      "sessionLabel": "Dars",
+      "sessionHints": {
+        "primary": "Bitta darsga bog‘lang yoki butun sinf uchun qoldiring.",
+        "substituteLocked": "Dars o‘rinbosar taklifidan belgilangan.",
+        "noSessions": "Jadvalda hali dars yo‘q. Butun sinf xulosasini saqlashingiz mumkin.",
+        "wholeClass": "Butun sinf"
+      },
+      "session": {
+        "wholeClass": "Butun sinf",
+        "placeholder": "Butun sinf yoki bitta dars…",
+        "loadingAssigned": "Dars yuklanmoqda…"
+      },
+      "bodyLabel": "Xulosa",
+      "bodyPlaceholder": "Asosiy nuqtalar, uy vazifasi, keyingi uchun nimalarni takrorlash…",
+      "actions": {
+        "delete": "O‘chirish",
+        "saveForStudents": "Saqlash"
+      },
+      "deleteDialog": {
+        "title": "Bu xulosani o‘chirasizmi?",
+        "description": "Talabalar uni boshqa ko‘rmaydi. Bu amalni bekor qilib bo‘lmaydi."
+      },
+      "errors": {
+        "missingClass": "Sinf ko‘rsatilmagan.",
+        "noAccess": "Bu sinfga ruxsatingiz yo‘q.",
+        "classNotFound": "Sinf topilmadi.",
+        "emptyBody": "Saqlashdan oldin matn yozing."
+      },
+      "toast": {
+        "notFound": "Xulosa topilmadi",
+        "saveFailed": "Saqlab bo‘lmadi.",
+        "deleteFailed": "Xulosani o‘chirib bo‘lmadi.",
+        "deleted": "Xulosa o‘chirildi",
+        "created": "Xulosa yaratildi",
+        "createdDescription": "Talabalar uni Resume bo‘limida o‘qishi mumkin.",
+        "updated": "Xulosa yangilandi",
+        "updatedDescription": "Talabalar o‘zgarishlarni ko‘radi.",
+        "invalidImage": "Rasm faylini tanlang.",
+        "uploadFailed": "Rasm yuklanmadi."
+      }
+    },
+    "roster": {
+      "backToMyClass": "Mening sinflarimga qaytish",
+      "awaitingAdminApproval": "Awaiting admin approval",
+      "awaitingAdminTitle": "An admin will set the price and publish this sinf.",
+      "actions": {
+        "unarchive": "Unarchive",
+        "archive": "Archive",
+        "deleteClass": "O'chirish sinf",
+        "editClassContent": "Tahrirlash sinf content"
+      },
+      "errors": {
+        "missingClass": "Missing sinf.",
+        "loading": "Yuklanmoqda sinf…",
+        "forbidden": "You don't have access to this sinf roster.",
+        "loadFailed": "Could not load this sinf. It may have been removed or you may need to sign in again.",
+        "notFound": "Sinf not found."
+      },
+      "thumbnailAlt": "{{title}} thumbnail",
+      "banners": {
+        "substitute": {
+          "viewingAs": "You are viewing as substitute.",
+          "courseLead": "Course lead (owns this sinf in the catalog):",
+          "description": "You can use sinf resumes and local attendance (QR and this browser's check-ins). The server enrollment list is only returned for the course lead today, so the Enrolled tab explains that limitation. Catalog tahrirlashs, deleting the sinf, and inviting another substitute stay with the course lead."
+        },
+        "primary": {
+          "title": "You are the course lead.",
+          "description": "Tasdiqlangan substitute {{email}} has demo access to this sinf page for resumes and local attendance. The server enrollment list stays course-lead only until the API supports substitutes."
+        }
+      },
+      "enrollmentHint": "Talabalar enrolled from the catalog appear below when the API returns roster data.",
+      "inviteSubstitute": "Invite Substitute",
+      "inviteSubstituteHint": "Covers a session when you're unavailable. Enter the Substitute's admin-registered lecturer email. Demo: in-app notifications only.",
+      "tabs": {
+        "enrolled": "Ro'yxatdan o'tganlar",
+        "schedule": "Jadval",
+        "resume": "Xulosa",
+        "quiz": "Test",
+        "quizScores": "Test ballari",
+        "attendance": "Davomat",
+        "grades": "Baholar"
+      },
+      "enrolled": {
+        "title": "Enrolled talabas",
+        "intro": "Everyone signed up for this sinf in the platform. Local-only sinfes won't show rows until the sinf exists on the server.",
+        "sessionsNote": "This sinf is set to {{count}} sessions in 6 months (from sinf settings); the table compares local check-ins to that target.",
+        "localOnly": "This sinf is stored only in your browser. Connect it to the API to load enrolled talabas here.",
+        "substituteNoRoster": "Enrollment list is not loaded for substitutes (API).",
+        "substituteNoRosterDescription": "The server only returns /courses/…/talabas for the catalog course lead. Your access here is from the approved substitute workflow (demo).",
+        "loading": "Yuklanmoqda talabas…",
+        "loadError": "Could not load enrollment list. Check permissions or try again later.",
+        "empty": "No talabas enrolled yet.",
+        "table": {
+          "name": "Name",
+          "email": "Email",
+          "status": "Status",
+          "sessionsTitle": "Check-ins recorded on this browser vs planned sinf meetings in six months (sinf settings).",
+          "sessionsInSixMonths": "Sessions in 6 months *"
+        },
+        "footnote": "* Sessions in 6 months is the planned total from sinf settings. The first number is how many distinct sessions this talaba checked into on this browser only."
+      },
+      "schedule": {
+        "yourCover": "Your cover on this sinf",
+        "classSchedule": "Sinf jadval",
+        "substituteIntro": "Only the session(s) you are covering appear here—not the course lead's full term calendar.",
+        "courseLead": "Course lead:",
+        "primaryIntro": "Session plan from the catalog and, when present, the latest admin proposal from the server.",
+        "scheduleApprovalsLink": "Jadval approvals",
+        "editClassScheduleLink": "Tahrirlash sinf → Jadval",
+        "feedbackTitle": "Jadval feedback on file",
+        "classWindowStart": "Sinf window start:",
+        "classWindowEnd": "End:",
+        "approveOrRequest": "Approve or request jadval changes",
+        "loadingProposal": "Yuklanmoqda latest admin jadval proposal…",
+        "substituteNoMatch": "We couldn't match an active substitute invite on this device to a jadval row.",
+        "substituteNoMatchHint": "Check that your sign-in email matches the invited substitute, or ask the course lead which session you cover.",
+        "wholeClassCover": "Whole-sinf substitute cover",
+        "wholeClassCoverDescription": "The course lead did not tie this cover to a single calendar row, so the full term jadval is not listed here.",
+        "sessionsCovering": "Session(s) you are covering:",
+        "table": {
+          "number": "#",
+          "session": "Session",
+          "yourCover": "Your cover",
+          "yourCoverTitle": "Your invited cover email and workflow status.",
+          "substituteInstructor": "Substitute instructor",
+          "substituteInstructorTitle": "Lecturer invited when the course lead cannot run this session (demo workflow).",
+          "date": "Date",
+          "time": "Time",
+          "yourEmailTitle": "Your work email on this cover",
+          "invitedEmailTitle": "Invited substitute work email"
+        },
+        "substituteHiddenNote": "Other sessions in this sinf are hidden on purpose. The course lead still sees the full jadval.",
+        "noSessions": "No session rows yet. When an admin proposes dates and times, they will show here.",
+        "adminProposal": "Admin proposal from {{name}}.",
+        "plannedSessions": "Planned sessions (six-month window):",
+        "substituteColumnNote": "The Substitute instructor column lists the work email from your invite when the course lead cannot run that session."
+      },
+      "scheduleStatus": {
+        "pendingApproval": "Jadval pending your approval",
+        "approved": "Jadval approved",
+        "draft": "Qoralama",
+        "published": "Nashr etilgan"
+      },
+      "sessionFallback": "Session {{n}}",
+      "substituteCoverTitle": "Substitute cover · {{title}}",
+      "resume": {
+        "title": "Dars xulosalari",
+        "intro": "Talabalar sinf sahifasida o‘qiydigan qisqa xulosalar.",
+        "newResume": "Yangi xulosa",
+        "emptyTitle": "Hali xulosa yo‘q",
+        "emptyDescription": "Darsdan keyin qisqa xulosa yozing — talabalar keyinroq qayta o‘qishi mumkin.",
+        "createResume": "Xulosa yaratish",
+        "wholeClassRecap": "Butun sinf",
+        "updated": "Yangilandi {{datetime}}",
+        "thumbnailAlt": "Xulosa eskizi",
+        "count_one": "{{count}} xulosa",
+        "count_other": "{{count}} xulosa"
+      },
+      "quiz": {
+        "title": "Testlar",
+        "intro": "Ushbu sinf uchun ko‘p tanlovli testlar va placement testlar.",
+        "createQuiz": "Test yaratish",
+        "substituteRestriction": "Testlarni asosiy o‘qituvchi boshqaradi.",
+        "substituteRestrictionDescription": "Test yaratish va nashr qilish faqat sinf egasiga tegishli.",
+        "localOnly": "Bu sinf faqat shu qurilmada. Testlarni boshqarish uchun API ga ulang.",
+        "yourQuizzes": "Testlaringiz",
+        "fetchNoteFallback": "Test ro‘yxatini yuklab bo‘lmadi. Mahalliy testlar pastda ko‘rinadi.",
+        "fetchNoteWithError": "Testlarni yuklab bo‘lmadi ({{error}}). Mahalliy testlar pastda ko‘rinadi.",
+        "loadError": "Bu sinf testlarini yuklab bo‘lmadi.",
+        "emptyTitle": "Hali test yo‘q",
+        "emptyDescription": "Amaliyot yoki placement test yarating.",
+        "placement": "Placement",
+        "quiz": "Test",
+        "draft": "Qoralama",
+        "published": "Nashr etilgan",
+        "questionCount_one": "{{count}} savol",
+        "questionCount_other": "{{count}} savol",
+        "count_one": "{{count}} test",
+        "count_other": "{{count}} test",
+        "publish": "Nashr qilish",
+        "results": "Natijalar",
+        "toast": {
+          "publishedLocally": "Shu qurilmada nashr etildi",
+          "published": "Test nashr etildi",
+          "publishFailed": "Testni nashr qilib bo‘lmadi."
+        }
+      },
+      "quizScores": {
+        "title": "Qo'lda test ballari",
+        "intro": "Ro'yxatdan o'tgan talabalar uchun test ballarini qo'lda kiriting. Test ustunini qo'shing, har bir talaba uchun 0–100 yozing va saqlang. Ballar server API paydo bo'lguncha shu qurilmada saqlanadi.",
+        "searchPlaceholder": "Ism yoki email bo'yicha qidirish",
+        "addQuiz": "Test qo'shish",
+        "deleteQuiz": "Testni o'chirish",
+        "save": "Saqlash",
+        "saveAll": "Hammasini saqlash",
+        "scorePlaceholder": "—",
+        "table": {
+          "student": "Talaba",
+          "total": "Jami"
+        },
+        "addDialog": {
+          "title": "Test ustuni qo'shish",
+          "description": "Qisqa nom bering — u har bir talaba uchun ball ustuniga aylanadi.",
+          "label": "Test nomi",
+          "placeholder": "masalan, 2-hafta testi"
+        },
+        "deleteDialog": {
+          "title": "Test ustuni o'chirilsinmi?",
+          "description": "\"{{title}}\" va undagi barcha ballar shu qurilmadan o'chiriladi. Bu amalni qaytarib bo'lmaydi."
+        },
+        "empty": {
+          "connectApi": "Qo'lda test ballari uchun talabalarni yuklash uchun sinfni API ga ulang.",
+          "loading": "Talabalar yuklanmoqda…",
+          "error": "Test ballari uchun talabalarni yuklab bo'lmadi.",
+          "noStudents": "Hali ro'yxatdan o'tgan talabalar yo'q — baholash uchun hech kim yo'q.",
+          "noColumnsTitle": "Hali test ustunlari yo'q",
+          "noColumnsDescription": "Har bir talaba uchun ball kiritishni boshlash uchun test qo'shing.",
+          "noSearchResults": "Qidiruvga mos talaba topilmadi."
+        },
+        "toast": {
+          "saved": "Ballar saqlandi",
+          "savedAll": "Barcha ko'rinadigan ballar saqlandi",
+          "invalidScore": "0 dan 100 gacha ball kiriting yoki katakni bo'sh qoldiring.",
+          "titleRequired": "Test nomini kiriting.",
+          "columnAdded": "Test ustuni qo'shildi",
+          "columnDeleted": "Test ustuni o'chirildi"
+        }
+      },
+      "attendance": {
+        "qrTitle": "Sinf meeting check-in (QR)",
+        "qrIntro": "Each QR opens the check-in link; talabas must use it signed in as a talaba. The roster table below only shows check-ins stored on this browser.",
+        "overviewTitle": "Talaba attendance overview",
+        "overviewIntro": "Use Jump by sinf jadval to pick the last planned session or a specific row from your jadval.",
+        "connectApi": "Connect this sinf to the API to align attendance tracking with enrolled talabas.",
+        "substituteOverview": "Davomat overview needs the server roster.",
+        "substituteOverviewDescription": "That roster is only returned for the course lead today, so this table cannot load while you are signed in as substitute.",
+        "loadingRoster": "Yuklanmoqda roster for attendance table…",
+        "loadStudentsError": "Could not load talabas for this overview.",
+        "noStudents": "No enrolled talabas yet — nothing to show in the attendance overview.",
+        "phoneScanNote": "Phone scan vs this screen:",
+        "phoneScanDescription": "talaba phone scans now sync through the EduHub attendance API.",
+        "confirmEmailNote": "Confirm the talaba account email matches the roster row, the meeting selected here matches the QR they scanned, and they are signed in as a talaba on the check-in page.",
+        "showingFor": "Showing attendance for:",
+        "presentForMeeting": "Present for this meeting:",
+        "selectMeetingHint": "Select a meeting with Jump by sinf jadval or in Sinf meeting check-in to load check-in data for the table below.",
+        "enrollmentNote": "Enrollment lists everyone who joined the sinf on the platform. Present and Checked in now use the EduHub attendance API for the selected QR meeting.",
+        "jumpBySchedule": "Jump by sinf jadval",
+        "chooseScheduleContext": "Choose jadval context",
+        "latestQr": "Latest QR session (newest)",
+        "lastScheduled": "Last date on sinf jadval",
+        "matchHint": "When a row matches the selected QR session, the Present and Checked in columns in this table use that meeting from the attendance API.",
+        "tableAria": "Talaba attendance for the selected check-in meeting",
+        "verifyHint": "Tick to confirm attendance for this meeting.",
+        "table": {
+          "student": "Talaba",
+          "email": "Email",
+          "present": "Present",
+          "checkedIn": "Checked in",
+          "instructorCheck": "Verify"
+        },
+        "presentBadge": "Present",
+        "absentBadge": "—",
+        "checkedInTitle": "Checked in",
+        "signInToCheck": "Sign in to save o'qituvchi check",
+        "toast": {
+          "noQrMeetings": "No QR meetings yet — generate check-in in Sinf meeting check-in above.",
+          "noSavedMeeting": "No saved meeting matches that jadval row yet. Generate a QR for that sinf day, or pick the meeting manually in Sinf meeting check-in."
+        }
+      },
+      "dialogs": {
+        "deleteClass": {
+          "title": "Are you sure you want to o'chirish this sinf?",
+          "description": "This will permanently remove this sinf and all its lessons. This action cannot be undone."
+        },
+        "deleteResume": {
+          "title": "O'chirish this resume?",
+          "description": "Talabalar will no longer see this recap on their sinf page. This cannot be undone."
+        }
+      },
+      "substituteDialog": {
+        "title": "Invite a substitute instructor",
+        "description": "Use the work email of a lecturer your admin created. They receive an in-app notification here; your admin is notified too (browser demo until the API exists).",
+        "emailLabel": "Substitute email",
+        "emailPlaceholder": "colleague@school.org",
+        "sessionLabel": "Jadvald session",
+        "sessionOptional": "Jadvald session (optional)",
+        "sessionPlaceholder": "Select session to cover",
+        "messageLabel": "Message (optional)",
+        "messagePlaceholder": "Brief note for the substitute…",
+        "sendInvite": "Send invite",
+        "toast": {
+          "needEmail": "Your account needs an email to send this invite.",
+          "enterEmail": "Enter the substitute lecturer's email.",
+          "ownEmail": "Use another instructor's email — not your own.",
+          "notRegistered": "That email is not on the admin lecturer list (demo).",
+          "notRegisteredDescription": "Ask your admin to register the lecturer (Add user role), then invite using that work email.",
+          "selectSession": "Select the jadvald session this substitute will cover.",
+          "success": "Substitute invite recorded",
+          "successDescription": "The substitute must accept, then you approve. Check instructor notifications (demo)."
+        }
+      },
+      "toast": {
+        "resumeDeleted": "Resume o'chirishd",
+        "resumeDeleteFailed": "Could not o'chirish resume."
+      }
+    },
+    "attendancePanel": {
+      "title": "Sinf meeting check-in",
+      "description": {
+        "fixed": "Generate a QR for this sinf. Talabalar scan to check in on their phones.",
+        "schedule": "Pick a planned session from the jadval, name the meeting, then generate a QR.",
+        "embedded": "Name each meeting and generate a QR; past meetings stay on this device.",
+        "default": "Select a sinf and meeting, then generate a QR code for talaba check-in."
+      },
+      "loading": "Yuklanmoqda sinfes…",
+      "noClasses": "No sinfes yet. Create a sinf first.",
+      "classLabel": "Sinf",
+      "classPlaceholder": "Select sinf",
+      "scheduleHint": {
+        "meetingsPerWeek": "{{count}} meetings per week on average (from jadval).",
+        "setSessions": "Set Sessions in 6 months on the sinf jadval to align meeting names with planned rows."
+      },
+      "meetingName": {
+        "label": "Name this sinf meeting",
+        "placeholder": "e.g. Week 3 — Supply & Demand",
+        "helper": "Shown on the projector and in the session log."
+      },
+      "generateQr": {
+        "new": "Yangi QR",
+        "this": "QR yaratish",
+        "pickSessionFirst": "Avval darsni tanlang."
+      },
+      "projectorView": "Proyektor",
+      "stopSession": "To‘xtatish",
+      "modality": {
+        "online": "Online check-in — talabas scan from anywhere.",
+        "inPerson": "In-person check-in — show QR on the projector."
+      },
+      "sessionTimer": {
+        "label": "Sinf session time",
+        "max": "max {{duration}}",
+        "remaining": "{{time}} remaining",
+        "closesAt": "Check-in closes at {{time}}"
+      },
+      "qrHint": "Scan opens talaba check-in — they must be signed in as a talaba.",
+      "sessionEnded": {
+        "stopped": {
+          "title": "Session stopped",
+          "body": "Check-in is closed for this meeting."
+        },
+        "windowEnded": {
+          "title": "Check-in closed",
+          "body": "The check-in window for this session has ended."
+        },
+        "closed": {
+          "title": "Check-in window ended",
+          "body": "Start a new QR session for the next meeting."
+        },
+        "noToken": {
+          "title": "QR bu yerdа yo‘q",
+          "body": "Sessiya ochiq, lekin kod bu tabda yo‘q. Yangi QR yarating."
+        }
+      },
+      "emptyQr": {
+        "tapGenerate": "Tap Generate below to create a QR for this meeting.",
+        "pickClass": "Sinfni tanlang, keyin QR yarating.",
+        "pickSession": "Darsni tanlang, keyin QR yarating."
+      },
+      "sessionLog": {
+        "title": "Oxirgi sessiyalar",
+        "description": "Ushbu sinf uchun oldingi check-in sessiyalari."
+      },
+      "projector": {
+        "title": "Davomat QR — projector",
+        "scanHint": "Talabalar scan with their phone to check in",
+        "meetingLabel": "Meeting:",
+        "exitAria": "Exit projector view",
+        "ariaLabel": "Projector attendance QR"
+      },
+      "meetingFallback": "Meeting",
+      "toast": {
+        "generateFailed": "Could not generate attendance QR",
+        "stopFailed": "Could not stop attendance session"
+      },
+      "setupTitle": "Sozlash",
+      "sessionLabel": "Dars",
+      "live": "Jonli",
+      "ended": "Tugagan"
+    },
+    "attendancePicker": {
+      "label": "Meeting (for the table below)",
+      "placeholders": {
+        "pickSession": "Pick a planned session…",
+        "chooseMeeting": "Choose a meeting",
+        "noMeetings": "No meetings generated yet"
+      },
+      "group": {
+        "plannedSessions": "Planned sessions (approved jadval)",
+        "savedCheckIns": "Saqlashd check-ins (this browser)"
+      },
+      "checkInSuffix": {
+        "count": " · {{count}} checked in (this browser)",
+        "none": " · no check-ins stored here yet"
+      },
+      "helper": {
+        "generateBelow": "Generate a meeting in Sinf meeting check-in above, then pick it here.",
+        "generateAbove": "Generate a meeting in Sinf meeting check-in above, then pick it here.",
+        "plannedRows": "Planned rows mirror your approved jadval; saved check-ins come from QR sessions on this browser."
+      },
+      "empty": {
+        "pickSession": "Pick a planned session or a saved check-in to load the attendance table.",
+        "generateMeeting": "Generate a meeting QR first, then select it here."
+      }
+    },
+    "attendanceLogs": {
+      "title": "Davomat QR session log",
+      "description": "Past check-in sessions for this sinf on this browser.",
+      "empty": "No attendance sessions logged yet.",
+      "table": {
+        "started": "Started",
+        "ended": "Ended",
+        "timeInClass": "Time in sinf",
+        "class": "Sinf",
+        "meeting": "Meeting",
+        "instructor": "Instructor",
+        "howEnded": "How it ended"
+      },
+      "inProgress": "In progress",
+      "endReason": {
+        "windowEnded": "2h 15m window ended",
+        "newQr": "New QR / next meeting",
+        "switchedClass": "Switched sinf",
+        "stoppedByInstructor": "Stopped by instructor"
+      }
+    },
+    "grades": {
+      "title": "Final scores",
+      "intro": "Total is the sum of quiz scores from the Quiz scores tab. Save here, then publish certificates.",
+      "publishAll": "Publish all certificates",
+      "empty": {
+        "substitute": "Substitute instructors cannot tahrirlash grades on this demo page.",
+        "connectApi": "Connect this sinf to the API to load enrolled talabas for grading.",
+        "loading": "Yuklanmoqda talabas…",
+        "error": "Could not load talabas for grading.",
+        "noStudents": "No talabas enrolled yet."
+      },
+      "table": {
+        "student": "Talaba",
+        "sessions": "Sessions",
+        "attendance": "Attend. %",
+        "instructor": "Instructor",
+        "total": "Total",
+        "feedback": "Feedback",
+        "actions": "Actions",
+        "headerTitles": {
+          "sessions": "QR check-ins on this browser vs planned sessions",
+          "attendance": "Auto: sessions attended ÷ planned sessions in 6 months",
+          "total": "Sum of saved quiz scores (Quiz scores tab)"
+        }
+      },
+      "feedback": {
+        "sessions": "sess.",
+        "platformPending": "Platform pending",
+        "platformBonus": "+ platform",
+        "pending": "Pending",
+        "readReview": "Read review"
+      },
+      "scorePlaceholder": "0–100",
+      "actions": {
+        "save": "Saqlash",
+        "update": "Update",
+        "publish": "Publish",
+        "done": "Done"
+      },
+      "footnote": "Attend. % is informational. Total is the sum of quiz scores. Save to lock the grade, then publish certificates.",
+      "noQuizScores": "Enter and save quiz scores on the Quiz scores tab first.",
+      "reviewDialog": {
+        "title": "Talaba review",
+        "description": "Ratings and comments submitted by the talaba.",
+        "instructorRating": "Instructor rating",
+        "platformRating": "Platform rating",
+        "noComment": "No comment.",
+        "submitted": "Yuborishted {{date}}"
+      },
+      "starsAriaLabel": "{{rating}} out of 5 stars",
+      "toast": {
+        "gradeSaved": "Grade saved",
+        "certificatePublished": "Certificate published",
+        "saveFailed": "Could not save grade",
+        "publishFailed": "Could not publish certificate",
+        "publishAllDone": "All certificates published"
+      }
+    }
+  },
+  "admin": {
+    "shared": {
+      "backToDashboard": "Boshqaruv paneliga qaytish",
+      "backToPayments": "To'lovlarga qaytish",
+      "backToPayroll": "Ish haqiga qaytish",
+      "backToPayrollOverview": "Ish haqi umumiy ko'rinishiga qaytish",
+      "backToEnrollmentApplications": "Ro'yxatdan o'tish arizalariga qaytish",
+      "backToAllClasses": "Barcha sinflar",
+      "backToClassOverview": "Sinf umumiy ko'rinishi",
+      "backToInstructorRequests": "O'qituvchi so'rovlari",
+      "backToNotifications": "Bildirishnomalarga qaytish",
+      "clearFilters": "Filtrlarni tozalash",
+      "clear": "Tozalash",
+      "roleBadge": "Admin",
+      "roleBadgeSuper": "Superadmin",
+      "allRoles": "Barcha rollar",
+      "allStatuses": "Barcha holatlar",
+      "allCategories": "Barcha toifalar",
+      "allClasses": "Barcha sinflar",
+      "allLecturers": "Barcha o'qituvchilar",
+      "allTypes": "Barcha turlar",
+      "allMethods": "Barcha usullar",
+      "allPayments": "Barcha to'lovlar",
+      "allEnrollments": "Barcha ro'yxatdan o'tishlar",
+      "allClassStatuses": "Barcha sinf holatlari",
+      "allRiskLevels": "Barcha xavf darajalari",
+      "allResults": "Barcha natijalar",
+      "allEligibility": "Barcha moslik",
+      "anyCourseLoad": "Har qanday kurs yuklamasi",
+      "active": "Faol",
+      "inactive": "Nofaol",
+      "pending": "Kutilmoqda",
+      "paid": "To'langan",
+      "overdue": "Muddati o'tgan",
+      "approved": "Tasdiqlangan",
+      "rejected": "Rad etilgan",
+      "notApproved": "Tasdiqlanmagan",
+      "awaitingReview": "Ko'rib chiqish kutilmoqda",
+      "pendingReview": "Ko'rib chiqish kutilmoqda",
+      "yes": "Ha",
+      "no": "Yo'q",
+      "done": "Bajarildi",
+      "missing": "Yo'q",
+      "demo": "demo",
+      "loadingUsers": "Loading users…",
+      "loading": "Yuklanmoqda…",
+      "loadingApplications": "Loading applications...",
+      "loadingClass": "Loading class…",
+      "loadingClasses": "Loading classes…",
+      "loadingApplication": "Loading application...",
+      "loadingNotifications": "Loading notifications…",
+      "loadingPayrollSubmission": "Loading payroll submission…",
+      "loadingClassSchedule": "Loading class schedule…",
+      "loadingListedPrice": "Loading listed class price…",
+      "retrying": "Retrying…",
+      "tryAgain": "Qayta urinish",
+      "submitting": "Yuborilmoqda…",
+      "publishing": "Nashr qilinmoqda…",
+      "saving": "Saqlanmoqda…",
+      "creating": "Yaratilmoqda...",
+      "approving": "Tasdiqlanmoqda…",
+      "rejecting": "Rad etilmoqda…",
+      "copied": "Nusxalandi",
+      "copy": "Nusxalash",
+      "email": "Email",
+      "phone": "Telefon",
+      "role": "Rol",
+      "category": "Toifa",
+      "level": "Daraja",
+      "class": "Sinf",
+      "course": "Kurs",
+      "lecturer": "O'qituvchi",
+      "instructor": "O'qituvchi",
+      "student": "Talaba",
+      "amount": "Summa",
+      "date": "Sana",
+      "time": "Vaqt",
+      "title": "Sarlavha",
+      "reference": "Ma'lumotnoma",
+      "method": "Usul",
+      "period": "Davr",
+      "submitted": "Yuborilgan",
+      "updated": "Yangilangan",
+      "recorded": "Qayd etilgan",
+      "due": "Muddat",
+      "notes": "Izohlar",
+      "summary": "Xulosa",
+      "details": "Tafsilotlar",
+      "viewDetails": "Tafsilotlarni ko'rish",
+      "openDetails": "Tafsilotni ochish",
+      "review": "Ko'rib chiqish",
+      "approve": "Tasdiqlash",
+      "reject": "Rad etish",
+      "deactivate": "O'chirish",
+      "activate": "Faollashtirish",
+      "returnToList": "Ro'yxatga qaytish",
+      "backToList": "Ro'yxatga qaytish",
+      "noRowsMatch": "No rows match your search or filters.",
+      "loggedInAs": "Logged in as {{name}}",
+      "waiting": "Kutilmoqda",
+      "completed": "Tugallangan",
+      "trial": "Sinov",
+      "allRequests": "Barcha so'rovlar",
+      "allSubstituteRequests": "Barcha o'rnini bosish so'rovlari",
+      "view": "Ko'rish",
+      "edit": "Tahrirlash",
+      "searchNameEmailRole": "Search name, email, role…",
+      "searchNameEmail": "Search name or email…",
+      "searchStudentClass": "Search student, class…",
+      "searchStudentClassLecturer": "Search student, class, lecturer…",
+      "enterAdminCode": "Admin kodingizni kiriting",
+      "unknownError": "Noma'lum xato",
+      "couldNotLoadUsers": "Could not load users.",
+      "noUsersYet": "No users yet.",
+      "noUsersMatch": "No users match your search or filters."
+    },
+    "dashboard": {
+      "subtitle": "Admin boshqaruv paneli",
+      "stats": {
+        "totalUsers": "Jami foydalanuvchilar",
+        "students": "Talabalar",
+        "classes": "Sinflar"
+      },
+      "recentUsers": {
+        "title": "So'nggi foydalanuvchilar",
+        "addUser": "Foydalanuvchi qo'shish",
+        "searchPlaceholder": "Search name, email, role…",
+        "rolePlaceholder": "Rol",
+        "statusPlaceholder": "Holat",
+        "table": {
+          "name": "Ism",
+          "email": "Email",
+          "role": "Rol",
+          "status": "Holat",
+          "actions": "Amallar"
+        },
+        "empty": {
+          "none": "No users yet.",
+          "noMatch": "No users match your search or filters."
+        },
+        "loadError": "Could not load users.",
+        "actions": {
+          "view": "Ko'rish",
+          "edit": "Tahrirlash",
+          "deactivate": "O'chirish"
+        }
+      },
+      "systemActivity": {
+        "title": "Tizim faoliyati"
+      },
+      "quickActions": {
+        "title": "Tezkor amallar",
+        "studentsRegistrations": "Talabalar va ro'yxatdan o'tish",
+        "enrollmentsWaitlist": "Ro'yxatdan o'tish va kutish ro'yxati",
+        "paymentsReminders": "To'lovlar va eslatmalar",
+        "allClasses": "Barcha sinflar",
+        "calendar": "Taqvim",
+        "users": "Foydalanuvchilar",
+        "reports": "Hisobotlar",
+        "settings": "Sozlamalar"
+      },
+      "adminAccess": {
+        "title": "Admin kirish",
+        "description": "You have full access to users, classes, and platform configuration."
+      }
+    },
+    "students": {
+      "description": "Directory and status of enrolled students.",
+      "remindSelected": "Tanlanganlarga eslatma",
+      "remindQueuedDemo": "Reminder queued (demo)",
+      "remindQueuedDescription": "{{count}} student(s)",
+      "searchPlaceholder": "Search name or email…",
+      "statusPlaceholder": "Student status",
+      "table": {
+        "student": "Talaba",
+        "status": "Holat",
+        "classes": "Sinflar",
+        "registered": "Ro'yxatdan o'tgan"
+      },
+      "actions": {
+        "viewEnrollments": "View enrollments"
+      },
+      "empty": "No students match your search or filters.",
+      "toast": {
+        "loadFailed": "Failed to load students",
+        "deactivated": "Student deactivated",
+        "activated": "Student activated",
+        "updateFailed": "Failed to update status"
+      }
+    },
+    "teachers": {
+      "description": "Lecturer accounts and class load.",
+      "searchPlaceholder": "Search name, email, classes, students…",
+      "classLoadPlaceholder": "Class load",
+      "withAssignedClasses": "With assigned classes",
+      "noClasses": "No classes (0)",
+      "table": {
+        "name": "Ism",
+        "email": "Email",
+        "classes": "Sinflar",
+        "totalStudents": "Jami talabalar",
+        "status": "Holat",
+        "actions": "Amallar"
+      },
+      "viewProfile": "View profile",
+      "profileDialog": {
+        "title": "Teacher profile",
+        "description": "Lecturer account · {{email}}",
+        "assignedCourses": "Assigned courses",
+        "totalStudents": "Jami talabalar",
+        "classesTaught": "Classes taught",
+        "noClassesAssigned": "No classes assigned.",
+        "enrolledCapacity": "Enrolled / capacity",
+        "viewDetails": "Tafsilotlarni ko'rish"
+      },
+      "toast": {
+        "loadFailed": "Failed to load teachers"
+      }
+    },
+    "staff": {
+      "description": "Non-teaching staff accounts (demo data).",
+      "searchPlaceholder": "Search name, email, role…",
+      "empty": "No staff match your search or filters."
+    },
+    "users": {
+      "description": "Cross-role user list.",
+      "empty": "No users match your search or filters.",
+      "toast": {
+        "loadFailedTitle": "Xato",
+        "loadFailed": "Failed to load users"
+      }
+    },
+    "addUserRole": {
+      "description": "Create a new staff account. A secure temporary password will be shown once after creation and the user must change it on first sign-in.",
+      "form": {
+        "fullName": "Full Name",
+        "fullNamePlaceholder": "Enter full name",
+        "email": "Email",
+        "emailPlaceholder": "user@school.com",
+        "phoneNumber": "Phone Number",
+        "phonePlaceholder": "+6281234567890",
+        "role": "Rol",
+        "selectRole": "Select role",
+        "category": "Toifa",
+        "selectCategory": "Select category",
+        "level": "O'qituvchi darajasi",
+        "selectLevel": "O'qituvchi darajasini tanlang (ixtiyoriy)",
+        "adminCode": "Admin code",
+        "adminCodePlaceholder": "masalan, AF01",
+        "adminCodeHint": "Short ID used on approve/reject actions so you can tell which admin handled a request.",
+        "createUser": "Foydalanuvchi yaratish"
+      },
+      "roles": {
+        "teacher": "O'qituvchi",
+        "adminFinance": "Admin Finance",
+        "adminContent": "Admin Content",
+        "adminSupport": "Admin Support",
+        "adminAnalytic": "Admin Analytic"
+      },
+      "tempPasswordDialog": {
+        "title": "Temporary password created",
+        "description": "Share this password securely with {{email}}. It will not be shown again.",
+        "instruction": "The user must enter this as their current password on first sign-in.",
+        "ariaLabel": "Temporary password",
+        "storedSecurely": "I have stored it securely",
+        "leaveWarning": "Store the temporary password before leaving this screen."
+      },
+      "toast": {
+        "fillAllFields": "Please fill in all fields",
+        "selectCategory": "Please select a teacher category",
+        "invalidAdminCode": "Enter an admin code (2–16 letters or numbers, e.g. AF01)",
+        "accountCreated": "{{role}} account created successfully",
+        "createFailed": "Failed to create user",
+        "passwordCopied": "Temporary password copied",
+        "copyFailed": "Could not copy password. Select and copy it manually."
+      }
+    },
+    "settings": {
+      "description": "Platforma sozlamalari, asosiy ma'lumotlar va tizim afzalliklari.",
+      "tabs": {
+        "general": "Umumiy sozlamalar",
+        "categories": "O'qitish kategoriyalari",
+        "courseLevels": "Kurs darajalari"
+      },
+      "emailAdminsOnRegistration": "Yangi ro'yxatdan o'tishda adminlarga xat yuborish",
+      "emailAdminsHint": "Operatsiyalar pochta qutisiga yuboriladi.",
+      "blockLmsWhenOverdue": "To'lov muddati o'tganda LMS kirishini bloklash",
+      "blockLmsHint": "Server tomonida majburiy bajariladi.",
+      "saveChanges": "O'zgarishlarni saqlash",
+      "savedDemo": "Sozlamalar muvaffaqiyatli saqlandi"
+    },
+    "categories": {
+      "title": "O'qitish va kurs kategoriyalari",
+      "subtitle": "O'qituvchilar va kurslarga biriktirilgan fan sohalari va bo'limlarni boshqarish.",
+      "loadError": "Kategoriyalarni yuklab bo'lmadi",
+      "totalCategories": "Jami kategoriyalar",
+      "totalCoursesTagged": "Biriktirilgan kurslar",
+      "totalTeachersAssigned": "Biriktirilgan o'qituvchilar",
+      "searchPlaceholder": "Kategoriyalarni qidirish…",
+      "addCategory": "Kategoriya qo'shish",
+      "nameColumn": "Kategoriya nomi",
+      "coursesColumn": "Kurslar",
+      "teachersColumn": "O'qituvchilar",
+      "actionsColumn": "Amallar",
+      "coursesUnit": "kurslar",
+      "teachersUnit": "o'qituvchilar",
+      "inUseWarningTooltip": "Kategoriya hozirda foydalanilmoqda",
+      "noCategoriesFound": "Kategoriyalar topilmadi",
+      "noSearchResults": "Qidiruv bo'yicha kategoriyalar topilmadi.",
+      "createFirstCategoryHint": "Kurslar va o'qituvchilarni tartibga solish uchun birinchi kategoriyani qo'shing.",
+      "createModalTitle": "Yangi kategoriya yaratish",
+      "createModalDesc": "Yangi fan sohasi yoki bo'lim uchun nom kiriting.",
+      "categoryNameLabel": "Kategoriya nomi",
+      "createButton": "Kategoriya yaratish",
+      "nameRequired": "Kategoriya nomi kiritilishi shart.",
+      "alreadyExists": "Bu nomdagi kategoriya allaqachon mavjud.",
+      "createSuccess": "Kategoriya muvaffaqiyatli yaratildi.",
+      "createError": "Kategoriya yaratib bo'lmadi.",
+      "deleteConfirmTitle": "Kategoriyani o'chirish",
+      "deleteConfirmPrompt": "\"{{name}}\" kategoriyasini o'chirmoqchimisiz? Bu amalni bekor qilib bo'lmaydi.",
+      "deleteBlockedHint": "Ushbu kategoriya hozirda {{courses}} ta kurs va {{teachers}} ta o'qituvchiga biriktirilgan. Ularni qayta taqsimlamaguncha o'chirish server tomonidan rad etilishi mumkin.",
+      "deleteSuccess": "Kategoriya muvaffaqiyatli o'chirildi.",
+      "deleteError": "Kategoriyani o'chirib bo'lmadi."
+    },
+    "courseLevels": {
+      "title": "Kurs / Sinf darajalari",
+      "subtitle": "Kurs yaratishda mavjud bo'lgan akademik qiyinchilik va bilim darajalarini boshqarish.",
+      "loadError": "Kurs darajalarini yuklab bo'lmadi",
+      "totalLevels": "Jami darajalar",
+      "activeLevels": "Faol darajalar",
+      "inactiveLevels": "Nofaol darajalar",
+      "searchPlaceholder": "Darajalarni qidirish…",
+      "addLevel": "Kurs darajasi qo'shish",
+      "orderColumn": "Tartib",
+      "nameColumn": "Ko'rsatiladigan nom",
+      "codeColumn": "Kod identifikatori",
+      "descriptionColumn": "Tavsif / Mo'ljallangan auditoriya",
+      "statusColumn": "Holat",
+      "actionsColumn": "Amallar",
+      "toggleActive": "Faollik holatini o'zgartirish",
+      "activatedSuccess": "\"{{name}}\" darajasi faollashtirildi.",
+      "deactivatedSuccess": "\"{{name}}\" darajasi faolsizlantirildi.",
+      "noLevelsFound": "Kurs darajalari topilmadi",
+      "noSearchResults": "Qidiruv bo'yicha darajalar topilmadi.",
+      "createFirstLevelHint": "O'quv rejasini standartlashtirish uchun bilim darajalarini sozlang.",
+      "createModalTitle": "Kurs darajasi qo'shish",
+      "createModalDesc": "Kurslarni boshqarish uchun yangi bilim yoki qiyinchilik darajasini aniqlang.",
+      "codeLabel": "Kod (Noyob identifikator)",
+      "codeHint": "Kichik harflar, raqamlar, chiziqcha yoki pastki chiziq (masalan, beginner_a1, grade_10)",
+      "nameLabel": "Ko'rsatiladigan nom",
+      "sortOrderLabel": "Tartiblash raqami",
+      "sortOrderHint": "Ro'yxatlarda ko'rsatiladigan tartib raqami (masalan, 10, 20)",
+      "descriptionLabel": "Tavsif (Ixtiyoriy)",
+      "activeStatusLabel": "Faol va tanlash mumkin",
+      "activeStatusHint": "Nofaol darajalar o'tmishdagi yozuvlarda qoladi, lekin yangi dars yaratishda yashiriladi.",
+      "createButton": "Daraja yaratish",
+      "codeRequired": "Kod identifikatori kiritilishi shart.",
+      "nameRequired": "Daraja nomi kiritilishi shart.",
+      "alreadyExists": "Bu kodli daraja allaqachon mavjud.",
+      "createSuccess": "Kurs darajasi muvaffaqiyatli yaratildi.",
+      "createError": "Kurs darajasini yaratib bo'lmadi.",
+      "editModalTitle": "Kurs darajasini tahrirlash",
+      "editModalDesc": "\"{{code}}\" kodi uchun ma'lumotlarni yangilang.",
+      "updateSuccess": "Kurs darajasi muvaffaqiyatli yangilandi.",
+      "updateError": "Kurs darajasini yangilab bo'lmadi.",
+      "deleteConfirmTitle": "Kurs darajasini o'chirish",
+      "deleteConfirmPrompt": "\"{{name}}\" ({{code}}) darajasini o'chirmoqchimisiz? Agar bu daraja allaqachon kurslarda ishlatilayotgan bo'lsa, uni o'chirish o'rniga nofaol qilish tavsiya etiladi.",
+      "deleteSuccess": "Kurs darajasi muvaffaqiyatli o'chirildi.",
+      "deleteError": "Kurs darajasini o'chirib bo'lmadi."
+    },
+    "notifications": {
+      "description": "Admin activity alerts and updates.",
+      "unread": "{{count}} unread",
+      "markAllRead": "Barchasini o'qilgan deb belgilash",
+      "searchPlaceholder": "Search notifications…",
+      "filterPlaceholder": "Filtr",
+      "filterStudents": "Talabalar",
+      "filterTeachers": "O'qituvchilar",
+      "ariaUnread": "O'qilmagan",
+      "markRead": "O'qilgan deb belgilash",
+      "empty": {
+        "none": "No notifications yet.",
+        "noMatch": "No notifications match your search."
+      },
+      "categories": {
+        "student": "Talaba",
+        "teacher": "O'qituvchi",
+        "system": "Tizim"
+      },
+      "relativeTime": {
+        "justNow": "Hozirgina",
+        "minutesAgo": "{{count}} min ago",
+        "hoursAgo_one": "{{count}} hour ago",
+        "hoursAgo_other": "{{count}} hours ago",
+        "daysAgo_one": "{{count}} day ago",
+        "daysAgo_other": "{{count}} days ago"
+      }
+    },
+    "courses": {
+      "list": {
+        "description": "Quick list by title, lecturer, category, and status. Open a class for pricing, schedule workflow, and review.",
+        "referralCodesButton": "Referral va chegirma",
+        "searchPlaceholder": "Search title, category, lecturer…",
+        "statusDraft": "Draft (pending review)",
+        "statusPublished": "Nashr qilingan",
+        "statusRejected": "Rad etilgan",
+        "statusArchived": "Arxivlangan",
+        "categoryPlaceholder": "Toifa",
+        "table": {
+          "title": "Sarlavha",
+          "lecturer": "O'qituvchi",
+          "status": "Holat",
+          "actions": "Amallar",
+          "category": "Toifa"
+        },
+        "details": "Tafsilotlar",
+        "detailsTitle": "View class details",
+        "emptyNone": "No classes returned.",
+        "emptyNoMatch": "No classes match your search or filters.",
+        "loadError": {
+          "default": "Could not load classes.",
+          "network": "Could not reach the API. In Brave (or strict blockers), try Shields down for this site, or confirm you are logged in here (tokens are per-browser).",
+          "accessDeniedSuffix": " Sign out and sign in again if your session was refreshed in another tab."
+        }
+      },
+      "detail": {
+        "subtitle": "Catalog, schedule workflow, and review tools.",
+        "invalidId": "Invalid class id.",
+        "backToAllClasses": "← Back to all classes",
+        "loadError": "Could not load this class.",
+        "schedule": "Jadval",
+        "reviewPricing": "Review & pricing",
+        "catalogPricing": "Catalog & pricing",
+        "overview": "Umumiy ko'rinish",
+        "pricing": "Narxlash",
+        "scheduleCard": "Jadval",
+        "description": "Tavsif",
+        "fields": {
+          "category": "Toifa",
+          "lecturer": "O'qituvchi",
+          "status": "Holat",
+          "submitted": "Submitted (draft created)",
+          "enrollments": "Ro'yxatdan o'tishlar",
+          "catalogPrice": "Katalog narxi",
+          "referralCode": "Referral kodi",
+          "discount": "Chegirma",
+          "discountedPrice": "Discounted price",
+          "totalSessions": "Total sessions (6 mo.)",
+          "classStart": "Class start",
+          "classEnd": "Class end"
+        },
+        "scheduleBadges": {
+          "instructorApproved": "Instructor approved",
+          "awaitingInstructor": "Awaiting instructor",
+          "changesRequested": "Changes requested",
+          "noApprovalRecorded": "No schedule approval step recorded (this browser)."
+        }
+      },
+      "schedule": {
+        "description": "Add one or more schedule months, set how many sessions fall in each, add optional date/time per row, then send the combined plan to the instructor.",
+        "courseStatus": "Course status:",
+        "waitingInstructor": "— Waiting for instructor approval",
+        "scheduleApprovedReady": "— Schedule approved, ready to publish",
+        "instructorNote": "Instructor note: {{note}}",
+        "instructorAvatarAlt": "O'qituvchi",
+        "classLabel": "Sinf",
+        "classStart": "Class start",
+        "classEnd": "Class end",
+        "datesHint": "From session dates below, or the class start/end saved on the course when no session dates are set.",
+        "removeMonth": "Oyni olib tashlash",
+        "perSessionDetails": "Per-session details",
+        "optional": "(optional)",
+        "perSessionHint": "Title, date, and time for each session in this month (optional).",
+        "session": "Session {{num}}",
+        "sessionTitlePlaceholder": "Session {{num}} title",
+        "addScheduleMonth": "Jadval oyini qo'shish",
+        "sendToInstructor": "O'qituvchiga yuborish",
+        "resendToInstructor": "O'qituvchiga qayta yuborish",
+        "monthHeading": "Sessions in {{ordinal}} month",
+        "monthSessionLimit": "Up to {{max}} sessions per month.",
+        "sessionDefaultTitle": "Session {{num}}",
+        "dayPattern": {
+          "label": "Day pattern",
+          "hint": "Fill session dates on odd days (Monday, Wednesday, Friday) or even days (Tuesday, Thursday, Saturday).",
+          "openButton": "Set day pattern",
+          "placeholder": "Odd Day / Even Day",
+          "odd": "Odd Day",
+          "even": "Even Day",
+          "oddDetail": "Odd Day — Monday, Wednesday, Friday",
+          "evenDetail": "Even Day — Tuesday, Thursday, Saturday",
+          "courseStart": "Course start",
+          "hour": "Hour",
+          "hourPlaceholder": "Select hour",
+          "dialogTitle": "Set day pattern",
+          "dialogDescription": "Pick the course start date, day pattern, and hour, then apply to fill session dates and times.",
+          "apply": "Apply"
+        },
+        "toast": {
+          "minOneSession": "Add at least one session across the schedule months.",
+          "maxSessionsPerMonth": "Each schedule month allows at most {{max}} sessions.",
+          "sent": "Schedule sent to instructor for approval",
+          "sendFailed": "Could not send",
+          "dayPatternFillFailed": "Could not fill enough dates for this day pattern.",
+          "dayPatternStartRequired": "Select a course start date.",
+          "dayPatternOddApplied": "Session dates filled for Odd Day (Monday, Wednesday, Friday).",
+          "dayPatternEvenApplied": "Session dates filled for Even Day (Tuesday, Thursday, Saturday)."
+        },
+        "loadError": "Could not load class."
+      }
+    },
+    "classesRosters": {
+      "description": "Assign students to classes, track session quota, and handle class switching from the student or enrollment record.",
+      "searchPlaceholder": "Search class, schedule…",
+      "classStatusPlaceholder": "Sinf holati",
+      "table": {
+        "class": "Sinf",
+        "schedule": "Jadval",
+        "capacity": "Sig'im",
+        "status": "Holat",
+        "sessionQuota": "Session quota",
+        "roster": "Ro'yxat",
+        "sessions": "{{used}}/{{total}} sessions"
+      },
+      "openRoster": "Ro'yxatni ochish",
+      "openRosterDemo": "Open roster (demo)",
+      "empty": "No classes match your search or filters.",
+      "rosterDialog": {
+        "paidStatus": "To'lov holati"
+      }
+    },
+    "enrollments": {
+      "description": "Class enrollment, roster assignment, and waitlist promotion. Server validates capacity and payment rules.",
+      "promoteSelected": "Kutish ro'yxatidan tanlanganlarni ko'tarish",
+      "promotionSentDemo": "Promotion request sent (demo)",
+      "searchPlaceholder": "Search student, class…",
+      "paymentPlaceholder": "To'lov",
+      "enrollmentPlaceholder": "Ro'yxatdan o'tish",
+      "enrolled": "Ro'yxatdan o'tgan",
+      "table": {
+        "student": "Talaba",
+        "class": "Sinf",
+        "waitlistNumber": "Waitlist #",
+        "enrollment": "Ro'yxatdan o'tish",
+        "payment": "To'lov",
+        "classStatus": "Sinf holati"
+      },
+      "empty": "No enrollments match your search or filters."
+    },
+    "enrollmentApplications": {
+      "list": {
+        "description": "Review student requests (full or down payment, schedule-based tuition). Approve to enroll or reject with feedback.",
+        "pendingBanner_one": "{{count}} enrollment pending review",
+        "pendingBanner_other": "{{count}} enrollments pending review",
+        "noPending": "No pending enrollments.",
+        "followUpBanner_one": "{{count}} approved enrollment with follow-up tuition to review",
+        "followUpBanner_other": "{{count}} approved enrollments with follow-up tuition to review",
+        "table": {
+          "submitted": "Yuborilgan",
+          "class": "Sinf",
+          "student": "Talaba",
+          "tuition": "To'lov",
+          "status": "Holat",
+          "actions": "Amallar"
+        },
+        "badgeReviewFollowUp": "Review follow-up",
+        "badgeFollowUpPayment": "Follow-up payment",
+        "reviewPayment": "To'lovni ko'rib chiqish",
+        "empty": "No applications yet. Students submit from Available Classes → Request enrollment.",
+        "loadFailed": "Failed to load applications"
+      },
+      "detail": {
+        "eyebrow": "Enrollment application",
+        "title": "Review submission",
+        "description": "Verify contact details, full or down payment (schedule-based tuition), and open proof / ID before approving or rejecting.",
+        "submittedAt": "Submitted {{date}}",
+        "sections": {
+          "class": "Sinf",
+          "student": "Talaba",
+          "contact": "Contact",
+          "officialDocuments": "Official documents",
+          "invoice": "Invoice: {{number}}",
+          "receipt": "Receipt: {{number}}",
+          "method": "Method: {{method}}",
+          "payment": "To'lov",
+          "paymentMethod": "Payment method",
+          "monthsPaidAtEnrollment": "Months paid at enrollment",
+          "monthsPaid": "Months paid",
+          "amountOnTransfer": "Amount on transfer",
+          "furtherInstalments": "Further instalments",
+          "instalmentPolicy": "{{count}} payments (school policy)",
+          "schedule": "Jadval",
+          "paymentProof": "Payment proof",
+          "idDocument": "ID document",
+          "adminNote": "Admin note"
+        },
+        "openProof": "Open proof in new tab",
+        "openId": "Open ID in new tab",
+        "noUploadRequired": "{{method}} — no transfer proof or ID upload required.",
+        "listedPrice": "Listed class price:",
+        "proratedTuition": "Student tuition (prorated):",
+        "expectedForPlan": "Expected for this plan:",
+        "amountMismatch": "Transfer amount does not match expected tuition for this plan — check the payment proof.",
+        "amountMatches": "Transfer amount matches expected tuition.",
+        "priceUnavailable": "Listed class price not available for this course. Summary:",
+        "reviewed": "Reviewed {{date}}{{by}}",
+        "reviewedBy": " by {{name}}",
+        "approveEnrollment": "Ro'yxatdan o'tishni tasdiqlash",
+        "rejectDialog": {
+          "title": "Arizani rad etish",
+          "noteLabel": "Note to student (optional)",
+          "notePlaceholder": "e.g. Amount mismatch, illegible screenshot",
+          "rejectApplication": "Arizani rad etish"
+        },
+        "notFound": {
+          "title": "Application not found",
+          "description": "It may have been removed or the link is invalid.",
+          "missing": "Missing application."
+        },
+        "toast": {
+          "loadFailed": "Failed to load application",
+          "approvedTitle": "Tasdiqlangan",
+          "approvedDescription": "Student enrolled. Invoice and receipt are available in their Payment history.",
+          "approveFailed": "Could not approve application",
+          "rejectedTitle": "Application rejected",
+          "rejectedDescription": "The student can submit again if needed.",
+          "rejectFailed": "Could not reject application"
+        }
+      }
+    },
+    "payments": {
+      "description": "Mark as paid, validate transfer proof, filter overdue, and send reminders. Authoritative status lives on the API.",
+      "remindSelected": "Tanlanganlarga eslatma",
+      "remindersSentDemo": "Payment reminders sent (demo)",
+      "installmentBanner": "Enrolled students paying tuition month-by-month submit follow-up transfers for review.",
+      "scheduleMonthPayments": "Jadval oylik to'lovlari",
+      "scheduleMonthPending": "Schedule month payments ({{count}} pending)",
+      "searchPlaceholder": "Search student, class, lecturer, invoice…",
+      "paymentStatusPlaceholder": "To'lov holati",
+      "lecturerPlaceholder": "O'qituvchi",
+      "table": {
+        "student": "Talaba",
+        "class": "Sinf",
+        "course": "Kurs",
+        "lecturer": "O'qituvchi",
+        "amount": "Summa",
+        "status": "Holat",
+        "actions": "Amallar"
+      },
+      "viewDetails": "Tafsilotlarni ko'rish",
+      "markPaid": "To'langan deb belgilash",
+      "markPaidDialog": {
+        "title": "Mark as paid",
+        "description": "Only do this after you verify the payment (e.g. bank transfer received).",
+        "paidDate": "Paid date",
+        "paymentMethod": "Payment method",
+        "selectMethod": "Select method",
+        "selectEllipsis": "Select…",
+        "methods": {
+          "bankTransfer": "Bank o'tkazmasi",
+          "cash": "Naqd",
+          "card": "Karta",
+          "payme": "Payme",
+          "click": "Click",
+          "other": "Boshqa"
+        },
+        "reference": "Ma'lumotnoma",
+        "referencePlaceholder": "e.g. bank txn id / receipt number",
+        "noteOptional": "Note (optional)",
+        "notePlaceholder": "Internal admin note…",
+        "confirmPaid": "To'langan deb tasdiqlash",
+        "markedPaidDemo": "Marked paid (demo)"
+      },
+      "detailsDialog": {
+        "title": "Payment details",
+        "dueDate": "Due date",
+        "created": "Created",
+        "paidAt": "Paid at",
+        "proofUploaded": "Proof uploaded",
+        "proofYes": "Ha",
+        "proofNo": "Yo'q",
+        "openProof": "Open proof"
+      },
+      "proofDialog": {
+        "title": "Transfer proof",
+        "description": "Preview uploaded receipt or PDF from storage. Approve to mark payment as validated and update student access.",
+        "demoNoFile": "Demo: no file attached in mock data",
+        "approveProof": "Dalilni tasdiqlash",
+        "approvedDemo": "Proof approved (demo)"
+      },
+      "empty": "No payments match your search or filters."
+    },
+    "installmentPayments": {
+      "description": "Follow-up tuition from enrolled students. Approve to unlock QR attendance for that month.",
+      "filters": {
+        "awaitingReview": "Ko'rib chiqish kutilmoqda",
+        "approved": "Tasdiqlangan",
+        "rejected": "Rad etilgan",
+        "all": "All"
+      },
+      "scheduleMonth": "Schedule month",
+      "submitted": "Submitted {{date}}",
+      "viewProof": "View proof",
+      "enrollment": "Ro'yxatdan o'tish",
+      "proof": "Dalil",
+      "allPayments": "Barcha to'lovlar",
+      "filteredPayments": "{{filter}} payments",
+      "adminCodeHint": "Enter your code once, then approve or reject each payment below.",
+      "empty": {
+        "noneTitle": "No follow-up payments yet",
+        "noneDescription": "When students pay a remaining schedule month, their transfer appears here for review.",
+        "noInView": "No payments in this view."
+      },
+      "rejectDialog": {
+        "title": "To'lovni rad etish",
+        "notePlaceholder": "Note for your records (optional) — e.g. amount mismatch, unclear screenshot",
+        "rejectPayment": "To'lovni rad etish"
+      },
+      "toast": {
+        "approvedTitle": "Payment approved",
+        "approvedDescription": "{{month}} unlocked for QR attendance.",
+        "approveFailed": "Could not approve",
+        "rejectedTitle": "Payment rejected",
+        "rejectedDescription": "The student can submit again with corrected proof.",
+        "rejectFailed": "Could not reject"
+      }
+    },
+    "promos": {
+      "description": "Create carousel banners for student pages. Stored in this browser until a promos API exists.",
+      "resetSamples": "Namunalarni tiklash",
+      "addPromo": "Promo qo'shish",
+      "table": {
+        "title": "Sarlavha",
+        "placement": "Joylash",
+        "order": "Tartib",
+        "status": "Holat",
+        "actions": "Amallar"
+      },
+      "live": "Faol",
+      "hidden": "Yashirin",
+      "empty": "No promos yet. Add one to show a carousel on My Class.",
+      "hint": "Students see active promos in a carousel at the top of My Class. Use sort order to control slide sequence. Optional start/end dates hide promos outside the window.",
+      "dialog": {
+        "editTitle": "Edit promotion",
+        "newTitle": "New promotion",
+        "titleLabel": "Sarlavha",
+        "titlePlaceholder": "Summer enrollment is open",
+        "messageLabel": "Message",
+        "messagePlaceholder": "Short promo copy shown on the banner",
+        "buttonLabel": "Button label",
+        "buttonLink": "Button link",
+        "buttonLinkPlaceholder": "/eduhub or https://...",
+        "imageUrl": "Image URL (optional)",
+        "imagePlaceholder": "https://...",
+        "accentColor": "Accent color",
+        "showOn": "Show on",
+        "sortOrder": "Sort order",
+        "startsOptional": "Starts (optional)",
+        "endsOptional": "Ends (optional)",
+        "liveForStudents": "Live for students",
+        "liveHint": "Hidden promos stay saved but do not appear in the carousel.",
+        "publishPromo": "Publish promo",
+        "saveChanges": "O'zgarishlarni saqlash"
+      },
+      "accentPresets": {
+        "eduhubBlue": "EduHub ko'k",
+        "teal": "Ko'k-yashil",
+        "amber": "Yantar",
+        "violet": "Binafsha",
+        "slate": "Kulrang"
+      },
+      "placements": {
+        "myClass": "Mening sinflarim",
+        "dashboard": "Boshqaruv paneli",
+        "allStudentPages": "Barcha talaba sahifalari"
+      },
+      "defaultCta": "Batafsil",
+      "toast": {
+        "titleRequired": "Title is required",
+        "updated": "Promotion updated",
+        "published": "Promotion published",
+        "hidden": "Promotion hidden from students",
+        "live": "Promotion is live",
+        "deleted": "Promotion deleted"
+      }
+    },
+    "referralCodes": {
+      "description": "Set referral codes, discount percentages, and trial class codes per class. Students enter the referral code at enrollment for the discount.",
+      "searchPlaceholder": "Search class, code, lecturer…",
+      "table": {
+        "class": "Sinf",
+        "status": "Holat",
+        "catalogPrice": "Katalog narxi",
+        "referralCode": "Referral kodi",
+        "discount": "Chegirma",
+        "actions": "Amallar"
+      },
+      "setPricing": "Narx belgilash",
+      "empty": "No classes match your search.",
+      "addDialog": {
+        "title": "Referral, chegirma va sinov kodi",
+        "description": "Bitta dars uchun yoki umumiy (barcha darslar) kodlarni belgilang.",
+        "tabClass": "Dars",
+        "tabGeneral": "Umumiy",
+        "tabTrial": "Sinov",
+        "referralHint": "Talabalar chegirma uchun yozilishda shu kodni kiritadi.",
+        "generalHint": "Umumiy kodlar har qanday darsda, talaba mos referral kodini kiritsa, ishlaydi.",
+        "generalReferralHint": "Platforma bo'ylab referral kodi. Har qanday darsda ishlaydi.",
+        "generalDiscountHint": "Umumiy referral mos kelganda katalog narxidan foiz chegirma (0–100).",
+        "generalTrialHint": "Umumiy sinov kodi. Har qanday dars uchun ishlatilishi mumkin.",
+        "trialTabHint": "Bitta dars yoki barcha darslar uchun sinov kodini yarating.",
+        "trialAppliesTo": "Sinov kodi qo'llaniladi",
+        "trialCode": "Sinov dars kodi",
+        "trialPlaceholder": "masalan TRIAL-ENG-01",
+        "trialHint": "Talabalar tanlangan darsga sinov uchun shu koddan foydalanadi."
+      },
+      "editDialog": {
+        "title": "Edit referral code",
+        "catalogSuffix": " · Catalog {{price}}",
+        "referralCode": "Referral kodi",
+        "referralPlaceholder": "e.g. SPRING2026",
+        "discountPercent": "Discount (%)",
+        "discountHint": "Percent off catalog price when the code matches (0–100).",
+        "withCode": "With code:",
+        "discountSuffix": " (−{{percent}}%)"
+      },
+      "toast": {
+        "saved": "Kodlar saqlandi",
+        "savedDescription": "{{title}} yangilandi.",
+        "generalSaved": "Umumiy referral kodlar saqlandi",
+        "trialSaved": "Sinov dars kodi saqlandi",
+        "trialGeneralSaved": "Umumiy sinov kodi saqlandi",
+        "saveFailed": "Kodlarni saqlab bo'lmadi",
+        "pricingRequired": "Referral yoki sinov kodidan oldin dars narxini belgilang.",
+        "discountRange": "Discount must be between 0 and 100%."
+      }
+    },
+    "specialTuition": {
+      "description": "Grant free enrollment to specific student emails—for example staff family or scholarship cases. Stored in this browser until a grants API exists.",
+      "addGrant": "Imtiyoz qo'shish",
+      "addGrantHint": "The student must sign in with this email when applying. Tuition shows as free on their enrollment form.",
+      "studentEmail": "Student email",
+      "emailPlaceholder": "student@example.com",
+      "classScope": "Class scope",
+      "chooseClass": "Choose class",
+      "allClassesScope": "Barcha sinflar",
+      "noteOptional": "Note (optional)",
+      "notePlaceholder": "e.g. Rector family",
+      "saveGrant": "Save grant",
+      "table": {
+        "email": "Email",
+        "class": "Sinf",
+        "note": "Note",
+        "active": "Faol",
+        "added": "Added"
+      },
+      "toggleGrantAria": "Toggle grant for {{email}}",
+      "removeGrantAria": "Remove grant for {{email}}",
+      "empty": "No grants yet. Add a student email above.",
+      "toast": {
+        "saved": "Special tuition grant saved",
+        "savedClass": "{{email}} can enroll in this class for free.",
+        "savedAll": "{{email}} can enroll in any class for free.",
+        "saveFailed": "Could not save grant.",
+        "enabled": "Grant enabled",
+        "paused": "Grant paused",
+        "removed": "Grant removed"
+      }
+    },
+    "payroll": {
+      "description": "Review instructor payroll submissions, then record bank transfer proof. Student tuition is available separately for reference when checking figures.",
+      "paymentsLink": "To'lovlar va eslatmalar",
+      "tabs": {
+        "instructorRequests": "O'qituvchi so'rovlari",
+        "studentTuition": "Talaba to'lovi",
+        "payoutProof": "To'lov dalili",
+        "contractRates": "Contract rates"
+      },
+      "howItWorks": {
+        "title": "How payroll works",
+        "step1": "Open a submission and verify class figures against the schedule month.",
+        "step2": "Approve or reject the instructor's requested payout.",
+        "step3": "After you pay them, record transfer proof on the detail page or Payout proof tab."
+      },
+      "stats": {
+        "pendingReview": "Ko'rib chiqish kutilmoqda",
+        "approved": "Tasdiqlangan",
+        "allSubmissions": "All submissions"
+      },
+      "pendingBanner": "{{count}} submission(s) waiting for your decision. Filter by Pending review or open any row to review.",
+      "requests": {
+        "searchPlaceholder": "Search instructor, class, period, amount…",
+        "table": {
+          "submitted": "Yuborilgan",
+          "instructor": "O'qituvchi",
+          "class": "Sinf",
+          "scheduleMonth": "Schedule month",
+          "requested": "So'ralgan",
+          "status": "Holat",
+          "action": "Amal"
+        },
+        "review": "Ko'rib chiqish",
+        "emptyNone": "No instructor payroll submissions yet. They appear when a teacher submits from their Payroll page.",
+        "emptyNoMatch": "No rows match your search or status filter."
+      },
+      "rates": {
+        "description": "Set each instructor's revenue split. Payroll quotes and payout estimates use this rate instead of the default when an override is saved.",
+        "defaultNote": "Default contract is {{split}} (instructor/platform). Instructors not listed here use the default.",
+        "searchPlaceholder": "Search instructor name or email…",
+        "contractSplit": "Contract split",
+        "default": "default",
+        "usingDefault": "Default rate",
+        "saved": "Contract rate saved",
+        "loadFailed": "Could not load instructors",
+        "emptyNoTeachers": "No instructors found.",
+        "emptyNoMatch": "No instructors match your search."
+      },
+      "tuition": {
+        "description": "Student tuition rows for reference when validating instructor payroll. Use Payments & reminders to chase unpaid invoices.",
+        "searchPlaceholder": "Search student, class, lecturer, invoice…",
+        "totalsTitle": "Totals in current view",
+        "totalsHint": "Collected counts paid tuition; outstanding is pending and overdue rows that match your filters.",
+        "collected": "Yig'ilgan",
+        "outstanding": "Qarzdorlik",
+        "paidRows": "{{count}} paid row(s)",
+        "unpaidRows": "{{count}} unpaid row(s)",
+        "noPaymentsInView": "No payments in this view.",
+        "summary": "{{count}} payment row(s) total · {{sections}} class section(s) with activity",
+        "table": {
+          "student": "Talaba",
+          "class": "Sinf",
+          "course": "Kurs",
+          "lecturer": "O'qituvchi",
+          "amount": "Summa",
+          "status": "Holat",
+          "due": "Muddat",
+          "paid": "To'langan"
+        }
+      },
+      "proof": {
+        "description": "Log of bank transfer proof recorded after you pay an instructor. Instructors are notified when proof is saved. Approve the payroll request first on the Instructor requests tab.",
+        "searchPlaceholder": "Search class, course, instructor, email…",
+        "table": {
+          "submitted": "Yuborilgan",
+          "class": "Sinf",
+          "course": "Kurs",
+          "instructor": "O'qituvchi",
+          "email": "Email",
+          "summary": "Xulosa",
+          "notes": "Izohlar"
+        },
+        "emptyNone": "No payout proof recorded yet. After approving a request and paying the instructor, record proof from the submission detail page.",
+        "emptyNoMatch": "No rows match your search."
+      }
+    },
+    "payrollSubmissions": {
+      "description": "History of when an admin submitted bank transfer proof for a class (local browser storage until an API replaces it). Instructor figure approvals are on Instructor payroll requests.",
+      "instructorRequests": "O'qituvchi so'rovlari",
+      "payrollOverview": "Ish haqi umumiy ko'rinishi",
+      "searchPlaceholder": "Search class, course, instructor, email…",
+      "emptyNone": "No submissions yet. Submit payout proof from a class card on Payroll.",
+      "emptyNoMatch": "No rows match your search."
+    },
+    "payrollProof": {
+      "title": "Instructor payout proof",
+      "descriptionMissingParams": "Open this page from Payroll — pick a class card and use \"Upload proof\".",
+      "description": "Attach bank transfer confirmation. Submit records the payout, logs it for admins, and notifies the instructor when their email is on file.",
+      "goToPayroll": "Ish haqiga o'tish",
+      "fields": {
+        "class": "Sinf",
+        "course": "Kurs",
+        "instructor": "O'qituvchi",
+        "email": "Email"
+      },
+      "noEmailWarning": "No lecturer email on this link — add lecturer email to payment rows so the instructor gets an in-app notification.",
+      "paymentSummaryLabel": "Payment summary for notification:"
+    },
+    "instructorPayrollRequests": {
+      "description": "Review figures instructors submitted from Payroll. Approve or reject, then record bank transfer proof so they are notified (demo: this browser).",
+      "payoutProofLog": "To'lov dalili jurnali",
+      "emptyTitle": "No pending requests",
+      "emptyDescription": "When an instructor submits payroll for a class, it appears here for approval and transfer proof.",
+      "openPayrollOverview": "Ish haqi umumiy ko'rinishini ochish",
+      "pendingTitle": "Pending ({{count}})",
+      "pendingInstructions": "1. Approve or reject (optional note on reject). 2. After you pay them, open Record transfer proof (or use Upload payout proof on a class card on Payroll overview). Submitting proof sends an in-app notification to the instructor.",
+      "openDetail": "Tafsilotni ochish",
+      "recordTransferProof": "O'tkazma dalilini qayd etish",
+      "fields": {
+        "period": "Davr",
+        "sessionsTaught": "Sessions taught",
+        "requestedPayout": "Requested payout",
+        "payoutDetails": "Payout details",
+        "instructorNotes": "Instructor notes:"
+      },
+      "rejectNoteLabel": "Optional note to instructor (shown on reject)",
+      "rejectNotePlaceholder": "Reason or next steps…",
+      "toast": {
+        "approved": "Request approved",
+        "approveFailed": "Could not approve",
+        "approveFailedDescription": "Request may have been removed.",
+        "rejected": "Request rejected",
+        "rejectFailed": "Could not reject"
+      }
+    },
+    "instructorPayrollRequestDetail": {
+      "allRequests": "Barcha so'rovlar",
+      "classLabel": "Sinf",
+      "statusLabel": "Holat",
+      "instructor": "O'qituvchi",
+      "requestAmount": "Request amount",
+      "submitted": "Yuborilgan",
+      "periodPrefix": "Period: {{label}}",
+      "status": {
+        "approved": "Tasdiqlangan",
+        "notApproved": "Tasdiqlanmagan",
+        "awaitingDecision": "Awaiting your decision"
+      },
+      "schedule": {
+        "title": "Class schedule",
+        "description": "Admin-proposed schedule, approved by the instructor. Payroll for {{period}} is eligible only when every session in that calendar month is marked finished (attendance held).",
+        "requestedPeriod": "the requested period",
+        "loading": "Loading class schedule…",
+        "noMatch": "Could not match this class to a course schedule. Check that the class section and course title align with an admin course or teacher course in the demo.",
+        "demoSchedule": "Showing the demo schedule for this class so you can verify sessions before approving payroll. When the API returns live course data, this panel updates automatically.",
+        "sessionsFinished": "{{finished}}/{{total}} sessions finished",
+        "noSessionsInMonth": "no sessions in this month",
+        "eligible": "All sessions in this month are finished — eligible for payroll for this period.",
+        "notEligible": "Payroll should be processed after the remaining sessions in this month are finished.",
+        "confirmPeriod": "Confirm the period label matches a month that has scheduled sessions.",
+        "sessionsInPeriod": "Sessions in {{period}}",
+        "meeting": "Meeting {{num}}",
+        "dateTba": "Date TBA"
+      },
+      "submission": {
+        "show": "Show full submission from instructor",
+        "hide": "Hide full submission from instructor",
+        "sessionsTaught": "Sessions taught",
+        "payoutDetails": "Payout details",
+        "instructorNotes": "Instructor notes",
+        "noteToInstructor": "Note sent to instructor"
+      },
+      "approvedBanner": "Figures are approved by {{code}} ({{date}}). Use the transfer proof section below to attach or update the bank receipt — that notifies the instructor in this demo.",
+      "rejectedBanner": "This request was declined ({{date}}) · {{code}}. You can still use the proof section below if you need a receipt on file.",
+      "pendingBanner": "Suggested order: attach and submit bank transfer proof in the section below first, then scroll down to approve or decline the instructor's figures.",
+      "transferProof": {
+        "title": "Transfer proof",
+        "description": "Upload the bank receipt and submit here. When you're done, scroll down to approve or decline the payroll request (pending requests only).",
+        "tuitionSnapshot": "Tuition snapshot (for their notification):",
+        "openDedicatedPage": "Open the same proof tools on a dedicated page"
+      },
+      "decision": {
+        "title": "Approve or decline",
+        "description": "After transfer proof is on file (recommended), confirm whether you accept this instructor's payroll figures. Decline opens a confirmation step so you don't mis-click. Approve or decline sends an in-app notification to the instructor (Teacher → Notifications): Payroll request approved or Payroll request not approved, with your note when you decline. Demo uses this browser only; skipped if there is no instructor email and no name on the submission.",
+        "approveRequest": "Ushbu so'rovni tasdiqlash",
+        "declineNotify": "Decline and notify instructor…"
+      },
+      "approveDialog": {
+        "title": "Approve this payroll request?",
+        "description": "Confirm you accept {{name}}'s figures for {{classSection}}. The instructor will be notified in Teacher → Notifications.",
+        "approveRequest": "So'rovni tasdiqlash"
+      },
+      "declineDialog": {
+        "title": "Decline this payroll request?",
+        "description": "The instructor will see this in their notifications. You can leave a short explanation (recommended).",
+        "noteLabel": "Note to instructor",
+        "notePlaceholder": "Reason they should fix or resubmit…",
+        "declineRequest": "So'rovni rad etish"
+      },
+      "noTuitionRows": "No tuition rows for this class in the current payment list.",
+      "toast": {
+        "approved": "Tasdiqlangan",
+        "approvedDescription": "{{name}} was notified.",
+        "approveFailed": "Could not approve",
+        "declined": "Request declined",
+        "declineFailed": "Could not decline"
+      }
+    },
+    "transactions": {
+      "description": "Recorded movements (demo). Pair with Payments for reconciliation when the ledger API is live.",
+      "searchPlaceholder": "Search reference, student, amount, method…",
+      "typePlaceholder": "Tur",
+      "methodPlaceholder": "Usul",
+      "table": {
+        "reference": "Ma'lumotnoma",
+        "student": "Talaba",
+        "type": "Tur",
+        "amount": "Summa",
+        "method": "Usul",
+        "recorded": "Qayd etilgan"
+      },
+      "empty": "No transactions match your search or filters."
+    },
+    "attendance": {
+      "description": "Monitor partial attendance and completion. Use filters for at-risk learners once the API exposes thresholds.",
+      "searchPlaceholder": "Search student, class, lecturer…",
+      "riskPlaceholder": "Xavf",
+      "atRiskOnly": "At risk only",
+      "onTrackOnly": "On track only",
+      "table": {
+        "student": "Talaba",
+        "class": "Sinf",
+        "lecturer": "O'qituvchi",
+        "attendance": "Davomat",
+        "progress": "Progress",
+        "risk": "Xavf",
+        "details": "Tafsilotlar"
+      },
+      "atRisk": "Xavf ostida",
+      "onTrack": "Yo'lda",
+      "viewDetails": "Tafsilotlarni ko'rish",
+      "detailDialog": {
+        "title": "Attendance details",
+        "sessions": "Sessiyalar",
+        "sessionsAttended": "{{present}} / {{total}} attended",
+        "overall": "Overall",
+        "classProgress": "Class progress",
+        "lastActivity": "Last recorded activity",
+        "recentSessions": "Recent sessions",
+        "session": "Sessiya",
+        "status": "Holat"
+      },
+      "sessionStatus": {
+        "present": "Ishtirok etdi",
+        "late": "Kechikdi",
+        "excused": "Uzrli",
+        "absent": "Kelmadi"
+      }
+    },
+    "placementTests": {
+      "description": "Monitor placement results and tie outcomes to enrollments and class placement.",
+      "searchPlaceholder": "Search student, class, lecturer, assessment…",
+      "resultPlaceholder": "Natija",
+      "passed": "O'tdi",
+      "belowThreshold": "Chegara ostida",
+      "table": {
+        "student": "Talaba",
+        "class": "Sinf",
+        "lecturer": "O'qituvchi",
+        "assessment": "Baholash",
+        "score": "Ball",
+        "result": "Natija",
+        "completed": "Tugallangan"
+      }
+    },
+    "certifications": {
+      "description": "Eligibility requires survey completion and class completion. Issue actions call the API when available.",
+      "searchPlaceholder": "Search student, class…",
+      "eligibilityPlaceholder": "Eligibility",
+      "eligible": "Mos",
+      "notEligible": "Mos emas",
+      "table": {
+        "student": "Talaba",
+        "class": "Sinf",
+        "survey": "So'rovnoma",
+        "classComplete": "Sinf tugallangan",
+        "eligible": "Mos",
+        "issue": "Berish"
+      },
+      "surveyDone": "Bajarildi",
+      "surveyMissing": "Yo'q",
+      "classCompleteYes": "Ha",
+      "classCompleteNo": "Yo'q",
+      "issueCertificate": "Sertifikat berish",
+      "issueDisabledTitle": "Complete survey and class first",
+      "toast": {
+        "issuedDemo": "Certificate issued (demo)"
+      }
+    },
+    "calendar": {
+      "description": "Class schedules, placement or mock tests, and review sessions. Drill through to the class or student when wired to routes.",
+      "searchPlaceholder": "Search title, type, time…",
+      "eventTypePlaceholder": "Tadbir turi",
+      "types": {
+        "class": "Sinf",
+        "test": "Test",
+        "review": "Ko'rib chiqish"
+      },
+      "empty": "No events match your search or filters."
+    },
+    "supportSessions": {
+      "description": "Additional classes or support blocks requested by students. Approve and schedule when integrations are ready.",
+      "searchPlaceholder": "Search student, class, topic…",
+      "requested": "So'ralgan",
+      "scheduled": "Rejalashtirilgan",
+      "table": {
+        "student": "Talaba",
+        "class": "Sinf",
+        "topic": "Mavzu",
+        "requested": "So'ralgan",
+        "status": "Holat",
+        "actions": "Amallar"
+      },
+      "approveSchedule": "Tasdiqlash va rejalashtirish",
+      "viewSlot": "Vaqt oralig'ini ko'rish",
+      "toast": {
+        "approvedDemo": "Session approved (demo)",
+        "viewSlotDemo": "Open calendar slot (demo)"
+      },
+      "empty": "No sessions match your search or filters."
+    },
+    "substituteCover": {
+      "list": {
+        "description": "Open a request to see full details. When both instructors agree, you can give final approval on the request page.",
+        "empty": "No substitute cover requests yet. They appear here when an instructor sends a substitute invite (demo data in this browser).",
+        "reviewApprove": "Ko'rib chiqish va tasdiqlash",
+        "viewDetails": "Tafsilotlarni ko'rish"
+      },
+      "detail": {
+        "title": "Substitute cover request",
+        "descriptionPendingFinal": "Both instructors have agreed. Use the buttons below to give final sign-off.",
+        "descriptionCanDecide": "The invite is still with instructors. You can still approve or reject this substitute cover below (demo: admin may decide at any time before it is finalized).",
+        "descriptionClosed": "This request is no longer open for admin approval.",
+        "status": "Holat",
+        "adminDecision": "Admin decision",
+        "adminDecisionFinal": "Approve to record this cover in the system after both instructors agreed, or reject to stop it.",
+        "adminDecisionEarly": "Approve to confirm this substitute arrangement now, or reject to cancel it. In a full rollout you might wait for instructor replies first.",
+        "finalApprove": "Yakuniy tasdiqlash",
+        "approveCover": "Approve substitute cover",
+        "reject": "Rad etish",
+        "viewInTeachers": "O'qituvchilarda ko'rish",
+        "readonlyNotes": {
+          "finalized": "This substitute cover has been finalized.",
+          "rejectedAdmin": "This request was rejected at the final admin step.",
+          "declinedSubstitute": "The substitute declined; no admin approval is needed.",
+          "rejectedPrimary": "The primary instructor did not approve this cover.",
+          "nothingToConfirm": "There is nothing for you to confirm at this step."
+        },
+        "missingId": "Missing request id.",
+        "notFound": "This cover request was not found. It may have been removed."
+      },
+      "status": {
+        "waitingSubstitute": "Waiting for substitute",
+        "waitingPrimary": "Waiting for primary",
+        "waitingPrimaryInstructor": "Waiting for primary instructor",
+        "needsAdminApproval": "Needs admin approval",
+        "readyForFinalApproval": "Ready for your final approval",
+        "approved": "Tasdiqlangan",
+        "declinedSubstitute": "Declined (substitute)",
+        "declinedBySubstitute": "Declined by substitute",
+        "rejectedPrimary": "Rejected (primary)",
+        "rejectedByPrimary": "Rejected by primary instructor",
+        "rejectedAdmin": "Rejected (admin)",
+        "rejectedByAdmin": "Rejected by admin"
+      },
+      "toast": {
+        "finalized": "Substitute cover finalized",
+        "approved": "Substitute cover approved",
+        "approveFailed": "Could not approve substitute cover",
+        "rejected": "Substitute arrangement rejected",
+        "rejectFailed": "Could not reject substitute cover"
+      }
+    },
+    "integrations": {
+      "description": "External LMS links and trial policy. Values are typically loaded from environment or admin settings API.",
+      "lmsBaseUrl": "LMS base URL",
+      "lmsHint": "Students open this from their dashboard; admins use it for support.",
+      "freeTrialPolicy": "Free trial policy",
+      "freeTrialDescription": "One trial per account. The student profile shows whether the trial has been consumed; blocking a second trial is enforced server-side."
+    },
+    "reports": {
+      "description": "High-level KPIs and exports will connect to reporting APIs. Below is a placeholder layout.",
+      "kpis": {
+        "activeEnrollments": "Faol ro'yxatdan o'tishlar",
+        "overduePayments": "Muddati o'tgan to'lovlar",
+        "certificates30d": "Certificates (30d)"
+      }
+    },
+    "components": {
+      "statusBadges": {
+        "course": {
+          "published": "Nashr qilingan",
+          "draft": "Qoralama",
+          "schedulePending": "Jadval kutilmoqda",
+          "scheduleApproved": "Jadval tasdiqlangan",
+          "rejected": "Rad etilgan",
+          "archived": "Arxivlangan"
+        },
+        "payment": {
+          "paid": "To'langan",
+          "pending": "Kutilmoqda",
+          "overdue": "Muddati o'tgan"
+        },
+        "class": {
+          "active": "Faol",
+          "waiting": "Kutilmoqda",
+          "completed": "Tugallangan"
+        },
+        "student": {
+          "active": "Faol",
+          "trial": "Sinov",
+          "inactive": "Nofaol"
+        }
+      },
+      "actionCode": {
+        "label": "Sizning admin kodingiz",
+        "placeholder": "masalan, AF01",
+        "hint": "Short ID for audit trail — records who approved or rejected this action when several admins share the account.",
+        "validationError": "Enter your admin code (2–16 letters or numbers, e.g. AF01)."
+      },
+      "courseReviewDialog": {
+        "titleReviewPublish": "Review & publish class",
+        "titleSchedulePending": "Schedule pending",
+        "titleReview": "Review class",
+        "descReviewableIntro": "The instructor has approved the schedule. Set the catalog price and publish.",
+        "steps": {
+          "setCatalogPrice": "Set catalog price (required for publishing).",
+          "addReferralDiscount": "Optionally add a referral code and discount %.",
+          "clickPublish": "Click Publish class to make it visible in the catalog."
+        },
+        "descSchedulePending": "The schedule has been sent to the instructor and is awaiting their approval. You can publish once they approve.",
+        "descDraft": "This class is in draft. Propose a class schedule first, then get instructor approval before publishing.",
+        "descDefault": "Review the class details below. You can reject with feedback or set pricing to publish.",
+        "fields": {
+          "title": "Sarlavha",
+          "lecturer": "O'qituvchi",
+          "status": "Holat",
+          "lastRejection": "Last rejection",
+          "scheduleRejection": "Schedule rejection",
+          "category": "Toifa",
+          "description": "Tavsif",
+          "catalogPrice": "Catalog price ({{currency}}) — admin only",
+          "catalogPricePlaceholder": "e.g. 1200000",
+          "catalogPriceHint": "Teachers do not set this. Persisted in-browser until the billing API stores class fees.",
+          "referralCode": "Referral code (optional)",
+          "referralPlaceholder": "e.g. SPRING2026 or PARTNER-ALI",
+          "referralHint": "Students enter this at enrollment or checkout. Pair with a discount below so the code has a clear benefit.",
+          "discountPercent": "Referral discount (%)",
+          "discountPlaceholder": "0",
+          "discountHint": "Percent off the catalog price when the referral code is applied (0–100).",
+          "rejectionReason": "Rejection reason",
+          "rejectionPlaceholder": "Explain what the lecturer needs to fix before approval.",
+          "rejectionHint": "Required only when rejecting the class."
+        },
+        "pricePreview": {
+          "title": "Price with referral",
+          "discountedPrice": "Discounted price",
+          "catalog": "Catalog:",
+          "studentSaves": "Student saves {{amount}} vs catalog",
+          "noDiscount": "Discounted price:",
+          "fullCatalog": "(no discount — full catalog price)"
+        },
+        "rejectClass": "Sinfni rad etish",
+        "approvePublish": "Tasdiqlash va nashr qilish",
+        "saveCatalog": "Katalogni saqlash",
+        "publishBlockedPending": "Publishing is blocked until the instructor approves the proposed schedule.",
+        "publishBlockedDraft": "Propose a class schedule first.",
+        "toast": {
+          "rejectedTitle": "Class rejected",
+          "rejectedDescription": "{{title}} was sent back to the lecturer.",
+          "rejectedDescriptionGeneric": "The lecturer can revise and resubmit.",
+          "approvedTitle": "Class approved and published",
+          "approvedDescription": "{{title}} is live for students.",
+          "approvedDescriptionGeneric": "The class is now published.",
+          "catalogSaved": "Catalog saved",
+          "reviewFailed": "Class review failed",
+          "reviewFailedDescription": "Try again or check API permissions.",
+          "invalidClass": "Invalid class",
+          "rejectionRequired": "Enter a reason before rejecting this class.",
+          "waitSchedulePending": "Wait for the instructor to approve the class schedule before publishing.",
+          "proposeScheduleFirst": "Propose a class schedule and get instructor approval before publishing.",
+          "invalidPrice": "Enter a valid catalog price (0 or greater).",
+          "discountRange": "Discount must be between 0 and 100%."
+        },
+        "loadError": "Could not load class details."
+      },
+      "enrollmentPaidMonths": {
+        "title": "Jadval oylik to'lovlari",
+        "description": "Students can scan attendance QR only for schedule months marked paid. When they submit a follow-up payment in the app, approve it under Schedule month payments — or toggle months manually here after verifying a transfer.",
+        "scheduleMonthPaymentsLink": "Jadval oylik to'lovlari",
+        "loadingSchedule": "Loading class schedule…",
+        "noScheduleMonths": "No schedule months on file. Paid months follow the enrollment plan until a schedule is published.",
+        "sessions_one": "{{count}} session",
+        "sessions_other": "{{count}} sessions",
+        "qrAllowed": " · QR check-in allowed",
+        "paymentAwaitingReview": " · payment submitted — awaiting review",
+        "qrBlocked": " · QR check-in blocked",
+        "summaryAllPaid": "All schedule months paid",
+        "summaryPaid": "Paid: {{labels}}",
+        "summaryNonePaid": "No months marked paid",
+        "partialPlanWarning": "Unpaid months are blocked from attendance QR until you mark them paid here.",
+        "fullAccess": "All schedule months are paid — full attendance access.",
+        "toast": {
+          "minOneMonth": "At least one schedule month must stay paid.",
+          "markedPaid": "Schedule month marked paid",
+          "markedUnpaid": "Schedule month marked unpaid",
+          "attendanceUpdate": "Attendance QR access updates for this student immediately."
+        }
+      },
+      "payrollProofPanel": {
+        "informationTitle": "Information & recommendations",
+        "informationHint": "Optional. Bank reference, period, rate notes, etc. When you submit payout proof, this text can be included in the instructor's in-app notification.",
+        "informationPlaceholder": "e.g. Transfer ref ABC-2026-0312 · Period: March 1–15 · 60% contract rate · …",
+        "saveInformation": "Ma'lumotni saqlash",
+        "bankReceiptTitle": "Bank transfer receipt",
+        "bankReceiptHint": "Upload the bank transfer confirmation for the instructor payout (screenshot or PDF). Not student course certificates — instructors only see this after you submit payout proof below.",
+        "dropOrBrowse": "Drop a file here or browse",
+        "browse": "ko'rib chiqish",
+        "fileHint": "Bank receipt only (PNG, JPG, WebP, or PDF · max {{maxMb}} MB). Do not upload course certificates.",
+        "uploadedAttached": "Uploaded {{date}} · attached",
+        "replace": "Almashtirish",
+        "approved": "Approved {{date}}",
+        "approvePayoutRecord": "Approve payout record",
+        "submitHint": "Use Submit payout proof below to save notes and approve this record.",
+        "removeFile": "Faylni olib tashlash",
+        "submitDescription": "Submit saves your information, checks that a transfer file is attached, then marks this payout as approved for your local records (replace with server workflow when API is ready).",
+        "saveChanges": "O'zgarishlarni saqlash",
+        "submitPayoutProof": "To'lov dalilini yuborish",
+        "attachToEnable": "Attach a transfer proof file to enable submit.",
+        "toast": {
+          "informationSaved": "Information saved",
+          "proofSaved": "Proof saved",
+          "uploadFailed": "Could not upload",
+          "tryAgain": "Please try again.",
+          "payoutApproved": "Payout record approved",
+          "uploadFirst": "Upload proof first",
+          "uploadBeforeSubmit": "Upload transfer proof before submitting.",
+          "changesSaved": "Changes saved.",
+          "approveFailed": "Could not approve payout proof.",
+          "submittedApproved": "Payout proof submitted and approved.",
+          "notifyInstructor": "Instructor notified in-app (demo: same browser storage).",
+          "notifySkipped": "No instructor email or name on this page — notification skipped. Open proof from a class card or payroll request so instructor context is set.",
+          "fileRemoved": "Proof file removed"
+        }
+      }
+    }
+  },
+  "public": {
+    "hero": {
+      "badge": "Sifatli til ta'limi",
+      "titleLine1": "Sizning yo'lingiz",
+      "words": [
+        "Mukammallikka",
+        "Muvaffaqiyatga",
+        "Innovatsiyaga",
+        "O'sishga",
+        "Bilimga"
+      ],
+      "descriptionLine1": "EDUHUB — O'zbekistondagi yetakchi xususiy universitet TISU qoshida faoliyat yurituvchi ta'lim markazi.",
+      "descriptionLine2": "U xalqaro standartlarga asoslangan zamonaviy va yuqori sifatli til ta'limini taklif etadi.",
+      "learnMore": "Batafsil"
+    },
+    "partners": {
+      "title": "Bizning qimmatli hamkorlarimiz",
+      "partner": "Hamkor {{number}}"
+    },
+    "availableClasses": {
+      "eyebrow": "Open classes",
+      "title": "Available classes",
+      "subtitle": "The same Available Classes students see after login — with real class covers and tuition.",
+      "viewAll": "View all classes",
+      "signInToBrowse": "Sign in to browse",
+      "instructor": "Instructor",
+      "tuition": "Tuition",
+      "free": "Free",
+      "students_one": "{{count}} student",
+      "students_other": "{{count}} students",
+      "emptyTitle": "No classes to show yet",
+      "emptyHint": "Sign in as a student (or open Available Classes once) so we can load the real class list and thumbnails here.",
+      "ctaRegister": "Register to browse"
+    },
+    "aboutPage": {
+      "badge": "EduHub haqida",
+      "title": "TUES Universityda maqsadli o'qish",
+      "titleLine1": "Maqsadli o'qish",
+      "titleLine2": "TUES Universityda",
+      "subtitle": "EduHub — TISU qoshidagi til va o'quv markazi bo'lib, xalqaro standartlar va qo'llab-quvvatlovchi jamoa orqali haqiqiy ko'nikmalarni shakllantiradi.",
+      "storyTitle": "Biz kim",
+      "storyBody1": "EDUHUB — O'zbekistondagi yetakchi xususiy universitet TISU qoshidagi ta'lim markazi. Talabalar, mutaxassislar va umrbod o'rganuvchilar uchun zamonaviy va sifatli til ta'limini taklif etamiz.",
+      "storyBody2": "Jamoa tajribali o'qituvchilar, tuzilgan dasturlar va yagona talaba portali bilan har bir o'rganuvchining sinf va undan tashqarida ishonchli rivojlanishini ta'minlaydi.",
+      "ctaTitle": "Yo'lingizni boshlashga tayyormisiz?",
+      "ctaBody": "Hisob yarating va til rivojlanishi, akademik yordam va kasbiy tayyorgarlik uchun dasturlarni ko'rib chiqing.",
+      "ctaButton": "Ro'yxatdan o'tish",
+      "sections": {
+        "intro": "Bizning nuqtai nazarimiz / 01",
+        "story": "Biz kim / 02",
+        "direction": "Missiya va yo'nalish / 03",
+        "pillars": "Bizning tamoyillarimiz / 04",
+        "cta": "Keyingi qadam / 05"
+      },
+      "statementBefore": "Eng yaxshi o'quv markazlari tilni imkoniyatdan ajratmaydi. Biz ikkalasini ham ",
+      "statementAccent": "bir bog'langan tajriba",
+      "statementAfter": " sifatida quramiz — ishonch uchun yetarlicha aniq, o'sish uchun yetarlicha amaliy.",
+      "tags": [
+        "Til",
+        "O'qitish",
+        "Jamoa",
+        "O'sish"
+      ],
+      "marquee": [
+        "IELTS tayyorgarligi",
+        "Business English",
+        "Akademik yozuv",
+        "Kichik guruhlar"
+      ],
+      "collageBadge": "O'rgan\nO's\nErish",
+      "ctaAvailable": "Yangi ro'yxatdan o'tishlar ochiq"
+    },
+    "programPages": {
+      "badge": "Dasturlar",
+      "nextStepTitle": "Qo'shilishga tayyormisiz?",
+      "nextStepBody": "Darslarga ariza berish va o'qishingizni bir joyda kuzatish uchun ro'yxatdan o'ting.",
+      "register": "Ro'yxatdan o'tish",
+      "aboutLink": "EduHub haqida",
+      "languageTraining": {
+        "title": "Til o'qitish dasturi",
+        "subtitle": "Malakali o'qituvchilar rahbarligidagi tuzilgan ingliz tili dasturlari orqali ishonchli muloqot.",
+        "overviewTitle": "Nima olasiz",
+        "overviewBody": "Asosiy ko'nikmalardan imtihon tayyorgarligigacha — dasturlarimiz amaliyot, fikr-mulohaza va o'lchanadigan progressni birlashtiradi.",
+        "audienceTitle": "Kimlar uchun",
+        "audienceBody": "Chet elda o'qish, xalqaro imtihonlar yoki ish muloqoti uchun tayyorlanayotgan talabalar va mutaxassislar.",
+        "highlights": [
+          "CELTA sertifikatli va tajribali o'qituvchilar bilan kichik guruhlar",
+          "Boshlang'ichdan ilg'or darajagacha aniq bosqichlar",
+          "Gapirish, yozish va IELTS tayyorgarligi yo'nalishlari",
+          "Jadval, progress va fikr-mulohaza uchun talaba portali"
+        ]
+      },
+      "academicServices": {
+        "title": "Akademik xizmatlar",
+        "subtitle": "Akademik yozuv, universitetga tayyorgarlik va til sinfidan tashqari tuzilgan o'qish yordami.",
+        "overviewTitle": "Nima taklif etamiz",
+        "overviewBody": "Akademik xizmatlar o'qish ko'nikmalarini mustahkamlash, universitet talablarini bajarish va xalqaro muhitga tayyorlanishga yordam beradi.",
+        "audienceTitle": "Kimlar uchun",
+        "audienceBody": "TUES University talabalari, tashqi o'rganuvchilar va til rivojlanishi bilan birga akademik yordam kerak bo'lganlar.",
+        "highlights": [
+          "Akademik yozuv va taqdimot yordami",
+          "Universitet darajasidagi o'qish va tadqiqot ko'nikmalari",
+          "Tajribali xodimlar bilan seminar va maslahatlar",
+          "Ichki va tashqi talabalar uchun moslashuvchan variantlar"
+        ]
+      }
+    },
+    "stats": {
+      "whyChooseUs": "Nega bizni tanlash kerak",
+      "heading": "Nega biz bilan<br />qo'shilishingiz kerak?",
+      "students": "Talabalar",
+      "classes": "Darslar",
+      "classesHeading": "20+",
+      "wideVariety": "Kurslar va xizmatlar",
+      "teachers": "Bitiruvchilar",
+      "completionRate": "Professional va tajribali o'qituvchilar",
+      "yearsExcellence": "Xalqaro o'qituvchilar",
+      "tags": {
+        "language": "Til",
+        "business": "Biznes",
+        "tech": "Texnologiya",
+        "arts": "San'at",
+        "science": "Fan",
+        "math": "Matematika"
+      }
+    },
+    "team": {
+      "titleLine1": "Jamoa bilan tanishing",
+      "titleLine2": "O'qishingiz ortida",
+      "subtitleLine1": "Professional va tajribali o'qituvchilar va xodimlar",
+      "subtitleLine2": "magistr darajasi va xalqaro sertifikatlarga ega",
+      "linkedin": "LinkedIn",
+      "roles": {
+        "director": "EDUHUB direktori",
+        "directorLine1": "EDUHUB",
+        "directorLine2": "Direktori",
+        "coExecutiveDirector": "Bosh direktor o'rinbosari",
+        "coExecutiveLine1": "Bosh direktor",
+        "coExecutiveLine2": "o'rinbosari",
+        "orgExcellenceManager": "Tashkiliy mukammallik menejeri",
+        "orgExcellenceLine1": "Tashkiliy mukammallik",
+        "orgExcellenceLine2": "Menejeri",
+        "learningExperienceManager": "O'quv tajribasi menejeri",
+        "learningExperienceLine1": "O'quv tajribasi",
+        "learningExperienceLine2": "Menejeri",
+        "callOperator": "Call-operator",
+        "callOperatorLine1": "Call",
+        "callOperatorLine2": "Operator",
+        "learningSupportOfficer": "O'quv yordam xodimi",
+        "learningSupportOfficerLine1": "O'quv yordam",
+        "learningSupportOfficerLine2": "xodimi",
+        "adminNavigator": "Ma'muriy navigator",
+        "adminNavigatorLine1": "Ma'muriy",
+        "adminNavigatorLine2": "Navigator"
+      }
+    },
+    "features": {
+      "title": "Nega EduHub?",
+      "descriptionLine1": "EDUHUB — O'zbekistondagi yetakchi xususiy universitet TISU qoshida faoliyat yurituvchi ta'lim markazi. U xalqaro standartlarga asoslangan zamonaviy va yuqori sifatli til ta'limini taklif etadi.",
+      "descriptionLine2": "Dasturlarimiz tuzilgan o'quv dasturlarini amaliy, real hayotdagi qo'llash bilan birlashtiradi, shunda siz tez rivojlanib, tilni ish va o'qishda ishonchli ishlata olasiz. Imtihonlarga, martaba o'sishiga yoki akademik almashinuvga tayyorgarlik ko'rayotgan bo'lsangiz ham, EDUHUB tajribali o'qituvchilar va muvaffaqiyatingiz uchun mo'ljallangan o'quv muhiti bilan maqsadlaringizni qo'llab-quvvatlaydi.",
+      "descriptionLine3": "Sifat, moslashuvchanlik va o'lchanadigan natijalarga sodiqligi uchun EDUHUBni tanlaydigan o'quvchilar va mutaxassislar jamoasiga qo'shiling. Kichik guruh darslaridan tortib, shaxsiy mashg'ulotlargacha — biz jadvalingiz va darajangizga moslashamiz, til maqsadlaringizga erishish yo'lida o'z sur'atingizda o'rganishingiz mumkin.",
+      "learnMore": "Batafsil",
+      "items": {
+        "onlineClasses": {
+          "title": "Onlayn darslar",
+          "description": "Istalgan joydan, istalgan vaqtda to'liq darslarga kirish",
+          "imageAlt": "Onlayn o'qish"
+        },
+        "expertInstructors": {
+          "title": "Mutaxassis o'qituvchilar",
+          "description": "Sanoat mutaxassislari va akademik ekspertlardan o'rganing",
+          "imageAlt": "Mutaxassis o'qituvchi"
+        },
+        "certifications": {
+          "title": "Sertifikatlar",
+          "description": "Darsni tugatgandan so'ng tan olingan sertifikatlar oling",
+          "imageAlt": "Sertifikat"
+        },
+        "careerGrowth": {
+          "title": "Karyera o'sishi",
+          "description": "Talab qilinadigan ko'nikmalar bilan karyerangizni rivojlantiring",
+          "imageAlt": "Karyera o'sishi"
+        },
+        "globalAccess": {
+          "title": "Global kirish",
+          "description": "Butun dunyo bo'ylab o'quvchilar bilan bog'laning",
+          "imageAlt": "Global o'qish"
+        },
+        "analyticsDashboard": {
+          "title": "Analitika paneli",
+          "description": "Rivojlanishingiz va natijalaringizni kuzatib boring",
+          "imageAlt": "Analitika paneli"
+        }
+      }
+    },
+    "vision": {
+      "badge": "Vazifa va maqsad",
+      "title": "Bizning maqsad va va'dalarimiz<br />hayotga tatbiq etiladi",
+      "imageAlt": "EduHub maqsadi",
+      "tabs": {
+        "mission": "Bizning vazifamiz",
+        "vision": "Bizning maqsadimiz",
+        "values": "Bizning qadriyatlarimiz"
+      },
+      "mission": {
+        "intro": "EduHub aniq yo'nalish va har bir dars, faoliyat va tajribani boshqaradigan qiziqarli, o'quvchi markazli majburiyatlar atrofida qurilgan.",
+        "items": [
+          "Akademik, kasbiy va shaxsiy rivojlanish ehtiyojlarini qondiradigan qulay va yuqori sifatli o'quv dasturlarini taqdim etish.",
+          "Talabalar, o'qituvchilar, mutaxassislar va jamoalarni umrbod o'rganish uchun bog'laydigan hamkorlik platformasi bo'lish.",
+          "Milliy va xalqaro standartlarga javob beradigan innovatsion o'quv modellarini ishlab chiqish va amalga oshirish.",
+          "O'quv dolzarbligini va global raqobatbardoshligini oshirish uchun muassasalar va sanoat bilan hamkorlik qurish.",
+          "Ishtirokchilarni kelajakdagi chaqiriqlarga tayyorlashda inklyuzivlik, ijodkorlik va moslashuvchanlikni rag'batlantirish."
+        ]
+      },
+      "visionContent": {
+        "intro": "Talabalar, mahalliy jamoalar va global o'quvchilarni milliy va xalqaro sifatdagi tegishli ko'nikmalar va bilimlar bilan ta'minlaydigan turli o'quv dasturlari uchun markaziy mukammallik markaziga aylanish.",
+        "inspireTitle": "Ilhomlantirish",
+        "inspireText": "Iqtisodiyot va biznesni qiziqarli, vizual va hikoya asosida qilish.",
+        "connectTitle": "Bog'lash",
+        "connectText": "Sinflar, ish joylari va jamoalarni bir qiziqarli makonda birlashtirish.",
+        "elevateTitle": "Ko'tarish",
+        "elevateText": "Har bir o'quvchining qiziquvchan boshlang'ichdan ishonchli mutaxassisgacha o'sishiga yordam berish."
+      },
+      "values": {
+        "intro": "Bu majburiyatlar har bir EduHub moduli, faoliyati va o'quvchi safarini qanday loyihalashtirishimizni boshqaradi.",
+        "items": [
+          "Milliy va xalqaro sifatdagi tegishli ko'nikmalar va bilimlar.",
+          "Har bir dars va faoliyatda o'quvchi markazli majburiyatlar.",
+          "Kelajakdagi chaqiriqlar uchun inklyuzivlik, ijodkorlik va moslashuvchanlik."
+        ]
+      }
+    },
+    "reviews": {
+      "titleLine1": "Sinfdan",
+      "titleLine2": "ovozlar",
+      "subtitle": "Biznes, til va ko'nikmalar dasturlari bo'yicha o'quvchilar — EduHubda darsni tugatgandan keyin o'z so'zlari bilan.",
+      "studentLabel": "EduHub talabasi",
+      "starsAria": "{{rating}} dan 5 yulduz",
+      "items": {
+        "aziza": {
+          "course": "Biznes ingliz tili",
+          "quote": "Har bir dars amaliy tuyuldi, darslik og'ir emas edi. Gapirish ishonchim birinchi oy ichida yaxshilandi."
+        },
+        "jasur": {
+          "course": "Iqtisodiyotga kirish",
+          "quote": "Aniq tushuntirishlar va real misollar. O'qituvchilar haqiqatan savollarga javob beradi — iqtisodiyot nihoyat tushunarli bo'ldi."
+        },
+        "madina": {
+          "course": "Raqamli marketing asoslari",
+          "quote": "Loyihalar amaliy va dolzarb edi. Darsda o'rganilganlarni shu hafta freelance mijoz uchun ishlatdim."
+        },
+        "bobur": {
+          "course": "Moliyaviy hisob",
+          "quote": "Tuzilgan darslar va foydali fikr-mulohazalar. Onlayn format silliq ishladi — sessiyalar orasida yo'qolgan his qilmadim."
+        },
+        "nilufar": {
+          "course": "Biznes uchun ingliz tili",
+          "quote": "Kichik guruh muhokamalari va sabrli o'qituvchilar. Endi hisobotlar yozib, ingliz tilida uchrashuvlarga qo'shila olaman."
+        },
+        "sardor": {
+          "course": "Excel bilan ma'lumotlar tahlili",
+          "quote": "Asoslardan dashboardlargacha, bosqichma-bosqich. CVda ko'rsatish mumkin bo'lgan ko'nikmalar bilan tugatdim."
+        }
+      }
+    },
+    "video": {
+      "titleLine1": "Bizning",
+      "titleLine2": "o'quv platformamizni kashf eting",
+      "description": "Innovatsion onlayn o'quv platformamizni ushbu to'liq video sayohat orqali bilib oling. Ta'limni butun dunyo talabalari uchun qulay, qiziqarli va samarali qilishimizni ko'ring.",
+      "interactiveTitle": "Interaktiv o'qish",
+      "interactiveDesc": "Multimedia kontent va interaktiv mashqlar bilan shug'ullaning",
+      "expertTitle": "Mutaxassis o'qituvchilar",
+      "expertDesc": "Sanoat mutaxassislari va akademik ekspertlardan o'rganing",
+      "flexibleTitle": "Moslashuvchan jadval",
+      "flexibleDesc": "O'z sur'atingizda, istalgan vaqtda va joyda o'qing",
+      "unsupported": "Brauzeringiz video tegini qo'llab-quvvatlamaydi."
+    },
+    "blog": {
+      "badge": "Blog",
+      "title": "Tahlillar va yangiliklar",
+      "readMore": "Ko'proq o'qish",
+      "posts": {
+        "languagePrograms": {
+          "title": "Yangi til dasturlari bu semestrda boshlanadi",
+          "description": "Band mutaxassislar va talabalar uchun mo'ljallangan biznes ingliz tili, akademik yozuv va suhbat mashg'ulotlaridagi kengaytirilgan takliflarimizni kashf eting.",
+          "imageAlt": "Yashil qirqo'g'ay"
+        },
+        "successStories": {
+          "title": "EduHub talaba muvaffaqiyat hikoyalari: sinfdan karyeraga",
+          "description": "Bitiruvchilarimiz til ko'nikmalari va sertifikatlaridan xalqaro rollarda va oliy ta'limda qanday foydalanayotganini o'qing.",
+          "imageAlt": "Sariq gul"
+        },
+        "workshops": {
+          "title": "Yaqinlashib kelayotgan seminarlar va madaniy almashinuv tadbirlari",
+          "description": "Nutq klublari, imtihon tayyorgarligi sessiyalari va TISU hamkor tadbirlariga qo'shiling — sanalar va ro'yxatdan o'tish haqida yangilanishlarni kuzating.",
+          "imageAlt": "To'q sariq gul"
+        }
+      }
+    },
+    "highlights": {
+      "title": "O'qishning asosiy yo'nalishlari",
+      "subtitle": "Muvaffaqiyatli o'qish safari uchun kerak bo'lgan hamma narsa",
+      "items": {
+        "interactive": {
+          "title": "Interaktiv o'qish",
+          "description": "Multimedia kontent, testlar va amaliy loyihalar bilan shug'ullaning"
+        },
+        "goalOriented": {
+          "title": "Maqsadga yo'naltirilgan",
+          "description": "Shaxsiylashtirilgan yo'llar bilan o'quv maqsadlaringizni belgilang va erishing"
+        },
+        "fastTrack": {
+          "title": "Tez yo'l",
+          "description": "Intensiv dasturlar bilan o'rganishni tezlashtiring"
+        },
+        "community": {
+          "title": "Jamoa qo'llab-quvvatlashi",
+          "description": "O'quvchilar va mentorlardan iborat jonli jamoaga qo'shiling"
+        }
+      }
+    },
+    "cta": {
+      "qualityEducation": "Sifatli ta'lim",
+      "title": "O'qishni boshlashga tayyormisiz?",
+      "button": "Boshlash — bepul"
+    },
+    "scrollToTop": "Yuqoriga aylantirish",
+    "telegramSupport": "EduHub bilan Telegram orqali bog'lanish",
+    "footer": {
+      "subscribe": "Obuna bo'lish",
+      "emailPlaceholder": "Emailingizni kiriting",
+      "subscribeButton": "Obuna bo'lish",
+      "subscribeConsent": "Obuna bo'lish orqali siz bizning",
+      "privacyPolicy": "Maxfiylik siyosatimizga",
+      "subscribeConsentSuffix": "rozilik bildirasiz va EduHub yangilanishlarini olishga rozilik berasiz.",
+      "contact": "Aloqa",
+      "menuLinks": "Menyu havolalari",
+      "copyright": "© 2026 EduHub. Barcha huquqlar himoyalangan.",
+      "termsOfUse": "Foydalanish shartlari",
+      "accessibility": "Qulaylik",
+      "sections": {
+        "other": "Boshqa",
+        "information": "Ma'lumot",
+        "connect": "Bog'lanish"
+      },
+      "links": {
+        "about": "Biz haqimizda",
+        "contact": "Aloqa",
+        "faq": "FAQ",
+        "termsConditions": "Foydalanish shartlari",
+        "privacyPolicy": "Maxfiylik siyosati",
+        "paymentMethod": "To'lov usuli",
+        "eduhubTeam": "EduHub jamoasi",
+        "internationalStudents": "Xalqaro talabalar",
+        "openDays": "Ochiq kunlar",
+        "contactUs": "Biz bilan bog'laning",
+        "alumni": "Bitiruvchilar",
+        "giving": "Xayriya",
+        "jobs": "Ish o'rinlari",
+        "pressOffice": "Matbuot xizmati",
+        "conferenceEvents": "Konferensiya va tadbirlar"
+      },
+      "social": {
+        "facebook": "Facebook",
+        "twitter": "Twitter",
+        "instagram": "Instagram",
+        "linkedin": "LinkedIn",
+        "youtube": "YouTube"
+      },
+      "journal": {
+        "brand": "TUES Journal",
+        "tagline": "Iqtisodshilar, olimlar va siyosat mutafakkirlaridan tadqiqotlar, sharhlar va tahlillar.",
+        "quickLinks": "Tez havolalar",
+        "home": "Bosh sahifa",
+        "articles": "Maqolalar",
+        "authors": "Mualliflar",
+        "topics": "Mavzular",
+        "about": "Haqida",
+        "aboutUs": "Biz haqimizda",
+        "editorialTeam": "Tahririyat jamoasi",
+        "submissionGuidelines": "Maqola yuborish qoidalari",
+        "contact": "Aloqa",
+        "copyright": "© 2026 TUES Economics Journal. Barcha huquqlar himoyalangan.",
+        "termsOfUse": "Foydalanish shartlari"
+      }
+    }
+  }
+}

@@ -42,6 +42,7 @@ import {
 import type { CourseResponse, GeneralReferralCodeResponse, ScheduleProposalResponse, UserResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import { computeDiscountedPrice } from "@/features/admin/utils/adminCourseCatalog";
+import { resolveStudentCoursePrice } from "@/features/enrollment/resolveStudentCoursePrice";
 import {
   loadGeneralReferralCodes,
   matchGeneralReferralCode,
@@ -321,12 +322,18 @@ const StudentEnrollmentApplicationPage = () => {
     return matchGeneralTrialCode(entered, generalCodes);
   }, [trialCodeInput, courseTrialMeta, generalCodes]);
 
-  const listedTuitionBase = useMemo(() => {
-    if (courseReferralMeta?.listedAmount != null && courseReferralMeta.listedAmount > 0) {
-      return courseReferralMeta.listedAmount;
-    }
-    return coursePriceAmount;
-  }, [courseReferralMeta, coursePriceAmount]);
+  const affiliationPrice = useMemo(() => {
+    const catalog =
+      courseReferralMeta?.listedAmount != null && courseReferralMeta.listedAmount > 0
+        ? courseReferralMeta.listedAmount
+        : coursePriceAmount;
+    return resolveStudentCoursePrice({
+      amount: catalog,
+      latestSchool: apiUser?.latestSchool,
+    });
+  }, [courseReferralMeta, coursePriceAmount, apiUser?.latestSchool]);
+
+  const listedTuitionBase = affiliationPrice?.baseAmount ?? coursePriceAmount;
 
   const effectiveListedTuition = useMemo(() => {
     if (specialTuitionGrant) return 0;
@@ -348,7 +355,15 @@ const StudentEnrollmentApplicationPage = () => {
   /** Tuition base for this enrollment: prorated when schedule exists, else full listed price. */
   const tuitionDueTotal = specialTuitionGrant
     ? 0
-    : sessionTuitionQuote?.amountDue ?? coursePriceAmount;
+    : sessionTuitionQuote?.amountDue ?? effectiveListedTuition ?? coursePriceAmount;
+
+  const affiliationPriceDisplay = useMemo(() => {
+    if (specialTuitionGrant) return "Free";
+    if (effectiveListedTuition != null && effectiveListedTuition > 0) {
+      return formatPrice(effectiveListedTuition, priceCurrency);
+    }
+    return priceDisplay || "—";
+  }, [specialTuitionGrant, effectiveListedTuition, priceCurrency, priceDisplay]);
 
   useEffect(() => {
     const join = sessionTuitionQuote?.joinFromMeeting;
@@ -600,25 +615,17 @@ const StudentEnrollmentApplicationPage = () => {
         toast.error("Upload a screenshot or proof of bank transfer.");
         return;
       }
-      if (!idCardFile) {
-        toast.error("Upload a photo or scan of your ID card.");
-        return;
-      }
       if (file.size > PROOF_MAX_BYTES) {
         toast.error("Proof file must be 2 MB or smaller.");
         return;
       }
-      if (idCardFile.size > PROOF_MAX_BYTES) {
+      if (idCardFile && idCardFile.size > PROOF_MAX_BYTES) {
         toast.error("ID document must be 2 MB or smaller.");
         return;
       }
     } else if (!specialTuitionGrant && paymentMethod === "CASH") {
       const url = cashPaymentProofUrl.trim();
-      if (!url) {
-        toast.error("Paste a payment proof URL for cash payment.");
-        return;
-      }
-      if (!/^https?:\/\//i.test(url)) {
+      if (url && !/^https?:\/\//i.test(url)) {
         toast.error("Payment proof URL must start with http:// or https://");
         return;
       }
@@ -645,17 +652,21 @@ const StudentEnrollmentApplicationPage = () => {
     try {
       let proofUrl: string | undefined;
       let idUrl: string | undefined;
-      if (requiresVerificationUploads && file && idCardFile) {
+      if (requiresVerificationUploads && file) {
         toast.loading("Uploading files...", { id: "enrollment-upload" });
-        const [proofResult, idResult] = await Promise.all([
-          eduhubUploadFile(file, "enrollment-proofs"),
-          eduhubUploadFile(idCardFile, "enrollment-ids"),
-        ]);
-        toast.dismiss("enrollment-upload");
-        proofUrl = proofResult.url;
-        idUrl = idResult.url;
+        try {
+          const proofResult = await eduhubUploadFile(file, "enrollment-proofs");
+          proofUrl = proofResult.url;
+          if (idCardFile) {
+            const idResult = await eduhubUploadFile(idCardFile, "enrollment-ids");
+            idUrl = idResult.url;
+          }
+        } finally {
+          toast.dismiss("enrollment-upload");
+        }
       } else if (!specialTuitionGrant && paymentMethod === "CASH") {
-        proofUrl = cashPaymentProofUrl.trim();
+        const cashUrl = cashPaymentProofUrl.trim();
+        proofUrl = cashUrl || undefined;
       }
 
       const paymentDetailLines: string[] = [];
@@ -684,7 +695,12 @@ const StudentEnrollmentApplicationPage = () => {
           );
         }
       }
-      paymentDetailLines.push(`Listed class price: ${priceDisplay || "—"}`);
+      paymentDetailLines.push(`Listed class price: ${affiliationPriceDisplay || "—"}`);
+      if (affiliationPrice?.usedExternalPrice) {
+        paymentDetailLines.push(
+          `External student surcharge (demo): ${formatPrice(affiliationPrice.surcharge, priceCurrency)}`,
+        );
+      }
       const referralEntered = referralCodeInput.trim();
       if (referralEntered) {
         paymentDetailLines.push(`Referral code entered: ${referralEntered}`);
@@ -742,7 +758,7 @@ const StudentEnrollmentApplicationPage = () => {
         submittedAtIso: new Date().toISOString(),
         courseTitle: courseTitle ?? courseId,
         courseId,
-        tuitionLabel: priceDisplay || "—",
+        tuitionLabel: affiliationPriceDisplay || "—",
         fullName: user.name.trim(),
         email: user.email.trim(),
         phone: primaryPhone,
@@ -754,8 +770,15 @@ const StudentEnrollmentApplicationPage = () => {
             ? file.name
             : paymentMethod === "CASH" && cashPaymentProofUrl.trim()
               ? cashPaymentProofUrl.trim()
+              : paymentMethod === "CASH"
+                ? "Not provided (optional)"
+                : "Not required (cash)",
+        idFileName:
+          requiresVerificationUploads && idCardFile
+            ? idCardFile.name
+            : requiresVerificationUploads
+              ? "Not provided (optional)"
               : "Not required (cash)",
-        idFileName: requiresVerificationUploads && idCardFile ? idCardFile.name : "Not required (cash)",
         amount: downAmount,
         currency: priceCurrency,
         paymentMethod,
@@ -912,10 +935,13 @@ const StudentEnrollmentApplicationPage = () => {
                               <DollarSign className="h-4 w-4 text-white/80" aria-hidden />
                               {loadingCourse && !priceDisplay && !specialTuitionGrant
                                 ? "…"
-                                : specialTuitionGrant
-                                  ? "Free"
-                                  : priceDisplay || "—"}
+                                : affiliationPriceDisplay}
                             </div>
+                            {affiliationPrice?.usedExternalPrice && !specialTuitionGrant ? (
+                              <div className="rounded-full border border-amber-200/40 bg-amber-500/20 px-3 py-1 text-[11px] font-medium text-white/95 backdrop-blur-sm">
+                                External student tuition
+                              </div>
+                            ) : null}
                             {transferDueSummary.amount != null ? (
                               <div className="rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-xs font-semibold tabular-nums text-white/95 backdrop-blur-sm">
                                 Due now: {formatPrice(transferDueSummary.amount, priceCurrency)}
@@ -1067,7 +1093,7 @@ const StudentEnrollmentApplicationPage = () => {
               description={
                 requiresVerificationUploads
                   ? "Choose how you pay and your plan. Review the schedule below before you transfer."
-                  : "Choose cash payment and your plan. Paste a proof URL after you pay at the school office."
+                  : "Choose cash payment and your plan. You can optionally paste a proof URL after you pay at the school office."
               }
             >
               <fieldset className="min-w-0 border-0 p-0 shadow-none">
@@ -1090,7 +1116,8 @@ const StudentEnrollmentApplicationPage = () => {
                 {paymentMethod === "CASH" && !specialTuitionGrant ? (
                   <div className="mt-4">
                     <Label htmlFor="enrollment-cash-proof-url" className="text-zinc-700">
-                      Payment proof URL
+                      Payment proof URL{" "}
+                      <span className="font-normal text-zinc-400">(optional)</span>
                     </Label>
                     <Input
                       id="enrollment-cash-proof-url"
@@ -1100,11 +1127,11 @@ const StudentEnrollmentApplicationPage = () => {
                       onChange={(e) => setCashPaymentProofUrl(e.target.value)}
                       placeholder="https://…"
                       autoComplete="off"
-                      required
                       className="mt-1.5 h-11 rounded-xl border-zinc-200"
                     />
                     <p className="mt-1.5 text-xs text-zinc-500">
-                      Paste a link to your cash payment receipt or confirmation (http:// or https://).
+                      Optional. Paste a link to your cash payment receipt or confirmation (http:// or
+                      https://).
                     </p>
                   </div>
                 ) : null}
@@ -1169,18 +1196,21 @@ const StudentEnrollmentApplicationPage = () => {
               step="Step 3"
               title="Verification uploads"
               icon={IdCard}
-              description="Pay by transfer, upload your ID, then attach the bank receipt so we can verify you."
+              description="Pay by transfer, attach the bank receipt, and optionally upload your ID so we can verify you."
             >
               <div className="space-y-8">
                 <div>
                   <div className="flex items-center gap-2">
                     <IdCard className="h-4 w-4 text-zinc-500" aria-hidden />
                     <h3 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500">
-                      Identification
+                      Identification{" "}
+                      <span className="font-normal normal-case tracking-normal text-zinc-400">
+                        (optional)
+                      </span>
                     </h3>
                   </div>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Upload a clear photo or scan of your government ID, passport, or student ID.
+                    Optional. Upload a clear photo or scan of your government ID, passport, or student ID.
                   </p>
 
                   <div className="mt-5">
@@ -1246,7 +1276,7 @@ const StudentEnrollmentApplicationPage = () => {
                             Drop your ID here or <span className="text-[#3954d0]">browse</span>
                           </p>
                           <p className="text-xs leading-relaxed text-zinc-500">
-                            PNG, JPG, or PDF · max 2 MB. Ensure name and photo are readable.
+                            Optional · PNG, JPG, or PDF · max 2 MB. Ensure name and photo are readable.
                           </p>
                         </div>
                       </label>

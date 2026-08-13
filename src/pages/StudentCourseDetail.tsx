@@ -15,6 +15,7 @@ import {
   CalendarRange,
   Users,
   FileText,
+  Images,
   Loader2,
 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
@@ -93,6 +94,11 @@ import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentAppl
 import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
 import { isCourseScheduleFinished } from "@/features/courses/courseScheduleCompletion";
 import { hasSeenCourseCongrats } from "@/features/student/courseCongratsSeenStorage";
+import {
+  CLASS_PHOTOS_CHANGED_EVENT,
+  MAX_CLASS_PHOTOS,
+  resolveClassPhotoUrls,
+} from "@/features/courses/classPhotoStore";
 
 function nameInitials(name: string, max = 2): string {
   const t = name.trim();
@@ -556,7 +562,21 @@ const StudentCourseDetail = () => {
 
   const tabRaw = searchParams.get("tab");
   const activeCourseTab =
-    tabRaw === "resume" || tabRaw === "attendance" || tabRaw === "quiz" ? tabRaw : "content";
+    tabRaw === "resume" || tabRaw === "attendance" || tabRaw === "quiz" || tabRaw === "photos"
+      ? tabRaw
+      : "content";
+
+  const [classPhotosTick, setClassPhotosTick] = useState(0);
+  useEffect(() => {
+    const bump = () => setClassPhotosTick((n) => n + 1);
+    window.addEventListener(CLASS_PHOTOS_CHANGED_EVENT, bump);
+    return () => window.removeEventListener(CLASS_PHOTOS_CHANGED_EVENT, bump);
+  }, []);
+
+  const classPhotoUrls = useMemo(
+    () => resolveClassPhotoUrls(courseId, apiCourseDetail?.classPhotoUrls),
+    [courseId, apiCourseDetail?.classPhotoUrls, classPhotosTick],
+  );
 
   const onCourseTabChange = (value: string) => {
     setSearchParams(
@@ -1255,6 +1275,12 @@ const StudentCourseDetail = () => {
                   >
                     Attendance
                   </TabsTrigger>
+                  <TabsTrigger
+                    value="photos"
+                    className={cn(slidingPillTabTriggerClassName, "px-2.5 text-xs sm:px-3 sm:text-sm")}
+                  >
+                    Photos
+                  </TabsTrigger>
                 </SlidingPillTabsList>
               </div>
               <Button
@@ -1666,6 +1692,65 @@ const StudentCourseDetail = () => {
                       </Table>
                     </div>
                   )}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="photos" className="mt-0 space-y-4">
+              <div>
+                <h2
+                  className="text-base font-semibold tracking-tight text-zinc-900"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  Class photos
+                </h2>
+                <p className="mt-1 text-sm leading-relaxed text-zinc-600">
+                  Photos your instructor shares of the space, materials, or sessions.
+                </p>
+              </div>
+              {classPhotoUrls.length > 0 ? (
+                <ul
+                  className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3"
+                  aria-label="Class photo gallery"
+                >
+                  {classPhotoUrls.slice(0, MAX_CLASS_PHOTOS).map((url, i) => (
+                    <li
+                      key={`${url}-${i}`}
+                      className="aspect-[4/3] overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-zinc-200/80"
+                    >
+                      <img
+                        src={url}
+                        alt={`Class photo ${i + 1}`}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div>
+                  <ul
+                    className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3"
+                    aria-label="Class photo gallery (empty slots)"
+                  >
+                    {Array.from({ length: MAX_CLASS_PHOTOS }, (_, i) => (
+                      <li
+                        key={`class-photo-placeholder-${i}`}
+                        className="aspect-[4/3] overflow-hidden rounded-xl border border-dashed border-zinc-200 bg-zinc-50 ring-1 ring-zinc-200/70"
+                      >
+                        <div
+                          className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-100/90 to-zinc-50/90"
+                          aria-hidden
+                        >
+                          <Images className="h-7 w-7 text-zinc-300/90" />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-3 text-xs text-foreground/55">
+                    No photos yet. Your instructor can add up to eight images; they will replace these
+                    placeholders.
+                  </p>
                 </div>
               )}
             </TabsContent>

@@ -393,11 +393,31 @@
         "monthHeading": "Sessions in {{ordinal}} month",
         "monthSessionLimit": "Up to {{max}} sessions per month.",
         "sessionDefaultTitle": "Session {{num}}",
+        "dayPattern": {
+          "label": "Day pattern",
+          "hint": "Fill session dates on odd days (Monday, Wednesday, Friday) or even days (Tuesday, Thursday, Saturday).",
+          "openButton": "Set day pattern",
+          "placeholder": "Odd Day / Even Day",
+          "odd": "Odd Day",
+          "even": "Even Day",
+          "oddDetail": "Odd Day — Monday, Wednesday, Friday",
+          "evenDetail": "Even Day — Tuesday, Thursday, Saturday",
+          "courseStart": "Course start",
+          "hour": "Hour",
+          "hourPlaceholder": "Select hour",
+          "dialogTitle": "Set day pattern",
+          "dialogDescription": "Pick the course start date, day pattern, and hour, then apply to fill session dates and times.",
+          "apply": "Apply"
+        },
         "toast": {
           "minOneSession": "Add at least one session across the schedule months.",
           "maxSessionsPerMonth": "Each schedule month allows at most {{max}} sessions.",
           "sent": "Schedule sent to instructor for approval",
-          "sendFailed": "Could not send"
+          "sendFailed": "Could not send",
+          "dayPatternFillFailed": "Could not fill enough dates for this day pattern.",
+          "dayPatternStartRequired": "Select a course start date.",
+          "dayPatternOddApplied": "Session dates filled for Odd Day (Monday, Wednesday, Friday).",
+          "dayPatternEvenApplied": "Session dates filled for Even Day (Tuesday, Thursday, Saturday)."
         },
         "loadError": "Could not load class."
       }

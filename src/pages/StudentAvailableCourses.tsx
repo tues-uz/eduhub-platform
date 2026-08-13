@@ -18,7 +18,7 @@ import {
 import { useAuthSession } from "@/features/auth/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { useStudentCourseScheduleSummaries } from "@/features/student/hooks/useStudentCourseScheduleSummaries";
-import { eduhubCourses, eduhubCategories } from "@/api/eduhubClient";
+import { eduhubAuth, eduhubCategories, getAccessToken } from "@/api/eduhubClient";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
 import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
 import {
@@ -26,6 +26,7 @@ import {
   resolveEnrollmentRejectionNote,
   type StudentCourseEnrollmentDisplayStatus,
 } from "@/features/enrollment/studentCourseEnrollmentStatus";
+import { resolveStudentCoursePrice } from "@/features/enrollment/resolveStudentCoursePrice";
 import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
 import { StudentPromoCarousel } from "@/features/student/components/StudentPromoCarousel";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
@@ -33,6 +34,7 @@ import { tuitionForJoinFromMeeting } from "@/features/enrollment/enrollmentSessi
 import { resolveInstructorAvatarUrl } from "@/features/teacher/resolveInstructorAvatarUrl";
 import type { CourseScheduleSummary } from "@/features/student/courseScheduleSummary";
 import { formatClassDateLabel } from "@/features/courses/classSchedulePreview";
+import { fetchPublishedAvailableCourses } from "@/features/courses/publishedAvailableCourses";
 import { resolveEnrolledStudentPreviews } from "@/features/student/enrolledStudentPreviews";
 import { TEACHER_CLASS_MAX_STUDENTS, canApplyToTeacherClass, isTeacherClassFull } from "@/features/courses/teacherClassCapacity";
 
@@ -138,11 +140,20 @@ const StudentAvailableCourses = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrollmentStoreTick, setEnrollmentStoreTick] = useState(0);
+  const [latestSchool, setLatestSchool] = useState<string | undefined>();
 
   useEffect(() => {
     eduhubCategories.getAll()
       .then((res) => setCategories((res || []).map((c) => c.name)))
       .catch((err) => console.error("Failed to load categories", err));
+  }, []);
+
+  useEffect(() => {
+    if (!getAccessToken()) return;
+    eduhubAuth
+      .me()
+      .then((me) => setLatestSchool(me.latestSchool))
+      .catch(() => setLatestSchool(undefined));
   }, []);
 
   const scheduleCourseItems = useMemo(
@@ -195,7 +206,12 @@ const StudentAvailableCourses = () => {
 
       const mapApiToItem = (c: CourseSummaryResponse) => {
         const enrolledData = enrolledByLinkId.get(c.id);
-        const price = c.pricing?.discountedAmount ?? c.pricing?.amount;
+        const catalog = c.pricing?.discountedAmount ?? c.pricing?.amount;
+        const resolved = resolveStudentCoursePrice({
+          amount: catalog,
+          latestSchool,
+        });
+        const price = resolved?.baseAmount ?? catalog;
         return {
           id: c.id,
           linkId: c.id,
@@ -222,22 +238,9 @@ const StudentAvailableCourses = () => {
       };
 
       try {
-        const seenIds = new Set<string>();
-        const apiItems: AvailableCourseItem[] = [];
-
-        // 1) GET /courses = getAllPublishedCourses (Swagger): lecturer-created courses that are PUBLISHED. Students explore these.
-        try {
-          const pubRes = await eduhubCourses.getAll({ page: 0, size: 100 });
-          pubRes.forEach((c) => {
-            if (!seenIds.has(c.id)) {
-              seenIds.add(c.id);
-              apiItems.push(mapApiToItem(c));
-            }
-          });
-        } catch {
-          // API down or auth issue
-        }
-
+        // Same catalog used by the public landing “Available classes” section.
+        const pubRes = await fetchPublishedAvailableCourses(100);
+        const apiItems = pubRes.map(mapApiToItem);
         const merged = await enrichWithInstructorAvatars(await enrichWithEnrolledStudents(apiItems));
         if (!cancelled) {
           setCourses(merged);
@@ -249,7 +252,7 @@ const StudentAvailableCourses = () => {
     }
     load();
     return () => { cancelled = true; };
-  }, [enrolledCourses, enrollmentStoreTick, emailNorm, applicationsByCourse, t]);
+  }, [enrolledCourses, enrollmentStoreTick, emailNorm, applicationsByCourse, latestSchool, t]);
 
   const categoryOptions = useMemo(() => {
     const options = new Set<string>(categories);
@@ -416,6 +419,15 @@ const StudentAvailableCourses = () => {
                           ) : (
                             <span aria-hidden />
                           )}
+                          {scheduleSummary?.dayPattern === "odd" ? (
+                            <span className="shrink-0 rounded-full bg-[#3954d0]/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#3954d0]">
+                              {t("availableCourses.dayPatternOdd")}
+                            </span>
+                          ) : scheduleSummary?.dayPattern === "even" ? (
+                            <span className="shrink-0 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+                              {t("availableCourses.dayPatternEven")}
+                            </span>
+                          ) : null}
                         </div>
 
                         <h3

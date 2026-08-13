@@ -78,6 +78,7 @@ export const adminMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
       { labelKey: "adminNav.certifications", path: "/dashboard/admin/certifications" },
       { labelKey: "adminNav.calendar", path: "/dashboard/admin/calendar" },
       { labelKey: "adminNav.supportSessions", path: "/dashboard/admin/support-sessions" },
+      { labelKey: "adminNav.teacherComplaints", path: "/dashboard/admin/teacher-complaints" },
       { labelKey: "adminNav.substituteRequests", path: "/dashboard/admin/substitute-requests" },
     ],
   },
