@@ -30,9 +30,11 @@ import {
   notifyAttendanceSessionCompleted,
 } from "@/features/notifications/appNotificationStore";
 import {
+  ATTENDANCE_OVERVIEW_SESSION_SYNC,
   ATTENDANCE_SESSION_MAX_MS,
   fetchAttendanceMeetings,
   MAX_STORED_MEETINGS,
+  rememberAttendanceQrToken,
   type StoredAttendanceMeeting,
 } from "@/features/teacher/attendance/attendanceMeetingsStorage";
 import { AttendanceSessionLogsSection } from "@/features/teacher/components/AttendanceSessionLogsSection";
@@ -118,6 +120,7 @@ export function TeacherAttendanceSessionPanel({
   /** Planned schedule row chosen with no matching QR yet — enables Generate using that label. */
   const [rosterScheduleSlotIntent, setRosterScheduleSlotIntent] = useState<ApprovedScheduleSlotOption | null>(null);
   const [loadedScheduleSlots, setLoadedScheduleSlots] = useState<ApprovedScheduleSlotOption[]>([]);
+  const qrPreviewRef = useRef<HTMLDivElement | null>(null);
 
   const approvedScheduleSlots =
     rosterAttendanceOverviewPicker?.approvedScheduleSlots ?? loadedScheduleSlots;
@@ -258,14 +261,18 @@ export function TeacherAttendanceSessionPanel({
         if (cancelled) return;
         setStoredMeetings((prev) => {
           const prevById = new Map(prev.map((m) => [m.sessionId, m]));
-          return list.map((m) => ({ ...m, token: prevById.get(m.sessionId)?.token }));
+          return list.map((m) => ({
+            ...m,
+            token: m.token || prevById.get(m.sessionId)?.token,
+          }));
         });
-        setCurrentSessionToken(null);
         setSessionId((prev) => {
           if (prev && list.some((m) => m.sessionId === prev)) return prev;
           const open = list.find((m) => m.status === "OPEN");
           return open?.sessionId ?? list[0]?.sessionId ?? null;
         });
+        const open = list.find((m) => m.status === "OPEN" && m.token);
+        setCurrentSessionToken(open?.token ?? list.find((m) => m.token)?.token ?? null);
       })
       .catch(() => {
         if (cancelled) return;
@@ -370,6 +377,9 @@ export function TeacherAttendanceSessionPanel({
     });
     setSessionId(next.sessionId);
     setCurrentSessionToken(created.token ?? null);
+    if (created.token) {
+      rememberAttendanceQrToken(courseId, next.sessionId, created.token);
+    }
     setNextMeetingName(useSchedulePicker ? "" : (suggestedMeetingName?.trim() ?? ""));
 
     notifyAttendanceQrGenerated({
@@ -410,6 +420,36 @@ export function TeacherAttendanceSessionPanel({
     () => storedMeetings.find((m) => m.sessionId === sessionId),
     [storedMeetings, sessionId],
   );
+
+  const selectMeetingFromLog = useCallback(
+    (sid: string) => {
+      const meeting = storedMeetings.find((m) => m.sessionId === sid);
+      if (!meeting) return;
+      setSessionId(sid);
+      setCurrentSessionToken(meeting.token ?? null);
+      setRosterScheduleSlotIntent(null);
+      setRosterOverviewSessionId(sid);
+      rosterAttendanceOverviewPicker?.onSelectionChange?.(sid);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent(ATTENDANCE_OVERVIEW_SESSION_SYNC, {
+            detail: { courseId, sessionId: sid },
+          }),
+        );
+      }
+      // Scroll after state paints so the preview shows the selected meeting.
+      window.setTimeout(() => {
+        qrPreviewRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+    },
+    [courseId, rosterAttendanceOverviewPicker, storedMeetings],
+  );
+
+  useEffect(() => {
+    if (!sessionId) return;
+    const meeting = storedMeetings.find((m) => m.sessionId === sessionId);
+    if (meeting?.token) setCurrentSessionToken(meeting.token);
+  }, [sessionId, storedMeetings]);
 
   useEffect(() => {
     if (!courseId) return;
@@ -680,7 +720,10 @@ export function TeacherAttendanceSessionPanel({
   );
 
   const qrPreview = (
-    <div className="flex h-full min-h-[20rem] flex-col items-center justify-center rounded-xl border border-border bg-muted/30 px-6 py-8 text-center">
+    <div
+      ref={qrPreviewRef}
+      className="flex h-full min-h-[20rem] flex-col items-center justify-center rounded-xl border border-border bg-muted/30 px-6 py-8 text-center"
+    >
       {sessionId && selectedCourse ? (
         <>
           <div className="mb-5 space-y-1">
@@ -809,6 +852,8 @@ export function TeacherAttendanceSessionPanel({
               meetings={storedMeetings}
               title={t("teacher.attendancePanel.sessionLog.title")}
               description={t("teacher.attendancePanel.sessionLog.description")}
+              activeSessionId={sessionId}
+              onSelectMeeting={selectMeetingFromLog}
             />
           ) : null}
         </div>

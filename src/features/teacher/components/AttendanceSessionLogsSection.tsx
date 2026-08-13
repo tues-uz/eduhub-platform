@@ -5,6 +5,7 @@ import {
   formatDurationMs,
   type StoredAttendanceMeeting,
 } from "@/features/teacher/attendance/attendanceMeetingsStorage";
+import { cn } from "@/lib/utils";
 
 function formatShort(iso: string): string {
   const d = new Date(iso);
@@ -24,6 +25,10 @@ type Props = {
   meetings: StoredAttendanceMeeting[];
   title?: string;
   description?: string;
+  /** Highlights the meeting currently shown in the QR panel. */
+  activeSessionId?: string | null;
+  /** Click a meeting name to reopen it in the QR preview (helps after accidental refresh). */
+  onSelectMeeting?: (sessionId: string) => void;
 };
 
 /** Session history, straight from the backend attendance sessions for this course — no local log. */
@@ -31,6 +36,8 @@ export function AttendanceSessionLogsSection({
   meetings,
   title = "Attendance QR session log",
   description = "Each QR generation starts a session; duration is recorded when the session ends (new QR, 2h 15m cap, or manual stop).",
+  activeSessionId = null,
+  onSelectMeeting,
 }: Props) {
   const sorted = useMemo(
     () => [...meetings].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
@@ -69,8 +76,16 @@ export function AttendanceSessionLogsSection({
             <tbody>
               {sorted.map((row) => {
                 const duration = durationMsFor(row);
+                const label = row.name.trim() || "—";
+                const isActive = activeSessionId === row.sessionId;
                 return (
-                  <tr key={row.sessionId} className="border-b border-border last:border-0">
+                  <tr
+                    key={row.sessionId}
+                    className={cn(
+                      "border-b border-border last:border-0",
+                      isActive && "bg-teal-50/60",
+                    )}
+                  >
                     <td className="px-4 py-2.5 tabular-nums text-foreground">{formatShort(row.createdAt)}</td>
                     <td className="px-4 py-2.5 tabular-nums text-muted-foreground">
                       {row.endedAt ? formatShort(row.endedAt) : "—"}
@@ -78,7 +93,23 @@ export function AttendanceSessionLogsSection({
                     <td className="px-4 py-2.5 font-medium text-foreground">
                       {duration != null ? formatDurationMs(duration) : "—"}
                     </td>
-                    <td className="px-4 py-2.5 text-foreground">{row.name.trim() || "—"}</td>
+                    <td className="px-4 py-2.5 text-foreground">
+                      {onSelectMeeting && label !== "—" ? (
+                        <button
+                          type="button"
+                          onClick={() => onSelectMeeting(row.sessionId)}
+                          className={cn(
+                            "max-w-full text-left font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/30 rounded-sm",
+                            isActive ? "text-teal-800" : "text-teal-700",
+                          )}
+                          title="Show this session in the QR panel"
+                        >
+                          {label}
+                        </button>
+                      ) : (
+                        label
+                      )}
+                    </td>
                     <td className="px-4 py-2.5 text-muted-foreground">
                       {row.modality === "online" ? "Online" : "In person"}
                     </td>

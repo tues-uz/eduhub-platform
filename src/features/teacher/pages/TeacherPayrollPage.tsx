@@ -53,7 +53,9 @@ function classAggregateFromPayroll(cls: PayrollClassSummaryResponse): ClassPayro
   const outstandingByCurrency = new Map<string, number>();
   let paidCount = 0;
   let unpaidCount = 0;
-  for (const s of cls.students) {
+  const students = cls.students ?? [];
+  for (const s of students) {
+    if (!s) continue;
     if (s.status === "paid") {
       paidCount += 1;
       if (s.amount != null && s.amount > 0) addToCurrencyMap(paidByCurrency, s.currency, s.amount);
@@ -67,7 +69,7 @@ function classAggregateFromPayroll(cls: PayrollClassSummaryResponse): ClassPayro
     course: cls.course,
     lecturerName: cls.lecturerName,
     lecturerEmail: cls.lecturerEmail?.trim() || undefined,
-    paymentCount: cls.students.length,
+    paymentCount: students.length,
     paidCount,
     unpaidCount,
     paidByCurrency,
@@ -112,9 +114,13 @@ function SubmissionStatusPill({ status }: { status: "pending" | "approved" | "re
   );
 }
 
-function StudentPayrollStatusBadge({ status }: { status: PayrollClassStudentResponse["status"] }) {
+function StudentPayrollStatusBadge({
+  status,
+}: {
+  status: PayrollClassStudentResponse["status"] | null | undefined;
+}) {
   const { t } = useTranslation();
-  if (status === "enrolled") {
+  if (!status || status === "enrolled") {
     return (
       <span className="inline-flex rounded-md border border-border bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
         {t("teacher.payroll.status.enrolled")}
@@ -261,12 +267,13 @@ export default function TeacherPayrollPage() {
     if (!q) return classCardModels;
     return classCardModels.filter((cls) => {
       if ([cls.className, cls.course].join(" ").toLowerCase().includes(q)) return true;
-      return cls.students.some((s) =>
-        [s.fullName, s.email, s.status, formatMoney(s.amount ?? 0, s.currency)]
+      return (cls.students ?? []).some((s) => {
+        if (!s) return false;
+        return [s.fullName, s.email, s.status, formatMoney(s.amount ?? 0, s.currency)]
           .join(" ")
           .toLowerCase()
-          .includes(q),
-      );
+          .includes(q);
+      });
     });
   }, [classCardModels, search]);
 
@@ -281,7 +288,7 @@ export default function TeacherPayrollPage() {
   }, [filteredClassCards]);
 
   const totalPaymentRows = useMemo(
-    () => filteredClassCards.reduce((sum, cls) => sum + cls.students.length, 0),
+    () => filteredClassCards.reduce((sum, cls) => sum + (cls.students?.length ?? 0), 0),
     [filteredClassCards],
   );
 
@@ -483,7 +490,7 @@ export default function TeacherPayrollPage() {
                         payrollEmail && aggBase.lecturerEmail !== payrollEmail
                           ? { ...aggBase, lecturerEmail: payrollEmail }
                           : aggBase;
-                      const studentRows = cls.students;
+                      const studentRows = cls.students ?? [];
                       const totalStudents = studentRows.length > 0 ? studentRows.length : cls.enrollmentCount;
                       const paidCount = agg.paidCount;
                       const unpaidCount = agg.unpaidCount;

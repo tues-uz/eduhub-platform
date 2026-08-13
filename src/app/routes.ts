@@ -11,6 +11,8 @@ export const appRoutes = {
   register: "/register",
   changePassword: "/change-password",
   forgotPassword: "/forgot-password",
+  /** Public class detail (no sign-in required to browse). */
+  publicClassDetail: (courseId: string) => `/classes/${encodeURIComponent(courseId)}`,
   /** Use this path in password-reset email links so the SPA route matches. */
   resetPassword: "/reset-password",
   /** Use this path in email verification links so the SPA route matches. */
@@ -30,7 +32,8 @@ export function isPublicLandingPage(pathname: string): boolean {
     pathname === appRoutes.programsLanguageTraining ||
     pathname === appRoutes.programsAcademicServices ||
     pathname === "/eduhub" ||
-    pathname.startsWith("/eduhub/")
+    pathname.startsWith("/eduhub/") ||
+    pathname.startsWith("/classes/")
   );
 }
 

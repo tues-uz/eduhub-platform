@@ -59,15 +59,65 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { eduhubCourseQuizzes, eduhubCourses, eduhubClassResumes, eduhubSchedule, eduhubSubstituteInvites, ApiError, type QuizResponse } from "@/api/eduhubClient";
-import type { CourseResponse, CourseStatus, SubstituteInviteResponse, SubstituteInviteStatus } from "@/api/eduhubTypes";
+import { Badge } from "@/components/ui/badge";
+import {
+  eduhubAdminEnrollmentApplications,
+  eduhubCourseQuizzes,
+  eduhubCourses,
+  eduhubClassResumes,
+  eduhubSchedule,
+  eduhubSubstituteInvites,
+  ApiError,
+  type QuizResponse,
+} from "@/api/eduhubClient";
+import type {
+  ClassResumeResponse,
+  CourseResponse,
+  CourseStatus,
+  EnrollmentApplicationResponse,
+  PayrollClassStudentResponse,
+  SubstituteInviteResponse,
+  SubstituteInviteStatus,
+} from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import { useAuthSession } from "@/features/auth/context";
+import { PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
 import { TeacherAttendanceSessionPanel } from "@/features/teacher/components/TeacherAttendanceSessionPanel";
 import { TeacherAttendanceMatrixPanel } from "@/features/teacher/components/TeacherAttendanceMatrixPanel";
 import { TeacherCourseGradesPanel } from "@/features/teacher/components/TeacherCourseGradesPanel";
 import { TeacherCourseSchedulePanel } from "@/features/teacher/components/TeacherCourseSchedulePanel";
 import { TeacherManualQuizScoresPanel } from "@/features/teacher/components/TeacherManualQuizScoresPanel";
+import { TeacherClassPhotosPanel } from "@/features/teacher/components/TeacherClassPhotosPanel";
+import { usePayrollClassesQuery } from "@/features/teacher/hooks/useTeacherQueries";
+import { formatMoney } from "@/features/payroll/classPayrollAggregate";
+import {
+  formatContractShareLabel,
+  getInstructorRevenueShare,
+  useInstructorRevenueShareOverrides,
+} from "@/features/payroll/instructorRevenueShareStorage";
+import {
+  buildScheduleMonthTabs,
+  orderSessionSlotsChronologically,
+  type SessionSlotLike,
+} from "@/features/courses/classSchedulePreview";
+import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
+import {
+  ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED,
+  adminEnrollmentPaidMonthsStore,
+} from "@/features/admin/data/adminEnrollmentPaidMonthsStore";
+import {
+  ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED,
+  useEnrollmentInstallmentPayments,
+} from "@/features/enrollment/enrollmentInstallmentPaymentStore";
+import {
+  resolvedMonthsPaidCoverageKey,
+  type MonthsPaidCoverageKey,
+} from "@/features/enrollment/enrollmentPaymentHistory";
+import {
+  paidTuitionMonthsFromPaymentFields,
+  tuitionThirds,
+  type TuitionPlanMonths,
+} from "@/features/enrollment/enrollmentTuitionThirds";
 import { formatDisplayPersonName, profileInitials } from "@/lib/formatPersonName";
 import {
   buildCourseScheduleSlotsForPicker,
@@ -85,9 +135,81 @@ import {
   ATTENDANCE_ROLL_STORAGE_KEY,
   countSessionsStudentAttended,
 } from "@/features/attendance/attendanceRollStorage";
-import type { ClassResumeResponse } from "@/api/eduhubTypes";
 import { useTeacherClassChecklist } from "@/features/teacher/hooks/useTeacherClassChecklist";
 import { useTranslation } from "react-i18next";
+
+type RosterStudentPaymentStatus = PayrollClassStudentResponse["status"];
+
+type RosterStudentPaymentInfo = {
+  status: RosterStudentPaymentStatus;
+  amount?: number;
+  currency: string;
+};
+
+function mergeRosterPaidMonths(
+  enrollment: EnrollmentApplicationResponse,
+  scheduleSlots: SessionSlotLike[],
+): Set<TuitionPlanMonths> {
+  const monthCount =
+    buildScheduleMonthTabs(orderSessionSlotsChronologically(scheduleSlots)).length || 3;
+  const fromPlan = paidTuitionMonthsFromPaymentFields(enrollment, monthCount) ?? new Set<TuitionPlanMonths>();
+  const fromInstallments = adminEnrollmentPaidMonthsStore.get(enrollment.id);
+  if (!fromInstallments?.size) return fromPlan;
+  return new Set<TuitionPlanMonths>([...fromPlan, ...fromInstallments]);
+}
+
+/** Infer month coverage from how much was paid vs listed class tuition. */
+function inferCoverageFromPaidAmount(
+  amount: number | undefined,
+  tuitionPerStudent: number | undefined,
+): MonthsPaidCoverageKey | null {
+  if (amount == null || amount <= 0 || tuitionPerStudent == null || tuitionPerStudent <= 0) {
+    return null;
+  }
+  const thirds = tuitionThirds(Math.round(tuitionPerStudent));
+  const tol = Math.max(1, Math.round(tuitionPerStudent * 0.03));
+  if (!thirds) {
+    if (amount + tol >= tuitionPerStudent) return "full";
+    if (amount + tol >= tuitionPerStudent * (2 / 3)) return "second";
+    if (amount + tol >= tuitionPerStudent / 3) return "first";
+    return "partial";
+  }
+  const [m1, m2] = thirds;
+  const throughSecond = m1 + m2;
+  if (amount + tol >= tuitionPerStudent) return "full";
+  if (amount + tol >= throughSecond) return "second";
+  if (amount + tol >= m1) return "first";
+  return "partial";
+}
+
+function RosterStudentStatusBadge({
+  status,
+  coverageKey,
+}: {
+  status: RosterStudentPaymentStatus;
+  coverageKey?: MonthsPaidCoverageKey | null;
+}) {
+  const { t } = useTranslation();
+  if (status === "enrolled") {
+    return (
+      <span className="inline-flex rounded-md border border-border bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
+        {t("teacher.payroll.status.enrolled")}
+      </span>
+    );
+  }
+  if (status === "paid") {
+    const key: MonthsPaidCoverageKey =
+      coverageKey && coverageKey !== "unpaid" ? coverageKey : "full";
+    return (
+      <Badge variant="default" className="whitespace-nowrap font-medium">
+        {t("teacher.roster.enrolled.paymentCoverage.paidWithDetail", {
+          detail: t(`teacher.roster.enrolled.paymentCoverage.${key}`),
+        })}
+      </Badge>
+    );
+  }
+  return <PaymentStatusBadge status={status} />;
+}
 
 function formatClassMeetingSlotLabel(slot: ClassMeetingSlot, index: number): string {
   const title = slot.title?.trim() || `Session ${index + 1}`;
@@ -181,6 +303,7 @@ const TEACHER_COURSE_TABS = [
   "quiz-scores",
   "attendance",
   "grades",
+  "photos",
 ] as const;
 type TeacherCourseTab = (typeof TEACHER_COURSE_TABS)[number];
 
@@ -192,7 +315,8 @@ function isTeacherCourseTab(t: string | null): t is TeacherCourseTab {
     t === "quiz" ||
     t === "quiz-scores" ||
     t === "attendance" ||
-    t === "grades"
+    t === "grades" ||
+    t === "photos"
   );
 }
 
@@ -279,6 +403,13 @@ export default function TeacherCourseRosterPage() {
 
   const courseLeadEmail = apiCourseQuery.data?.lecturer?.email?.trim();
 
+  /** Re-render when admin changes this instructor’s contract share. */
+  useInstructorRevenueShareOverrides();
+  const revenueShareEmail = courseLeadEmail || user.email;
+  const instructorRevenueShare = getInstructorRevenueShare(revenueShareEmail);
+  const instructorSharePct = Math.round(instructorRevenueShare * 100);
+  const contractShareLabel = formatContractShareLabel(instructorRevenueShare);
+
   const courseMeta =
     apiCourseQuery.data != null
       ? {
@@ -301,6 +432,83 @@ export default function TeacherCourseRosterPage() {
       apiCourseQuery.isSuccess &&
       (isApiCourseLecturer || substituteCanAccess),
   });
+
+  const payrollClassesQuery = usePayrollClassesQuery(
+    isApiCourseLecturer || substituteCanAccess ? user.id : undefined,
+  );
+
+  const payrollClassForCourse = useMemo(
+    () => (payrollClassesQuery.data ?? []).find((cls) => cls.courseId === courseId),
+    [courseId, payrollClassesQuery.data],
+  );
+
+  const studentPaymentByKey = useMemo(() => {
+    const map = new Map<string, RosterStudentPaymentInfo>();
+    for (const student of payrollClassForCourse?.students ?? []) {
+      const info: RosterStudentPaymentInfo = {
+        status: student.status,
+        amount: student.amount,
+        currency: student.currency || payrollClassForCourse?.currency || "USD",
+      };
+      map.set(student.id, info);
+      const email = student.email?.trim().toLowerCase();
+      if (email) map.set(`email:${email}`, info);
+    }
+    return map;
+  }, [payrollClassForCourse]);
+
+  const courseEnrollmentsQuery = useQuery({
+    queryKey: ["teacher", "roster", "enrollments", courseId],
+    queryFn: async (): Promise<EnrollmentApplicationResponse[]> => {
+      const byId = new Map<string, EnrollmentApplicationResponse>();
+      try {
+        const all = await eduhubAdminEnrollmentApplications.listAll();
+        for (const a of all) {
+          if (a.courseId === courseId && a.status === "APPROVED") byId.set(a.id, a);
+        }
+      } catch {
+        // Teacher may not have admin enrollment access — fall back to local cache below.
+      }
+      for (const a of enrollmentApplicationStore.list()) {
+        if (a.courseId !== courseId || a.status !== "APPROVED" || byId.has(a.id)) continue;
+        byId.set(a.id, {
+          id: a.id,
+          courseId: a.courseId,
+          courseTitle: a.courseTitle ?? "",
+          applicantEmailNorm: a.applicantEmailNorm,
+          fullName: a.fullName,
+          email: a.email,
+          phone: a.phone,
+          address: a.address,
+          paymentPlan: a.paymentPlan === "INSTALLMENT" ? "DOWN_PAYMENT" : a.paymentPlan,
+          installmentCount:
+            a.installmentCount === 3 || a.installmentCount === 12
+              ? 2
+              : (a.installmentCount as 1 | 2 | 4 | 6 | 8 | undefined),
+          status: a.status,
+          submittedAt: a.submittedAt,
+          amountPaid: a.amountPaid,
+          priceCurrency: a.priceCurrency,
+        });
+      }
+      return [...byId.values()];
+    },
+    enabled: Boolean(courseId) && isUuid(courseId) && (isApiCourseLecturer || substituteCanAccess),
+  });
+
+  const installmentPaymentsTick = useEnrollmentInstallmentPayments();
+  const [paidMonthsTick, setPaidMonthsTick] = useState(0);
+  useEffect(() => {
+    const bump = () => setPaidMonthsTick((n) => n + 1);
+    window.addEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
+    window.addEventListener(ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED, bump);
+    window.addEventListener("eduhub-enrollment-applications-changed", bump);
+    return () => {
+      window.removeEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
+      window.removeEventListener(ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED, bump);
+      window.removeEventListener("eduhub-enrollment-applications-changed", bump);
+    };
+  }, []);
 
   const courseQuizzesQuery = useQuery({
     queryKey: ["teacher", "roster", "courseQuizzes", courseId],
@@ -395,6 +603,40 @@ export default function TeacherCourseRosterPage() {
       slots,
     };
   }, [scheduleProposalQuery.data, scheduleSourceCourse, courseId]);
+
+  const studentPaymentCoverageByEmail = useMemo(() => {
+    void installmentPaymentsTick;
+    void paidMonthsTick;
+    const map = new Map<string, MonthsPaidCoverageKey>();
+    const slots = rosterScheduleView.slots;
+    const scheduleMonthCount =
+      buildScheduleMonthTabs(orderSessionSlotsChronologically(slots)).length || 3;
+    const tuition = payrollClassForCourse?.tuitionPerStudent;
+
+    for (const enrollment of courseEnrollmentsQuery.data ?? []) {
+      const email =
+        enrollment.applicantEmailNorm?.trim().toLowerCase() || enrollment.email?.trim().toLowerCase();
+      if (!email) continue;
+      const paidMonths = mergeRosterPaidMonths(enrollment, slots);
+      map.set(email, resolvedMonthsPaidCoverageKey(paidMonths, scheduleMonthCount));
+    }
+
+    // Payroll amount fallback when enrollment plan isn't available for this browser/role.
+    for (const student of payrollClassForCourse?.students ?? []) {
+      const email = student.email?.trim().toLowerCase();
+      if (!email || map.has(email)) continue;
+      if (student.status !== "paid") continue;
+      map.set(email, inferCoverageFromPaidAmount(student.amount, tuition) ?? "full");
+    }
+
+    return map;
+  }, [
+    courseEnrollmentsQuery.data,
+    rosterScheduleView.slots,
+    installmentPaymentsTick,
+    paidMonthsTick,
+    payrollClassForCourse,
+  ]);
 
   const scheduleSubstituteCoverage = useMemo(() => {
     const empty = {
@@ -931,6 +1173,9 @@ export default function TeacherCourseRosterPage() {
                     <TabsTrigger value="grades" className={rosterTabTriggerClass}>
                       {t("teacher.roster.tabs.grades")}
                     </TabsTrigger>
+                    <TabsTrigger value="photos" className={rosterTabTriggerClass}>
+                      {t("teacher.roster.tabs.photos")}
+                    </TabsTrigger>
                   </TabsList>
                 </div>
 
@@ -944,6 +1189,12 @@ export default function TeacherCourseRosterPage() {
                       </h2>
                       <p className="text-sm text-muted-foreground">
                         {t("teacher.roster.enrolled.intro")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("teacher.roster.enrolled.shareHint", {
+                          split: contractShareLabel,
+                          instructorPct: instructorSharePct,
+                        })}
                       </p>
                     </div>
                     {studentsQuery.data?.length ? (
@@ -975,6 +1226,22 @@ export default function TeacherCourseRosterPage() {
                               <TableHead className="min-w-[16rem]">
                                 {t("teacher.roster.enrolled.table.name")}
                               </TableHead>
+                              <TableHead className="whitespace-nowrap">
+                                {t("teacher.roster.enrolled.table.status")}
+                              </TableHead>
+                              <TableHead className="whitespace-nowrap text-right">
+                                {t("teacher.roster.enrolled.table.amountPaid")}
+                              </TableHead>
+                              <TableHead
+                                className="whitespace-nowrap text-right"
+                                title={t("teacher.roster.enrolled.table.yourShareTitle", {
+                                  pct: instructorSharePct,
+                                })}
+                              >
+                                {t("teacher.roster.enrolled.table.yourShare", {
+                                  pct: instructorSharePct,
+                                })}
+                              </TableHead>
                               <TableHead
                                 className="whitespace-nowrap text-right"
                                 title={t("teacher.roster.enrolled.table.sessionsTitle")}
@@ -989,6 +1256,28 @@ export default function TeacherCourseRosterPage() {
                               const displayName = formatDisplayPersonName(s.fullName);
                               const planned = apiCourseQuery.data?.classMeetingsInSixMonths;
                               const attended = countSessionsStudentAttended(courseMeta.id, s.id, s.email);
+                              const emailKey = s.email?.trim().toLowerCase();
+                              const paymentInfo =
+                                studentPaymentByKey.get(s.id) ??
+                                (emailKey ? studentPaymentByKey.get(`email:${emailKey}`) : undefined);
+                              const paymentStatus: RosterStudentPaymentStatus =
+                                paymentInfo?.status ?? "enrolled";
+                              const coverageKey = emailKey
+                                ? studentPaymentCoverageByEmail.get(emailKey)
+                                : undefined;
+                              const paidAmount =
+                                paymentStatus === "paid" &&
+                                paymentInfo?.amount != null &&
+                                paymentInfo.amount > 0
+                                  ? paymentInfo.amount
+                                  : null;
+                              const currency = paymentInfo?.currency || "USD";
+                              const amountPaidLabel =
+                                paidAmount != null ? formatMoney(paidAmount, currency) : "—";
+                              const yourShareLabel =
+                                paidAmount != null
+                                  ? formatMoney(Math.round(paidAmount * instructorRevenueShare), currency)
+                                  : "—";
                               const sessionsCell =
                                 planned != null ? (
                                   <span className="tabular-nums">
@@ -1017,6 +1306,18 @@ export default function TeacherCourseRosterPage() {
                                         <p className="truncate text-xs text-muted-foreground">{s.email}</p>
                                       </div>
                                     </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <RosterStudentStatusBadge
+                                      status={paymentStatus}
+                                      coverageKey={coverageKey}
+                                    />
+                                  </TableCell>
+                                  <TableCell className="text-right text-sm tabular-nums whitespace-nowrap">
+                                    {amountPaidLabel}
+                                  </TableCell>
+                                  <TableCell className="text-right text-sm tabular-nums whitespace-nowrap font-medium text-teal-800">
+                                    {yourShareLabel}
                                   </TableCell>
                                   <TableCell className="text-right text-sm">{sessionsCell}</TableCell>
                                 </TableRow>
@@ -1588,6 +1889,13 @@ export default function TeacherCourseRosterPage() {
                     isApiCourse={isUuid(courseId)}
                     isLoading={studentsQuery.isLoading}
                     isError={studentsQuery.isError}
+                  />
+                </TabsContent>
+
+                <TabsContent value="photos" className="mt-0 min-w-0 focus-visible:outline-none focus-visible:ring-0">
+                  <TeacherClassPhotosPanel
+                    courseId={courseMeta.id}
+                    apiPhotoUrls={apiCourseQuery.data?.classPhotoUrls}
                   />
                 </TabsContent>
                 </div>

@@ -116,6 +116,7 @@
     "sessions": "Занятия",
     "sessionsLabel": "занятий",
     "tuition": "Стоимость обучения",
+    "externalTuitionNote": "External student tuition (+50,000).",
     "scheduleComplete": "Расписание составлено",
     "free": "Бесплатно",
     "continueLearning": "Продолжить обучение",
@@ -130,7 +131,9 @@
     "emptyNoMatchHint": "Попробуйте другой запрос.",
     "myClass": "Мой класс",
     "clearFilters": "Сбросить фильтры",
-    "defaultCategory": "Класс"
+    "defaultCategory": "Класс",
+    "dayPatternOdd": "Нечётный день",
+    "dayPatternEven": "Чётный день"
   },
   "classSearch": {
     "placeholder": "Поиск классов…",

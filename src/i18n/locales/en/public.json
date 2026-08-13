@@ -12,6 +12,21 @@
       "title": "Our Valuable Partners",
       "partner": "Partner {{number}}"
     },
+    "availableClasses": {
+      "eyebrow": "Open classes",
+      "title": "Available classes",
+      "subtitle": "Browse featured classes. Register to apply and start learning.",
+      "viewAll": "View all classes",
+      "signInToBrowse": "Sign in to browse",
+      "instructor": "Instructor",
+      "tuition": "Tuition",
+      "free": "Free",
+      "students_one": "{{count}} student",
+      "students_other": "{{count}} students",
+      "emptyTitle": "No classes to show yet",
+      "emptyHint": "Check back soon, or register to explore open classes.",
+      "ctaRegister": "Register to browse"
+    },
     "aboutPage": {
       "badge": "About EduHub",
       "title": "Learning with purpose at TUES University",

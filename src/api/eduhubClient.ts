@@ -372,7 +372,8 @@ export const eduhubCourses = {
     return request<CourseSummaryResponse[]>(`/courses?${sp}`);
   },
 
-  getById: (id: string) => request<CourseResponse>(`/courses/${id}`),
+  getById: (id: string, options?: { skipAuth?: boolean }) =>
+    request<CourseResponse>(`/courses/${id}`, { skipAuth: options?.skipAuth }),
 
   create: (body: CourseRequest) =>
     request<CourseResponse>("/courses", { method: "POST", body: JSON.stringify(body) }),
@@ -867,8 +868,10 @@ export const eduhubPayroll = {
 
 /** Schedule Workflow */
 export const eduhubSchedule = {
-  getProposal: (courseId: string) =>
-    request<ScheduleProposalResponse>(`/courses/${courseId}/schedule`),
+  getProposal: (courseId: string, options?: { skipAuth?: boolean }) =>
+    request<ScheduleProposalResponse>(`/courses/${courseId}/schedule`, {
+      skipAuth: options?.skipAuth,
+    }),
 
   approve: (courseId: string) =>
     request<ScheduleProposalResponse>(`/courses/${courseId}/schedule/approve`, { method: "PATCH" }),

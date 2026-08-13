@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import EduHubHeader from "@/components/EduHubHeader";
 import { HeroInfiniteScrollGallery } from "@/components/HeroInfiniteScrollGallery";
 import Footer from "@/components/Footer";
+import { LandingAvailableClassesSection } from "@/features/landing/LandingAvailableClassesSection";
 import { useLandingPageContent } from "@/features/landing/useLandingPageContent";
 import { appRoutes } from "@/app/routes";
 
@@ -133,6 +134,7 @@ const PARTNER_LOGOS = [
   { name: "IELTS", logo: "/partnership/2.png" },
   { name: "University of Cambridge", logo: "/partnership/3.png" },
   { name: "British Council", logo: "/partnership/4.png" },
+  { name: "Bloomberg", logo: "/partnership/bloomberg.png" },
 ] as const;
 
 const EduHub = () => {
@@ -296,6 +298,8 @@ const EduHub = () => {
           y: 0,
           duration: 1,
           ease,
+          // Remove transform after reveal so nested position:sticky (feature cards) can work.
+          clearProps: "transform",
           scrollTrigger: {
             trigger: el,
             start: "top 82%",
@@ -497,7 +501,7 @@ const EduHub = () => {
 
           {/* Logo ticker - mask fade on edges, 64px gap */}
           <div
-            className="flex w-full items-center overflow-hidden"
+            className="flex w-full min-w-0 items-center overflow-hidden"
             style={{
               maskImage: 'linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 10%, rgb(0, 0, 0) 90%, rgba(0, 0, 0, 0) 100%)',
               WebkitMaskImage: 'linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 10%, rgb(0, 0, 0) 90%, rgba(0, 0, 0, 0) 100%)',
@@ -524,6 +528,8 @@ const EduHub = () => {
           </div>
         </div>
       </section>
+
+      <LandingAvailableClassesSection />
 
       {/* Stats Section - Framer Bento-style grid (wide + subgrid) */}
       <section className="pt-16 pb-[160px] px-6 lg:px-16 bg-white relative">
@@ -758,11 +764,11 @@ const EduHub = () => {
           </div>
         </div>
       </section>
-      {/* Features Section */}
+      {/* Features Section — sticky card stack; avoid section-reveal transform on this wrapper */}
       <section className="py-24 relative bg-white">
-        <div className="section-reveal container mx-auto px-6">
+        <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 gap-8 items-start lg:grid-cols-2 lg:gap-12">
-            <div className="text-center lg:text-left lg:sticky lg:top-24 pt-4 flex flex-col lg:h-[600px]">
+            <div className="section-reveal text-center lg:text-left lg:sticky lg:top-24 pt-4 flex flex-col lg:h-[600px]">
               <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 {t("public.features.title")}
               </h2>

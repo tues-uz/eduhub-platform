@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { ClassStatusBadge, PaymentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
-import { eduhubAdmin, eduhubAdminClasses, eduhubAdminPayments } from "@/api/eduhubClient";
+import { eduhubAdmin, eduhubAdminClasses, eduhubAdminPayments, eduhubCourses } from "@/api/eduhubClient";
 import type {
   ClassStatus,
   AdminClassRowResponse as AdminClassRow,
@@ -11,6 +11,12 @@ import type {
   PaymentStatus,
   UserResponse,
 } from "@/api/eduhubTypes";
+import { formatDisplayPersonName } from "@/lib/formatPersonName";
+
+function resolveClassTeacherName(row: AdminClassRow): string {
+  const raw = row.teacherName?.trim() || row.lecturerName?.trim() || row.instructorName?.trim() || "";
+  return raw ? formatDisplayPersonName(raw) : "";
+}
 import { Loader2, UserPlus, ArrowLeftRight, Trash2, Users } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -119,8 +125,33 @@ export default function AdminClassesPage() {
   const fetchClasses = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await eduhubAdminClasses.listAll();
-      setClassList(data || []);
+      const [data, published, drafts] = await Promise.all([
+        eduhubAdminClasses.listAll(),
+        eduhubCourses.getAll({ page: 0, size: 100 }).catch(() => []),
+        eduhubCourses.getAll({ page: 0, size: 100, status: "DRAFT" }).catch(() => []),
+      ]);
+      const courses = [...(published || []), ...(drafts || [])];
+
+      const teacherByCourseId = new Map<string, string>();
+      const teacherByTitle = new Map<string, string>();
+      for (const course of courses) {
+        const name = course.lecturerName?.trim();
+        if (!name) continue;
+        teacherByCourseId.set(course.id, name);
+        teacherByTitle.set(course.title.trim().toLowerCase(), name);
+      }
+
+      setClassList(
+        (data || []).map((row) => {
+          if (resolveClassTeacherName(row)) return row;
+          const fromId = teacherByCourseId.get(row.id);
+          const fromTitle =
+            teacherByTitle.get(row.course.trim().toLowerCase()) ||
+            teacherByTitle.get(row.name.trim().toLowerCase());
+          const teacherName = fromId || fromTitle;
+          return teacherName ? { ...row, teacherName } : row;
+        }),
+      );
     } catch {
       setClassList([]);
     } finally {
@@ -229,7 +260,10 @@ export default function AdminClassesPage() {
       if (statusFilter !== "all" && c.status !== (statusFilter as ClassStatus)) return false;
       if (courseFilter !== "all" && c.course !== courseFilter) return false;
       if (!q) return true;
-      return [c.name, c.course, c.schedule].join(" ").toLowerCase().includes(q);
+      return [c.name, c.course, c.schedule, resolveClassTeacherName(c)]
+        .join(" ")
+        .toLowerCase()
+        .includes(q);
     });
   }, [search, statusFilter, courseFilter, classList]);
 
@@ -261,60 +295,62 @@ export default function AdminClassesPage() {
         description={t("admin.classesRosters.description")}
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
+      <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <Input
           placeholder={t("admin.classesRosters.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-md bg-white"
+          className="w-full max-w-md bg-white"
         />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[170px] bg-white">
-            <SelectValue placeholder={t("admin.classesRosters.classStatusPlaceholder")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("admin.shared.allClassStatuses")}</SelectItem>
-            <SelectItem value="active">{t("admin.shared.active")}</SelectItem>
-            <SelectItem value="waiting">{t("admin.shared.waiting")}</SelectItem>
-            <SelectItem value="completed">{t("admin.shared.completed")}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={courseFilter} onValueChange={setCourseFilter}>
-          <SelectTrigger className="w-full sm:w-[220px] bg-white">
-            <SelectValue placeholder="Class" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("admin.shared.allClasses")}</SelectItem>
-            {courseOptions.map((name) => (
-              <SelectItem key={name} value={name}>
-                {name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {hasActiveFilters ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-slate-600"
-            onClick={() => {
-              setSearch("");
-              setStatusFilter("all");
-              setCourseFilter("all");
-            }}
-          >
-            Clear filters
-          </Button>
-        ) : null}
+        <div className="flex flex-row flex-nowrap items-center gap-3">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[170px] shrink-0 bg-white">
+              <SelectValue placeholder={t("admin.classesRosters.classStatusPlaceholder")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("admin.shared.allClassStatuses")}</SelectItem>
+              <SelectItem value="active">{t("admin.shared.active")}</SelectItem>
+              <SelectItem value="waiting">{t("admin.shared.waiting")}</SelectItem>
+              <SelectItem value="completed">{t("admin.shared.completed")}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={courseFilter} onValueChange={setCourseFilter}>
+            <SelectTrigger className="w-[220px] shrink-0 bg-white">
+              <SelectValue placeholder="Class" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("admin.shared.allClasses")}</SelectItem>
+              {courseOptions.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {hasActiveFilters ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-slate-600"
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("all");
+                setCourseFilter("all");
+              }}
+            >
+              Clear filters
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50">
-              <TableHead>{t("admin.shared.class")}</TableHead>
-              <TableHead>{t("admin.shared.class")}</TableHead>
+              <TableHead>{t("admin.classesRosters.table.class")}</TableHead>
+              <TableHead>{t("admin.classesRosters.table.teacher")}</TableHead>
               <TableHead>{t("admin.courses.detail.schedule")}</TableHead>
               <TableHead>{t("admin.classesRosters.table.capacity")}</TableHead>
               <TableHead>{t("common.status")}</TableHead>
@@ -341,8 +377,12 @@ export default function AdminClassesPage() {
             ) : (
               filtered.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium text-slate-900">{c.name}</TableCell>
-                  <TableCell>{c.course}</TableCell>
+                  <TableCell className="font-medium text-slate-900">
+                    {c.name?.trim() || c.course}
+                  </TableCell>
+                  <TableCell className="text-slate-800">
+                    {resolveClassTeacherName(c) || "—"}
+                  </TableCell>
                   <TableCell className="text-slate-600">{c.schedule}</TableCell>
                   <TableCell>
                     <span className="font-semibold">{c.filled}</span>/{c.capacity}

@@ -47,18 +47,19 @@ export function buildPayrollProofPagePath(requestId: string): string {
  * Visible once approved or if the proof has a released dataUrl.
  */
 export function canInstructorViewTransferProof(
-  request: InstructorPayrollRequestRecord,
+  request: InstructorPayrollRequestRecord | null | undefined,
   proof?: PayrollProofRecord | null,
 ): boolean {
+  if (!request) return false;
   if (request.status === "approved") return true;
   return isReleasedInstructorTransferProof(request, proof);
 }
 
 export function isReleasedInstructorTransferProof(
-  request: InstructorPayrollRequestRecord,
+  request: InstructorPayrollRequestRecord | null | undefined,
   proof?: PayrollProofRecord | null,
 ): boolean {
-  return request.status === "approved" && hasPayrollProofFile(proof);
+  return Boolean(request && request.status === "approved" && hasPayrollProofFile(proof));
 }
 
 /** Resolve the PayrollProofRecord for a given class+course from the snapshot map. */

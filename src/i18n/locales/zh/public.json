@@ -12,6 +12,21 @@
       "title": "我们的重要合作伙伴",
       "partner": "合作伙伴 {{number}}"
     },
+    "availableClasses": {
+      "eyebrow": "Open classes",
+      "title": "Available classes",
+      "subtitle": "The same Available Classes students see after login — with real class covers and tuition.",
+      "viewAll": "View all classes",
+      "signInToBrowse": "Sign in to browse",
+      "instructor": "Instructor",
+      "tuition": "Tuition",
+      "free": "Free",
+      "students_one": "{{count}} student",
+      "students_other": "{{count}} students",
+      "emptyTitle": "No classes to show yet",
+      "emptyHint": "Sign in as a student (or open Available Classes once) so we can load the real class list and thumbnails here.",
+      "ctaRegister": "Register to browse"
+    },
     "aboutPage": {
       "badge": "关于 EduHub",
       "title": "在 TUES University 有目标地学习",

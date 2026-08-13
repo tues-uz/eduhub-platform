@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,15 +14,13 @@ import {
   AlertCircle,
   ArrowLeft,
   Check,
-  Upload,
-  X,
 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { DateOfBirthPicker } from "@/components/ui/date-of-birth-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { eduhubAuth, eduhubUploadFile, setAuthTokens } from "@/api/eduhubClient";
+import { eduhubAuth, setAuthTokens } from "@/api/eduhubClient";
 import { PhoneWithCountryCode } from "@/features/auth/components/PhoneWithCountryCode";
 import {
   composeInternationalPhone,
@@ -30,108 +28,12 @@ import {
   getCountryByIso,
 } from "@/features/auth/data/countryDialCodes";
 import { setSessionUser, useAuthSession } from "@/features/auth/context";
+import { TUES_UNIVERSITY_SCHOOL_NAME } from "@/features/auth/studentAffiliation";
 import type { UserRole } from "@/features/auth/types";
 import { cn } from "@/lib/utils";
 
 type SignUpStep = 1 | 2;
 type StudentAffiliation = "internal" | "external";
-
-/** Stored in `latestSchool` when the student selects internal affiliation. */
-const TUES_UNIVERSITY_SCHOOL_NAME = "TUES University";
-
-const PASSPORT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
-const PASSPORT_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
-
-function PassportImageField({
-  id,
-  label,
-  optionalLabel,
-  file,
-  previewUrl,
-  inputRef,
-  onPick,
-  onClear,
-  browseLabel,
-  replaceLabel,
-  removeLabel,
-  hint,
-}: {
-  id: string;
-  label: string;
-  optionalLabel?: string;
-  file: File | null;
-  previewUrl: string;
-  inputRef: React.RefObject<HTMLInputElement | null>;
-  onPick: (file: File | null) => void;
-  onClear: () => void;
-  browseLabel: string;
-  replaceLabel: string;
-  removeLabel: string;
-  hint: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="inline-flex flex-wrap items-baseline gap-x-1.5">
-        <span>{label}</span>
-        {optionalLabel ? (
-          <span className="font-normal text-foreground/50">{optionalLabel}</span>
-        ) : null}
-      </Label>
-      <input
-        ref={inputRef}
-        id={id}
-        type="file"
-        accept={PASSPORT_IMAGE_ACCEPT}
-        className="sr-only"
-        onChange={(e) => onPick(e.target.files?.[0] ?? null)}
-      />
-      {file && previewUrl ? (
-        <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50/80 p-3">
-          <img
-            src={previewUrl}
-            alt=""
-            className="h-14 w-14 shrink-0 rounded-lg border border-gray-200 object-cover"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{file.name}</p>
-            <p className="text-xs text-foreground/55">
-              {(file.size / 1024).toFixed(file.size < 10240 ? 1 : 0)} KB
-            </p>
-            <div className="mt-1.5 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="text-xs font-medium text-[#1e40af] hover:underline"
-                onClick={() => inputRef.current?.click()}
-              >
-                {replaceLabel}
-              </button>
-              <button
-                type="button"
-                className="inline-flex items-center gap-0.5 text-xs font-medium text-foreground/55 hover:text-foreground"
-                onClick={onClear}
-              >
-                <X className="h-3 w-3" />
-                {removeLabel}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50/50 px-3 py-5 text-center transition-colors hover:border-[#1e40af]/40 hover:bg-[#eff3ff]/40"
-        >
-          <span className="inline-flex size-9 items-center justify-center rounded-full bg-[#1e40af]/10 text-[#1e40af]">
-            <Upload className="h-4 w-4" />
-          </span>
-          <span className="text-sm font-medium text-foreground">{browseLabel}</span>
-          <span className="text-xs text-foreground/55">{hint}</span>
-        </button>
-      )}
-    </div>
-  );
-}
 
 const SignUp = () => {
   const { t } = useTranslation();
@@ -151,72 +53,22 @@ const SignUp = () => {
     dateOfBirth: "",
     birthCity: "",
     latestSchool: "",
+    faculty: "",
     password: "",
     confirmPassword: "",
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [localPassportFile, setLocalPassportFile] = useState<File | null>(null);
-  const [internationalPassportFile, setInternationalPassportFile] = useState<File | null>(null);
-  const [localPassportPreview, setLocalPassportPreview] = useState("");
-  const [internationalPassportPreview, setInternationalPassportPreview] = useState("");
-  const localPassportInputRef = useRef<HTMLInputElement>(null);
-  const internationalPassportInputRef = useRef<HTMLInputElement>(null);
 
   const navigate = useNavigate();
   const { toast } = useToast();
   const { refreshUser } = useAuthSession();
-
-  useEffect(() => {
-    if (!localPassportFile) {
-      setLocalPassportPreview("");
-      return;
-    }
-    const url = URL.createObjectURL(localPassportFile);
-    setLocalPassportPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [localPassportFile]);
-
-  useEffect(() => {
-    if (!internationalPassportFile) {
-      setInternationalPassportPreview("");
-      return;
-    }
-    const url = URL.createObjectURL(internationalPassportFile);
-    setInternationalPassportPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [internationalPassportFile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
-  };
-
-  const pickPassportImage = (
-    file: File | null,
-    setFile: (f: File | null) => void,
-    inputRef: React.RefObject<HTMLInputElement | null>,
-  ) => {
-    if (!file) {
-      setFile(null);
-      return;
-    }
-    const okType =
-      file.type === "image/jpeg" || file.type === "image/png" || file.type === "image/webp";
-    if (!okType) {
-      setError(t("auth.signUp.passportImageInvalidType"));
-      if (inputRef.current) inputRef.current.value = "";
-      return;
-    }
-    if (file.size > PASSPORT_IMAGE_MAX_BYTES) {
-      setError(t("auth.signUp.passportImageTooLarge"));
-      if (inputRef.current) inputRef.current.value = "";
-      return;
-    }
-    setError("");
-    setFile(file);
   };
 
   const validateStep1 = (): boolean => {
@@ -253,12 +105,16 @@ const SignUp = () => {
       ...prev,
       latestSchool:
         affiliation === "internal" ? TUES_UNIVERSITY_SCHOOL_NAME : "",
+      faculty: affiliation === "internal" ? prev.faculty : "",
     }));
   };
 
   const resolveLatestSchool = (): string => {
     if (studentAffiliation === "internal") {
-      return TUES_UNIVERSITY_SCHOOL_NAME;
+      const faculty = formData.faculty.trim();
+      return faculty
+        ? `${TUES_UNIVERSITY_SCHOOL_NAME} · ${faculty}`
+        : TUES_UNIVERSITY_SCHOOL_NAME;
     }
     return formData.latestSchool.trim();
   };
@@ -266,6 +122,10 @@ const SignUp = () => {
   const validateStep2 = (): boolean => {
     if (!studentAffiliation) {
       setError(t("auth.signUp.studentAffiliationRequired"));
+      return false;
+    }
+    if (studentAffiliation === "internal" && !formData.faculty.trim()) {
+      setError(t("auth.signUp.facultyRequired"));
       return false;
     }
     if (studentAffiliation === "external" && !formData.latestSchool.trim()) {
@@ -324,30 +184,6 @@ const SignUp = () => {
       });
 
       setAuthTokens(res.accessToken, res.refreshToken, res.expiresIn);
-
-      try {
-        let passportImageUrl: string | undefined;
-        if (localPassportFile) {
-          const uploaded = await eduhubUploadFile(localPassportFile, "passport-ids");
-          passportImageUrl = uploaded.url;
-        }
-        let internationalPassportImageUrl: string | undefined;
-        if (internationalPassportFile) {
-          const uploaded = await eduhubUploadFile(internationalPassportFile, "passport-ids");
-          internationalPassportImageUrl = uploaded.url;
-        }
-        if (passportImageUrl || internationalPassportImageUrl) {
-          await eduhubAuth.updateProfile({
-            ...(passportImageUrl ? { passportImageUrl } : {}),
-            ...(internationalPassportImageUrl ? { internationalPassportImageUrl } : {}),
-          });
-        }
-      } catch {
-        toast({
-          title: t("auth.signUp.passportImageUploadFailed"),
-          variant: "destructive",
-        });
-      }
 
       const role: UserRole = "student";
       setSessionUser({
@@ -656,53 +492,6 @@ const SignUp = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <PassportImageField
-                        id="localPassportImage"
-                        label={t("auth.signUp.passportLocalImage")}
-                        optionalLabel={t("auth.signUp.optional")}
-                        file={localPassportFile}
-                        previewUrl={localPassportPreview}
-                        inputRef={localPassportInputRef}
-                        onPick={(file) =>
-                          pickPassportImage(file, setLocalPassportFile, localPassportInputRef)
-                        }
-                        onClear={() => {
-                          setLocalPassportFile(null);
-                          if (localPassportInputRef.current) localPassportInputRef.current.value = "";
-                        }}
-                        browseLabel={t("auth.signUp.passportImageBrowse")}
-                        replaceLabel={t("auth.signUp.passportImageReplace")}
-                        removeLabel={t("auth.signUp.passportImageRemove")}
-                        hint={t("auth.signUp.passportImageHint")}
-                      />
-                      <PassportImageField
-                        id="internationalPassportImage"
-                        label={t("auth.signUp.passportInternationalImage")}
-                        optionalLabel={t("auth.signUp.optional")}
-                        file={internationalPassportFile}
-                        previewUrl={internationalPassportPreview}
-                        inputRef={internationalPassportInputRef}
-                        onPick={(file) =>
-                          pickPassportImage(
-                            file,
-                            setInternationalPassportFile,
-                            internationalPassportInputRef,
-                          )
-                        }
-                        onClear={() => {
-                          setInternationalPassportFile(null);
-                          if (internationalPassportInputRef.current) {
-                            internationalPassportInputRef.current.value = "";
-                          }
-                        }}
-                        browseLabel={t("auth.signUp.passportImageBrowse")}
-                        replaceLabel={t("auth.signUp.passportImageReplace")}
-                        removeLabel={t("auth.signUp.passportImageRemove")}
-                        hint={t("auth.signUp.passportImageHint")}
-                      />
-                    </div>
-
                     <Button
                       type="button"
                       onClick={goNext}
@@ -862,12 +651,34 @@ const SignUp = () => {
                           </div>
                         </div>
                       ) : studentAffiliation === "internal" ? (
-                        <div className="rounded-xl border border-[#1e40af]/20 bg-[#eff3ff]/50 px-4 py-3">
+                        <div className="space-y-3 rounded-xl border border-[#1e40af]/20 bg-[#eff3ff]/50 px-4 py-3">
                           <p className="text-sm font-medium text-[#1e40af]">
                             {t("auth.signUp.studentAffiliationInternalConfirmed", {
                               university: TUES_UNIVERSITY_SCHOOL_NAME,
                             })}
                           </p>
+                          <div className="space-y-2">
+                            <Label htmlFor="faculty" className="text-[#1e40af]/90">
+                              {t("auth.signUp.faculty")}
+                            </Label>
+                            <div className="relative">
+                              <GraduationCap className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1e40af]/55" />
+                              <Input
+                                id="faculty"
+                                name="faculty"
+                                type="text"
+                                placeholder={t("auth.signUp.facultyPlaceholder")}
+                                value={formData.faculty}
+                                onChange={handleChange}
+                                className="h-11 rounded-xl border-[#1e40af]/25 bg-white pl-10"
+                                required
+                                autoComplete="organization-title"
+                              />
+                            </div>
+                            <p className="text-xs text-[#1e40af]/70">
+                              {t("auth.signUp.facultyHint")}
+                            </p>
+                          </div>
                         </div>
                       ) : null}
                     </div>

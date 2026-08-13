@@ -12,6 +12,11 @@ import {
   resolvedAdminScheduleSessionTotal,
 } from "@/features/admin/utils/adminCourseScheduleDisplay";
 import { refreshScheduleAttendanceState } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
+import {
+  resolveScheduleDayPattern,
+  type ScheduleDayPattern,
+} from "@/features/courses/scheduleDayPattern";
+import { writePublicCourseScheduleCache } from "@/features/courses/publicCourseScheduleCache";
 
 export type CourseScheduleSummary = {
   /** Sessions finished or currently in progress (by calendar time or attendance QR). */
@@ -26,6 +31,8 @@ export type CourseScheduleSummary = {
   classStartDate?: string;
   /** ISO date for last session / cohort end when known. */
   classEndDate?: string;
+  /** Admin Odd Day (Mon/Wed/Fri) or Even Day (Tue/Thu/Sat) pattern when known. */
+  dayPattern?: ScheduleDayPattern;
 };
 
 async function buildSummary(
@@ -45,6 +52,10 @@ async function buildSummary(
   const slotBounds = boundsFromMeetingSlots(slots);
   const classStartDate = explicitDates?.classStartDate?.trim() || slotBounds.start;
   const classEndDate = explicitDates?.classEndDate?.trim() || slotBounds.end;
+  const dayPattern = resolveScheduleDayPattern(
+    courseId,
+    slots.map((slot) => slot.sessionDate),
+  ) ?? undefined;
 
   return {
     reached,
@@ -53,6 +64,7 @@ async function buildSummary(
     allSessionsFinished,
     classStartDate,
     classEndDate,
+    dayPattern,
   };
 }
 
@@ -73,6 +85,8 @@ export async function fetchCourseScheduleSummary(
       resolvedAdminScheduleSessionTotal(id, detail, proposal) ??
       (proposal?.sessionCount && proposal.sessionCount > 0 ? proposal.sessionCount : undefined) ??
       slots.length;
+
+    writePublicCourseScheduleCache(id, slots);
 
     return await buildSummary(slots, id, total ?? 0, {
       classStartDate: detail.classStartDate,

@@ -117,6 +117,7 @@
     "sessionsLabel": "sessions",
     "studentsJoined": "Students joined",
     "tuition": "Tuition",
+    "externalTuitionNote": "External student tuition (+50,000).",
     "scheduleComplete": "Schedule complete",
     "free": "Free",
     "continueLearning": "Continue learning",
@@ -135,7 +136,9 @@
     "emptyNoMatchHint": "Try a different search.",
     "myClass": "My Class",
     "clearFilters": "Clear filters",
-    "defaultCategory": "Class"
+    "defaultCategory": "Class",
+    "dayPatternOdd": "Odd Day",
+    "dayPatternEven": "Even Day"
   },
   "classSearch": {
     "placeholder": "Search classes…",
@@ -409,6 +412,13 @@
     "tabResume": "Resume",
     "tabQuiz": "Quiz",
     "tabAttendance": "Attendance",
+    "tabPhotos": "Photos",
+    "photosTitle": "Class photos",
+    "photosHint": "Photos your instructor shares of the space, materials, or sessions.",
+    "photosEmpty": "No photos yet. Your instructor can add up to eight images; they will replace these placeholders.",
+    "photosGalleryAria": "Class photo gallery",
+    "photosEmptyGalleryAria": "Class photo gallery (empty slots)",
+    "photoAlt": "Class photo {{n}}",
     "scanQr": "Scan QR",
     "scanAttendanceQr": "Scan attendance QR",
     "classContent": "Class Content",
@@ -481,7 +491,40 @@
     "scannerUnsupported": "QR detection is unsupported on this browser. Use Chrome/Edge on mobile or open attendance link manually.",
     "scannerPermissionDenied": "Camera permission denied or unavailable. Allow camera access in browser settings.",
     "scannerUnableStart": "Unable to start camera",
-    "scannerCameraFailed": "Couldn't start the camera"
+    "scannerCameraFailed": "Couldn't start the camera",
+    "complaint": {
+      "menuAria": "Class options",
+      "menuItem": "Report a concern",
+      "title": "Report a concern",
+      "description": "Tell the school about an issue with {{teacher}} or this class. Admins will review your message.",
+      "mood": "How do you feel?",
+      "moodHint": "Tap a face from sad to happy.",
+      "moodSad": "Sad",
+      "moodHappy": "Happy",
+      "moodRequired": "Please pick how you feel.",
+      "moods": {
+        "1": "Very sad",
+        "2": "Sad",
+        "3": "Okay",
+        "4": "Happy",
+        "5": "Very happy"
+      },
+      "category": "Topic",
+      "categories": {
+        "teacher": "About the teacher",
+        "class": "About the class",
+        "other": "Something else"
+      },
+      "message": "Your message",
+      "messagePlaceholder": "Describe what happened and what you need help with…",
+      "messageTooShort": "Please write at least a short description (10+ characters).",
+      "adminHint": "Only school administrators can read this — not the teacher.",
+      "submit": "Send to admin",
+      "submitted": "Thanks — your report was sent to the school admin.",
+      "submitFailed": "Could not send your report. Try again.",
+      "signInRequired": "Sign in as a student to send a report.",
+      "signIn": "Sign in"
+    }
   },
   "lesson": {
     "loading": "Loading lesson…",

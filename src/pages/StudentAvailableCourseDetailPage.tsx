@@ -5,7 +5,7 @@ import { resolveStudentCourseEnrollmentDisplayStatus, resolveEnrollmentRejection
 import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
 import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import { createPortal } from "react-dom";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   BookOpen,
@@ -22,9 +22,10 @@ import { useLayoutContext } from "@/features/layout/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { cn } from "@/lib/utils";
 import { instructorProfileAvatarsStore } from "@/features/teacher/data/instructorProfileAvatarsStore";
-import { eduhubCompletion, eduhubCourses, eduhubSchedule } from "@/api/eduhubClient";
-import type { CourseResponse, CourseReviewResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
+import { eduhubAuth, eduhubCompletion, eduhubCourses, eduhubSchedule, getAccessToken } from "@/api/eduhubClient";
+import type { CourseResponse, CourseReviewResponse, CourseSummaryResponse, ScheduleProposalResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
+import { resolveStudentCoursePrice } from "@/features/enrollment/resolveStudentCoursePrice";
 import {
   mergeScheduleDisplayForAdminReview,
   resolvedSessionsSixMonths,
@@ -32,6 +33,15 @@ import {
 } from "@/features/admin/utils/adminCourseScheduleDisplay";
 import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
 import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
+import {
+  fetchPublishedAvailableCourses,
+  readPublishedAvailableCoursesCache,
+} from "@/features/courses/publishedAvailableCourses";
+import {
+  readPublicCourseScheduleCache,
+  writePublicCourseScheduleCache,
+} from "@/features/courses/publicCourseScheduleCache";
+import { appRoutes } from "@/app/routes";
 import { formatSessionTimeLabel, resolveEnrollmentSessionTimingStatus, buildScheduleMonthTabs, sessionDateMs } from "@/features/courses/classSchedulePreview";
 import { useScheduleAttendanceState } from "@/features/courses/useScheduleAttendanceState";
 import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
@@ -41,8 +51,49 @@ import {
   canApplyToTeacherClass,
   isTeacherClassFull,
 } from "@/features/courses/teacherClassCapacity";
+import { ClassDetailActionsMenu } from "@/features/student/components/ClassDetailActionsMenu";
+import {
+  CLASS_PHOTOS_CHANGED_EVENT,
+  MAX_CLASS_PHOTOS,
+  resolveClassPhotoUrls,
+} from "@/features/courses/classPhotoStore";
 
-const MAX_CLASS_PHOTOS = 8;
+function courseFromSummary(summary: CourseSummaryResponse): CourseResponse {
+  return {
+    id: summary.id,
+    title: summary.title,
+    description: "",
+    thumbnailUrl: summary.thumbnailUrl,
+    status: summary.status,
+    category: summary.category,
+    level: summary.level,
+    lecturer: {
+      id: "",
+      fullName: summary.lecturerName,
+      email: "",
+      role: "LECTURER",
+      avatarUrl: summary.lecturerAvatarUrl,
+    },
+    enrollmentCount: summary.enrollmentCount,
+    pricing: summary.pricing,
+    createdAt: summary.createdAt,
+    updatedAt: summary.createdAt,
+    classMeetingsInSixMonths: summary.classMeetingsInSixMonths,
+    classMeetingSlots: summary.classMeetingSlots,
+  };
+}
+
+async function resolvePublicCourseFallback(courseId: string): Promise<CourseResponse | null> {
+  const fromCache = readPublishedAvailableCoursesCache().find((c) => c.id === courseId);
+  if (fromCache) return courseFromSummary(fromCache);
+  try {
+    const rows = await fetchPublishedAvailableCourses(100);
+    const match = rows.find((c) => c.id === courseId);
+    return match ? courseFromSummary(match) : null;
+  } catch {
+    return null;
+  }
+}
 
 function nameInitials(name: string, max = 2): string {
   const t = name.trim();
@@ -166,6 +217,9 @@ function ReviewStars({ rating }: { rating: number }) {
 const StudentAvailableCourseDetailPage = () => {
   const { courseId: rawParam } = useParams<{ courseId: string }>();
   const linkId = rawParam ? decodeURIComponent(rawParam) : "";
+  const { pathname } = useLocation();
+  const isPublicView = pathname.startsWith("/classes/");
+  const signedIn = Boolean(getAccessToken());
   const { user } = useAuthSession();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const { isSidebarCollapsed } = useLayoutContext();
@@ -180,6 +234,7 @@ const StudentAvailableCourseDetailPage = () => {
   const [scheduleProposal, setScheduleProposal] = useState<ScheduleProposalResponse | null>(null);
   const [studentReviews, setStudentReviews] = useState<CourseReviewResponse[]>([]);
   const [reviewsError, setReviewsError] = useState(false);
+  const [latestSchool, setLatestSchool] = useState<string | undefined>();
 
   useEffect(() => {
     const bump = () => setEnrollmentStoreTick((n) => n + 1);
@@ -189,6 +244,14 @@ const StudentAvailableCourseDetailPage = () => {
       window.removeEventListener("eduhub-enrollment-applications-changed", bump);
       window.removeEventListener("storage", bump);
     };
+  }, []);
+
+  useEffect(() => {
+    if (!getAccessToken()) return;
+    eduhubAuth
+      .me()
+      .then((me) => setLatestSchool(me.latestSchool))
+      .catch(() => setLatestSchool(undefined));
   }, []);
 
   const emailNorm = user.email.trim().toLowerCase();
@@ -210,6 +273,11 @@ const StudentAvailableCourseDetailPage = () => {
     applicationsByCourse.get(linkId),
   );
   const enrollSuccessPath = `/dashboard/available-courses/enroll/${encodeURIComponent(linkId)}/success`;
+  const enrollPath = `/dashboard/available-courses/enroll/${encodeURIComponent(linkId)}`;
+  const joinHref = signedIn
+    ? enrollPath
+    : `${appRoutes.signIn}?redirect=${encodeURIComponent(enrollPath)}`;
+  const backHref = isPublicView ? appRoutes.home : "/dashboard/available-courses";
 
   useEffect(() => {
     if (!linkId) {
@@ -228,10 +296,17 @@ const StudentAvailableCourseDetailPage = () => {
     setReviewsError(false);
 
     if (isUuid(linkId)) {
+      const skipAuth = !getAccessToken();
       Promise.all([
-        eduhubCourses.getById(linkId),
+        eduhubCourses.getById(linkId, { skipAuth }).catch(async () => {
+          // Guests (and some backends) cannot read /courses/{id}; fall back to catalog cache.
+          if (skipAuth || isPublicView) {
+            return resolvePublicCourseFallback(linkId);
+          }
+          throw new Error("Course not found");
+        }),
         eduhubCourses.getAllLessons(linkId).catch(() => [] as LessonPreview[]),
-        eduhubSchedule.getProposal(linkId).catch(() => null),
+        eduhubSchedule.getProposal(linkId, { skipAuth }).catch(() => null),
         eduhubCompletion
           .listCourseReviews(linkId, { target: "INSTRUCTOR", limit: 3 })
           .then((reviews) => ({ reviews, failed: false }))
@@ -239,8 +314,49 @@ const StudentAvailableCourseDetailPage = () => {
       ])
         .then(([c, allLessons, proposal, reviewsResult]) => {
           if (cancelled) return;
+          if (!c) {
+            setNotFound(true);
+            return;
+          }
           setApiCourse(c);
-          setScheduleProposal(proposal);
+
+          let resolvedProposal = proposal;
+          if (!resolvedProposal?.sessions?.length) {
+            const fromLocalStore = courseScheduleProposalStore.get(linkId);
+            if (fromLocalStore?.classMeetingSlots?.some((s) => s.sessionDate?.trim())) {
+              resolvedProposal = {
+                id: `local-schedule-${linkId}`,
+                courseId: linkId,
+                proposedByName: "",
+                sessionCount: fromLocalStore.classMeetingsInSixMonths,
+                sessions: fromLocalStore.classMeetingSlots.map((s, i) => ({
+                  id: `local-session-${linkId}-${i}`,
+                  sessionIndex: i + 1,
+                  title: s.title || `Session ${i + 1}`,
+                  sessionDate: s.sessionDate || undefined,
+                  sessionTime: s.sessionTime || undefined,
+                })),
+                createdAt: fromLocalStore.updatedAt,
+              };
+            } else {
+              resolvedProposal = readPublicCourseScheduleCache(linkId);
+            }
+          }
+
+          if (resolvedProposal?.sessions?.length) {
+            writePublicCourseScheduleCache(
+              linkId,
+              resolvedProposal.sessions.map((s) => ({
+                title: s.title,
+                sessionDate: s.sessionDate,
+                sessionTime: s.sessionTime,
+              })),
+            );
+          } else if (c.classMeetingSlots?.some((s) => s.sessionDate?.trim())) {
+            writePublicCourseScheduleCache(linkId, c.classMeetingSlots);
+          }
+
+          setScheduleProposal(resolvedProposal);
           setLessonRows(allLessons.map((l) => ({ id: l.id, title: l.title })));
           setStudentReviews(reviewsResult.reviews);
           setReviewsError(reviewsResult.failed);
@@ -262,7 +378,7 @@ const StudentAvailableCourseDetailPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [linkId]);
+  }, [linkId, isPublicView]);
 
   const title = apiCourse?.title ?? "";
   const instructor = apiCourse?.lecturer?.fullName ?? "—";
@@ -342,8 +458,14 @@ const StudentAvailableCourseDetailPage = () => {
   const isClassFull = isTeacherClassFull(enrollmentCount);
   const canJoinClass = canApplyToTeacherClass(enrollmentStatus, enrollmentCount);
 
-  const price = apiCourse?.pricing?.discountedAmount ?? apiCourse?.pricing?.amount;
+  const catalogPrice = apiCourse?.pricing?.discountedAmount ?? apiCourse?.pricing?.amount;
+  const affiliationPrice = resolveStudentCoursePrice({
+    amount: catalogPrice,
+    latestSchool,
+  });
+  const price = affiliationPrice?.baseAmount ?? catalogPrice;
   const currency = apiCourse?.pricing?.currency ?? "USD";
+  const usedExternalPrice = Boolean(affiliationPrice?.usedExternalPrice);
 
   const resolvedClassStartIso =
     scheduleMerged?.classStartDate || apiCourse?.classStartDate?.trim();
@@ -351,11 +473,18 @@ const StudentAvailableCourseDetailPage = () => {
   const classStartLabel = formatClassDateLabel(resolvedClassStartIso);
   const classEndLabel = formatClassDateLabel(resolvedClassEndIso);
 
-  const enrollPath = `/dashboard/available-courses/enroll/${encodeURIComponent(linkId)}`;
   const workspacePath = `/dashboard/courses/${linkId}`;
 
-  const classPhotoUrls = (apiCourse?.classPhotoUrls ?? []).filter(
-    (u) => typeof u === "string" && u.trim().length > 0,
+  const [classPhotosTick, setClassPhotosTick] = useState(0);
+  useEffect(() => {
+    const bump = () => setClassPhotosTick((n) => n + 1);
+    window.addEventListener(CLASS_PHOTOS_CHANGED_EVENT, bump);
+    return () => window.removeEventListener(CLASS_PHOTOS_CHANGED_EVENT, bump);
+  }, []);
+
+  const classPhotoUrls = useMemo(
+    () => resolveClassPhotoUrls(linkId || apiCourse?.id, apiCourse?.classPhotoUrls),
+    [linkId, apiCourse?.id, apiCourse?.classPhotoUrls, classPhotosTick],
   );
   const displayedClassPhotoUrls = classPhotoUrls.slice(0, MAX_CLASS_PHOTOS);
   const hasMoreClassPhotos = classPhotoUrls.length > MAX_CLASS_PHOTOS;
@@ -364,7 +493,13 @@ const StudentAvailableCourseDetailPage = () => {
 
   return (
     <>
-      <div className="-mx-6 box-border min-w-0 w-[calc(100%+3rem)] max-w-[calc(100%+3rem)]">
+      <div
+        className={
+          isPublicView
+            ? "min-w-0 w-full"
+            : "-mx-6 box-border min-w-0 w-[calc(100%+3rem)] max-w-[calc(100%+3rem)]"
+        }
+      >
         {loading ? (
           <div className="flex items-center justify-center py-24">
             <Loader2 className="h-8 w-8 animate-spin text-foreground/40" />
@@ -377,7 +512,7 @@ const StudentAvailableCourseDetailPage = () => {
               It may have been removed or the link is invalid.
             </p>
             <Button asChild className="mt-6 rounded-full" style={{ backgroundColor: "#3954d0" }}>
-              <Link to="/dashboard/available-courses">Browse classes</Link>
+              <Link to={backHref}>{isPublicView ? "Back to home" : "Browse classes"}</Link>
             </Button>
           </div>
         ) : (
@@ -418,32 +553,38 @@ const StudentAvailableCourseDetailPage = () => {
                     {title}
                   </h1>
                 </div>
-                <div className="w-full min-w-0 sm:w-auto sm:max-w-md sm:shrink-0">
+                <div className="flex w-full min-w-0 items-end justify-between gap-3 sm:w-auto sm:max-w-none sm:justify-end sm:gap-4">
                   <div
-                    className="grid w-full grid-cols-2 gap-x-4 gap-y-2 sm:flex sm:w-auto sm:flex-row sm:flex-wrap sm:items-end sm:justify-end sm:gap-x-8 sm:gap-y-2"
+                    className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-2 sm:flex sm:w-auto sm:flex-none sm:flex-row sm:flex-wrap sm:items-end sm:justify-end sm:gap-x-8 sm:gap-y-2"
                     aria-label="Class start and end dates"
                   >
-                  <div className="min-w-0 text-left sm:text-right">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
-                      Class start
-                    </p>
-                    <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
-                      {classStartLabel ?? (
-                        <span className="font-normal text-foreground/45">To be announced</span>
-                      )}
-                    </p>
+                    <div className="min-w-0 text-left sm:text-right">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
+                        Class start
+                      </p>
+                      <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
+                        {classStartLabel ?? (
+                          <span className="font-normal text-foreground/45">To be announced</span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="min-w-0 text-left sm:text-right">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
+                        Class end
+                      </p>
+                      <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
+                        {classEndLabel ?? (
+                          <span className="font-normal text-foreground/45">To be announced</span>
+                        )}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0 text-left sm:text-right">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
-                      Class end
-                    </p>
-                    <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
-                      {classEndLabel ?? (
-                        <span className="font-normal text-foreground/45">To be announced</span>
-                      )}
-                    </p>
-                  </div>
-                  </div>
+                  <ClassDetailActionsMenu
+                    courseId={linkId}
+                    courseTitle={title}
+                    teacherName={instructor}
+                    teacherId={apiCourse?.lecturer?.id}
+                  />
                 </div>
               </div>
 
@@ -480,6 +621,11 @@ const StudentAvailableCourseDetailPage = () => {
                         <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-[#3954d0]">
                           {formatPrice(price, currency)}
                         </p>
+                        {usedExternalPrice ? (
+                          <p className="mt-1 text-xs text-amber-800">
+                            External student tuition (+50,000)
+                          </p>
+                        ) : null}
                       </div>
                     </div>
 
@@ -843,14 +989,15 @@ const StudentAvailableCourseDetailPage = () => {
               className={cn(
                 "fixed bottom-0 z-40 border-t border-zinc-200/90 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md",
                 "left-0 right-0",
-                isSidebarCollapsed ? "lg:left-20 lg:right-0" : "lg:left-64 lg:right-0",
+                !isPublicView &&
+                  (isSidebarCollapsed ? "lg:left-20 lg:right-0" : "lg:left-64 lg:right-0"),
               )}
             >
               <div className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
                 <Link
-                  to="/dashboard/available-courses"
-                  title="Back to available classes"
-                  aria-label="Back to available classes"
+                  to={backHref}
+                  title={isPublicView ? "Back to home" : "Back to available classes"}
+                  aria-label={isPublicView ? "Back to home" : "Back to available classes"}
                   className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-200 text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
                 >
                   <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
@@ -885,7 +1032,7 @@ const StudentAvailableCourseDetailPage = () => {
                       className="h-10 shrink-0 rounded-xl border-0 px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#2f47b3] hover:text-white sm:px-5"
                       style={{ backgroundColor: "#3954d0" }}
                     >
-                      <Link to={enrollPath}>
+                      <Link to={joinHref}>
                         {enrollmentStatus === "rejected" ? "Apply again" : "Join Class"}
                       </Link>
                     </Button>

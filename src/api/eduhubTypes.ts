@@ -140,6 +140,8 @@ export interface CourseRequest {
   classMeetingTitles?: string[];
   /** Richer per-session scheduling (optional). */
   classMeetingSlots?: ClassMeetingSlotDto[];
+  /** Optional gallery; lecturer-uploaded class or environment photos (up to 8). */
+  classPhotoUrls?: string[];
 }
 
 export interface CoursePricingResponse {
@@ -977,6 +979,10 @@ export interface AdminClassRowResponse {
   filled: number;
   status: "active" | "waiting" | "completed";
   sessionQuota: { used: number; total: number };
+  /** Present when API / enrichment includes the class instructor. */
+  teacherName?: string;
+  lecturerName?: string;
+  instructorName?: string;
 }
 
 export interface AdminClassRosterRowResponse {

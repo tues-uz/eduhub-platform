@@ -15,6 +15,7 @@ import DashboardRedirect from "@/pages/DashboardRedirect";
 import StudentCoursesPage from "@/features/student/pages/StudentCoursesPage";
 import StudentAvailableCourses from "@/pages/StudentAvailableCourses";
 import StudentAvailableCourseDetailPage from "@/pages/StudentAvailableCourseDetailPage";
+import PublicAvailableClassDetailPage from "@/pages/PublicAvailableClassDetailPage";
 import StudentCourseDetail from "@/pages/StudentCourseDetail";
 import StudentLessonPage from "@/pages/StudentLessonPage";
 import StudentAssignments from "@/pages/StudentAssignments";
@@ -47,6 +48,7 @@ import AdminPlacementTestsPage from "@/features/admin/pages/AdminPlacementTestsP
 import AdminCertificationsPage from "@/features/admin/pages/AdminCertificationsPage";
 import AdminCalendarPage from "@/features/admin/pages/AdminCalendarPage";
 import AdminSupportSessionsPage from "@/features/admin/pages/AdminSupportSessionsPage";
+import AdminTeacherComplaintsPage from "@/features/admin/pages/AdminTeacherComplaintsPage";
 import AdminIntegrationsPage from "@/features/admin/pages/AdminIntegrationsPage";
 import AdminCoursesListPage from "@/features/admin/pages/AdminCoursesListPage";
 import AdminCourseDetailPage from "@/features/admin/pages/AdminCourseDetailPage";
@@ -108,6 +110,7 @@ export function AppRoutes() {
         element={<EduHubProgramPage variant="academicServices" />}
       />
       <Route path="/blog/:slug" element={<EduHubBlogArticlePage />} />
+      <Route path="/classes/:courseId" element={<PublicAvailableClassDetailPage />} />
       <Route path={appRoutes.signIn} element={<SignIn />} />
       <Route path={appRoutes.register} element={<SignUp />} />
       <Route path={appRoutes.changePassword} element={<ChangePassword />} />
@@ -155,6 +158,7 @@ export function AppRoutes() {
           <Route path="/dashboard/admin/certifications" element={<AdminCertificationsPage />} />
           <Route path="/dashboard/admin/calendar" element={<AdminCalendarPage />} />
           <Route path="/dashboard/admin/support-sessions" element={<AdminSupportSessionsPage />} />
+          <Route path="/dashboard/admin/teacher-complaints" element={<AdminTeacherComplaintsPage />} />
           <Route path="/dashboard/admin/integrations" element={<AdminIntegrationsPage />} />
           <Route path="/dashboard/admin/teachers" element={<AdminTeachersPage />} />
           <Route path="/dashboard/admin/staff" element={<AdminStaffPage />} />
