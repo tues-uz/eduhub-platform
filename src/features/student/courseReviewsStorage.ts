@@ -9,13 +9,6 @@ export type StudentCourseReviewSummary = {
   platformSubmittedAt?: string;
 };
 
-export type CourseInstructorReviewListItem = {
-  emailNorm: string;
-  rating: number;
-  comment?: string;
-  submittedAt: string;
-};
-
 export type CourseReviewTarget = "INSTRUCTOR" | "PLATFORM";
 
 
@@ -110,23 +103,4 @@ export function hasSubmittedBothReviews(courseId: string, emailNorm: string): bo
   return Boolean(data.instructor && data.platform);
 }
 
-/** All instructor-target reviews submitted for a course (demo: scans localStorage). */
-export function listInstructorReviewsForCourse(courseId: string): CourseInstructorReviewListItem[] {
-  if (!courseId.trim()) return [];
-  const prefix = `${encodeURIComponent(courseId)}__`;
-  const items: CourseInstructorReviewListItem[] = [];
-  for (const [key, data] of Object.entries(memoryReviewsMap)) {
-    if (!key.startsWith(prefix)) continue;
-    const emailNorm = key.slice(prefix.length).trim().toLowerCase();
-    if (!emailNorm || !data.instructor?.rating) continue;
-    items.push({
-      emailNorm,
-      rating: data.instructor.rating,
-      comment: data.instructor.comment,
-      submittedAt: data.instructor.submittedAt,
-    });
-  }
-  items.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
-  return items;
-}
 

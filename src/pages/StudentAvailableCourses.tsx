@@ -98,6 +98,14 @@ function resolveCardTuition(
 }
 
 async function enrichWithEnrolledStudents(items: AvailableCourseItem[]): Promise<AvailableCourseItem[]> {
+  const role = typeof window !== "undefined" ? localStorage.getItem("userRole") : null;
+  if (role !== "admin" && role !== "teacher") {
+    return items.map((item) => ({
+      ...item,
+      enrolledStudents: [],
+      enrollmentCount: item.enrollmentCount ?? 0,
+    }));
+  }
   return Promise.all(
     items.map(async (item) => {
       const { students, totalCount } = await resolveEnrolledStudentPreviews({
@@ -180,12 +188,8 @@ const StudentAvailableCourses = () => {
 
   useEffect(() => {
     const bump = () => setEnrollmentStoreTick((n) => n + 1);
-    window.addEventListener("eduhub-enrollment-applications-changed", bump);
     window.addEventListener("storage", bump);
-    return () => {
-      window.removeEventListener("eduhub-enrollment-applications-changed", bump);
-      window.removeEventListener("storage", bump);
-    };
+    return () => window.removeEventListener("storage", bump);
   }, []);
 
   useEffect(() => {
@@ -226,11 +230,7 @@ const StudentAvailableCourses = () => {
           thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
           enrollmentCount: c.enrollmentCount,
           enrollmentStatus: enrollmentStatusFor(c.id),
-          rejectionNote: resolveEnrollmentRejectionNote(
-            c.id,
-            emailNorm,
-            applicationsByCourse.get(c.id),
-          ),
+          rejectionNote: resolveEnrollmentRejectionNote(applicationsByCourse.get(c.id)),
           progress: enrolledData?.progress,
           status: enrolledData?.status,
           nextLesson: enrolledData?.nextLesson,

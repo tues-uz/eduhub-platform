@@ -10,12 +10,8 @@ export function useMyEnrollmentApplicationsByCourse(emailNorm?: string) {
 
   useEffect(() => {
     const bump = () => setTick((n) => n + 1);
-    window.addEventListener("eduhub-enrollment-applications-changed", bump);
     window.addEventListener("storage", bump);
-    return () => {
-      window.removeEventListener("eduhub-enrollment-applications-changed", bump);
-      window.removeEventListener("storage", bump);
-    };
+    return () => window.removeEventListener("storage", bump);
   }, []);
 
   useEffect(() => {

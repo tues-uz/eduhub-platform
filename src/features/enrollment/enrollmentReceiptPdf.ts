@@ -6,7 +6,7 @@ import {
   tuitionLineDescription,
   type EduHubReceiptPdfInput,
 } from "@/features/enrollment/eduHubReceiptPdfLayout";
-import { enrichEnrollmentApplication, isDemoEnrollmentDocuments } from "@/features/enrollment/enrollmentDocuments";
+import { enrichEnrollmentApplication } from "@/features/enrollment/enrollmentDocuments";
 import {
   buildReceiptDescriptionLines,
   computeReceiptAmountPaid,
@@ -57,7 +57,6 @@ function buildReceiptPdfData(
     invoiceNumber: enriched.invoiceNumber ?? copy.pendingApproval,
     receiptNumber: enriched.receiptNumber ?? copy.pendingApproval,
     paymentMethod: enriched.paymentMethod ?? "BANK_TRANSFER",
-    isDemo: isDemoEnrollmentDocuments(enriched),
     fullName: enriched.fullName,
     courseTitle: enriched.courseTitle ?? enriched.courseId,
     phone: enriched.phone,

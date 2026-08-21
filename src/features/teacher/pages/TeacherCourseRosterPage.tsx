@@ -100,7 +100,6 @@ import {
   orderSessionSlotsChronologically,
   type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import {
   ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED,
   adminEnrollmentPaidMonthsStore,
@@ -458,29 +457,7 @@ export default function TeacherCourseRosterPage() {
           if (a.courseId === courseId && a.status === "APPROVED") byId.set(a.id, a);
         }
       } catch {
-        // Teacher may not have admin enrollment access — fall back to local cache below.
-      }
-      for (const a of enrollmentApplicationStore.list()) {
-        if (a.courseId !== courseId || a.status !== "APPROVED" || byId.has(a.id)) continue;
-        byId.set(a.id, {
-          id: a.id,
-          courseId: a.courseId,
-          courseTitle: a.courseTitle ?? "",
-          applicantEmailNorm: a.applicantEmailNorm,
-          fullName: a.fullName,
-          email: a.email,
-          phone: a.phone,
-          address: a.address,
-          paymentPlan: a.paymentPlan === "INSTALLMENT" ? "DOWN_PAYMENT" : a.paymentPlan,
-          installmentCount:
-            a.installmentCount === 3 || a.installmentCount === 12
-              ? 2
-              : (a.installmentCount as 1 | 2 | 4 | 6 | 8 | undefined),
-          status: a.status,
-          submittedAt: a.submittedAt,
-          amountPaid: a.amountPaid,
-          priceCurrency: a.priceCurrency,
-        });
+        // Teacher may not have admin enrollment access.
       }
       return [...byId.values()];
     },
@@ -493,11 +470,9 @@ export default function TeacherCourseRosterPage() {
     const bump = () => setPaidMonthsTick((n) => n + 1);
     window.addEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
     window.addEventListener(ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED, bump);
-    window.addEventListener("eduhub-enrollment-applications-changed", bump);
     return () => {
       window.removeEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
       window.removeEventListener(ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED, bump);
-      window.removeEventListener("eduhub-enrollment-applications-changed", bump);
     };
   }, []);
 

@@ -1,5 +1,4 @@
 import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 
 /** How a class appears to the student in browse / catalog UI. */
 export type StudentCourseEnrollmentDisplayStatus =
@@ -47,45 +46,22 @@ export function resolveStudentCourseEnrollmentDisplayStatus(
   apiApplication?: EnrollmentApplicationResponse,
 ): StudentCourseEnrollmentDisplayStatus {
   if (isEnrolledFromApi) return "enrolled";
-  if (emailNorm && enrollmentApplicationStore.isApprovedForCourse(courseId, emailNorm)) {
-    return "enrolled";
-  }
 
   const apiStatus = apiApplication?.status;
   if (apiStatus === "PENDING") return "pending_review";
   if (apiStatus === "APPROVED") return "enrolled";
-
-  if (emailNorm) {
-    if (enrollmentApplicationStore.findPendingForCourseAndEmail(courseId, emailNorm)) {
-      return "pending_review";
-    }
-    const latest = enrollmentApplicationStore.findLatestForCourseAndEmail(courseId, emailNorm);
-    if (latest?.status === "APPROVED") return "enrolled";
-    if (latest?.status === "REJECTED") return "rejected";
-    if (apiStatus === "REJECTED") return "rejected";
-  } else if (apiStatus === "REJECTED") {
-    return "rejected";
-  }
+  if (apiStatus === "REJECTED") return "rejected";
 
   return "not_enrolled";
 }
 
 /** Admin note when the student's latest application for this class was rejected. */
 export function resolveEnrollmentRejectionNote(
-  courseId: string,
-  emailNorm: string,
   apiApplication?: EnrollmentApplicationResponse,
 ): string | undefined {
   if (apiApplication?.status === "REJECTED") {
     const note = apiApplication.adminNote?.trim();
     if (note) return note;
-  }
-  if (emailNorm) {
-    const latest = enrollmentApplicationStore.findLatestForCourseAndEmail(courseId, emailNorm);
-    if (latest?.status === "REJECTED") {
-      const note = latest.adminNote?.trim();
-      if (note) return note;
-    }
   }
   return undefined;
 }

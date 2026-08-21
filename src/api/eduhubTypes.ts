@@ -501,6 +501,22 @@ export interface AttendanceSessionResponse {
   token?: string;
 }
 
+export interface QuizColumnRequest {
+  title: string;
+  sessionSlotKey?: string;
+  sessionLabel?: string;
+  sessionDate?: string;
+}
+
+export interface QuizColumnResponse {
+  id: string;
+  title: string;
+  createdAt: string;
+  sessionSlotKey?: string;
+  sessionLabel?: string;
+  sessionDate?: string;
+}
+
 export interface AttendanceCourseSummaryResponse {
   totalHeld: number;
   attendedByStudentId: Record<string, number>;

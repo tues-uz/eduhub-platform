@@ -1,6 +1,6 @@
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
-import type { CourseCertificateRecord } from "@/features/courses/courseCertificatesStorage";
+import type { CourseCertificateResponse } from "@/api/eduhubTypes";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
 
 /** Official template (A4 portrait). Served from `/certificate-template.pdf`. */
@@ -136,7 +136,7 @@ function drawLabelValue(
 }
 
 export function certificateRecordToPdfInput(
-  record: CourseCertificateRecord,
+  record: CourseCertificateResponse,
   instructorNameFallback = "Instructor",
 ): CourseCertificatePdfInput {
   return {
@@ -188,7 +188,7 @@ export async function generateCourseCertificatePdfBytes(
 }
 
 export async function downloadCourseCertificatePdf(
-  record: CourseCertificateRecord,
+  record: CourseCertificateResponse,
   instructorNameFallback?: string,
 ): Promise<void> {
   const bytes = await generateCourseCertificatePdfBytes(

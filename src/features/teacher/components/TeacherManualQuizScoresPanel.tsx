@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Search, Trash2 } from "@/lib/icons";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -35,16 +36,11 @@ import { formatDisplayPersonName, profileInitials } from "@/lib/formatPersonName
 import { cn } from "@/lib/utils";
 import type { ClassMeetingSlot } from "@/features/teacher/types";
 import { formatClassMeetingSlotLabel } from "@/features/teacher/pages/teacherCourseFormHelpers";
-import {
-  MANUAL_QUIZ_SCORES_CHANGED,
-  addManualQuizColumn,
-  deleteManualQuizColumn,
-  getManualQuizScoresData,
-  parseManualQuizScoreInput,
-  saveManualQuizStudentScores,
-  sumManualQuizInputs,
-  type ManualQuizColumn,
-} from "@/features/teacher/data/manualQuizScoresStorage";
+import { eduhubQuizGrading } from "@/api/eduhubClient";
+import type { QuizColumnResponse } from "@/api/eduhubTypes";
+import { parseManualQuizScoreInput, sumManualQuizInputs } from "@/features/teacher/data/manualQuizScoresStorage";
+
+type ManualQuizColumn = QuizColumnResponse;
 
 export type ManualQuizRosterStudent = {
   id: string;
@@ -79,13 +75,16 @@ function formatSessionDateLabel(iso?: string): string {
 /** Draft scores: studentId → quizColumnId → raw input string */
 type DraftMap = Record<string, Record<string, string>>;
 
-function buildDraftFromStorage(courseId: string, students: ManualQuizRosterStudent[]): DraftMap {
-  const data = getManualQuizScoresData(courseId);
+function buildDraftFromScores(
+  columns: ManualQuizColumn[],
+  scores: Record<string, Record<string, number>>,
+  students: ManualQuizRosterStudent[],
+): DraftMap {
   const draft: DraftMap = {};
   for (const s of students) {
     const row: Record<string, string> = {};
-    for (const col of data.columns) {
-      const score = data.scores[s.id]?.[col.id];
+    for (const col of columns) {
+      const score = scores[s.id]?.[col.id];
       row[col.id] = score != null ? String(score) : "";
     }
     draft[s.id] = row;
@@ -153,7 +152,7 @@ export function TeacherManualQuizScoresPanel({
   isError = false,
 }: TeacherManualQuizScoresPanelProps) {
   const { t } = useTranslation();
-  const [tick, setTick] = useState(0);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState<DraftMap>({});
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -199,24 +198,43 @@ export function TeacherManualQuizScoresPanel({
     setAddOpen(true);
   }, [resetAddDialog]);
 
-  useEffect(() => {
-    const onChange = (e: Event) => {
-      const detail = (e as CustomEvent<{ courseId?: string }>).detail;
-      if (detail?.courseId && detail.courseId !== courseId) return;
-      setTick((n) => n + 1);
-    };
-    window.addEventListener(MANUAL_QUIZ_SCORES_CHANGED, onChange);
-    return () => window.removeEventListener(MANUAL_QUIZ_SCORES_CHANGED, onChange);
-  }, [courseId]);
+  const columnsQuery = useQuery({
+    queryKey: ["teacher", "quiz-columns", courseId],
+    queryFn: () => eduhubQuizGrading.listColumns(courseId),
+    enabled: isApiCourse,
+  });
+  const scoresQuery = useQuery({
+    queryKey: ["teacher", "quiz-scores", courseId],
+    queryFn: () => eduhubQuizGrading.getScores(courseId),
+    enabled: isApiCourse,
+  });
 
-  const columns: ManualQuizColumn[] = useMemo(() => {
-    void tick;
-    return getManualQuizScoresData(courseId).columns;
-  }, [courseId, tick]);
+  const columns: ManualQuizColumn[] = useMemo(() => columnsQuery.data ?? [], [columnsQuery.data]);
+  const scores = useMemo(() => scoresQuery.data ?? {}, [scoresQuery.data]);
 
   useEffect(() => {
-    setDraft(buildDraftFromStorage(courseId, students));
-  }, [courseId, students, tick]);
+    setDraft(buildDraftFromScores(columns, scores, students));
+  }, [columns, scores, students]);
+
+  const invalidate = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ["teacher", "quiz-columns", courseId] });
+    void queryClient.invalidateQueries({ queryKey: ["teacher", "quiz-scores", courseId] });
+  }, [queryClient, courseId]);
+
+  const addColumnMutation = useMutation({
+    mutationFn: (body: Parameters<typeof eduhubQuizGrading.addColumn>[1]) =>
+      eduhubQuizGrading.addColumn(courseId, body),
+    onSuccess: invalidate,
+  });
+  const deleteColumnMutation = useMutation({
+    mutationFn: (columnId: string) => eduhubQuizGrading.deleteColumn(courseId, columnId),
+    onSuccess: invalidate,
+  });
+  const saveScoresMutation = useMutation({
+    mutationFn: ({ studentId, scores: s }: { studentId: string; scores: Record<string, number | null> }) =>
+      eduhubQuizGrading.saveStudentScores(courseId, studentId, s),
+    onSuccess: invalidate,
+  });
 
   const filteredStudents = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -238,8 +256,8 @@ export function TeacherManualQuizScoresPanel({
     }));
   }, []);
 
-  const persistStudent = useCallback(
-    (studentId: string) => {
+  const buildScoresForStudent = useCallback(
+    (studentId: string): Record<string, number | null> | null => {
       const row = draft[studentId] ?? {};
       const scores: Record<string, number | null> = {};
       for (const col of columns) {
@@ -251,42 +269,46 @@ export function TeacherManualQuizScoresPanel({
         const parsed = parseManualQuizScoreInput(raw);
         if (parsed == null) {
           toast.error(t("teacher.roster.quizScores.toast.invalidScore"));
-          return false;
+          return null;
         }
         scores[col.id] = parsed;
       }
-      saveManualQuizStudentScores(courseId, studentId, scores);
-      return true;
+      return scores;
     },
-    [columns, courseId, draft, t],
+    [columns, draft, t],
   );
 
-  const handleSaveRow = (studentId: string) => {
+  const handleSaveRow = async (studentId: string) => {
+    const scores = buildScoresForStudent(studentId);
+    if (!scores) return;
     setSavingId(studentId);
     try {
-      if (persistStudent(studentId)) {
-        toast.success(t("teacher.roster.quizScores.toast.saved"));
-        setTick((n) => n + 1);
-      }
+      await saveScoresMutation.mutateAsync({ studentId, scores });
+      toast.success(t("teacher.roster.quizScores.toast.saved"));
+    } catch {
+      toast.error(t("teacher.roster.quizScores.toast.invalidScore"));
     } finally {
       setSavingId(null);
     }
   };
 
-  const handleSaveAll = () => {
+  const handleSaveAll = async () => {
     setSavingAll(true);
     try {
       for (const s of filteredStudents) {
-        if (!persistStudent(s.id)) return;
+        const scores = buildScoresForStudent(s.id);
+        if (!scores) return;
+        await saveScoresMutation.mutateAsync({ studentId: s.id, scores });
       }
       toast.success(t("teacher.roster.quizScores.toast.savedAll"));
-      setTick((n) => n + 1);
+    } catch {
+      toast.error(t("teacher.roster.quizScores.toast.invalidScore"));
     } finally {
       setSavingAll(false);
     }
   };
 
-  const handleAddColumn = () => {
+  const handleAddColumn = async () => {
     const title = newTitle.trim();
     if (!title) {
       toast.error(t("teacher.roster.quizScores.toast.titleRequired"));
@@ -297,22 +319,30 @@ export function TeacherManualQuizScoresPanel({
       return;
     }
     const session = scheduleRows.find((r) => r.key === selectedSessionKey);
-    addManualQuizColumn(courseId, {
-      title,
-      sessionSlotKey: session?.key,
-      sessionLabel: session?.label,
-      sessionDate: session?.date || selectedDate || undefined,
-    });
-    resetAddDialog();
-    setAddOpen(false);
-    toast.success(t("teacher.roster.quizScores.toast.columnAdded"));
+    try {
+      await addColumnMutation.mutateAsync({
+        title,
+        sessionSlotKey: session?.key,
+        sessionLabel: session?.label,
+        sessionDate: session?.date || selectedDate || undefined,
+      });
+      resetAddDialog();
+      setAddOpen(false);
+      toast.success(t("teacher.roster.quizScores.toast.columnAdded"));
+    } catch {
+      toast.error(t("teacher.roster.quizScores.toast.invalidScore"));
+    }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deleteColumnId) return;
-    deleteManualQuizColumn(courseId, deleteColumnId);
-    setDeleteColumnId(null);
-    toast.success(t("teacher.roster.quizScores.toast.columnDeleted"));
+    try {
+      await deleteColumnMutation.mutateAsync(deleteColumnId);
+      setDeleteColumnId(null);
+      toast.success(t("teacher.roster.quizScores.toast.columnDeleted"));
+    } catch {
+      toast.error(t("teacher.roster.quizScores.toast.invalidScore"));
+    }
   };
 
   if (!isApiCourse) {
@@ -322,10 +352,10 @@ export function TeacherManualQuizScoresPanel({
       </div>
     );
   }
-  if (isLoading) {
+  if (isLoading || columnsQuery.isLoading || scoresQuery.isLoading) {
     return <p className="text-sm text-muted-foreground">{t("teacher.roster.quizScores.empty.loading")}</p>;
   }
-  if (isError) {
+  if (isError || columnsQuery.isError || scoresQuery.isError) {
     return <p className="text-sm text-red-600">{t("teacher.roster.quizScores.empty.error")}</p>;
   }
   if (students.length === 0) {
@@ -358,7 +388,7 @@ export function TeacherManualQuizScoresPanel({
               size="sm"
               className="gap-1.5"
               disabled={savingAll}
-              onClick={handleSaveAll}
+              onClick={() => void handleSaveAll()}
             >
               {savingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
               {t("teacher.roster.quizScores.saveAll")}
@@ -513,7 +543,7 @@ export function TeacherManualQuizScoresPanel({
                         size="sm"
                         className="h-7 px-2 text-xs"
                         disabled={savingId === s.id || columns.length === 0}
-                        onClick={() => handleSaveRow(s.id)}
+                        onClick={() => void handleSaveRow(s.id)}
                       >
                         {savingId === s.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -634,7 +664,7 @@ export function TeacherManualQuizScoresPanel({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    handleAddColumn();
+                    void handleAddColumn();
                   }
                 }}
               />
@@ -647,7 +677,7 @@ export function TeacherManualQuizScoresPanel({
             <Button
               type="button"
               className="bg-teal-700 hover:bg-teal-800"
-              onClick={handleAddColumn}
+              onClick={() => void handleAddColumn()}
             >
               {t("teacher.roster.quizScores.addQuiz")}
             </Button>
@@ -676,7 +706,7 @@ export function TeacherManualQuizScoresPanel({
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
-              onClick={handleConfirmDelete}
+              onClick={() => void handleConfirmDelete()}
             >
               {t("teacher.roster.quizScores.deleteQuiz")}
             </AlertDialogAction>

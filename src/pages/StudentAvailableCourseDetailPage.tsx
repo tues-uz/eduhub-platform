@@ -3,7 +3,6 @@ import { useAuthSession } from "@/features/auth/context";
 import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
 import { resolveStudentCourseEnrollmentDisplayStatus, resolveEnrollmentRejectionNote } from "@/features/enrollment/studentCourseEnrollmentStatus";
 import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import { createPortal } from "react-dom";
 import { Link, useLocation, useParams } from "react-router-dom";
 import {
@@ -160,25 +159,6 @@ function resolvePreviewSessionSlots(
 
 type LessonPreview = { id: string; title: string };
 
-function formatReviewAuthorName(courseId: string, emailNorm: string): string {
-  const app = enrollmentApplicationStore.findLatestForCourseAndEmail(courseId, emailNorm);
-  if (app?.fullName?.trim()) {
-    const parts = formatDisplayPersonName(app.fullName).split(/\s+/).filter(Boolean);
-    if (parts.length >= 2) {
-      return `${parts[0]} ${parts[parts.length - 1]![0]}.`;
-    }
-    return parts[0] ?? "Student";
-  }
-  const local = emailNorm.split("@")[0] ?? "";
-  const bits = local.split(/[._-]+/).filter(Boolean);
-  if (bits.length >= 2) {
-    const lastInitial = bits[bits.length - 1]![0]?.toUpperCase() ?? "";
-    return `${formatDisplayPersonName(bits[0])} ${lastInitial}.`.trim();
-  }
-  if (bits[0]) return formatDisplayPersonName(bits[0]);
-  return "Student";
-}
-
 function formatReviewDateLabel(iso: string | undefined): string {
   if (!iso?.trim()) return "Recently";
   const submitted = new Date(iso.trim());
@@ -221,7 +201,6 @@ const StudentAvailableCourseDetailPage = () => {
   const { user } = useAuthSession();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const { isSidebarCollapsed } = useLayoutContext();
-  const [, setEnrollmentStoreTick] = useState(0);
   const scheduleLocalTick = useAdminCourseLocalDataVersion();
   const scheduleAttendance = useScheduleAttendanceState(linkId || undefined);
 
@@ -234,15 +213,6 @@ const StudentAvailableCourseDetailPage = () => {
   const [reviewsError, setReviewsError] = useState(false);
   const [latestSchool, setLatestSchool] = useState<string | undefined>();
 
-  useEffect(() => {
-    const bump = () => setEnrollmentStoreTick((n) => n + 1);
-    window.addEventListener("eduhub-enrollment-applications-changed", bump);
-    window.addEventListener("storage", bump);
-    return () => {
-      window.removeEventListener("eduhub-enrollment-applications-changed", bump);
-      window.removeEventListener("storage", bump);
-    };
-  }, []);
 
   useEffect(() => {
     if (!getAccessToken()) return;
@@ -265,11 +235,7 @@ const StudentAvailableCourseDetailPage = () => {
     [linkId, emailNorm, enrolledCourses, applicationsByCourse],
   );
   const isEnrolled = enrollmentStatus === "enrolled";
-  const rejectionNote = resolveEnrollmentRejectionNote(
-    linkId,
-    emailNorm,
-    applicationsByCourse.get(linkId),
-  );
+  const rejectionNote = resolveEnrollmentRejectionNote(applicationsByCourse.get(linkId));
   const enrollSuccessPath = `/dashboard/available-courses/enroll/${encodeURIComponent(linkId)}/success`;
   const enrollPath = `/dashboard/available-courses/enroll/${encodeURIComponent(linkId)}`;
   const joinHref = signedIn

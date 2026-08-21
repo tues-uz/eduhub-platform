@@ -43,7 +43,6 @@ import {
   fetchAttendanceMeetings,
   type StoredAttendanceMeeting,
 } from "@/features/teacher/attendance/attendanceMeetingsStorage";
-import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
 import {
   eduhubCourses,
   eduhubSchedule,
@@ -90,7 +89,6 @@ import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueri
 import { formatDisplayPersonName, formatDisplayTitle } from "@/lib/formatPersonName";
 import { cn } from "@/lib/utils";
 import { useAuthSession } from "@/features/auth/context";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
 import { isCourseScheduleFinished } from "@/features/courses/courseScheduleCompletion";
 import { hasSeenCourseCongrats } from "@/features/student/courseCongratsSeenStorage";
@@ -488,7 +486,7 @@ const StudentCourseDetail = () => {
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const emailNorm = (user.email ?? "").trim().toLowerCase();
   const { byCourse: enrollmentAppsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
-  const [enrollmentStoreTick, setEnrollmentStoreTick] = useState(0);
+  const [paidMonthsTick, setPaidMonthsTick] = useState(0);
 
   const id = courseId && !isUuid(courseId ?? "") ? parseInt(courseId, 10) : NaN;
 
@@ -514,43 +512,19 @@ const StudentCourseDetail = () => {
   });
 
   useEffect(() => {
-    const bump = () => setEnrollmentStoreTick((n) => n + 1);
-    window.addEventListener("eduhub-enrollment-applications-changed", bump);
+    const bump = () => setPaidMonthsTick((n) => n + 1);
     window.addEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
-    window.addEventListener("storage", bump);
-    return () => {
-      window.removeEventListener("eduhub-enrollment-applications-changed", bump);
-      window.removeEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
-      window.removeEventListener("storage", bump);
-    };
+    return () => window.removeEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
   }, []);
 
   const scheduleMonthAccess = useMemo((): ScheduleMonthSelectAccess => {
-    void enrollmentStoreTick;
     if (!courseId) return "enrollment_required";
-    if (
-      isEnrolled ||
-      (emailNorm && enrollmentApplicationStore.isApprovedForCourse(courseId, emailNorm))
-    ) {
-      return "full";
-    }
+    if (isEnrolled) return "full";
     const apiApp = enrollmentAppsByCourse.get(courseId);
-    if (
-      apiApp?.status === "PENDING" ||
-      (emailNorm && enrollmentApplicationStore.findPendingForCourseAndEmail(courseId, emailNorm))
-    ) {
-      return "pending_review";
-    }
-    if (
-      apiApp?.status === "REJECTED" ||
-      (emailNorm &&
-        enrollmentApplicationStore.findLatestForCourseAndEmail(courseId, emailNorm)?.status ===
-          "REJECTED")
-    ) {
-      return "rejected";
-    }
+    if (apiApp?.status === "PENDING") return "pending_review";
+    if (apiApp?.status === "REJECTED") return "rejected";
     return "enrollment_required";
-  }, [courseId, emailNorm, isEnrolled, enrollmentAppsByCourse, enrollmentStoreTick]);
+  }, [courseId, isEnrolled, enrollmentAppsByCourse]);
 
   const enrollApplicationHref = courseId
     ? `/dashboard/available-courses/enroll/${encodeURIComponent(courseId)}`
@@ -735,39 +709,22 @@ const StudentCourseDetail = () => {
   }, [allSessionSlots]);
 
   const approvedEnrollment = useMemo(() => {
-    void enrollmentStoreTick;
     if (!courseId) return undefined;
     const apiApp = enrollmentAppsByCourse.get(courseId);
-    const localLatest = emailNorm
-      ? enrollmentApplicationStore.findLatestForCourseAndEmail(courseId, emailNorm)
-      : undefined;
-    if (apiApp?.status === "APPROVED") return apiApp;
-    if (localLatest?.status === "APPROVED") return localLatest;
-    return undefined;
-  }, [courseId, emailNorm, enrollmentAppsByCourse, enrollmentStoreTick]);
+    return apiApp?.status === "APPROVED" ? apiApp : undefined;
+  }, [courseId, enrollmentAppsByCourse]);
 
   const paidTuitionMonths = useMemo((): ReadonlySet<TuitionPlanMonths> | null => {
-    void enrollmentStoreTick;
+    void paidMonthsTick;
     if (scheduleMonthAccess !== "full" || !courseId) return null;
     if (approvedEnrollment) {
       return resolvePaidTuitionMonths(approvedEnrollment as EnrollmentPaymentFields, allSessionSlots, approvedEnrollment.id);
     }
-    if (
-      isEnrolled ||
-      (emailNorm && enrollmentApplicationStore.isApprovedForCourse(courseId, emailNorm))
-    ) {
+    if (isEnrolled) {
       return new Set<TuitionPlanMonths>([1, 2, 3]);
     }
     return null;
-  }, [
-    scheduleMonthAccess,
-    courseId,
-    emailNorm,
-    isEnrolled,
-    approvedEnrollment,
-    allSessionSlots,
-    enrollmentStoreTick,
-  ]);
+  }, [scheduleMonthAccess, courseId, isEnrolled, approvedEnrollment, allSessionSlots, paidMonthsTick]);
 
   const attendanceTuitionBlock = useMemo(() => {
     if (!paidTuitionMonths || !allSessionSlots.length || !attendanceSessionsQuery.data?.length) {

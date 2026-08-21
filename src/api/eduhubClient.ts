@@ -35,6 +35,8 @@ import type {
   AttendanceRosterResponse,
   MyAttendanceResponse,
   AttendanceCourseSummaryResponse,
+  QuizColumnRequest,
+  QuizColumnResponse,
   NotificationResponse,
   AdminCreateUserResponse,
   CourseCertificateResponse,
@@ -843,6 +845,36 @@ export const eduhubReferralCodes = {
     request<GeneralReferralCodeResponse>("/admin/referral-codes/general", {
       method: "PATCH",
       body: JSON.stringify(body),
+    }),
+};
+
+/** Teacher manual quiz grading (extra assessment columns beyond attendance/final score). */
+export const eduhubQuizGrading = {
+  listColumns: (courseId: string) =>
+    request<QuizColumnResponse[]>(`/courses/${courseId}/quiz-columns`),
+
+  addColumn: (courseId: string, body: QuizColumnRequest) =>
+    request<QuizColumnResponse>(`/courses/${courseId}/quiz-columns`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  renameColumn: (courseId: string, columnId: string, title: string) =>
+    request<QuizColumnResponse>(`/courses/${courseId}/quiz-columns/${columnId}`, {
+      method: "PUT",
+      body: JSON.stringify({ title }),
+    }),
+
+  deleteColumn: (courseId: string, columnId: string) =>
+    request<void>(`/courses/${courseId}/quiz-columns/${columnId}`, { method: "DELETE" }),
+
+  getScores: (courseId: string) =>
+    request<Record<string, Record<string, number>>>(`/courses/${courseId}/quiz-columns/scores`),
+
+  saveStudentScores: (courseId: string, studentId: string, scores: Record<string, number | null>) =>
+    request<void>(`/courses/${courseId}/quiz-columns/scores/${studentId}`, {
+      method: "PUT",
+      body: JSON.stringify({ scores }),
     }),
 };
 

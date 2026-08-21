@@ -108,22 +108,34 @@ function replaceInMemory(replacement: StudentPromo) {
   writeStudentPromos(all);
 }
 
-/** Hydrate the local cache from the backend. Admin loads all; students fall back to the active feed. */
+/** Hydrate the local cache from the backend. Admin loads all; others load the active feed. */
 export async function loadStudentPromos(): Promise<void> {
   let fetched: MarketingPromo[] | undefined;
-  try {
-    fetched = await eduhubMarketingPromos.listAll();
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 403) {
-      try {
-        fetched = await eduhubMarketingPromos.listActive();
-      } catch {
+  const role = typeof window !== "undefined" ? localStorage.getItem("userRole") : null;
+  const isAdmin = role === "admin";
+
+  if (isAdmin) {
+    try {
+      fetched = await eduhubMarketingPromos.listAll();
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 403) {
+        try {
+          fetched = await eduhubMarketingPromos.listActive();
+        } catch {
+          return;
+        }
+      } else {
         return;
       }
-    } else {
+    }
+  } else {
+    try {
+      fetched = await eduhubMarketingPromos.listActive();
+    } catch {
       return;
     }
   }
+
   if (fetched) {
     memoryPromos = fetched.map(normalizePromo).filter((p): p is StudentPromo => p !== null);
     notifyPromosChanged();

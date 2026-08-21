@@ -62,7 +62,6 @@ export type EduHubReceiptPdfInput = {
   descriptionLines: string[];
   currency: string;
   amount: number;
-  isDemo?: boolean;
   /** Receipt UI language (defaults to English). */
   locale?: ReceiptPdfLocale;
 };

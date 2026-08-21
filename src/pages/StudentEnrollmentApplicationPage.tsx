@@ -52,7 +52,6 @@ import {
 } from "@/features/admin/data/generalReferralCodesStore";
 import {
   buildEnrollmentScheduleSessionSummaries,
-  enrollmentRecordToPdfData,
   type EnrollmentApplicationPdfData,
 } from "@/features/enrollment/enrollmentApplicationPdf";
 import type {
