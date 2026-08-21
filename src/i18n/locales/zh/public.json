@@ -317,6 +317,8 @@
       "subscribeConsent": "订阅即表示您同意我们的",
       "privacyPolicy": "隐私政策",
       "subscribeConsentSuffix": "并同意接收 EduHub 的更新。",
+      "subscribeSuccess": "感谢您的订阅！",
+      "subscribeError": "出现错误，请重试。",
       "contact": "联系方式",
       "menuLinks": "菜单链接",
       "copyright": "© 2026 EduHub. 保留所有权利。",

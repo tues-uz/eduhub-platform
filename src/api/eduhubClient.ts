@@ -1304,6 +1304,15 @@ export const eduhubMarketingPromos = {
     request<void>(`/admin/marketing-promos/${id}`, { method: "DELETE" }),
 };
 
+/** Newsletter API */
+export const eduhubNewsletter = {
+  subscribe: (email: string) =>
+    request<void>("/newsletter/subscribe", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+};
+
 /** Landing Page CMS API */
 export const eduhubLandingPage = {
   getContent: () => request<LandingPageContentResponse[]>("/landing-page"),

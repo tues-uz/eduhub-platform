@@ -384,6 +384,8 @@
       "subscribeConsent": "By subscribing you agree to our",
       "privacyPolicy": "Privacy Policy",
       "subscribeConsentSuffix": "and consent to receive updates from EduHub.",
+      "subscribeSuccess": "Thanks for subscribing!",
+      "subscribeError": "Something went wrong. Please try again.",
       "contact": "Contact",
       "menuLinks": "Menu Links",
       "copyright": "© 2026 EduHub. All rights reserved.",
