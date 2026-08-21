@@ -11,7 +11,7 @@ import {
   mergeScheduleDisplayForAdminReview,
   useAdminCourseLocalDataVersion,
 } from "@/features/admin/utils/adminCourseScheduleDisplay";
-import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
+import { deriveScheduleWorkflow } from "@/features/courses/courseScheduleWorkflow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,8 +64,8 @@ export default function AdminCourseDetailPage() {
   const scheduleProposal = data?.scheduleProposal ?? null;
 
   const scheduleWorkflow = useMemo(
-    () => (courseId && isUuid(courseId) ? courseScheduleWorkflowStore.get(courseId) : null),
-    [courseId, adminLocalDataVersion],
+    () => (courseId && isUuid(courseId) ? deriveScheduleWorkflow(detail) : null),
+    [courseId, detail],
   );
 
   const scheduleDisplay = useMemo(() => {

@@ -14,11 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  ATTENDANCE_ROLL_CHANGED,
-  ATTENDANCE_ROLL_STORAGE_KEY,
-  countSessionsStudentAttended,
-} from "@/features/attendance/attendanceRollStorage";
-import {
   COURSE_CERTIFICATES_CHANGED,
   getCourseCertificate,
   issueCourseCertificate,
@@ -266,7 +261,6 @@ export function TeacherCourseGradesPanel({
   const [gradesTick, setGradesTick] = useState(0);
   const [quizTick, setQuizTick] = useState(0);
   const [certTick, setCertTick] = useState(0);
-  const [attendanceTick, setAttendanceTick] = useState(0);
   const [reviewsTick, setReviewsTick] = useState(0);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | "all" | null>(null);
@@ -342,19 +336,6 @@ export function TeacherCourseGradesPanel({
     const bump = () => setCertTick((t) => t + 1);
     window.addEventListener(COURSE_CERTIFICATES_CHANGED, bump);
     return () => window.removeEventListener(COURSE_CERTIFICATES_CHANGED, bump);
-  }, []);
-
-  useEffect(() => {
-    const bump = () => setAttendanceTick((t) => t + 1);
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === ATTENDANCE_ROLL_STORAGE_KEY) bump();
-    };
-    window.addEventListener(ATTENDANCE_ROLL_CHANGED, bump);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(ATTENDANCE_ROLL_CHANGED, bump);
-      window.removeEventListener("storage", onStorage);
-    };
   }, []);
 
   useEffect(() => {
@@ -453,11 +434,7 @@ export function TeacherCourseGradesPanel({
       for (const s of students) {
         const saved = savedGrades[s.id];
         const total = computeTotalFinalScore(
-          saved?.attendanceScore ??
-            computeAttendanceScore(
-              countSessionsStudentAttended(courseId, s.id, s.email),
-              plannedSessions,
-            ),
+          saved?.attendanceScore ?? computeAttendanceScore(0, plannedSessions),
           readInstructorScore(saved) ?? null,
         );
         if (total == null || publishedCerts.has(s.id)) continue;
@@ -534,7 +511,6 @@ export function TeacherCourseGradesPanel({
       });
     }
 
-    void attendanceTick;
     void reviewsTick;
     return students.map((s) => {
       const emailNorm = s.email.trim().toLowerCase();
@@ -542,7 +518,7 @@ export function TeacherCourseGradesPanel({
       const saved = savedGrades[s.id];
       const savedInstructor = readInstructorScore(saved);
       const quizTotal = computeManualQuizStudentTotal(courseId, s.id);
-      const attended = countSessionsStudentAttended(courseId, s.id, s.email);
+      const attended = 0;
       const attendanceScore = computeAttendanceScore(attended, plannedSessions);
       const savedTotal = computeTotalFinalScore(
         saved?.attendanceScore ?? attendanceScore,
@@ -569,7 +545,6 @@ export function TeacherCourseGradesPanel({
     });
   }, [
     apiRows,
-    attendanceTick,
     courseId,
     isApiCourse,
     plannedSessions,

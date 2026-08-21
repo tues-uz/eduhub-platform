@@ -17,6 +17,8 @@ export type StoredAttendanceMeeting = {
   scheduleSlotIndex?: number;
   /** Stable key for enrollment schedule row (date|time|title). */
   scheduleSlotKey?: string;
+  /** Students checked in so far for this session (from backend). */
+  presentCount?: number;
 };
 
 /** Check-in stays open for this long after the QR is generated (class start). */
@@ -150,6 +152,7 @@ export async function fetchAttendanceMeetings(courseId: string): Promise<StoredA
       name: s.meetingName,
       scheduleSlotIndex: s.scheduleSlotIndex ?? undefined,
       scheduleSlotKey: s.scheduleSlotKey ?? undefined,
+      presentCount: s.presentCount ?? undefined,
       ...(token ? { token } : {}),
     };
   });

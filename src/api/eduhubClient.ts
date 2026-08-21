@@ -34,6 +34,7 @@ import type {
   AttendanceCheckInResponse,
   AttendanceRosterResponse,
   MyAttendanceResponse,
+  AttendanceCourseSummaryResponse,
   NotificationResponse,
   AdminCreateUserResponse,
   CourseCertificateResponse,
@@ -72,6 +73,9 @@ import type {
   AdminCertificationRowResponse,
   AdminPaymentRowResponse,
   GeneralReferralCodeResponse,
+  SpecialTuitionGrantResponse,
+  TeacherChecklistItemResponse,
+  TeacherComplaintResponse,
 } from "./eduhubTypes";
 
 
@@ -809,6 +813,12 @@ export const eduhubAdmin = {
   setUserStatus: (id: string, enabled: boolean) =>
     request<UserResponse>(`/admin/users/${id}/status`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
 
+  setInstructorRevenueShare: (id: string, instructorRevenueShare: number | null, adminActionCode: string) =>
+    request<UserResponse>(`/admin/users/${id}/revenue-share`, {
+      method: "PATCH",
+      body: JSON.stringify({ instructorRevenueShare, adminActionCode }),
+    }),
+
   listTeachers: () =>
     request<TeacherResponse[]>("/admin/teachers"),
 
@@ -938,6 +948,9 @@ export const eduhubAttendance = {
 
   myAttendance: (courseId: string) =>
     request<MyAttendanceResponse>(`/courses/${courseId}/attendance/my`),
+
+  summary: (courseId: string) =>
+    request<AttendanceCourseSummaryResponse>(`/courses/${courseId}/attendance/summary`),
 };
 
 /** Course completion: grades, certificates, and reviews */
@@ -1330,6 +1343,58 @@ export const eduhubAdminPayments = {
       method: "POST",
       body: JSON.stringify({ paymentIds }),
     }),
+};
+
+/** Special (free-tuition) grants */
+export const eduhubAdminTuitionGrants = {
+  list: () => request<SpecialTuitionGrantResponse[]>("/admin/tuition-grants"),
+  upsert: (body: {
+    email: string;
+    courseId?: string | null;
+    note?: string;
+    active?: boolean;
+    adminActionCode: string;
+  }) =>
+    request<SpecialTuitionGrantResponse>("/admin/tuition-grants", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  remove: (id: string, adminActionCode: string) =>
+    request<void>(`/admin/tuition-grants/${id}?adminActionCode=${encodeURIComponent(adminActionCode)}`, {
+      method: "DELETE",
+    }),
+};
+
+export const eduhubTuitionGrants = {
+  /** Active free-tuition grant for the authenticated student on this course, if any. */
+  myGrant: (courseId: string) =>
+    request<SpecialTuitionGrantResponse | null>(`/tuition-grants/me?courseId=${encodeURIComponent(courseId)}`),
+};
+
+/** Per-instructor, per-course class checklist */
+export const eduhubTeacherChecklist = {
+  list: (courseId: string) =>
+    request<TeacherChecklistItemResponse[]>(`/courses/${courseId}/checklist`),
+  setItem: (courseId: string, itemKey: string, body: { title: string; completed: boolean }) =>
+    request<TeacherChecklistItemResponse>(`/courses/${courseId}/checklist/${encodeURIComponent(itemKey)}`, {
+      method: "PUT",
+      body: JSON.stringify({ itemKey, ...body }),
+    }),
+};
+
+/** Teacher / class complaints */
+export const eduhubComplaints = {
+  submit: (body: { courseId: string; category: "teacher" | "class" | "other"; mood: 1 | 2 | 3 | 4 | 5; message: string }) =>
+    request<TeacherComplaintResponse>("/complaints", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+};
+
+export const eduhubAdminComplaints = {
+  list: () => request<TeacherComplaintResponse[]>("/admin/complaints"),
+  markReviewed: (id: string) =>
+    request<TeacherComplaintResponse>(`/admin/complaints/${id}/reviewed`, { method: "PATCH" }),
 };
 
 

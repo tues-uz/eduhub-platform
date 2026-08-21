@@ -40,6 +40,8 @@ export interface UserResponse {
   createdAt?: string;
   coursesCount?: number;
   adminCode?: string;
+  /** Instructor's contract revenue-share override (0-1); null/undefined uses the platform default. */
+  instructorRevenueShare?: number | null;
 }
 
 export interface AdminCreateUserResponse {
@@ -88,6 +90,7 @@ export interface TeacherResponse {
   courses: TeacherCourseRef[];
   totalStudents: number;
   category?: string;
+  instructorRevenueShare?: number | null;
 }
 
 
@@ -486,6 +489,11 @@ export interface AttendanceSessionResponse {
   presentCount?: number;
   enrolledCount?: number;
   token?: string;
+}
+
+export interface AttendanceCourseSummaryResponse {
+  totalHeld: number;
+  attendedByStudentId: Record<string, number>;
 }
 
 export interface AttendanceJoinInfoResponse {
@@ -1059,5 +1067,42 @@ export interface AdminPaymentRowResponse {
 }
 
 export type AdminPaymentRow = AdminPaymentRowResponse;
+
+export interface SpecialTuitionGrantResponse {
+  id: string;
+  studentId: string;
+  studentEmail: string;
+  studentName: string;
+  courseId?: string | null;
+  courseTitle?: string | null;
+  note: string;
+  active: boolean;
+  grantedByEmail?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeacherChecklistItemResponse {
+  itemKey: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface TeacherComplaintResponse {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  teacherId?: string | null;
+  teacherName?: string | null;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  category: "teacher" | "class" | "other";
+  mood: 1 | 2 | 3 | 4 | 5;
+  message: string;
+  status: "open" | "reviewed";
+  createdAt: string;
+  reviewedAt?: string | null;
+}
 
 

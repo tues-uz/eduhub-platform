@@ -30,7 +30,7 @@ import {
   formatMoney,
   type ClassPayrollAggregate,
 } from "@/features/payroll/classPayrollAggregate";
-import { getInstructorRevenueShare } from "@/features/payroll/instructorRevenueShareStorage";
+import { useMyInstructorRevenueShare } from "@/features/payroll/revenueShare";
 import {
   instructorPayrollRequestDedupeKey,
   instructorPayrollRequestStore,
@@ -196,6 +196,7 @@ function latestRequestForClass(
 export default function TeacherPayrollPage() {
   const { t } = useTranslation();
   const { user } = useAuthSession();
+  const instructorShare = useMyInstructorRevenueShare();
   const [search, setSearch] = useState("");
   const [submissionSearch, setSubmissionSearch] = useState("");
   const [payrollClasses, setPayrollClasses] = useState<PayrollClassSummaryResponse[]>([]);
@@ -497,10 +498,9 @@ export default function TeacherPayrollPage() {
                       const enrolledLines = currencyMapToFormattedLines(new Map([[cls.currency, cls.totalTuition]]));
                       const revenueSplit = estimateInstructorAndPlatformSplitLines(
                         new Map([[cls.currency, cls.totalTuition]]),
-                        emailNorm || cls.lecturerEmail,
+                        instructorShare,
                       );
                       const summaryText = buildPayrollSummaryText(agg);
-                      const instructorShare = getInstructorRevenueShare(emailNorm || cls.lecturerEmail);
                       const paidStudentCount = paidCount;
                       const paymentCurrency = cls.currency;
                       const paidPaymentAmounts = studentRows

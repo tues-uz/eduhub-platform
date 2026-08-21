@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { eduhubAdminComplaints } from "@/api/eduhubClient";
+import type { TeacherComplaintResponse } from "@/api/eduhubTypes";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,14 +23,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  listTeacherComplaints,
-  markTeacherComplaintReviewed,
-  moodEmoji,
-  TEACHER_COMPLAINTS_CHANGED_EVENT,
-  type TeacherComplaint,
-  type TeacherComplaintStatus,
-} from "@/features/student/teacherComplaintStore";
+const MOOD_EMOJI: Record<number, string> = { 1: "😢", 2: "😕", 3: "😐", 4: "🙂", 5: "😊" };
+function moodEmoji(mood: number | undefined): string {
+  return (mood != null && MOOD_EMOJI[mood]) || "—";
+}
 
 function formatWhen(iso: string): string {
   const d = new Date(iso);
@@ -37,19 +36,21 @@ function formatWhen(iso: string): string {
 
 export default function AdminTeacherComplaintsPage() {
   const { t } = useTranslation();
-  const [rows, setRows] = useState<TeacherComplaint[]>(() => listTeacherComplaints());
+  const queryClient = useQueryClient();
+  const { data: rows = [] } = useQuery({
+    queryKey: ["admin", "teacher-complaints"],
+    queryFn: eduhubAdminComplaints.list,
+  });
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | TeacherComplaintStatus>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | TeacherComplaintResponse["status"]>("all");
 
-  useEffect(() => {
-    const refresh = () => setRows(listTeacherComplaints());
-    window.addEventListener(TEACHER_COMPLAINTS_CHANGED_EVENT, refresh);
-    window.addEventListener("storage", refresh);
-    return () => {
-      window.removeEventListener(TEACHER_COMPLAINTS_CHANGED_EVENT, refresh);
-      window.removeEventListener("storage", refresh);
-    };
-  }, []);
+  const markReviewedMutation = useMutation({
+    mutationFn: (id: string) => eduhubAdminComplaints.markReviewed(id),
+    onSuccess: () => {
+      toast.success(t("admin.teacherComplaints.markedReviewed"));
+      void queryClient.invalidateQueries({ queryKey: ["admin", "teacher-complaints"] });
+    },
+  });
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -58,7 +59,7 @@ export default function AdminTeacherComplaintsPage() {
       if (!q) return true;
       return (
         row.courseTitle.toLowerCase().includes(q) ||
-        row.teacherName.toLowerCase().includes(q) ||
+        (row.teacherName ?? "").toLowerCase().includes(q) ||
         row.studentName.toLowerCase().includes(q) ||
         row.studentEmail.toLowerCase().includes(q) ||
         row.message.toLowerCase().includes(q)
@@ -66,10 +67,7 @@ export default function AdminTeacherComplaintsPage() {
     });
   }, [rows, search, statusFilter]);
 
-  const markReviewed = (id: string) => {
-    markTeacherComplaintReviewed(id);
-    toast.success(t("admin.teacherComplaints.markedReviewed"));
-  };
+  const markReviewed = (id: string) => markReviewedMutation.mutate(id);
 
   return (
     <div className="container mx-auto space-y-6 px-6">
@@ -87,7 +85,7 @@ export default function AdminTeacherComplaintsPage() {
         />
         <Select
           value={statusFilter}
-          onValueChange={(v) => setStatusFilter(v as "all" | TeacherComplaintStatus)}
+          onValueChange={(v) => setStatusFilter(v as "all" | TeacherComplaintResponse["status"])}
         >
           <SelectTrigger className="w-[180px]">
             <SelectValue />
@@ -132,7 +130,7 @@ export default function AdminTeacherComplaintsPage() {
                     <div className="font-medium text-slate-900">{row.studentName}</div>
                     <div className="text-xs text-slate-500">{row.studentEmail || "—"}</div>
                   </TableCell>
-                  <TableCell className="text-sm text-slate-800">{row.teacherName}</TableCell>
+                  <TableCell className="text-sm text-slate-800">{row.teacherName ?? "—"}</TableCell>
                   <TableCell className="text-sm text-slate-800">{row.courseTitle}</TableCell>
                   <TableCell className="text-center text-xl" title={String(row.mood ?? "")}>
                     {moodEmoji(row.mood)}

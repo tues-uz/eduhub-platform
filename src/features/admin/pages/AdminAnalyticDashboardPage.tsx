@@ -38,10 +38,8 @@ import type {
   UserResponse,
 } from "@/api/eduhubTypes";
 import { useInstructorPayrollRequests } from "@/features/teacher/data/instructorPayrollRequestStore";
-import {
-  INSTRUCTOR_REVENUE_SHARE,
-  sumAmountsForStatuses,
-} from "@/features/payroll/classPayrollAggregate";
+import { sumAmountsForStatuses } from "@/features/payroll/classPayrollAggregate";
+import { DEFAULT_INSTRUCTOR_REVENUE_SHARE } from "@/features/payroll/revenueShare";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
 import {
   Table,
@@ -310,7 +308,7 @@ export default function AdminAnalyticDashboardPage() {
     const amount = tuitionCollectedLines.reduce((sum, line) => sum + line.amount, 0);
     return {
       currency,
-      amount: Math.round(amount * INSTRUCTOR_REVENUE_SHARE),
+      amount: Math.round(amount * DEFAULT_INSTRUCTOR_REVENUE_SHARE),
     };
   }, [tuitionCollectedLines]);
 
@@ -360,7 +358,7 @@ export default function AdminAnalyticDashboardPage() {
         currency,
         tuitionCollected,
         tuitionOutstanding,
-        estInstructorPayout: Math.round(tuitionCollected * INSTRUCTOR_REVENUE_SHARE),
+        estInstructorPayout: Math.round(tuitionCollected * DEFAULT_INSTRUCTOR_REVENUE_SHARE),
         payrollPending: payroll.pending,
         payrollApproved: payroll.approved,
       };

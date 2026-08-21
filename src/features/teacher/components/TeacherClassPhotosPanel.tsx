@@ -1,16 +1,12 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { eduhubCourses, eduhubUploadFile } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
-import {
-  CLASS_PHOTOS_CHANGED_EVENT,
-  MAX_CLASS_PHOTOS,
-  classPhotoStore,
-  resolveClassPhotoUrls,
-} from "@/features/courses/classPhotoStore";
 import { Image, Loader2, Upload, X } from "@/lib/icons";
 import { cn } from "@/lib/utils";
+import { MAX_CLASS_PHOTOS } from "@/features/courses/classPhotos";
 
 type Props = {
   courseId: string;
@@ -20,7 +16,6 @@ type Props = {
 const MAX_BYTES = 8 * 1024 * 1024;
 
 async function persistToApi(courseId: string, urls: string[]) {
-  if (!isUuid(courseId)) return;
   const course = await eduhubCourses.getById(courseId);
   await eduhubCourses.update(courseId, {
     title: course.title,
@@ -28,11 +23,6 @@ async function persistToApi(courseId: string, urls: string[]) {
     category: course.category,
     level: course.level,
     status: course.status,
-    classMeetingsInSixMonths: course.classMeetingsInSixMonths,
-    classMeetingTitles: course.classMeetingTitles,
-    classMeetingSlots: course.classMeetingSlots,
-    classStartDate: course.classStartDate,
-    classEndDate: course.classEndDate,
     ...(course.thumbnailUrl?.trim() ? { thumbnailUrl: course.thumbnailUrl.trim() } : {}),
     classPhotoUrls: urls,
   });
@@ -40,32 +30,24 @@ async function persistToApi(courseId: string, urls: string[]) {
 
 export function TeacherClassPhotosPanel({ courseId, apiPhotoUrls }: Props) {
   const { t } = useTranslation();
-  const [urls, setUrls] = useState<string[]>(() => resolveClassPhotoUrls(courseId, apiPhotoUrls));
+  const queryClient = useQueryClient();
+  const [urls, setUrls] = useState<string[]>(() => (apiPhotoUrls ?? []).slice(0, MAX_CLASS_PHOTOS));
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingSlotRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setUrls(resolveClassPhotoUrls(courseId, apiPhotoUrls));
-  }, [courseId, apiPhotoUrls]);
-
-  useEffect(() => {
-    const onChanged = (e: Event) => {
-      const detail = (e as CustomEvent<{ courseId?: string }>).detail;
-      if (detail?.courseId && detail.courseId !== courseId) return;
-      setUrls(resolveClassPhotoUrls(courseId, apiPhotoUrls));
-    };
-    window.addEventListener(CLASS_PHOTOS_CHANGED_EVENT, onChanged);
-    return () => window.removeEventListener(CLASS_PHOTOS_CHANGED_EVENT, onChanged);
-  }, [courseId, apiPhotoUrls]);
+    setUrls((apiPhotoUrls ?? []).slice(0, MAX_CLASS_PHOTOS));
+  }, [apiPhotoUrls]);
 
   const saveUrls = async (next: string[]) => {
-    const saved = classPhotoStore.set(courseId, next);
-    setUrls(saved);
+    setUrls(next);
     try {
-      await persistToApi(courseId, saved);
-    } catch {
-      // Local store is enough for student/public preview in this browser.
+      await persistToApi(courseId, next);
+      void queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "course", courseId] });
+    } catch (err) {
+      setUrls(apiPhotoUrls ?? []);
+      toast.error(err instanceof Error ? err.message : "Could not save class photos");
     }
   };
 
@@ -90,6 +72,7 @@ export function TeacherClassPhotosPanel({ courseId, apiPhotoUrls }: Props) {
       toast.error(t("teacher.roster.photos.toastTooLarge"));
       return;
     }
+    if (!isUuid(courseId)) return;
 
     setUploadingIndex(slotIndex);
     try {

@@ -243,7 +243,7 @@ export const adminPayrollProofStore = {
     return true;
   },
 
-  remove(className: string, course: string): void {
+  async remove(className: string, course: string, requestId?: string): Promise<void> {
     const key = payrollProofKey(className, course);
     const prev = snapshot[key];
     if (!prev) return;
@@ -256,6 +256,11 @@ export const adminPayrollProofStore = {
     }
 
     emit();
+    const id = requestId ?? prev.requestId;
+    if (id) {
+      await eduhubPayroll.updateProof(id, { informationNotes: kept.informationNotes });
+      void adminPayrollProofStore.load();
+    }
   },
 };
 

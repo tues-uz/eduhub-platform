@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { eduhubAdmin } from "@/api/eduhubClient";
 import type { TeacherResponse } from "@/api/eduhubTypes";
+import { AdminActionCodeField, useAdminActionCodeState } from "@/features/admin/components/AdminActionCodeField";
+import { validateAdminActionCodeOrThrow } from "@/features/admin/adminStaffCode";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -23,24 +25,17 @@ import {
   CONTRACT_INSTRUCTOR_REVENUE_SHARE_OPTIONS,
   DEFAULT_INSTRUCTOR_REVENUE_SHARE,
   formatContractShareLabel,
-  isContractRevenueShareOverride,
-  normalizeInstructorEmail,
-  setInstructorRevenueShareOverride,
-  useInstructorRevenueShareOverrides,
+  resolveInstructorShare,
   type ContractInstructorRevenueShare,
-} from "@/features/payroll/instructorRevenueShareStorage";
-
-function shareSelectValue(email: string, overrides: Record<string, ContractInstructorRevenueShare>): string {
-  const key = normalizeInstructorEmail(email);
-  return String(overrides[key] ?? DEFAULT_INSTRUCTOR_REVENUE_SHARE);
-}
+} from "@/features/payroll/revenueShare";
 
 export function AdminPayrollContractRatesPanel() {
   const { t } = useTranslation();
-  const overrides = useInstructorRevenueShareOverrides();
+  const [adminActionCode, setAdminActionCode] = useAdminActionCodeState();
   const [teachers, setTeachers] = useState<TeacherResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,16 +67,29 @@ export function AdminPayrollContractRatesPanel() {
     );
   }, [search, teachers]);
 
-  const handleShareChange = (email: string, raw: string) => {
+  const handleShareChange = async (teacherId: string, raw: string) => {
     const parsed = Number(raw);
     if (!CONTRACT_INSTRUCTOR_REVENUE_SHARE_OPTIONS.includes(parsed as ContractInstructorRevenueShare)) {
       return;
     }
-    setInstructorRevenueShareOverride(
-      email,
-      parsed === DEFAULT_INSTRUCTOR_REVENUE_SHARE ? "default" : (parsed as ContractInstructorRevenueShare),
-    );
-    toast.success(t("admin.payroll.rates.saved"));
+    let code: string;
+    try {
+      code = validateAdminActionCodeOrThrow(adminActionCode);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Enter your admin code.");
+      return;
+    }
+    const nextShare = parsed === DEFAULT_INSTRUCTOR_REVENUE_SHARE ? null : parsed;
+    setSavingId(teacherId);
+    try {
+      const updated = await eduhubAdmin.setInstructorRevenueShare(teacherId, nextShare, code);
+      setTeachers((prev) => prev.map((teacher) => (teacher.id === teacherId ? { ...teacher, instructorRevenueShare: updated.instructorRevenueShare } : teacher)));
+      toast.success(t("admin.payroll.rates.saved"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save contract split.");
+    } finally {
+      setSavingId(null);
+    }
   };
 
   return (
@@ -93,13 +101,16 @@ export function AdminPayrollContractRatesPanel() {
         })}
       </p>
 
-      <div className="max-w-md">
-        <Input
-          placeholder={t("admin.payroll.rates.searchPlaceholder")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="bg-white"
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="max-w-md flex-1">
+          <Input
+            placeholder={t("admin.payroll.rates.searchPlaceholder")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="bg-white"
+          />
+        </div>
+        <AdminActionCodeField id="revenue-share-action-code" value={adminActionCode} onChange={setAdminActionCode} />
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -128,15 +139,17 @@ export function AdminPayrollContractRatesPanel() {
               </TableRow>
             ) : (
               filteredTeachers.map((teacher) => {
-                const customized = isContractRevenueShareOverride(teacher.email);
+                const customized = teacher.instructorRevenueShare != null;
+                const currentShare = resolveInstructorShare(teacher.instructorRevenueShare);
                 return (
                   <TableRow key={teacher.id}>
                     <TableCell className="text-sm font-medium text-slate-900">{teacher.fullName}</TableCell>
                     <TableCell className="text-xs text-slate-600">{teacher.email}</TableCell>
                     <TableCell>
                       <Select
-                        value={shareSelectValue(teacher.email, overrides)}
-                        onValueChange={(value) => handleShareChange(teacher.email, value)}
+                        value={String(currentShare)}
+                        disabled={savingId === teacher.id}
+                        onValueChange={(value) => void handleShareChange(teacher.id, value)}
                       >
                         <SelectTrigger className="h-9 w-[9.5rem] bg-white text-sm">
                           <SelectValue />

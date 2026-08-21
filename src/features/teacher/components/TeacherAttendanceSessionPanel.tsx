@@ -26,10 +26,6 @@ import {
   scheduleSlotKeyFromParts,
 } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 import {
-  notifyAttendanceQrGenerated,
-  notifyAttendanceSessionCompleted,
-} from "@/features/notifications/appNotificationStore";
-import {
   ATTENDANCE_OVERVIEW_SESSION_SYNC,
   ATTENDANCE_SESSION_MAX_MS,
   fetchAttendanceMeetings,
@@ -314,8 +310,6 @@ export function TeacherAttendanceSessionPanel({
     if (!name) return;
 
     const prevSessionId = sessionId;
-    const prevMeeting = prevSessionId ? storedMeetings.find((m) => m.sessionId === prevSessionId) : undefined;
-    const courseTitle = selectedCourse?.title?.trim() || "Class";
 
     const slotIndex = scheduleSlotForGenerate?.index;
     const scheduleSlotKey = slotKeyForScheduleOption(scheduleSlotForGenerate);
@@ -334,23 +328,6 @@ export function TeacherAttendanceSessionPanel({
       return;
     }
 
-    // Backend auto-closes the previous open session (reason NEW_SESSION) as part of createSession.
-    if (prevMeeting && !prevMeeting.endedAt) {
-      const startMs = new Date(prevMeeting.createdAt).getTime();
-      const endMs = new Date(created.startedAt).getTime();
-      if (Number.isFinite(startMs) && Number.isFinite(endMs)) {
-        notifyAttendanceSessionCompleted({
-          id: prevMeeting.sessionId,
-          courseTitle,
-          meetingName: prevMeeting.name,
-          endedAt: created.startedAt,
-          durationMs: Math.max(0, endMs - startMs),
-          endReason: "NEW_SESSION",
-          instructorEmail: user.email ?? "",
-          instructorName: user.name ?? "",
-        });
-      }
-    }
     void refreshScheduleAttendanceState(courseId);
 
     const next: StoredAttendanceMeeting = {
@@ -382,14 +359,6 @@ export function TeacherAttendanceSessionPanel({
     }
     setNextMeetingName(useSchedulePicker ? "" : (suggestedMeetingName?.trim() ?? ""));
 
-    notifyAttendanceQrGenerated({
-      id: next.sessionId,
-      courseTitle,
-      meetingName: name,
-      startedAt: created.startedAt,
-      instructorEmail: user.email ?? "",
-      instructorName: user.name ?? "",
-    });
     if (useSchedulePicker) {
       setRosterScheduleSlotIntent(null);
     }
@@ -399,12 +368,8 @@ export function TeacherAttendanceSessionPanel({
     scheduleSlotForGenerate,
     slotKeyForScheduleOption,
     sessionId,
-    selectedCourse?.title,
-    storedMeetings,
     suggestedMeetingName,
     useSchedulePicker,
-    user.email,
-    user.name,
   ]);
 
   const joinUrl = useMemo(() => {
@@ -520,9 +485,6 @@ export function TeacherAttendanceSessionPanel({
     if (!isUuid(sid)) return;
     if (finalizedMaxDurationRef.current.has(sid)) return;
     finalizedMaxDurationRef.current.add(sid);
-    const courseTitle = selectedCourse?.title?.trim() || "Class";
-    const meetingName = activeMeeting.name.trim() || "Meeting";
-    const startedAtIso = activeMeeting.createdAt;
     eduhubAttendance
       .closeSession(sid, "MAX_DURATION")
       .then((closed) => {
@@ -534,20 +496,6 @@ export function TeacherAttendanceSessionPanel({
           ),
         );
         void refreshScheduleAttendanceState(courseId);
-        const startMs = new Date(startedAtIso).getTime();
-        const endMs = closed.endedAt ? new Date(closed.endedAt).getTime() : NaN;
-        if (Number.isFinite(startMs) && Number.isFinite(endMs)) {
-          notifyAttendanceSessionCompleted({
-            id: sid,
-            courseTitle,
-            meetingName,
-            endedAt: closed.endedAt as string,
-            durationMs: Math.max(0, endMs - startMs),
-            endReason: closed.endReason ?? "MAX_DURATION",
-            instructorEmail: user.email ?? "",
-            instructorName: user.name ?? "",
-          });
-        }
       })
       .catch(() => {
         finalizedMaxDurationRef.current.delete(sid);
@@ -559,9 +507,6 @@ export function TeacherAttendanceSessionPanel({
     activeMeeting?.name,
     isBackendSessionClosed,
     sessionElapsedMs,
-    selectedCourse?.title,
-    user.email,
-    user.name,
   ]);
 
   const stopSession = useCallback(async () => {
@@ -569,10 +514,6 @@ export function TeacherAttendanceSessionPanel({
     if (manuallyStoppedSessionIds.includes(sessionId)) return;
     if (manualStopOnceRef.current.has(sessionId)) return;
     manualStopOnceRef.current.add(sessionId);
-
-    const courseTitle = selectedCourse?.title?.trim() || "Class";
-    const meetingName = activeMeeting.name.trim() || "Meeting";
-    const startedAtIso = activeMeeting.createdAt;
 
     try {
       if (isUuid(sessionId)) {
@@ -585,20 +526,6 @@ export function TeacherAttendanceSessionPanel({
           ),
         );
         void refreshScheduleAttendanceState(courseId);
-        const startMs = new Date(startedAtIso).getTime();
-        const endMs = closed.endedAt ? new Date(closed.endedAt).getTime() : NaN;
-        if (Number.isFinite(startMs) && Number.isFinite(endMs)) {
-          notifyAttendanceSessionCompleted({
-            id: sessionId,
-            courseTitle,
-            meetingName,
-            endedAt: closed.endedAt as string,
-            durationMs: Math.max(0, endMs - startMs),
-            endReason: closed.endReason ?? "MANUAL_STOP",
-            instructorEmail: user.email ?? "",
-            instructorName: user.name ?? "",
-          });
-        }
       }
     } catch (e) {
       toast.error("Could not stop attendance session", {
@@ -615,9 +542,6 @@ export function TeacherAttendanceSessionPanel({
     sessionId,
     activeMeeting,
     manuallyStoppedSessionIds,
-    selectedCourse?.title,
-    user.email,
-    user.name,
   ]);
 
   const canGenerate =

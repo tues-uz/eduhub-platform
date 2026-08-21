@@ -32,7 +32,7 @@ import {
   useAdminCourseLocalDataVersion,
 } from "@/features/admin/utils/adminCourseScheduleDisplay";
 import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
-import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
+import { deriveScheduleWorkflow } from "@/features/courses/courseScheduleWorkflow";
 import {
   fetchPublishedAvailableCourses,
   readPublishedAvailableCoursesCache,
@@ -53,10 +53,8 @@ import {
 } from "@/features/courses/teacherClassCapacity";
 import { ClassDetailActionsMenu } from "@/features/student/components/ClassDetailActionsMenu";
 import {
-  CLASS_PHOTOS_CHANGED_EVENT,
   MAX_CLASS_PHOTOS,
-  resolveClassPhotoUrls,
-} from "@/features/courses/classPhotoStore";
+} from "@/features/courses/classPhotos";
 
 function courseFromSummary(summary: CourseSummaryResponse): CourseResponse {
   return {
@@ -148,7 +146,7 @@ function resolvePreviewSessionSlots(
         sessionTime: s.sessionTime ?? "",
       }));
     }
-    const wf = courseScheduleWorkflowStore.get(courseId);
+    const wf = deriveScheduleWorkflow(apiDetail);
     const useProposal = wf?.status === "approved";
     if (useProposal) {
       const p = courseScheduleProposalStore.get(courseId);
@@ -393,7 +391,7 @@ const StudentAvailableCourseDetailPage = () => {
   const scheduleMerged = useMemo(() => {
     void scheduleLocalTick;
     if (!apiCourse || !isUuid(linkId)) return null;
-    const wf = courseScheduleWorkflowStore.get(linkId);
+    const wf = deriveScheduleWorkflow(apiCourse);
     return mergeScheduleDisplayForAdminReview(linkId, apiCourse, {
       useLocalProposalSnapshot: wf?.status === "approved",
     });
@@ -424,7 +422,7 @@ const StudentAvailableCourseDetailPage = () => {
     if (scheduleProposal?.sessions.length) {
       return "Published class schedule from the school.";
     }
-    const wf = courseScheduleWorkflowStore.get(linkId);
+    const wf = deriveScheduleWorkflow(apiCourse);
     if (wf?.status === "pending_instructor") {
       return "The proposed schedule is awaiting instructor confirmation—session dates are not finalized yet.";
     }
@@ -465,7 +463,6 @@ const StudentAvailableCourseDetailPage = () => {
   });
   const price = affiliationPrice?.baseAmount ?? catalogPrice;
   const currency = apiCourse?.pricing?.currency ?? "USD";
-  const usedExternalPrice = Boolean(affiliationPrice?.usedExternalPrice);
 
   const resolvedClassStartIso =
     scheduleMerged?.classStartDate || apiCourse?.classStartDate?.trim();
@@ -475,17 +472,7 @@ const StudentAvailableCourseDetailPage = () => {
 
   const workspacePath = `/dashboard/courses/${linkId}`;
 
-  const [classPhotosTick, setClassPhotosTick] = useState(0);
-  useEffect(() => {
-    const bump = () => setClassPhotosTick((n) => n + 1);
-    window.addEventListener(CLASS_PHOTOS_CHANGED_EVENT, bump);
-    return () => window.removeEventListener(CLASS_PHOTOS_CHANGED_EVENT, bump);
-  }, []);
-
-  const classPhotoUrls = useMemo(
-    () => resolveClassPhotoUrls(linkId || apiCourse?.id, apiCourse?.classPhotoUrls),
-    [linkId, apiCourse?.id, apiCourse?.classPhotoUrls, classPhotosTick],
-  );
+  const classPhotoUrls = apiCourse?.classPhotoUrls ?? [];
   const displayedClassPhotoUrls = classPhotoUrls.slice(0, MAX_CLASS_PHOTOS);
   const hasMoreClassPhotos = classPhotoUrls.length > MAX_CLASS_PHOTOS;
 
@@ -621,11 +608,6 @@ const StudentAvailableCourseDetailPage = () => {
                         <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-[#3954d0]">
                           {formatPrice(price, currency)}
                         </p>
-                        {usedExternalPrice ? (
-                          <p className="mt-1 text-xs text-amber-800">
-                            External student tuition (+50,000)
-                          </p>
-                        ) : null}
                       </div>
                     </div>
 

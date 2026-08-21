@@ -7,7 +7,6 @@ import {
 } from "@/features/courses/classSchedulePreview";
 import { tuitionPartsForSchedule } from "@/features/enrollment/enrollmentTuitionThirds";
 import { formatMoney } from "@/features/payroll/classPayrollAggregate";
-import { getInstructorRevenueShare } from "@/features/payroll/instructorRevenueShareStorage";
 
 export type PayrollMonthPayoutQuote = {
   amount: number;
@@ -59,15 +58,13 @@ export function computePayrollMonthRequestedPayout(opts: {
   slots: SessionSlotLike[];
   schedulePeriodKey: string;
   paidStudentCount: number;
-  instructorEmail?: string | null;
+  instructorShare: number;
 }): PayrollMonthPayoutQuote | null {
-  const { listedTuitionPerStudent, currency, slots, schedulePeriodKey, paidStudentCount, instructorEmail } =
+  const { listedTuitionPerStudent, currency, slots, schedulePeriodKey, paidStudentCount, instructorShare } =
     opts;
   if (!listedTuitionPerStudent || listedTuitionPerStudent <= 0 || paidStudentCount <= 0 || !schedulePeriodKey) {
     return null;
   }
-
-  const instructorShare = getInstructorRevenueShare(instructorEmail);
 
   const plan = resolveSchedulePlanMonthForYearMonth(slots, schedulePeriodKey);
   if (!plan) return null;

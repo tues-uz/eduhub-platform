@@ -62,6 +62,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   eduhubAdminEnrollmentApplications,
+  eduhubAttendance,
   eduhubCourseQuizzes,
   eduhubCourses,
   eduhubClassResumes,
@@ -92,9 +93,8 @@ import { usePayrollClassesQuery } from "@/features/teacher/hooks/useTeacherQueri
 import { formatMoney } from "@/features/payroll/classPayrollAggregate";
 import {
   formatContractShareLabel,
-  getInstructorRevenueShare,
-  useInstructorRevenueShareOverrides,
-} from "@/features/payroll/instructorRevenueShareStorage";
+  resolveInstructorShare,
+} from "@/features/payroll/revenueShare";
 import {
   buildScheduleMonthTabs,
   orderSessionSlotsChronologically,
@@ -129,12 +129,6 @@ import {
   ATTENDANCE_MEETINGS_CHANGED,
   fetchAttendanceMeetings,
 } from "@/features/teacher/attendance/attendanceMeetingsStorage";
-import {
-  ATTENDANCE_ROLL_BROADCAST,
-  ATTENDANCE_ROLL_CHANGED,
-  ATTENDANCE_ROLL_STORAGE_KEY,
-  countSessionsStudentAttended,
-} from "@/features/attendance/attendanceRollStorage";
 import { useTeacherClassChecklist } from "@/features/teacher/hooks/useTeacherClassChecklist";
 import { useTranslation } from "react-i18next";
 
@@ -403,10 +397,7 @@ export default function TeacherCourseRosterPage() {
 
   const courseLeadEmail = apiCourseQuery.data?.lecturer?.email?.trim();
 
-  /** Re-render when admin changes this instructor’s contract share. */
-  useInstructorRevenueShareOverrides();
-  const revenueShareEmail = courseLeadEmail || user.email;
-  const instructorRevenueShare = getInstructorRevenueShare(revenueShareEmail);
+  const instructorRevenueShare = resolveInstructorShare(apiCourseQuery.data?.lecturer?.instructorRevenueShare);
   const instructorSharePct = Math.round(instructorRevenueShare * 100);
   const contractShareLabel = formatContractShareLabel(instructorRevenueShare);
 
@@ -775,37 +766,18 @@ export default function TeacherCourseRosterPage() {
 
   useEffect(() => {
     const bump = () => setAttendanceUiKey((k) => k + 1);
-    const onStorage = (e: StorageEvent) => {
-      if (!e.key) return;
-      if (e.key === ATTENDANCE_ROLL_STORAGE_KEY) bump();
-    };
     const onFocus = () => bump();
     const onVis = () => {
       if (document.visibilityState === "visible") bump();
     };
-    window.addEventListener(ATTENDANCE_ROLL_CHANGED, bump);
     window.addEventListener(ATTENDANCE_MEETINGS_CHANGED, bump);
-    window.addEventListener("storage", onStorage);
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVis);
     return () => {
-      window.removeEventListener(ATTENDANCE_ROLL_CHANGED, bump);
       window.removeEventListener(ATTENDANCE_MEETINGS_CHANGED, bump);
-      window.removeEventListener("storage", onStorage);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [courseMeta?.id]);
-
-  useEffect(() => {
-    if (typeof BroadcastChannel === "undefined" || !courseMeta?.id) return;
-    const bump = () => setAttendanceUiKey((k) => k + 1);
-    const bc = new BroadcastChannel(ATTENDANCE_ROLL_BROADCAST);
-    bc.onmessage = (ev: MessageEvent) => {
-      const d = ev.data as { type?: string; courseId?: string } | undefined;
-      if (d?.type === "check-in" && d.courseId === courseMeta.id) bump();
-    };
-    return () => bc.close();
   }, [courseMeta?.id]);
 
   useEffect(() => {
@@ -841,6 +813,12 @@ export default function TeacherCourseRosterPage() {
     () => attendanceMeetingsQuery.data ?? [],
     [attendanceMeetingsQuery.data],
   );
+
+  const attendanceSummaryQuery = useQuery({
+    queryKey: ["teacher", "attendance-summary", courseMeta?.id, attendanceUiKey],
+    queryFn: () => eduhubAttendance.summary(courseMeta!.id),
+    enabled: Boolean(courseMeta?.id) && isUuid(courseMeta.id),
+  });
 
   useEffect(() => {
     if (!courseMeta?.id) return;
@@ -1252,10 +1230,9 @@ export default function TeacherCourseRosterPage() {
                           </TableHeader>
                           <TableBody>
                             {studentsQuery.data.map((s) => {
-                              void attendanceUiKey;
                               const displayName = formatDisplayPersonName(s.fullName);
                               const planned = apiCourseQuery.data?.classMeetingsInSixMonths;
-                              const attended = countSessionsStudentAttended(courseMeta.id, s.id, s.email);
+                              const attended = attendanceSummaryQuery.data?.attendedByStudentId[s.id] ?? 0;
                               const emailKey = s.email?.trim().toLowerCase();
                               const paymentInfo =
                                 studentPaymentByKey.get(s.id) ??

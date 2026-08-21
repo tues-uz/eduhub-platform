@@ -9,7 +9,6 @@ import { appRoutes } from "@/app/routes";
 import { useAuthSession } from "@/features/auth/context";
 import {
   fetchPublishedAvailableCourses,
-  LANDING_DEMO_AVAILABLE_CLASSES,
   PUBLISHED_AVAILABLE_COURSES_CACHE_CHANGED,
   readPublishedAvailableCoursesCache,
 } from "@/features/courses/publishedAvailableCourses";
@@ -31,9 +30,7 @@ function formatTuition(amount: number | undefined, currency: string | undefined,
 }
 
 function initialClasses(): CourseSummaryResponse[] {
-  const cached = readPublishedAvailableCoursesCache();
-  if (cached.length > 0) return cached.slice(0, LANDING_CLASS_LIMIT);
-  return LANDING_DEMO_AVAILABLE_CLASSES.slice(0, LANDING_CLASS_LIMIT);
+  return readPublishedAvailableCoursesCache().slice(0, LANDING_CLASS_LIMIT);
 }
 
 export function LandingAvailableClassesSection() {
@@ -46,9 +43,7 @@ export function LandingAvailableClassesSection() {
     setLoading(true);
     try {
       const rows = await fetchPublishedAvailableCourses(100);
-      setClasses(
-        (rows.length > 0 ? rows : LANDING_DEMO_AVAILABLE_CLASSES).slice(0, LANDING_CLASS_LIMIT),
-      );
+      setClasses(rows.slice(0, LANDING_CLASS_LIMIT));
     } catch {
       setClasses(initialClasses());
     } finally {
@@ -108,14 +103,19 @@ export function LandingAvailableClassesSection() {
             <Loader2 className="h-8 w-8 animate-spin text-slate-400" aria-hidden />
             <span className="sr-only">{t("common.loading")}</span>
           </div>
+        ) : classes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white/60 py-16 text-center">
+            <BookOpen className="h-8 w-8 text-slate-300" aria-hidden />
+            <p className="mt-3 text-sm font-medium text-slate-700">
+              {t("public.availableClasses.emptyTitle")}
+            </p>
+            <p className="mt-1 text-sm text-slate-500">{t("public.availableClasses.emptyHint")}</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {classes.map((course) => {
               const price = course.pricing?.discountedAmount ?? course.pricing?.amount;
-              const isDemo = course.id.startsWith("demo-");
-              const href = isDemo
-                ? appRoutes.register
-                : appRoutes.publicClassDetail(course.id);
+              const href = appRoutes.publicClassDetail(course.id);
               return (
                 <Link
                   key={course.id}

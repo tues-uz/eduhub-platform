@@ -1,17 +1,13 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "@/lib/icons";
 import { toast } from "sonner";
-import { eduhubCourses } from "@/api/eduhubClient";
+import { eduhubAdminTuitionGrants, eduhubCourses } from "@/api/eduhubClient";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { useTranslation } from "react-i18next";
-import {
-  deleteSpecialTuitionGrant,
-  setSpecialTuitionGrantActive,
-  upsertSpecialTuitionGrant,
-} from "@/features/admin/data/specialTuitionGrantsStore";
-import { useSpecialTuitionGrants } from "@/features/admin/hooks/useSpecialTuitionGrants";
+import { AdminActionCodeField, useAdminActionCodeState } from "@/features/admin/components/AdminActionCodeField";
+import { validateAdminActionCodeOrThrow } from "@/features/admin/adminStaffCode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,12 +46,20 @@ function formatGrantDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+const GRANTS_QUERY_KEY = ["admin", "tuition-grants"] as const;
+
 export default function AdminSpecialTuitionPage() {
   const { t } = useTranslation();
-  const grants = useSpecialTuitionGrants();
+  const queryClient = useQueryClient();
+  const [adminActionCode, setAdminActionCode] = useAdminActionCodeState();
   const [emailInput, setEmailInput] = useState("");
   const [courseScope, setCourseScope] = useState<string>("all");
   const [noteInput, setNoteInput] = useState("");
+
+  const { data: grants = [] } = useQuery({
+    queryKey: GRANTS_QUERY_KEY,
+    queryFn: eduhubAdminTuitionGrants.list,
+  });
 
   const { data: courses = [], isLoading: coursesLoading } = useQuery({
     queryKey: ["admin", "courses", "list"],
@@ -70,26 +74,95 @@ export default function AdminSpecialTuitionPage() {
     return map;
   }, [courses]);
 
+  const upsertMutation = useMutation({
+    mutationFn: eduhubAdminTuitionGrants.upsert,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: GRANTS_QUERY_KEY });
+    },
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: (opts: { email: string; courseId: string | null; active: boolean; code: string }) =>
+      eduhubAdminTuitionGrants.upsert({
+        email: opts.email,
+        courseId: opts.courseId,
+        active: opts.active,
+        adminActionCode: opts.code,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: GRANTS_QUERY_KEY });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (opts: { id: string; code: string }) => eduhubAdminTuitionGrants.remove(opts.id, opts.code),
+    onSuccess: () => {
+      toast.success(t("admin.specialTuition.toast.removed"));
+      void queryClient.invalidateQueries({ queryKey: GRANTS_QUERY_KEY });
+    },
+  });
+
   const handleAddGrant = () => {
+    let code: string;
     try {
-      const courseId = courseScope === "all" ? null : courseScope;
-      upsertSpecialTuitionGrant({
+      code = validateAdminActionCodeOrThrow(adminActionCode);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Enter your admin code.");
+      return;
+    }
+    const courseId = courseScope === "all" ? null : courseScope;
+    upsertMutation.mutate(
+      {
         email: emailInput,
         courseId,
-        courseTitle: courseId ? courseTitleById.get(courseId) : undefined,
         note: noteInput,
-      });
-      toast.success(t("admin.specialTuition.toast.saved"), {
-        description: courseId
-          ? `${emailInput.trim()} can enroll in this class for free.`
-          : `${emailInput.trim()} can enroll in any class for free.`,
-      });
-      setEmailInput("");
-      setNoteInput("");
-      setCourseScope("all");
+        active: true,
+        adminActionCode: code,
+      },
+      {
+        onSuccess: () => {
+          toast.success(t("admin.specialTuition.toast.saved"), {
+            description: courseId
+              ? `${emailInput.trim()} can enroll in this class for free.`
+              : `${emailInput.trim()} can enroll in any class for free.`,
+          });
+          setEmailInput("");
+          setNoteInput("");
+          setCourseScope("all");
+        },
+        onError: (e) => {
+          toast.error(e instanceof Error ? e.message : "Could not save grant.");
+        },
+      },
+    );
+  };
+
+  const handleToggle = (grant: (typeof grants)[number], checked: boolean) => {
+    let code: string;
+    try {
+      code = validateAdminActionCodeOrThrow(adminActionCode);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not save grant.");
+      toast.error(e instanceof Error ? e.message : "Enter your admin code.");
+      return;
     }
+    toggleActiveMutation.mutate(
+      { email: grant.studentEmail, courseId: grant.courseId ?? null, active: checked, code },
+      {
+        onSuccess: () => toast.success(checked ? t("admin.specialTuition.toast.enabled") : "Grant paused"),
+        onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update grant."),
+      },
+    );
+  };
+
+  const handleDelete = (grantId: string) => {
+    let code: string;
+    try {
+      code = validateAdminActionCodeOrThrow(adminActionCode);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Enter your admin code.");
+      return;
+    }
+    deleteMutation.mutate({ id: grantId, code });
   };
 
   return (
@@ -147,13 +220,15 @@ export default function AdminSpecialTuitionPage() {
                 className="bg-white"
               />
             </div>
+
+            <AdminActionCodeField id="grant-action-code" value={adminActionCode} onChange={setAdminActionCode} />
           </div>
 
           <Button
             type="button"
             className="mt-5 bg-slate-900 hover:bg-slate-800"
             onClick={handleAddGrant}
-            disabled={!emailInput.trim()}
+            disabled={!emailInput.trim() || upsertMutation.isPending}
           >
             <Plus className="mr-2 h-4 w-4" />
             Save grant
@@ -182,7 +257,7 @@ export default function AdminSpecialTuitionPage() {
               ) : (
                 grants.map((grant) => (
                   <TableRow key={grant.id}>
-                    <TableCell className="font-mono text-xs text-slate-900">{grant.email}</TableCell>
+                    <TableCell className="font-mono text-xs text-slate-900">{grant.studentEmail}</TableCell>
                     <TableCell className="max-w-[220px] text-slate-800">
                       {grant.courseId
                         ? grant.courseTitle ?? courseTitleById.get(grant.courseId) ?? grant.courseId
@@ -192,11 +267,8 @@ export default function AdminSpecialTuitionPage() {
                     <TableCell>
                       <Switch
                         checked={grant.active}
-                        onCheckedChange={(checked) => {
-                          setSpecialTuitionGrantActive(grant.id, checked);
-                          toast.success(checked ? t("admin.specialTuition.toast.enabled") : "Grant paused");
-                        }}
-                        aria-label={`Toggle grant for ${grant.email}`}
+                        onCheckedChange={(checked) => handleToggle(grant, checked)}
+                        aria-label={`Toggle grant for ${grant.studentEmail}`}
                       />
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-slate-600">
@@ -208,11 +280,8 @@ export default function AdminSpecialTuitionPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-slate-500 hover:text-red-600"
-                        onClick={() => {
-                          deleteSpecialTuitionGrant(grant.id);
-                          toast.success(t("admin.specialTuition.toast.removed"));
-                        }}
-                        aria-label={`Remove grant for ${grant.email}`}
+                        onClick={() => handleDelete(grant.id)}
+                        aria-label={`Remove grant for ${grant.studentEmail}`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

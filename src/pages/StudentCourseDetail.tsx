@@ -62,7 +62,7 @@ import {
   useAdminCourseLocalDataVersion,
 } from "@/features/admin/utils/adminCourseScheduleDisplay";
 import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
-import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
+import { deriveScheduleWorkflow } from "@/features/courses/courseScheduleWorkflow";
 import {
   classScheduleStatusHint,
   formatSessionTimeLabel,
@@ -94,11 +94,7 @@ import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentAppl
 import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
 import { isCourseScheduleFinished } from "@/features/courses/courseScheduleCompletion";
 import { hasSeenCourseCongrats } from "@/features/student/courseCongratsSeenStorage";
-import {
-  CLASS_PHOTOS_CHANGED_EVENT,
-  MAX_CLASS_PHOTOS,
-  resolveClassPhotoUrls,
-} from "@/features/courses/classPhotoStore";
+import { MAX_CLASS_PHOTOS } from "@/features/courses/classPhotos";
 
 function nameInitials(name: string, max = 2): string {
   const t = name.trim();
@@ -378,7 +374,7 @@ function resolveStudentSessionSlots(
         sessionTime: s.sessionTime ?? "",
       }));
     }
-    const wf = courseScheduleWorkflowStore.get(courseId);
+    const wf = deriveScheduleWorkflow(apiDetail);
     const useProposal = wf?.status === "approved";
     if (useProposal) {
       const p = courseScheduleProposalStore.get(courseId);
@@ -566,17 +562,7 @@ const StudentCourseDetail = () => {
       ? tabRaw
       : "content";
 
-  const [classPhotosTick, setClassPhotosTick] = useState(0);
-  useEffect(() => {
-    const bump = () => setClassPhotosTick((n) => n + 1);
-    window.addEventListener(CLASS_PHOTOS_CHANGED_EVENT, bump);
-    return () => window.removeEventListener(CLASS_PHOTOS_CHANGED_EVENT, bump);
-  }, []);
-
-  const classPhotoUrls = useMemo(
-    () => resolveClassPhotoUrls(courseId, apiCourseDetail?.classPhotoUrls),
-    [courseId, apiCourseDetail?.classPhotoUrls, classPhotosTick],
-  );
+  const classPhotoUrls = apiCourseDetail?.classPhotoUrls ?? [];
 
   const onCourseTabChange = (value: string) => {
     setSearchParams(
@@ -706,7 +692,7 @@ const StudentCourseDetail = () => {
           classEndDate: bounds.end,
         };
       }
-      const wf = courseScheduleWorkflowStore.get(courseId);
+      const wf = deriveScheduleWorkflow(apiCourseDetail);
       const useProposal = wf?.status === "approved";
       return mergeScheduleDisplayForAdminReview(courseId, apiCourseDetail, {
         useLocalProposalSnapshot: useProposal,
@@ -733,7 +719,7 @@ const StudentCourseDetail = () => {
 
   const scheduleStatusHint = useMemo(() => {
     const isApi = Boolean(apiCourseDetail && courseId && isUuid(courseId));
-    return classScheduleStatusHint(courseId, isApi, apiScheduleProposal, allSessionSlots.length > 0);
+    return classScheduleStatusHint(courseId, isApi, apiScheduleProposal, allSessionSlots.length > 0, apiCourseDetail);
   }, [courseId, apiCourseDetail, apiScheduleProposal, allSessionSlots.length]);
 
   /** Sum of sessions across admin month plans (`sessionCount` on propose). */

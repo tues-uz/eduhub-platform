@@ -1,15 +1,6 @@
 import type { AdminPaymentRow, PaymentStatus } from "@/api/eduhubTypes";
 import type { InstallmentPaymentResponse } from "@/api/eduhubTypes";
-import {
-  DEFAULT_INSTRUCTOR_REVENUE_SHARE,
-  getInstructorRevenueShare,
-  getPlatformRevenueShare,
-} from "@/features/payroll/instructorRevenueShareStorage";
-
-/** @deprecated Use {@link DEFAULT_INSTRUCTOR_REVENUE_SHARE} or {@link getInstructorRevenueShare}. */
-export const INSTRUCTOR_REVENUE_SHARE = DEFAULT_INSTRUCTOR_REVENUE_SHARE;
-/** @deprecated Use {@link getPlatformRevenueShare}. */
-export const PLATFORM_REVENUE_SHARE = 1 - DEFAULT_INSTRUCTOR_REVENUE_SHARE;
+import { DEFAULT_INSTRUCTOR_REVENUE_SHARE } from "@/features/payroll/revenueShare";
 
 export function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
@@ -59,13 +50,12 @@ export function mergeCurrencyMaps(a: Map<string, number>, b: Map<string, number>
 
 export function estimateInstructorAndPlatformSplitLines(
   totalByCurrency: Map<string, number>,
-  instructorEmail?: string | null,
+  instructorShare: number,
 ): {
   instructorLines: ReturnType<typeof currencyMapToFormattedLines>;
   platformLines: ReturnType<typeof currencyMapToFormattedLines>;
 } {
-  const instructorShare = getInstructorRevenueShare(instructorEmail);
-  const platformShare = getPlatformRevenueShare(instructorEmail);
+  const platformShare = 1 - instructorShare;
   const instructor = new Map<string, number>();
   const platform = new Map<string, number>();
   for (const [currency, amount] of totalByCurrency.entries()) {
@@ -76,21 +66,6 @@ export function estimateInstructorAndPlatformSplitLines(
     instructorLines: currencyMapToFormattedLines(instructor),
     platformLines: currencyMapToFormattedLines(platform),
   };
-}
-
-export function estimateInstructorPayoutLines(
-  paidByCurrency: Map<string, number>,
-  instructorEmail?: string | null,
-) {
-  const instructorShare = getInstructorRevenueShare(instructorEmail);
-  return currencyMapToFormattedLines(
-    new Map(
-      Array.from(paidByCurrency.entries()).map(([currency, amount]) => [
-        currency,
-        Math.round(amount * instructorShare),
-      ]),
-    ),
-  );
 }
 
 /** Group payment rows by class section + course (same keys as admin payroll cards). */
@@ -167,8 +142,15 @@ export function aggregateInstallmentPaymentsByClass(rows: InstallmentPaymentResp
 export function buildPayrollSummaryText(agg: ClassPayrollAggregate): string {
   const paidLines = currencyMapToFormattedLines(agg.paidByCurrency);
   const outLines = currencyMapToFormattedLines(agg.outstandingByCurrency);
-  const instructorShare = getInstructorRevenueShare(agg.lecturerEmail);
-  const estLines = estimateInstructorPayoutLines(agg.paidByCurrency, agg.lecturerEmail);
+  const instructorShare = DEFAULT_INSTRUCTOR_REVENUE_SHARE;
+  const estLines = currencyMapToFormattedLines(
+    new Map(
+      Array.from(agg.paidByCurrency.entries()).map(([currency, amount]) => [
+        currency,
+        Math.round(amount * instructorShare),
+      ]),
+    ),
+  );
   const col = paidLines.length ? paidLines.map((l) => l.formatted).join(", ") : "—";
   const out = outLines.length ? outLines.map((l) => l.formatted).join(", ") : "—";
   const est = estLines.length ? estLines.map((l) => l.formatted).join(", ") : "—";

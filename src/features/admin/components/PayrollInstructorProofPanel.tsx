@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { adminPayrollHistoryStore } from "@/features/admin/data/adminPayrollHistoryStore";
 import { useTranslation } from "react-i18next";
 import {
   adminPayrollProofStore,
@@ -15,7 +14,6 @@ import {
   payrollProofKey,
   usePayrollProofMap,
 } from "@/features/admin/data/adminPayrollProofStore";
-import { notifyInstructorPayrollSubmitted } from "@/features/notifications/appNotificationStore";
 
 function formatShortDate(iso: string) {
   try {
@@ -115,29 +113,7 @@ export function PayrollInstructorProofPanel({
       toast.error(t("admin.components.payrollProofPanel.toast.approveFailed"));
       return;
     }
-    adminPayrollHistoryStore.add({
-      classSection: className,
-      course,
-      instructorName: instructorName ?? "—",
-      instructorEmail: instructorEmail?.trim() || undefined,
-      summary: payrollSummary ?? "—",
-      notesPreview: notesDraft.trim() ? notesDraft.trim().slice(0, 160) : undefined,
-    });
-    notifyInstructorPayrollSubmitted({
-      instructorEmailNorm: instructorEmail?.trim() ?? "",
-      instructorName: (instructorName ?? "").trim(),
-      classSection: className,
-      course,
-      summary: payrollSummary ?? "",
-      adminNote: notesDraft.trim() || undefined,
-    });
-    const canRouteNotify =
-      Boolean(instructorEmail?.trim()) || Boolean((instructorName ?? "").trim());
-    toast.success(t("admin.components.payrollProofPanel.toast.submittedApproved"), {
-      description: canRouteNotify
-        ? "Instructor notified in-app (demo: same browser storage)."
-        : "No instructor email or name on this page — notification skipped. Open proof from a class card or payroll request so instructor context is set.",
-    });
+    toast.success(t("admin.components.payrollProofPanel.toast.submittedApproved"));
   };
 
   const onRemove = () => {

@@ -28,15 +28,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { appRoutes } from "@/app/routes";
-import { getAccessToken } from "@/api/eduhubClient";
-import { useAuthSession } from "@/features/auth/context";
-import {
-  submitTeacherComplaint,
-  TEACHER_COMPLAINT_MOODS,
-  type TeacherComplaintCategory,
-  type TeacherComplaintMood,
-} from "@/features/student/teacherComplaintStore";
+import { getAccessToken, eduhubComplaints } from "@/api/eduhubClient";
 import { cn } from "@/lib/utils";
+
+export type TeacherComplaintCategory = "teacher" | "class" | "other";
+/** 1 = very sad … 5 = very happy */
+export type TeacherComplaintMood = 1 | 2 | 3 | 4 | 5;
+
+export const TEACHER_COMPLAINT_MOODS: readonly { value: TeacherComplaintMood; emoji: string }[] = [
+  { value: 1, emoji: "😢" },
+  { value: 2, emoji: "😕" },
+  { value: 3, emoji: "😐" },
+  { value: 4, emoji: "🙂" },
+  { value: 5, emoji: "😊" },
+] as const;
 
 type Props = {
   courseId: string;
@@ -47,13 +52,10 @@ type Props = {
 
 export function ClassDetailActionsMenu({
   courseId,
-  courseTitle,
   teacherName,
-  teacherId,
 }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuthSession();
   const signedIn = Boolean(getAccessToken());
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<TeacherComplaintCategory>("teacher");
@@ -79,7 +81,7 @@ export function ClassDetailActionsMenu({
     setOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (mood == null) {
       toast.error(t("courseDetail.complaint.moodRequired"));
       return;
@@ -91,14 +93,8 @@ export function ClassDetailActionsMenu({
     }
     setSubmitting(true);
     try {
-      submitTeacherComplaint({
+      await eduhubComplaints.submit({
         courseId,
-        courseTitle,
-        teacherName,
-        teacherId,
-        studentId: user.id || undefined,
-        studentName: user.name || "Student",
-        studentEmail: user.email || "",
         category,
         mood,
         message: trimmed,

@@ -7,14 +7,7 @@ import { Button } from "@/components/ui/button";
 import { eduhubCompletion } from "@/api/eduhubClient";
 import type { CourseCertificateResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
-import { useAuthSession } from "@/features/auth/context";
 import { downloadCourseCertificatePdf } from "@/features/courses/courseCertificatePdf";
-import {
-  COURSE_CERTIFICATES_CHANGED,
-  listCertificatesForStudent,
-  type CourseCertificateRecord,
-} from "@/features/courses/courseCertificatesStorage";
-import { hasSubmittedBothReviews } from "@/features/student/courseReviewsStorage";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +18,7 @@ const formatDate = (dateString: string) =>
     year: "numeric",
   });
 
-type DisplayCertificate = CourseCertificateRecord | CourseCertificateResponse;
+type DisplayCertificate = CourseCertificateResponse;
 
 function CertificateCard({
   certificate,
@@ -141,16 +134,7 @@ function CertificateCard({
 }
 
 const StudentCertificates = () => {
-  const { user } = useAuthSession();
-  const emailNorm = user.email.trim().toLowerCase();
-  const [tick, setTick] = useState(0);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const bump = () => setTick((t) => t + 1);
-    window.addEventListener(COURSE_CERTIFICATES_CHANGED, bump);
-    return () => window.removeEventListener(COURSE_CERTIFICATES_CHANGED, bump);
-  }, []);
 
   const certificatesQuery = useQuery({
     queryKey: ["student", "certificates"],
@@ -163,11 +147,8 @@ const StudentCertificates = () => {
   );
 
   const readyCount = useMemo(
-    () =>
-      certificates.filter((c) =>
-        "reviewsComplete" in c ? c.reviewsComplete : hasSubmittedBothReviews(c.courseId, emailNorm),
-      ).length,
-    [certificates, emailNorm],
+    () => certificates.filter((c) => c.reviewsComplete).length,
+    [certificates],
   );
 
   return (
@@ -211,17 +192,15 @@ const StudentCertificates = () => {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-4">
           {certificates.map((c) => {
-            const reviewsComplete =
-              "reviewsComplete" in c ? c.reviewsComplete : hasSubmittedBothReviews(c.courseId, emailNorm);
             return (
               <CertificateCard
                 key={c.id}
                 certificate={c}
-                reviewsComplete={reviewsComplete}
+                reviewsComplete={c.reviewsComplete}
                 downloading={downloadingId === c.id}
                 onDownload={() => {
                   setDownloadingId(c.id);
-                  void downloadCourseCertificatePdf(c as CourseCertificateRecord)
+                  void downloadCourseCertificatePdf(c)
                     .then(() => toast.success("Certificate downloaded"))
                     .catch((e) =>
                       toast.error(e instanceof Error ? e.message : "Could not generate certificate PDF"),
