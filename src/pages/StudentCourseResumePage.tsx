@@ -19,7 +19,7 @@ const StudentCourseResumePage = () => {
   const courseId = rawCourseId ? decodeURIComponent(rawCourseId) : "";
   const resumeId = rawResumeId ? decodeURIComponent(rawResumeId) : "";
   const { user } = useAuthSession();
-  const emailNorm = user.email.trim().toLowerCase();
+  const emailNorm = (user.email ?? "").trim().toLowerCase();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
 
   const isApiCourse = Boolean(courseId) && isUuid(courseId);

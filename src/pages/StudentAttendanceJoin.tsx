@@ -165,7 +165,7 @@ export default function StudentAttendanceJoin() {
     setTuitionCheckDone(false);
     setTuitionBlock(null);
 
-    const emailNorm = user.email.trim().toLowerCase();
+    const emailNorm = (user.email ?? "").trim().toLowerCase();
     void (async () => {
       try {
         const [apps, sessions, course, proposal] = await Promise.all([

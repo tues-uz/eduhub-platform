@@ -33,8 +33,8 @@ type StoredReviews = {
 
 const memoryReviewsMap: Record<string, StoredReviews> = {};
 
-function storageKey(courseId: string, emailNorm: string): string {
-  return `${encodeURIComponent(courseId)}__${emailNorm.trim().toLowerCase()}`;
+function storageKey(courseId?: string | null, emailNorm?: string | null): string {
+  return `${encodeURIComponent((courseId ?? "").trim())}__${(emailNorm ?? "").trim().toLowerCase()}`;
 }
 
 function load(courseId: string, emailNorm: string): StoredReviews {

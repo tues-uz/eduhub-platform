@@ -24,15 +24,17 @@ function coalesceAvatarUrl(...candidates: (string | null | undefined)[]): string
 function mergeSessionAvatarUrl(
   apiAvatarUrl: string | null | undefined,
   previous: SessionUser,
-  nextEmail: string,
+  nextEmail?: string | null,
 ): string | undefined {
-  const sameUser = previous.email.trim().toLowerCase() === nextEmail.trim().toLowerCase();
+  const prevEmail = (previous.email || "").trim().toLowerCase();
+  const next = (nextEmail || "").trim().toLowerCase();
+  const sameUser = Boolean(prevEmail && next && prevEmail === next);
   return coalesceAvatarUrl(apiAvatarUrl, sameUser ? previous.avatarUrl : undefined);
 }
 
 export function resolveAvatarFromAuthResponse(
   apiAvatarUrl: string | null | undefined,
-  email: string,
+  email?: string | null,
 ): string | undefined {
   return mergeSessionAvatarUrl(apiAvatarUrl, readSessionUser(), email);
 }
@@ -60,8 +62,12 @@ function readSessionUser(): SessionUser {
 
 export function setSessionUser(user: SessionUser): void {
   if (user.id) localStorage.setItem(USER_ID_KEY, user.id);
-  localStorage.setItem("userName", user.name);
-  localStorage.setItem("userEmail", user.email);
+  localStorage.setItem("userName", user.name || "");
+  if (user.email) {
+    localStorage.setItem("userEmail", user.email);
+  } else {
+    localStorage.removeItem("userEmail");
+  }
   localStorage.setItem("userRole", user.role);
   if (user.avatarUrl) localStorage.setItem(USER_AVATAR_URL_KEY, user.avatarUrl);
   else localStorage.removeItem(USER_AVATAR_URL_KEY);
@@ -122,7 +128,7 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
         setSessionUser({
           id: me.id,
           name: me.fullName,
-          email: me.email,
+          email: me.email ?? (prev.email || undefined),
           role,
           staffRole,
           avatarUrl,

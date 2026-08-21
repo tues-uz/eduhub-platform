@@ -131,7 +131,7 @@ const StudentAvailableCourses = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuthSession();
-  const emailNorm = user.email.trim().toLowerCase();
+  const emailNorm = (user.email ?? "").trim().toLowerCase();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const { byCourse: applicationsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") ?? "");

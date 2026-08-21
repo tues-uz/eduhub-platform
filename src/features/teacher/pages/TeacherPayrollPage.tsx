@@ -246,7 +246,7 @@ export default function TeacherPayrollPage() {
     };
   }, [user.id]);
 
-  const emailNorm = user.email.trim().toLowerCase();
+  const emailNorm = (user.email ?? "").trim().toLowerCase();
   const nameNorm = (user.name ?? "").trim().toLowerCase();
   const instructorLabel = user.name?.trim() || "Instructor";
 

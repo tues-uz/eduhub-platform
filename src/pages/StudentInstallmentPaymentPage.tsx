@@ -76,7 +76,7 @@ export default function StudentInstallmentPaymentPage() {
   const { applicationId } = useParams<{ applicationId: string }>();
   const [searchParams] = useSearchParams();
   const { user } = useAuthSession();
-  const emailNorm = user.email.trim().toLowerCase();
+  const emailNorm = (user.email ?? "").trim().toLowerCase();
 
   const [application, setApplication] = useState<EnrollmentApplicationResponse | null>(null);
   const [loading, setLoading] = useState(true);

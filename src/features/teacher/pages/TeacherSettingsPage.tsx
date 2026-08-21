@@ -76,7 +76,7 @@ export default function TeacherSettingsPage() {
   }, [apiCourses]);
 
   const accountDetails = useMemo(() => {
-    const email = (apiUser?.email ?? user.email).trim() || "—";
+    const email = (apiUser?.email ?? user.email ?? "").trim() || "—";
     const phone = (apiUser?.phoneNumber ?? user.phoneNumber ?? "").trim() || "—";
     const category = resolveInstructorCategory(email, apiUser?.category ?? user.category).trim() || "—";
     return {

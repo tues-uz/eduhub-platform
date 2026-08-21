@@ -21,9 +21,9 @@ export function formatContractShareLabel(instructorShare: number): string {
 export function useMyInstructorRevenueShare(): number {
   const { user } = useAuthSession();
   const { data } = useQuery({
-    queryKey: ["me", "revenue-share", user.email],
+    queryKey: ["me", "revenue-share", user.email || user.id],
     queryFn: eduhubAuth.me,
-    enabled: Boolean(user.email) && user.role === "teacher",
+    enabled: Boolean(user.email || user.id) && user.role === "teacher",
     staleTime: 5 * 60 * 1000,
   });
   return resolveInstructorShare(data?.instructorRevenueShare);

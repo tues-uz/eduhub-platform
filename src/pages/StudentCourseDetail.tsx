@@ -486,7 +486,7 @@ const StudentCourseDetail = () => {
   const [completedStudentQuizIds, setCompletedStudentQuizIds] = useState<Set<string>>(() => new Set());
 
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
-  const emailNorm = user.email.trim().toLowerCase();
+  const emailNorm = (user.email ?? "").trim().toLowerCase();
   const { byCourse: enrollmentAppsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
   const [enrollmentStoreTick, setEnrollmentStoreTick] = useState(0);
 

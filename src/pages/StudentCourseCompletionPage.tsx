@@ -354,7 +354,7 @@ const StudentCourseCompletionPage = () => {
   const state = (location.state as LocationState | null) ?? {};
   const { user } = useAuthSession();
   const queryClient = useQueryClient();
-  const emailNorm = user.email.trim().toLowerCase();
+  const emailNorm = (user.email ?? "").trim().toLowerCase();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const { byCourse: enrollmentAppsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
   const [completionTick, setCompletionTick] = useState(0);

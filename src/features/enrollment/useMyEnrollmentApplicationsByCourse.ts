@@ -3,9 +3,9 @@ import { eduhubEnrollmentApplications } from "@/api/eduhubClient";
 import type { EnrollmentApplicationResponse } from "@/api/eduhubTypes";
 import { indexEnrollmentApplicationsByCourse } from "@/features/enrollment/studentCourseEnrollmentStatus";
 
-export function useMyEnrollmentApplicationsByCourse(emailNorm: string) {
+export function useMyEnrollmentApplicationsByCourse(emailNorm?: string) {
   const [byCourse, setByCourse] = useState<Map<string, EnrollmentApplicationResponse>>(() => new Map());
-  const [loading, setLoading] = useState(Boolean(emailNorm));
+  const [loading, setLoading] = useState(Boolean(emailNorm?.trim()));
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -19,15 +19,11 @@ export function useMyEnrollmentApplicationsByCourse(emailNorm: string) {
   }, []);
 
   useEffect(() => {
-    if (!emailNorm) {
-      setByCourse(new Map());
-      setLoading(false);
-      return;
-    }
+    const normalized = (emailNorm ?? "").trim();
     let cancelled = false;
     setLoading(true);
     eduhubEnrollmentApplications
-      .getMy(emailNorm)
+      .getMy(normalized)
       .then((rows) => {
         if (!cancelled) setByCourse(indexEnrollmentApplicationsByCourse(rows));
       })

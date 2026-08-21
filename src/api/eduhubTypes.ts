@@ -14,7 +14,7 @@ export type StudentAffiliation = "INTERNAL" | "EXTERNAL";
 export interface UserResponse {
   id: string;
   fullName: string;
-  email: string;
+  email?: string;
   role: ApiRole;
   avatarUrl?: string;
   bio?: string;

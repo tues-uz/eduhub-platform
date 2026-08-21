@@ -16,10 +16,10 @@ import {
   persistUiLanguagePreference,
 } from "@/features/settings/LanguageSettingsSection";
 
-function formatRegistrationDate(value: string, notAvailable: string): string {
-  if (!value.trim()) return notAvailable;
-  const parsed = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(parsed.getTime())) return value;
+function formatRegistrationDate(value: string | undefined | null, notAvailable: string): string {
+  if (!value?.trim()) return notAvailable;
+  const parsed = new Date(`${value.trim()}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return value.trim();
   return parsed.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
@@ -50,7 +50,7 @@ const StudentSettings = () => {
   const notAvailable = t("common.notAvailable");
   const { user, refreshUser } = useAuthSession();
   const [name, setName] = useState(user.name);
-  const [email, setEmail] = useState(user.email);
+  const [email, setEmail] = useState(user.email ?? "");
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl ?? "");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -87,7 +87,7 @@ const StudentSettings = () => {
 
     return {
       fullName: formatDisplayPersonName(apiUser?.fullName ?? user.name),
-      email: (apiUser?.email ?? user.email).trim() || notAvailable,
+      email: (apiUser?.email ?? user.email ?? "").trim() || notAvailable,
       phone,
       parentPhone,
       passport,

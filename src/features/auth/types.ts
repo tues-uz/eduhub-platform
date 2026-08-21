@@ -5,7 +5,7 @@ export type { AdminStaffRole } from "@/features/admin/adminStaffRoles";
 export interface SessionUser {
   id?: string;
   name: string;
-  email: string;
+  email?: string;
   role: UserRole;
   /** Sub-type for admin staff (ADMIN_FINANCE, etc.). Super admin is ADMIN or omitted. */
   staffRole?: import("@/features/admin/adminStaffRoles").AdminStaffRole;

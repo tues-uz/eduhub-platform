@@ -511,8 +511,8 @@ const StudentEnrollmentApplicationPage = () => {
   }, [courseId]);
 
   useEffect(() => {
-    if (!courseId || !user.email.trim()) return;
-    const emailNorm = user.email.trim().toLowerCase();
+    if (!courseId || !(user.email ?? "").trim()) return;
+    const emailNorm = (user.email ?? "").trim().toLowerCase();
     eduhubEnrollmentApplications
       .getMyPending(courseId, emailNorm)
       .then((pending) => {
@@ -591,8 +591,8 @@ const StudentEnrollmentApplicationPage = () => {
       toast.error(`This class is full (${TEACHER_CLASS_MAX_STUDENTS} students). New enrollments are closed.`);
       return;
     }
-    const emailNorm = user.email.trim().toLowerCase();
-    if (!user.name.trim() || !user.email.trim() || !primaryPhone || !address.trim()) {
+    const emailNorm = (user.email ?? "").trim().toLowerCase();
+    if (!user.name?.trim() || !primaryPhone || !address.trim()) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -704,7 +704,7 @@ const StudentEnrollmentApplicationPage = () => {
       await eduhubEnrollmentApplications.submit({
         courseId,
         fullName: user.name.trim(),
-        email: user.email.trim(),
+        email: (user.email ?? "").trim(),
         phone: primaryPhone,
         phoneSecondary: phoneSecondary.trim() || undefined,
         address: address.trim(),
@@ -729,7 +729,7 @@ const StudentEnrollmentApplicationPage = () => {
         courseId,
         tuitionLabel: affiliationPriceDisplay || "—",
         fullName: user.name.trim(),
-        email: user.email.trim(),
+        email: (user.email ?? "").trim(),
         phone: primaryPhone,
         phoneSecondary: phoneSecondary.trim() || undefined,
         address: address.trim(),
@@ -995,7 +995,7 @@ const StudentEnrollmentApplicationPage = () => {
                         readOnly
                         aria-readonly="true"
                         className={`mt-1.5 h-11 ${readonlyProfileClass}`}
-                        value={user.email}
+                        value={user.email || ""}
                         autoComplete="email"
                       />
                     </div>

@@ -252,7 +252,7 @@ const StudentAvailableCourseDetailPage = () => {
       .catch(() => setLatestSchool(undefined));
   }, []);
 
-  const emailNorm = user.email.trim().toLowerCase();
+  const emailNorm = (user.email ?? "").trim().toLowerCase();
   const { byCourse: applicationsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
   const enrollmentStatus = useMemo(
     () =>

@@ -108,7 +108,7 @@ export default function TeacherDashboardLayout() {
                 </span>
                 <p className="truncate text-xs font-medium text-foreground">{userName}</p>
               </div>
-              <p className="max-w-[16rem] truncate text-[11px] text-muted-foreground">{user.email}</p>
+              <p className="max-w-[16rem] truncate text-[11px] text-muted-foreground">{user.email || user.phoneNumber || "—"}</p>
             </div>
             <div
               className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-teal-500 to-emerald-600"

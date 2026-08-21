@@ -178,7 +178,7 @@ const StudentEnrollmentSuccessPage = () => {
   const courseId = rawCourseId ? decodeURIComponent(rawCourseId) : undefined;
   const location = useLocation();
   const { user } = useAuthSession();
-  const emailNorm = user.email.trim().toLowerCase();
+  const emailNorm = (user.email ?? "").trim().toLowerCase();
 
   const pdfData = useMemo(
     () => resolvePdfData(courseId, emailNorm, location.state as LocationState | null),

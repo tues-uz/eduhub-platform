@@ -2,8 +2,8 @@ import { instructorProfileAvatarsStore } from "@/features/teacher/data/instructo
 
 /** Persist instructor avatar for catalog cards. */
 export function syncInstructorProfileAvatar(
-  email: string,
-  name: string,
+  email: string | undefined | null,
+  name: string | undefined | null,
   avatarUrl: string | undefined,
 ): void {
   instructorProfileAvatarsStore.set(email, name, avatarUrl);
