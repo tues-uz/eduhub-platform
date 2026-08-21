@@ -465,7 +465,6 @@ const StudentEnrollmentApplicationPage = () => {
   const proofInputRef = useRef<HTMLInputElement>(null);
   const [idCardFile, setIdCardFile] = useState<File | null>(null);
   const idCardInputRef = useRef<HTMLInputElement>(null);
-  const [cashPaymentProofUrl, setCashPaymentProofUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const isClassFull = isTeacherClassFull(apiCourse?.enrollmentCount);
@@ -610,12 +609,6 @@ const StudentEnrollmentApplicationPage = () => {
         toast.error("ID document must be 2 MB or smaller.");
         return;
       }
-    } else if (!specialTuitionGrant && paymentMethod === "CASH") {
-      const url = cashPaymentProofUrl.trim();
-      if (url && !/^https?:\/\//i.test(url)) {
-        toast.error("Payment proof URL must start with http:// or https://");
-        return;
-      }
     }
     if (!monthlyPaymentFields) {
       toast.error("Select at least one month to pay for.");
@@ -651,16 +644,10 @@ const StudentEnrollmentApplicationPage = () => {
         } finally {
           toast.dismiss("enrollment-upload");
         }
-      } else if (!specialTuitionGrant && paymentMethod === "CASH") {
-        const cashUrl = cashPaymentProofUrl.trim();
-        proofUrl = cashUrl || undefined;
       }
 
       const paymentDetailLines: string[] = [];
       paymentDetailLines.push(`Payment method: ${formatPaymentMethodLabel(paymentMethod)}`);
-      if (paymentMethod === "CASH" && proofUrl) {
-        paymentDetailLines.push(`Cash payment proof URL: ${proofUrl}`);
-      }
       paymentDetailLines.push(
         paymentPlan === "FULL"
           ? `Payment plan: ${monthlyPaymentPlanLabel(monthlyPaymentFields.selectedCount, monthlyPaymentFields.scheduleMonthCount)}`
@@ -750,11 +737,9 @@ const StudentEnrollmentApplicationPage = () => {
         proofFileName:
           requiresVerificationUploads && file
             ? file.name
-            : paymentMethod === "CASH" && cashPaymentProofUrl.trim()
-              ? cashPaymentProofUrl.trim()
-              : paymentMethod === "CASH"
-                ? "Not provided (optional)"
-                : "Not required (cash)",
+            : requiresVerificationUploads
+              ? "Not provided (optional)"
+              : "Not required (cash)",
         idFileName:
           requiresVerificationUploads && idCardFile
             ? idCardFile.name
@@ -882,13 +867,13 @@ const StudentEnrollmentApplicationPage = () => {
                 aria-label="Course summary"
               >
                 <div className="min-h-0 min-w-0 lg:flex lg:h-full lg:min-h-0 lg:flex-1 lg:flex-col">
-                  <header className="flex min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm lg:flex lg:h-full lg:min-h-0 lg:flex-1 lg:flex-col lg:rounded-none lg:border-0 lg:shadow-none">
-                    <div className="relative aspect-[2/1] w-full overflow-hidden bg-gradient-to-b from-zinc-100 to-zinc-200/80 sm:aspect-[21/9] lg:min-h-0 lg:flex-1 lg:aspect-auto">
+                  <header className="flex min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm lg:flex lg:flex-col lg:rounded-none lg:border-0 lg:shadow-none">
+                    <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-b from-zinc-100 to-zinc-200/80">
                       {courseThumbnailUrl ? (
                         <img
                           src={courseThumbnailUrl}
                           alt=""
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-cover object-top"
                         />
                       ) : loadingCourse ? (
                         <div className="h-full w-full animate-pulse bg-zinc-200/90" />
@@ -1070,7 +1055,7 @@ const StudentEnrollmentApplicationPage = () => {
               description={
                 requiresVerificationUploads
                   ? "Choose how you pay and your plan. Review the schedule below before you transfer."
-                  : "Choose cash payment and your plan. You can optionally paste a proof URL after you pay at the school office."
+                  : "Choose cash payment and your plan."
               }
             >
               <fieldset className="min-w-0 border-0 p-0 shadow-none">
@@ -1090,28 +1075,6 @@ const StudentEnrollmentApplicationPage = () => {
                     <span className="text-sm font-medium text-zinc-900">Cash</span>
                   </label>
                 </RadioGroup>
-                {paymentMethod === "CASH" && !specialTuitionGrant ? (
-                  <div className="mt-4">
-                    <Label htmlFor="enrollment-cash-proof-url" className="text-zinc-700">
-                      Payment proof URL{" "}
-                      <span className="font-normal text-zinc-400">(optional)</span>
-                    </Label>
-                    <Input
-                      id="enrollment-cash-proof-url"
-                      type="url"
-                      inputMode="url"
-                      value={cashPaymentProofUrl}
-                      onChange={(e) => setCashPaymentProofUrl(e.target.value)}
-                      placeholder="https://…"
-                      autoComplete="off"
-                      className="mt-1.5 h-11 rounded-xl border-zinc-200"
-                    />
-                    <p className="mt-1.5 text-xs text-zinc-500">
-                      Optional. Paste a link to your cash payment receipt or confirmation (http:// or
-                      https://).
-                    </p>
-                  </div>
-                ) : null}
               </fieldset>
               <fieldset className="mt-6 min-w-0 border-0 border-t border-zinc-100 p-0 pt-6 shadow-none">
                 <legend className="sr-only">Payment plan</legend>

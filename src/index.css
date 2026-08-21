@@ -354,3 +354,36 @@
 .teacher-course-form-page select {
     font-family: 'DM Sans', sans-serif !important;
 }
+
+/* Header motto typewriter caret */
+@keyframes eduhub-motto-caret-blink {
+    0%,
+    45% {
+        opacity: 1;
+    }
+    50%,
+    100% {
+        opacity: 0;
+    }
+}
+
+.eduhub-motto-line {
+    display: block;
+    white-space: nowrap;
+}
+
+.eduhub-motto-caret {
+    display: inline-block;
+    width: 0.08em;
+    height: 0.95em;
+    margin-left: 0.08em;
+    vertical-align: -0.05em;
+    background: currentColor;
+    animation: eduhub-motto-caret-blink 0.9s steps(1, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .eduhub-motto-caret {
+        display: none;
+    }
+}
