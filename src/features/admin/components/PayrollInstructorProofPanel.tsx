@@ -116,8 +116,8 @@ export function PayrollInstructorProofPanel({
     toast.success(t("admin.components.payrollProofPanel.toast.submittedApproved"));
   };
 
-  const onRemove = () => {
-    adminPayrollProofStore.remove(className, course);
+  const onRemove = async () => {
+    await adminPayrollProofStore.remove(className, course, requestId);
     toast.message(t("admin.components.payrollProofPanel.toast.fileRemoved"));
   };
 
@@ -257,7 +257,7 @@ export function PayrollInstructorProofPanel({
                 variant="ghost"
                 size="sm"
                 className="w-full gap-1.5 text-red-600 hover:bg-red-50 hover:text-red-700"
-                onClick={onRemove}
+                onClick={() => void onRemove()}
               >
                 <Trash2 className="h-3.5 w-3.5" aria-hidden />
                 Remove file

@@ -9,6 +9,8 @@ export type ApiRole =
   | "LECTURER"
   | "STUDENT";
 
+export type StudentAffiliation = "INTERNAL" | "EXTERNAL";
+
 export interface UserResponse {
   id: string;
   fullName: string;
@@ -35,6 +37,10 @@ export interface UserResponse {
   birthCity?: string;
   /** Most recent school the student attended. */
   latestSchool?: string;
+  /** Student affiliation (internal TUES vs external). */
+  studentAffiliation?: StudentAffiliation;
+  /** Faculty name for internal TUES students. */
+  faculty?: string;
   enabled?: boolean;
   passwordChanged?: boolean;
   createdAt?: string;
@@ -68,6 +74,10 @@ export interface RegisterRequest {
   birthCity: string;
   /** Most recent school the student attended. */
   latestSchool: string;
+  /** Student affiliation (internal TUES vs external). */
+  studentAffiliation?: StudentAffiliation;
+  /** Faculty name for internal TUES students. */
+  faculty?: string;
   password: string;
   role: "STUDENT" | ApiRole;
 }

@@ -79,6 +79,11 @@ const StudentSettings = () => {
     const dateOfBirth = formatRegistrationDate(apiUser?.dateOfBirth ?? "", notAvailable);
     const birthCity = (apiUser?.birthCity ?? "").trim() || notAvailable;
     const latestSchool = (apiUser?.latestSchool ?? "").trim() || notAvailable;
+    const isInternal =
+      apiUser?.studentAffiliation === "INTERNAL" ||
+      (apiUser?.latestSchool ? apiUser.latestSchool.startsWith("TUES University") : false);
+    const affiliation = isInternal ? "Internal (TUES University)" : "External";
+    const faculty = (apiUser?.faculty ?? "").trim() || notAvailable;
 
     return {
       fullName: formatDisplayPersonName(apiUser?.fullName ?? user.name),
@@ -92,6 +97,9 @@ const StudentSettings = () => {
       dateOfBirth,
       birthCity,
       latestSchool,
+      affiliation,
+      faculty,
+      isInternal,
     };
   }, [apiUser, notAvailable, user.email, user.name, user.phoneNumber]);
 
@@ -294,6 +302,10 @@ const StudentSettings = () => {
                 ) : null}
                 <RegistrationDetail icon={Calendar} label={t("settings.dateOfBirth")} value={registrationDetails.dateOfBirth} notAvailable={notAvailable} />
                 <RegistrationDetail icon={MapPin} label={t("settings.bornCity")} value={registrationDetails.birthCity} notAvailable={notAvailable} />
+                <RegistrationDetail icon={GraduationCap} label={t("settings.studentAffiliation") || "Affiliation"} value={registrationDetails.affiliation} notAvailable={notAvailable} />
+                {registrationDetails.isInternal ? (
+                  <RegistrationDetail icon={GraduationCap} label={t("auth.signUp.faculty") || "Faculty"} value={registrationDetails.faculty} notAvailable={notAvailable} />
+                ) : null}
                 <RegistrationDetail icon={GraduationCap} label={t("settings.latestSchool")} value={registrationDetails.latestSchool} notAvailable={notAvailable} />
               </div>
             </div>
