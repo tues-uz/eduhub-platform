@@ -27,11 +27,77 @@ const SHORT_LANGUAGE_LABEL: Record<UiLanguageCode, string> = {
   zh: "中文",
 };
 
+const MOTTO_LINE_1 = "Learn today";
+const MOTTO_LINE_2 = "Lead tomorrow";
+
+function useLoopingMottoReveal(line1: string, line2: string) {
+  const [visible1, setVisible1] = useState("");
+  const [visible2, setVisible2] = useState("");
+  const [activeLine, setActiveLine] = useState<1 | 2>(1);
+
+  useEffect(() => {
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (reduceMotion) {
+      setVisible1(line1);
+      setVisible2(line2);
+      setActiveLine(2);
+      return;
+    }
+
+    let cancelled = false;
+    let timeoutId = 0;
+
+    const wait = (ms: number) =>
+      new Promise<void>((resolve) => {
+        timeoutId = window.setTimeout(resolve, ms);
+      });
+
+    const run = async () => {
+      while (!cancelled) {
+        setVisible1("");
+        setVisible2("");
+        setActiveLine(1);
+        await wait(280);
+
+        for (let i = 1; i <= line1.length; i += 1) {
+          if (cancelled) return;
+          setVisible1(line1.slice(0, i));
+          await wait(55);
+        }
+
+        await wait(220);
+        setActiveLine(2);
+
+        for (let i = 1; i <= line2.length; i += 1) {
+          if (cancelled) return;
+          setVisible2(line2.slice(0, i));
+          await wait(55);
+        }
+
+        await wait(2200);
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [line1, line2]);
+
+  return { visible1, visible2, activeLine };
+}
+
 const EduHubHeader = () => {
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [language, setLanguage] = useState<UiLanguageCode>(() => getUiLanguage());
   const currentLanguage = uiLanguageOption(language);
+  const { visible1, visible2, activeLine } = useLoopingMottoReveal(MOTTO_LINE_1, MOTTO_LINE_2);
 
   useEffect(() => {
     const sync = () => setLanguage(getUiLanguage());
@@ -52,14 +118,28 @@ const EduHubHeader = () => {
     >
       <nav className="px-6 lg:px-20">
         <div className="flex items-center justify-between h-[80px] relative">
-          {/* Logo */}
+          {/* Logo + tagline */}
           <div className="flex items-center gap-4">
-            <Link to={appRoutes.home} className="flex items-center py-1">
+            <Link to={appRoutes.home} className="flex items-center gap-2 py-1">
               <img
                 src="/logo-eduhub.png"
                 alt="EduHub Logo"
                 className="h-10 w-auto object-contain"
               />
+              <span
+                className="eduhub-motto hidden sm:flex flex-col justify-center leading-[1.1] text-xs font-bold uppercase tracking-[0.08em] text-zinc-800 sm:text-[13px]"
+                aria-hidden
+              >
+                <span className="eduhub-motto-line min-h-[1.1em]">
+                  {visible1}
+                  {activeLine === 1 ? <span className="eduhub-motto-caret" /> : null}
+                </span>
+                <span className="eduhub-motto-line min-h-[1.1em]">
+                  {visible2}
+                  {activeLine === 2 ? <span className="eduhub-motto-caret" /> : null}
+                </span>
+              </span>
+              <span className="sr-only">Learn today, lead tomorrow</span>
             </Link>
           </div>
 
