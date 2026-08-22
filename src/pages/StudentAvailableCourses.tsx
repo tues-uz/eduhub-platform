@@ -18,7 +18,9 @@ import {
 import { useAuthSession } from "@/features/auth/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { useStudentCourseScheduleSummaries } from "@/features/student/hooks/useStudentCourseScheduleSummaries";
-import { eduhubAuth, eduhubCategories, getAccessToken } from "@/api/eduhubClient";
+import { eduhubAuth, eduhubCategories, eduhubCourseQuizzes, getAccessToken } from "@/api/eduhubClient";
+import { resolvePlacementGate, type PlacementGateStatus } from "@/features/enrollment/resolvePlacementGate";
+import { useCourseLevels, formatCourseLevel } from "@/features/teacher/data/courseLevels";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
 import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
 import {
@@ -58,6 +60,10 @@ type AvailableCourseItem = {
   thumbnailUrl?: string;
   enrollmentCount?: number;
   enrolledStudents?: StudentAvatarPreview[];
+  /** Placement-test subject this class belongs to, if it's level-gated. */
+  subject?: string;
+  /** Required class level, if it's level-gated. */
+  level?: string;
   rejectionNote?: string;
 };
 
@@ -149,11 +155,42 @@ const StudentAvailableCourses = () => {
   const [loading, setLoading] = useState(true);
   const [enrollmentStoreTick, setEnrollmentStoreTick] = useState(0);
   const [latestSchool, setLatestSchool] = useState<string | undefined>();
+  const [achievedLevelBySubject, setAchievedLevelBySubject] = useState<Map<string, string>>(new Map());
+  const [publishedTestSubjects, setPublishedTestSubjects] = useState<Set<string>>(new Set());
+  const { levels: courseLevels } = useCourseLevels();
+  const levelSortOrderByCode = useMemo(
+    () => new Map(courseLevels.filter((l) => l.sortOrder !== undefined).map((l) => [l.value, l.sortOrder as number])),
+    [courseLevels],
+  );
 
   useEffect(() => {
     eduhubCategories.getAll()
       .then((res) => setCategories((res || []).map((c) => c.name)))
       .catch((err) => console.error("Failed to load categories", err));
+  }, []);
+
+  useEffect(() => {
+    if (!getAccessToken()) {
+      setAchievedLevelBySubject(new Map());
+      setPublishedTestSubjects(new Set());
+      return;
+    }
+    eduhubCourseQuizzes
+      .getMyPlacementResults()
+      .then((results) =>
+        setAchievedLevelBySubject(
+          new Map((results || []).map((r) => [r.subject.trim().toLowerCase(), r.levelCode])),
+        ),
+      )
+      .catch(() => setAchievedLevelBySubject(new Map()));
+    eduhubCourseQuizzes
+      .getPlacementTests()
+      .then((tests) =>
+        setPublishedTestSubjects(
+          new Set((tests || []).filter((q) => q.subject).map((q) => q.subject!.trim().toLowerCase())),
+        ),
+      )
+      .catch(() => setPublishedTestSubjects(new Set()));
   }, []);
 
   useEffect(() => {
@@ -229,6 +266,8 @@ const StudentAvailableCourses = () => {
           currency: c.pricing?.currency,
           thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
           enrollmentCount: c.enrollmentCount,
+          subject: c.subject,
+          level: c.level,
           enrollmentStatus: enrollmentStatusFor(c.id),
           rejectionNote: resolveEnrollmentRejectionNote(applicationsByCourse.get(c.id)),
           progress: enrolledData?.progress,
@@ -372,6 +411,13 @@ const StudentAvailableCourses = () => {
                     : null;
                   const isClassFull = isTeacherClassFull(course.enrollmentCount);
                   const canJoinClass = canApplyToTeacherClass(course.enrollmentStatus, course.enrollmentCount);
+                  const placementGate: PlacementGateStatus = resolvePlacementGate({
+                    courseSubject: course.subject,
+                    courseLevel: course.level,
+                    publishedTestSubjects,
+                    achievedLevelBySubject,
+                    levelSortOrderByCode,
+                  });
 
                   return (
                   <div
@@ -575,6 +621,31 @@ const StudentAvailableCourses = () => {
                           >
                             {t("availableCourses.classFull")}
                           </Button>
+                        ) : placementGate.gated && placementGate.qualifies === false ? (
+                          <Link
+                            to="/dashboard/placement-tests"
+                            className="block"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-auto w-full rounded-xl border-violet-300 bg-violet-50 px-5 py-2.5 text-sm font-medium text-violet-900 hover:bg-violet-100"
+                            >
+                              {placementGate.reason === "no_attempt"
+                                ? t("availableCourses.placementGate.takeTest", {
+                                    subject: course.subject,
+                                    defaultValue: `Take the ${course.subject} placement test to join`,
+                                  })
+                                : placementGate.reason === "below_level"
+                                ? t("availableCourses.placementGate.belowLevel", {
+                                    achieved: formatCourseLevel(placementGate.achievedLevelCode),
+                                    required: formatCourseLevel(course.level),
+                                    defaultValue: `You're placed at ${formatCourseLevel(placementGate.achievedLevelCode)} — this class needs ${formatCourseLevel(course.level)}`,
+                                  })
+                                : null}
+                            </Button>
+                          </Link>
                         ) : (
                           <Link
                             to={`/dashboard/available-courses/enroll/${encodeURIComponent(course.linkId)}`}

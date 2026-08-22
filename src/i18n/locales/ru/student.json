@@ -133,7 +133,11 @@
     "clearFilters": "Сбросить фильтры",
     "defaultCategory": "Класс",
     "dayPatternOdd": "Нечётный день",
-    "dayPatternEven": "Чётный день"
+    "dayPatternEven": "Чётный день",
+    "placementGate": {
+      "takeTest": "Take the {{subject}} placement test to join",
+      "belowLevel": "You're placed at {{achieved}} — this class needs {{required}}"
+    }
   },
   "classSearch": {
     "placeholder": "Поиск классов…",

@@ -370,6 +370,7 @@
         "subjectLabel": "Subject (optional)",
         "subjectPlaceholder": "e.g. Russian, Korean, IT",
         "subjectHint": "If students take a placement test for this subject, only students who qualify at this class's level or above can enroll.",
+        "subjectNoGateWarning": "No published placement test exists for \"{{subject}}\" yet — this class will not actually be level-gated until an admin publishes one in Admin → Placement Tests.",
         "aboutLabel": "About this 课程 (optional)",
         "aboutPlaceholder": "What 学生s will learn — a sentence or two is enough.",
         "datesSectionTitle": "课程 dates (optional)",
@@ -476,6 +477,8 @@
     "quiz": {
       "loading": "加载中 quiz…",
       "backToQuizzes": "返回 to 课程 quizzes",
+      "backToClass": "Back to class",
+      "legacyPlacementNotice": "This test is now managed institution-wide in Admin → Placement Tests, not from a class.",
       "title": {
         "edit": "编辑 quiz",
         "create": "Create quiz"
@@ -497,37 +500,15 @@
           "remove": "移除",
           "previewAlt": "测验封面预览"
         },
-        "typeLabel": "Type",
-        "typePlaceholder": "Select type",
-        "typeHint": "测验 for practice or Placement test for assessment.",
         "classLabel": "课程",
         "classPlaceholder": "Select 课程",
         "noClass": "No 课程",
         "classLockedHint": "课程 is locked for this quiz.",
         "classPickerHint": "加载中…",
         "titleLabels": {
-          "placement": "Placement test title *",
           "quiz": "测验 title *"
         },
         "titlePlaceholder": "e.g. Economics Placement Test",
-        "subjectLabel": "Subject",
-        "subjectPlaceholder": "e.g. Russian, Korean, IT",
-        "subjectHint": "Must match a class's subject for the score bands below to gate its enrollment.",
-        "release": {
-          "label": "Release date and time",
-          "date": "Date",
-          "time": "Time",
-          "selectDate": "Select date",
-          "selectTime": "Select time"
-        },
-        "releaseHint": "When this placement test becomes available to 学生s.",
-        "bands": {
-          "label": "Score-to-level bands",
-          "hint": "Map score ranges to a level. The student's latest result sets their level for this subject.",
-          "minScore": "Minimum score",
-          "maxScore": "Maximum score",
-          "addRow": "Add band"
-        },
         "questionsTitle": "Questions (multiple choice)",
         "addQuestion": "Add question",
         "questionActions": {
@@ -551,10 +532,6 @@
         },
         "saveChanges": "保存 changes",
         "createQuiz": "Create quiz"
-      },
-      "types": {
-        "quiz": "测验",
-        "placementTest": "Placement test"
       },
       "errors": {
         "titleRequired": "测验 title is required.",

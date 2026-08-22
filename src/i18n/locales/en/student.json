@@ -138,7 +138,11 @@
     "clearFilters": "Clear filters",
     "defaultCategory": "Class",
     "dayPatternOdd": "Odd Day",
-    "dayPatternEven": "Even Day"
+    "dayPatternEven": "Even Day",
+    "placementGate": {
+      "takeTest": "Take the {{subject}} placement test to join",
+      "belowLevel": "You're placed at {{achieved}} — this class needs {{required}}"
+    }
   },
   "classSearch": {
     "placeholder": "Search classes…",

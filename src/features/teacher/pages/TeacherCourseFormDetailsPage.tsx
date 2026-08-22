@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Upload, Loader2, Image } from "@/lib/icons";
+import { Upload, Loader2, Image, AlertCircle } from "@/lib/icons";
+import { eduhubCourseQuizzes } from "@/api/eduhubClient";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +50,25 @@ const TeacherCourseFormDetailsPage = () => {
   } = useTeacherCourseForm();
 
   const { levels: availableLevels } = useCourseLevels();
+  const [publishedTestSubjects, setPublishedTestSubjects] = useState<Set<string> | null>(null);
+
+  useEffect(() => {
+    eduhubCourseQuizzes
+      .getPlacementTests()
+      .then((tests) =>
+        setPublishedTestSubjects(
+          new Set((tests || []).filter((q) => q.subject).map((q) => q.subject!.trim().toLowerCase())),
+        ),
+      )
+      .catch(() => setPublishedTestSubjects(new Set()));
+  }, []);
+
+  const subjectTrimmed = subject.trim();
+  const showsNoGateWarning =
+    Boolean(subjectTrimmed) &&
+    Boolean(level) &&
+    publishedTestSubjects !== null &&
+    !publishedTestSubjects.has(subjectTrimmed.toLowerCase());
 
   const titleRequiredError = error === "Class title is required.";
   const categoryRequiredError = error === INSTRUCTOR_CATEGORY_MISSING;
@@ -261,6 +282,15 @@ const TeacherCourseFormDetailsPage = () => {
             <p className="text-xs text-muted-foreground">
               {t("teacher.courseForm.details.subjectHint")}
             </p>
+            {showsNoGateWarning ? (
+              <p className="flex items-start gap-1.5 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {t("teacher.courseForm.details.subjectNoGateWarning", {
+                  subject: subjectTrimmed,
+                  defaultValue: `No published placement test exists for "${subjectTrimmed}" yet — this class will not actually be level-gated until an admin publishes one in Admin → Placement Tests.`,
+                })}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">

@@ -43,6 +43,8 @@ export interface SelectableCourseLevel {
   label: string;
   labelKey?: string;
   description?: string;
+  /** Ordering used to compare an achieved placement level against a class's required level. */
+  sortOrder?: number;
 }
 
 /** Hook to fetch active course levels dynamically with default CEFR fallback. */
@@ -72,6 +74,7 @@ export function useCourseLevels() {
                 label: lvl.name,
                 labelKey: matchedStatic?.labelKey,
                 description: lvl.description,
+                sortOrder: lvl.sortOrder,
               };
             })
           );

@@ -387,6 +387,7 @@
         "subjectLabel": "Subject (optional)",
         "subjectPlaceholder": "e.g. Russian, Korean, IT",
         "subjectHint": "If students take a placement test for this subject, only students who qualify at this class's level or above can enroll.",
+        "subjectNoGateWarning": "No published placement test exists for \"{{subject}}\" yet — this class will not actually be level-gated until an admin publishes one in Admin → Placement Tests.",
         "aboutLabel": "About",
         "aboutPlaceholder": "What students will learn…",
         "datesSectionTitle": "Dates (optional)",
@@ -494,6 +495,8 @@
     "quiz": {
       "loading": "Loading quiz…",
       "backToQuizzes": "Back to quizzes",
+      "backToClass": "Back to class",
+      "legacyPlacementNotice": "This test is now managed institution-wide in Admin → Placement Tests, not from a class.",
       "title": {
         "edit": "Edit quiz",
         "create": "Create quiz"
@@ -515,37 +518,15 @@
           "remove": "Remove",
           "previewAlt": "Quiz cover preview"
         },
-        "typeLabel": "Type",
-        "typePlaceholder": "Select type",
-        "typeHint": "Quiz for practice, or Placement test for assessment.",
         "classLabel": "Class",
         "classPlaceholder": "Select class",
         "noClass": "No class",
         "classLockedHint": "Saved for the class you opened from My Class.",
         "classPickerHint": "Link to one of your classes.",
         "titleLabels": {
-          "placement": "Placement test title",
           "quiz": "Quiz title"
         },
         "titlePlaceholder": "e.g. Week 2 practice quiz",
-        "subjectLabel": "Subject",
-        "subjectPlaceholder": "e.g. Russian, Korean, IT",
-        "subjectHint": "Must match a class's subject for the score bands below to gate its enrollment.",
-        "release": {
-          "label": "Release date & time",
-          "date": "Date",
-          "time": "Time",
-          "selectDate": "Select date",
-          "selectTime": "Select time"
-        },
-        "releaseHint": "When students can take this placement test.",
-        "bands": {
-          "label": "Score-to-level bands",
-          "hint": "Map score ranges to a level. The student's latest result sets their level for this subject.",
-          "minScore": "Minimum score",
-          "maxScore": "Maximum score",
-          "addRow": "Add band"
-        },
         "questionsTitle": "Questions",
         "questionsHint": "Multiple choice — mark the correct option.",
         "addQuestion": "Add question",
@@ -573,10 +554,6 @@
         },
         "saveChanges": "Save",
         "createQuiz": "Create quiz"
-      },
-      "types": {
-        "quiz": "Quiz",
-        "placementTest": "Placement test"
       },
       "errors": {
         "titleRequired": "Quiz title is required.",

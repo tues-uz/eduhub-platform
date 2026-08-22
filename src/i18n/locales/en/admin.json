@@ -1332,6 +1332,10 @@
         "score": "Score",
         "result": "Result",
         "completed": "Completed"
+      },
+      "tabs": {
+        "results": "Results",
+        "manage": "Manage tests"
       }
     },
     "certifications": {

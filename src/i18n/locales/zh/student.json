@@ -133,7 +133,11 @@
     "clearFilters": "清除筛选",
     "defaultCategory": "课程",
     "dayPatternOdd": "单日",
-    "dayPatternEven": "双日"
+    "dayPatternEven": "双日",
+    "placementGate": {
+      "takeTest": "Take the {{subject}} placement test to join",
+      "belowLevel": "You're placed at {{achieved}} — this class needs {{required}}"
+    }
   },
   "classSearch": {
     "placeholder": "搜索课程…",

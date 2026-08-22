@@ -370,6 +370,7 @@
         "subjectLabel": "Subject (optional)",
         "subjectPlaceholder": "e.g. Russian, Korean, IT",
         "subjectHint": "If students take a placement test for this subject, only students who qualify at this class's level or above can enroll.",
+        "subjectNoGateWarning": "No published placement test exists for \"{{subject}}\" yet — this class will not actually be level-gated until an admin publishes one in Admin → Placement Tests.",
         "aboutLabel": "About this sinf (optional)",
         "aboutPlaceholder": "What talabas will learn — a sentence or two is enough.",
         "datesSectionTitle": "Sinf dates (optional)",
@@ -476,6 +477,8 @@
     "quiz": {
       "loading": "Yuklanmoqda quiz…",
       "backToQuizzes": "Orqaga to sinf quizzes",
+      "backToClass": "Back to class",
+      "legacyPlacementNotice": "This test is now managed institution-wide in Admin → Placement Tests, not from a class.",
       "title": {
         "edit": "Tahrirlash quiz",
         "create": "Create quiz"
@@ -497,37 +500,15 @@
           "remove": "Olib tashlash",
           "previewAlt": "Test muqovasi"
         },
-        "typeLabel": "Type",
-        "typePlaceholder": "Select type",
-        "typeHint": "Test for practice or Placement test for assessment.",
         "classLabel": "Sinf",
         "classPlaceholder": "Select sinf",
         "noClass": "No sinf",
         "classLockedHint": "Sinf is locked for this quiz.",
         "classPickerHint": "Yuklanmoqda…",
         "titleLabels": {
-          "placement": "Placement test title *",
           "quiz": "Test title *"
         },
         "titlePlaceholder": "e.g. Economics Placement Test",
-        "subjectLabel": "Subject",
-        "subjectPlaceholder": "e.g. Russian, Korean, IT",
-        "subjectHint": "Must match a class's subject for the score bands below to gate its enrollment.",
-        "release": {
-          "label": "Release date and time",
-          "date": "Date",
-          "time": "Time",
-          "selectDate": "Select date",
-          "selectTime": "Select time"
-        },
-        "releaseHint": "When this placement test becomes available to talabas.",
-        "bands": {
-          "label": "Score-to-level bands",
-          "hint": "Map score ranges to a level. The student's latest result sets their level for this subject.",
-          "minScore": "Minimum score",
-          "maxScore": "Maximum score",
-          "addRow": "Add band"
-        },
         "questionsTitle": "Questions (multiple choice)",
         "addQuestion": "Add question",
         "questionActions": {
@@ -551,10 +532,6 @@
         },
         "saveChanges": "Saqlash changes",
         "createQuiz": "Create quiz"
-      },
-      "types": {
-        "quiz": "Test",
-        "placementTest": "Placement test"
       },
       "errors": {
         "titleRequired": "Test title is required.",

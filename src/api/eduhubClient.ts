@@ -551,19 +551,86 @@ export const eduhubCourseQuizzes = {
   getAllMyResults: () =>
     request<QuizResultResponse[]>("/quizzes/my-results"),
 
-  getPlacementBands: (quizId: string) =>
-    request<PlacementTestBand[]>(`/quizzes/${quizId}/placement-bands`),
-
-  replacePlacementBands: (quizId: string, bands: PlacementTestBand[]) =>
-    request<PlacementTestBand[]>(`/quizzes/${quizId}/placement-bands`, {
-      method: "PUT",
-      body: JSON.stringify(bands.map((b) => ({ minScore: b.minScore, maxScore: b.maxScore, levelCode: b.levelCode }))),
-    }),
-
   /** The authenticated student's achieved placement levels, one per subject. */
   getMyPlacementResults: () =>
     request<StudentPlacementResultResponse[]>("/placement-results/me"),
 };
+
+/**
+ * Admin-owned placement tests. These are institution-wide and scoped by subject — one published
+ * "Russian" test gates every Russian class — so unlike per-class quizzes they carry no courseId.
+ */
+export const eduhubPlacementTestsAdmin = {
+  list: () => request<PlacementTestAdminResponse[]>("/admin/placement-tests"),
+
+  get: (quizId: string) =>
+    request<PlacementTestAdminResponse>(`/admin/placement-tests/${quizId}`),
+
+  create: (body: PlacementTestUpsertRequest) =>
+    request<PlacementTestAdminResponse>("/admin/placement-tests", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  update: (quizId: string, body: PlacementTestUpsertRequest) =>
+    request<PlacementTestAdminResponse>(`/admin/placement-tests/${quizId}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
+  setPublished: (quizId: string, publish: boolean) =>
+    request<PlacementTestAdminResponse>(
+      `/admin/placement-tests/${quizId}/publish?publish=${publish}`,
+      { method: "PATCH" },
+    ),
+
+  delete: (quizId: string) =>
+    request<void>(`/admin/placement-tests/${quizId}`, { method: "DELETE" }),
+};
+
+export interface PlacementTestOption {
+  letter: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface PlacementTestQuestion {
+  id?: string;
+  question: string;
+  imageUrl?: string;
+  explanation?: string;
+  orderIndex?: number;
+  points?: number;
+  options: PlacementTestOption[];
+}
+
+export interface PlacementTestUpsertRequest {
+  title: string;
+  description?: string;
+  /** Must match the Course.subject of the classes this test should gate (e.g. "Russian"). */
+  subject: string;
+  timeLimitMinutes?: number;
+  passingScore?: number;
+  /** Attempts allowed per student. Omit for unlimited. */
+  maxAttempts?: number;
+  isPublished?: boolean;
+  questions: PlacementTestQuestion[];
+  /** Required to publish: without bands no level is ever assigned. */
+  bands: PlacementTestBand[];
+}
+
+export interface PlacementTestAdminResponse {
+  id: string;
+  title: string;
+  description?: string;
+  subject: string;
+  timeLimitMinutes?: number;
+  passingScore?: number;
+  maxAttempts?: number;
+  isPublished: boolean;
+  questions: PlacementTestQuestion[];
+  bands: PlacementTestBand[];
+}
 
 /** Quiz - tied to lessons (legacy) */
 export const eduhubQuizzes = {
@@ -697,7 +764,7 @@ export interface PlacementTestBand {
   levelCode: string;
 }
 
-/** A student's achieved level for one subject, derived from their latest placement test attempt. */
+/** A student's achieved level for one subject: their best placement test result, never demoted by a weaker retake. */
 export interface StudentPlacementResultResponse {
   id: string;
   subject: string;

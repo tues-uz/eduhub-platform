@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { format, startOfDay } from "date-fns";
 import {
   ArrowLeft,
   Plus,
@@ -10,7 +9,6 @@ import {
   GripVertical,
   ChevronDown,
   ChevronUp,
-  CalendarClock,
   Loader2,
   Image as ImageIcon,
   X,
@@ -19,8 +17,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
@@ -46,34 +42,19 @@ import {
   eduhubUploadFile,
   type QuizResponse,
   type QuizCreateRequest,
-  type PlacementTestBand,
 } from "@/api/eduhubClient";
 import { useTranslation } from "react-i18next";
 import { useLayoutContext } from "@/features/layout/context";
 import {
   type QuizQuestion,
-  type QuizType,
   LETTERS,
   TIME_LIMIT_OPTIONS,
-  QUIZ_TYPE_OPTIONS,
   createEmptyQuestion,
 } from "../quizTypes";
-import { useCourseLevels } from "../data/courseLevels";
 
 function randomId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
-
-const RELEASE_TIME_OPTIONS: { value: string; label: string }[] = (() => {
-  const opts: { value: string; label: string }[] = [];
-  for (let h = 0; h < 24; h++) {
-    for (let m = 0; m < 60; m += 15) {
-      const value = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-      opts.push({ value, label: format(new Date(1970, 0, 1, h, m), "h:mm a") });
-    }
-  }
-  return opts;
-})();
 
 type MediaUploadBoxProps = {
   questionIndex: number;
@@ -243,15 +224,8 @@ const TeacherQuizPage = () => {
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
   const [editingSourceCourseId, setEditingSourceCourseId] = useState("");
   const [title, setTitle] = useState("");
-  const [quizType, setQuizType] = useState<QuizType>("quiz");
-  const [subject, setSubject] = useState("");
-  const [bands, setBands] = useState<PlacementTestBand[]>([]);
-  const { levels: availableLevels } = useCourseLevels();
   const [thumbnailDraft, setThumbnailDraft] = useState("");
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
-  const [releaseDate, setReleaseDate] = useState("");
-  const [releaseTime, setReleaseTime] = useState("");
-  const [releaseDatePickerOpen, setReleaseDatePickerOpen] = useState(false);
   const [courseId, setCourseId] = useState("");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [error, setError] = useState("");
@@ -260,6 +234,7 @@ const TeacherQuizPage = () => {
   const [editLinkLoading, setEditLinkLoading] = useState(() =>
     typeof window !== "undefined" ? Boolean(new URLSearchParams(window.location.search).get("edit")?.trim()) : false,
   );
+  const [legacyPlacementQuiz, setLegacyPlacementQuiz] = useState(false);
 
   const createQuizFromQueryRef = useRef(false);
   const editQuizFromQueryRef = useRef(false);
@@ -275,12 +250,7 @@ const TeacherQuizPage = () => {
     setEditingQuizId(null);
     setEditingSourceCourseId("");
     setTitle("");
-    setQuizType("quiz");
-    setSubject("");
-    setBands([]);
     setThumbnailDraft("");
-    setReleaseDate("");
-    setReleaseTime("");
     setQuestions([createEmptyQuestion(randomId())]);
     setError("");
   }, []);
@@ -289,19 +259,7 @@ const TeacherQuizPage = () => {
     setEditingQuizId(quiz.id);
     setEditingSourceCourseId(quiz.courseId ?? "");
     setTitle(quiz.title);
-    const qt = quiz.quizType === "PLACEMENT_TEST" ? "placement-test" : "quiz";
-    setQuizType(qt as QuizType);
-    setSubject(quiz.subject ?? "");
-    setBands([]);
-    if (qt === "placement-test") {
-      eduhubCourseQuizzes
-        .getPlacementBands(quiz.id)
-        .then((loaded) => setBands(loaded))
-        .catch(() => setBands([]));
-    }
     setThumbnailDraft(quiz.thumbnailUrl?.trim() || "");
-    setReleaseDate(quiz.releaseDate ?? "");
-    setReleaseTime(quiz.releaseTime ? quiz.releaseTime.slice(0, 5) : "");
     setCourseId(quiz.courseId ?? "");
     setQuestions(
       quiz.questions.length > 0
@@ -356,6 +314,12 @@ const TeacherQuizPage = () => {
       void eduhubCourseQuizzes
         .get(fromUrl, editId)
         .then((quiz) => {
+          if (quiz.quizType === "PLACEMENT_TEST") {
+            // Placement tests are managed institution-wide, not per class — this class-scoped
+            // editor no longer has a form for them (see AdminPlacementTestsManager instead).
+            setLegacyPlacementQuiz(true);
+            return;
+          }
           startEdit(quiz);
           setSearchParams(
             (prev) => {
@@ -476,9 +440,8 @@ const TeacherQuizPage = () => {
     }
     setError("");
 
-    const apiQuizType = quizType === "placement-test" ? "PLACEMENT_TEST" : "QUIZ";
     const quizCourseId = courseId.trim();
-    
+
     if (!quizCourseId) {
       setError("Please select a class to associate this quiz with.");
       return;
@@ -486,11 +449,8 @@ const TeacherQuizPage = () => {
 
     const payload: QuizCreateRequest = {
       title: trimmedTitle,
-      quizType: apiQuizType as "QUIZ" | "PLACEMENT_TEST",
-      subject: quizType === "placement-test" ? (subject.trim() || undefined) : undefined,
+      quizType: "QUIZ",
       thumbnailUrl: thumbnailDraft.trim() || undefined,
-      releaseDate: quizType === "placement-test" ? (releaseDate.trim() || undefined) : undefined,
-      releaseTime: quizType === "placement-test" ? (releaseTime.trim() || undefined) : undefined,
       questions: validQuestions.map((q, idx) => ({
         question: q.question.trim(),
         imageUrl: q.image?.trim() || undefined,
@@ -506,24 +466,12 @@ const TeacherQuizPage = () => {
       payload.courseId = courseId;
     }
 
-    const withThumbnail = (saved: QuizResponse): QuizResponse => ({
-      ...saved,
-      courseId: saved.courseId ?? quizCourseId,
-      thumbnailUrl: payload.thumbnailUrl ?? saved.thumbnailUrl,
-    });
-
     try {
       setLoading(true);
-      let savedQuizId = editingQuizId;
       if (editingQuizId) {
         await eduhubCourseQuizzes.update(quizCourseId, editingQuizId, payload);
       } else {
-        const created = await eduhubCourseQuizzes.create(courseId.trim(), payload);
-        savedQuizId = created.id;
-      }
-      if (apiQuizType === "PLACEMENT_TEST" && savedQuizId) {
-        const validBands = bands.filter((b) => b.levelCode.trim() && b.minScore <= b.maxScore);
-        await eduhubCourseQuizzes.replacePlacementBands(savedQuizId, validBands);
+        await eduhubCourseQuizzes.create(courseId.trim(), payload);
       }
       await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", quizCourseId] });
       toast.success(editingQuizId ? "Quiz updated" : "Quiz created");
@@ -536,7 +484,7 @@ const TeacherQuizPage = () => {
     }
   };
 
-  if (!searchParams.toString()) {
+  if (!searchParams.toString() && !createQuizFromQueryRef.current && !editQuizFromQueryRef.current) {
     return <Navigate to="/dashboard/teacher/courses" replace />;
   }
 
@@ -549,10 +497,18 @@ const TeacherQuizPage = () => {
     );
   }
 
-  const typeLabel = (value: QuizType) =>
-    value === "placement-test"
-      ? t("teacher.quiz.types.placementTest")
-      : t("teacher.quiz.types.quiz");
+  if (legacyPlacementQuiz) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 px-4 py-24 text-center lg:px-6">
+        <p className="max-w-md text-sm text-muted-foreground">
+          {t("teacher.quiz.legacyPlacementNotice")}
+        </p>
+        <Button type="button" variant="outline" size="sm" onClick={goBackToClassQuizTab}>
+          {t("teacher.quiz.backToClass")}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 py-5 pb-28 lg:px-6">
@@ -683,24 +639,6 @@ const TeacherQuizPage = () => {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs font-medium text-muted-foreground">
-                {t("teacher.quiz.form.typeLabel")}
-              </Label>
-              <Select value={quizType} onValueChange={(v) => setQuizType(v as QuizType)}>
-                <SelectTrigger className="w-full bg-background">
-                  <SelectValue placeholder={t("teacher.quiz.form.typePlaceholder")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {QUIZ_TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {typeLabel(opt.value)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             {!classFieldLocked ? (
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-muted-foreground">
@@ -727,9 +665,7 @@ const TeacherQuizPage = () => {
 
             <div className="space-y-2">
               <Label htmlFor="quiz-title" className="text-xs font-medium text-muted-foreground">
-                {quizType === "placement-test"
-                  ? t("teacher.quiz.form.titleLabels.placement")
-                  : t("teacher.quiz.form.titleLabels.quiz")}
+                {t("teacher.quiz.form.titleLabels.quiz")}
               </Label>
               <Input
                 id="quiz-title"
@@ -739,155 +675,6 @@ const TeacherQuizPage = () => {
               />
             </div>
 
-            {quizType === "placement-test" ? (
-              <div className="space-y-2 border-t border-border pt-4">
-                <Label htmlFor="quiz-subject" className="text-xs font-medium text-muted-foreground">
-                  {t("teacher.quiz.form.subjectLabel")}
-                </Label>
-                <Input
-                  id="quiz-subject"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder={t("teacher.quiz.form.subjectPlaceholder")}
-                  maxLength={100}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t("teacher.quiz.form.subjectHint")}
-                </p>
-              </div>
-            ) : null}
-
-            {quizType === "placement-test" ? (
-              <div className="space-y-2 border-t border-border pt-4">
-                <Label className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                  <CalendarClock className="h-3.5 w-3.5" aria-hidden />
-                  {t("teacher.quiz.form.release.label")}
-                </Label>
-                <div className="space-y-2">
-                  <Popover open={releaseDatePickerOpen} onOpenChange={setReleaseDatePickerOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        id="release-date-picker"
-                        className="h-10 w-full justify-between bg-background font-normal"
-                      >
-                        <span className="truncate">
-                          {releaseDate
-                            ? format(new Date(releaseDate + "T12:00:00"), "PPP")
-                            : t("teacher.quiz.form.release.selectDate")}
-                        </span>
-                        <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={releaseDate ? new Date(releaseDate + "T12:00:00") : undefined}
-                        disabled={(date) => startOfDay(date) < startOfDay(new Date())}
-                        onSelect={(date) => {
-                          if (date) setReleaseDate(format(date, "yyyy-MM-dd"));
-                          setReleaseDatePickerOpen(false);
-                        }}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <Select value={releaseTime || undefined} onValueChange={setReleaseTime}>
-                    <SelectTrigger id="release-time" className="h-10 w-full bg-background">
-                      <SelectValue placeholder={t("teacher.quiz.form.release.selectTime")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {RELEASE_TIME_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            ) : null}
-
-            {quizType === "placement-test" ? (
-              <div className="space-y-2 border-t border-border pt-4">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  {t("teacher.quiz.form.bands.label")}
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {t("teacher.quiz.form.bands.hint")}
-                </p>
-                <div className="space-y-2">
-                  {bands.map((band, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={band.minScore}
-                        onChange={(e) =>
-                          setBands((prev) =>
-                            prev.map((b, i) => (i === idx ? { ...b, minScore: Number(e.target.value) } : b)),
-                          )
-                        }
-                        className="w-16"
-                        aria-label={t("teacher.quiz.form.bands.minScore")}
-                      />
-                      <span className="text-xs text-muted-foreground">–</span>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={band.maxScore}
-                        onChange={(e) =>
-                          setBands((prev) =>
-                            prev.map((b, i) => (i === idx ? { ...b, maxScore: Number(e.target.value) } : b)),
-                          )
-                        }
-                        className="w-16"
-                        aria-label={t("teacher.quiz.form.bands.maxScore")}
-                      />
-                      <Select
-                        value={band.levelCode || undefined}
-                        onValueChange={(value) =>
-                          setBands((prev) => prev.map((b, i) => (i === idx ? { ...b, levelCode: value } : b)))
-                        }
-                      >
-                        <SelectTrigger className="h-9 flex-1 bg-background">
-                          <SelectValue placeholder={t("teacher.courseForm.details.levelPlaceholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableLevels.map((item) => (
-                            <SelectItem key={item.value} value={item.value}>
-                              {item.labelKey ? t(item.labelKey, { defaultValue: item.label }) : item.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
-                        onClick={() => setBands((prev) => prev.filter((_, i) => i !== idx))}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() =>
-                    setBands((prev) => [...prev, { minScore: 0, maxScore: 100, levelCode: "" }])
-                  }
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {t("teacher.quiz.form.bands.addRow")}
-                </Button>
-              </div>
-            ) : null}
           </aside>
 
           {/* Questions column */}

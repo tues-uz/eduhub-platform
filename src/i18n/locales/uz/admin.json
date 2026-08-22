@@ -1140,6 +1140,10 @@
         "score": "Ball",
         "result": "Natija",
         "completed": "Tugallangan"
+      },
+      "tabs": {
+        "results": "Natijalar",
+        "manage": "Testlarni boshqarish"
       }
     },
     "certifications": {

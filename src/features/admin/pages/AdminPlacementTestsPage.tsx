@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import { AdminPlacementTestsManager } from "@/features/admin/components/AdminPlacementTestsManager";
 import { eduhubCourseQuizzes } from "@/api/eduhubClient";
 import type { QuizResultResponse } from "@/api/eduhubClient";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "@/lib/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -103,6 +105,17 @@ export default function AdminPlacementTestsPage() {
           description={t("admin.placementTests.description")}
         />
 
+        <Tabs defaultValue="results">
+          <TabsList className="mb-4">
+            <TabsTrigger value="results">{t("admin.placementTests.tabs.results")}</TabsTrigger>
+            <TabsTrigger value="manage">{t("admin.placementTests.tabs.manage")}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="manage">
+            <AdminPlacementTestsManager />
+          </TabsContent>
+
+          <TabsContent value="results">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center mb-4">
           <Input
             placeholder={t("admin.placementTests.searchPlaceholder")}
@@ -213,6 +226,8 @@ export default function AdminPlacementTestsPage() {
             </TableBody>
           </Table>
         </div>
+          </TabsContent>
+        </Tabs>
       </div>
   );
 }

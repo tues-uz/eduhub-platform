@@ -1053,6 +1053,10 @@
         "score": "Score",
         "result": "Result",
         "completed": "Завершено"
+      },
+      "tabs": {
+        "results": "Результаты",
+        "manage": "Управление тестами"
       }
     },
     "certifications": {
