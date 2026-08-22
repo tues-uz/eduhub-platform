@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -247,7 +248,8 @@ const TeacherQuizPage = () => {
   const [editingSourceCourseId, setEditingSourceCourseId] = useState("");
   const [title, setTitle] = useState("");
   const [quizType, setQuizType] = useState<QuizType>("quiz");
-  const [subject, setSubject] = useState("");
+  /** Classes this placement test gates — picked directly, not matched by a typed string. */
+  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
   const [bands, setBands] = useState<PlacementTestBand[]>([]);
   const { levels: availableLevels } = useCourseLevels();
   const [thumbnailDraft, setThumbnailDraft] = useState("");
@@ -256,6 +258,8 @@ const TeacherQuizPage = () => {
   const [releaseTime, setReleaseTime] = useState("");
   const [releaseDatePickerOpen, setReleaseDatePickerOpen] = useState(false);
   const [courseId, setCourseId] = useState("");
+  /** The class this page was launched from, kept even when courseId is cleared for a placement test. */
+  const [originCourseId, setOriginCourseId] = useState("");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [error, setError] = useState("");
   const [questionToRemoveIndex, setQuestionToRemoveIndex] = useState<number | null>(null);
@@ -269,27 +273,24 @@ const TeacherQuizPage = () => {
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   const goBackToClassQuizTab = useCallback(() => {
-    if (quizType === "placement-test") {
-      void navigate("/dashboard/teacher/placement-tests", { replace: true });
-      return;
-    }
-    const cid = courseId.trim();
+    const cid = (originCourseId || courseId).trim();
     if (cid) void navigate(`/dashboard/teacher/courses/${cid}?tab=quiz`, { replace: true });
     else void navigate("/dashboard/teacher/courses", { replace: true });
-  }, [courseId, navigate, quizType]);
+  }, [originCourseId, courseId, navigate]);
 
   const startNew = useCallback(() => {
     setEditingQuizId(null);
     setEditingSourceCourseId("");
     setTitle("");
     setQuizType("quiz");
-    setSubject("");
+    setSelectedCourseIds([]);
     setBands([]);
     setThumbnailDraft("");
     setReleaseDate("");
     setReleaseTime("");
     setQuestions([createEmptyQuestion(randomId())]);
     setError("");
+    originCoursePrecheckedRef.current = false;
   }, []);
 
   const startEdit = useCallback((quiz: QuizResponse) => {
@@ -297,7 +298,7 @@ const TeacherQuizPage = () => {
     setEditingSourceCourseId(quiz.courseId ?? "");
     setTitle(quiz.title);
     setQuizType("quiz");
-    setSubject("");
+    setSelectedCourseIds([]);
     setBands([]);
     setThumbnailDraft(quiz.thumbnailUrl?.trim() || "");
     setReleaseDate("");
@@ -326,7 +327,7 @@ const TeacherQuizPage = () => {
     setEditingSourceCourseId("");
     setTitle(quiz.title);
     setQuizType("placement-test");
-    setSubject(quiz.subject ?? "");
+    setSelectedCourseIds((quiz.gatedCourses ?? []).map((c) => c.id));
     setBands(quiz.bands ?? []);
     setThumbnailDraft("");
     setReleaseDate(quiz.releaseDate ?? "");
@@ -355,7 +356,10 @@ const TeacherQuizPage = () => {
     const wantNew = searchParams.get("new") === "1";
     const editId = searchParams.get("edit")?.trim();
 
-    if (fromUrl) setCourseId(fromUrl);
+    if (fromUrl) {
+      setCourseId(fromUrl);
+      setOriginCourseId(fromUrl);
+    }
 
     if (!wantNew && !editId) {
       createQuizFromQueryRef.current = false;
@@ -437,7 +441,7 @@ const TeacherQuizPage = () => {
   const [lockedClassLabel, setLockedClassLabel] = useState("");
 
   useEffect(() => {
-    const cid = courseId.trim();
+    const cid = originCourseId.trim();
     if (!cid) {
       setLockedClassLabel("");
       return;
@@ -460,7 +464,21 @@ const TeacherQuizPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [courseId, courses]);
+  }, [originCourseId, courses]);
+
+  /**
+   * A placement test is usually authored from a specific class's Quizzes tab — pre-check that
+   * class in the "which classes does this gate?" list so the common case needs no extra clicks.
+   * Skipped while editing an existing test, since its gated classes already reflect reality.
+   */
+  const originCoursePrecheckedRef = useRef(false);
+  useEffect(() => {
+    if (quizType !== "placement-test" || editingQuizId) return;
+    const cid = originCourseId.trim();
+    if (!cid || originCoursePrecheckedRef.current) return;
+    originCoursePrecheckedRef.current = true;
+    setSelectedCourseIds((prev) => (prev.includes(cid) ? prev : [...prev, cid]));
+  }, [quizType, originCourseId, editingQuizId]);
 
   /** Quiz is always created in a class context from the roster (courseId in URL); no class picker needed. */
   const classFieldLocked = Boolean(courseId.trim());
@@ -530,11 +548,6 @@ const TeacherQuizPage = () => {
     setError("");
 
     if (quizType === "placement-test") {
-      const trimmedSubject = subject.trim();
-      if (!trimmedSubject) {
-        setError("Set the subject — it decides which classes this test gates.");
-        return;
-      }
       const usableBands = bands.filter((b) => b.levelCode.trim());
       if (usableBands.length === 0) {
         setError("Add at least one score band — without one, no student ever gets a level from this test.");
@@ -558,7 +571,7 @@ const TeacherQuizPage = () => {
 
       const placementPayload: PlacementTestUpsertRequest = {
         title: trimmedTitle,
-        subject: trimmedSubject,
+        courseIds: selectedCourseIds,
         releaseDate: releaseDate.trim() || undefined,
         releaseTime: releaseTime.trim() || undefined,
         isPublished: true,
@@ -582,7 +595,7 @@ const TeacherQuizPage = () => {
           await eduhubPlacementTestsAdmin.create(placementPayload);
         }
         toast.success(editingQuizId ? "Placement test updated" : "Placement test created");
-        void navigate("/dashboard/teacher/placement-tests", { replace: true });
+        goBackToClassQuizTab();
       } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : "Failed to save placement test.";
         setError(errorMessage);
@@ -662,9 +675,9 @@ const TeacherQuizPage = () => {
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
-            {courseId.trim() ? (
+            {(originCourseId || courseId).trim() ? (
               <Link
-                to={`/dashboard/teacher/courses/${courseId.trim()}?tab=quiz`}
+                to={`/dashboard/teacher/courses/${(originCourseId || courseId).trim()}?tab=quiz`}
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 <ArrowLeft className="h-4 w-4 shrink-0" />
@@ -850,18 +863,38 @@ const TeacherQuizPage = () => {
 
             {quizType === "placement-test" ? (
               <div className="space-y-2 border-t border-border pt-4">
-                <Label htmlFor="quiz-subject" className="text-xs font-medium text-muted-foreground">
-                  {t("teacher.quiz.form.subjectLabel")}
+                <Label className="text-xs font-medium text-muted-foreground">
+                  {t("teacher.quiz.form.gatedCoursesLabel")}
                 </Label>
-                <Input
-                  id="quiz-subject"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder={t("teacher.quiz.form.subjectPlaceholder")}
-                  maxLength={100}
-                />
+                <div className="max-h-56 space-y-0.5 overflow-y-auto rounded-md border border-border p-2">
+                  {courses.length === 0 ? (
+                    <p className="px-1 py-2 text-xs text-muted-foreground">
+                      {t("teacher.quiz.form.noClassesYet")}
+                    </p>
+                  ) : (
+                    courses.map((course) => {
+                      const checked = selectedCourseIds.includes(course.id);
+                      return (
+                        <label
+                          key={course.id}
+                          className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1.5 text-sm hover:bg-muted/40"
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(v) =>
+                              setSelectedCourseIds((prev) =>
+                                v ? [...prev, course.id] : prev.filter((id) => id !== course.id),
+                              )
+                            }
+                          />
+                          <span className="truncate">{course.title}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  {t("teacher.quiz.form.subjectHint")}
+                  {t("teacher.quiz.form.gatedCoursesHint")}
                 </p>
               </div>
             ) : null}

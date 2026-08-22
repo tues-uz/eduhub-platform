@@ -79,26 +79,25 @@ export default function StudentPlacementTests() {
     } else {
       try {
         setSubmitting(true);
-        if (!currentQuiz.courseId) throw new Error("Class ID missing on quiz");
         const timeSpentSeconds = quizStartTime ? Math.round((Date.now() - quizStartTime) / 1000) : 0;
-        const result = await eduhubCourseQuizzes.submit(currentQuiz.courseId, currentQuiz.id, { answers: newAnswers, timeSpentSeconds });
+        // Placement tests are institution-wide and never have a courseId; the URL still needs a
+        // UUID in that slot, but the backend ignores it entirely and grades by quizId alone.
+        const result = await eduhubCourseQuizzes.submit(
+          currentQuiz.courseId || currentQuiz.id,
+          currentQuiz.id,
+          { answers: newAnswers, timeSpentSeconds },
+        );
         setQuizResult(result);
         setCompletedQuizIds(prev => new Set(prev).add(currentQuiz.id));
         setScreen("result");
 
-        if (currentQuiz.subject) {
-          eduhubCourseQuizzes
-            .getMyPlacementResults()
-            .then((results) => {
-              const match = results.find(
-                (r) => r.subject.toLowerCase() === currentQuiz.subject!.toLowerCase(),
-              );
-              setAchievedLevel(match ? match.levelCode : null);
-            })
-            .catch(() => setAchievedLevel(null));
-        } else {
-          setAchievedLevel(null);
-        }
+        eduhubCourseQuizzes
+          .getMyPlacementResults()
+          .then((results) => {
+            const match = results.find((r) => r.quizId === currentQuiz.id);
+            setAchievedLevel(match ? match.levelCode : null);
+          })
+          .catch(() => setAchievedLevel(null));
       } catch (e) {
         console.error("Failed to submit placement test", e);
         alert(t("placementTests.submitFailed"));

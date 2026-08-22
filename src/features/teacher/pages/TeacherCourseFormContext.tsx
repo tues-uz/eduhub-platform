@@ -11,9 +11,6 @@ export type TeacherCourseFormContextValue = {
   category: string;
   level: string;
   setLevel: (v: string) => void;
-  /** Placement-test subject this class belongs to (e.g. "Russian"), for level-gated enrollment. Optional. */
-  subject: string;
-  setSubject: (v: string) => void;
   description: string;
   setDescription: (v: string) => void;
   classMeetingsInSixMonths: string;

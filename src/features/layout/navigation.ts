@@ -98,7 +98,6 @@ export const teacherMenuItems: Array<FlatMenuItem | NestedMenuItem> = [
     children: [
       { labelKey: "teacherNav.myClass", path: "/dashboard/teacher/courses" },
       { labelKey: "teacherNav.addNewClass", path: "/dashboard/teacher/courses/new" },
-      { labelKey: "teacherNav.placementTests", path: "/dashboard/teacher/placement-tests" },
     ],
   },
   { icon: Calendar, labelKey: "teacherNav.scheduleApprovals", path: "/dashboard/teacher/schedule" },

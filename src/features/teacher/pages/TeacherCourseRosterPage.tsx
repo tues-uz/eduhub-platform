@@ -66,10 +66,12 @@ import {
   eduhubCourseQuizzes,
   eduhubCourses,
   eduhubClassResumes,
+  eduhubPlacementTestsAdmin,
   eduhubSchedule,
   eduhubSubstituteInvites,
   ApiError,
   type QuizResponse,
+  type QuizQuestionResponse,
 } from "@/api/eduhubClient";
 import type {
   ClassResumeResponse,
@@ -447,9 +449,12 @@ export default function TeacherCourseRosterPage() {
     return map;
   }, [payrollClassForCourse]);
 
+  const isAdminUser = user?.role === "admin" || Boolean(user?.staffRole);
+
   const courseEnrollmentsQuery = useQuery({
     queryKey: ["teacher", "roster", "enrollments", courseId],
     queryFn: async (): Promise<EnrollmentApplicationResponse[]> => {
+      if (!isAdminUser) return [];
       const byId = new Map<string, EnrollmentApplicationResponse>();
       try {
         const all = await eduhubAdminEnrollmentApplications.listAll();
@@ -461,7 +466,7 @@ export default function TeacherCourseRosterPage() {
       }
       return [...byId.values()];
     },
-    enabled: Boolean(courseId) && isUuid(courseId) && (isApiCourseLecturer || substituteCanAccess),
+    enabled: Boolean(courseId) && isUuid(courseId) && (isApiCourseLecturer || substituteCanAccess) && isAdminUser,
   });
 
   const installmentPaymentsTick = useEnrollmentInstallmentPayments();
@@ -496,14 +501,49 @@ export default function TeacherCourseRosterPage() {
     retry: 1,
   });
 
+  const placementQuizId = apiCourseQuery.data?.placementQuizId?.trim() ?? "";
+
+  /** Placement tests are institution-wide (no courseId), so the one gating this class is fetched by id directly. */
+  const coursePlacementTestQuery = useQuery({
+    queryKey: ["teacher", "roster", "coursePlacementTest", placementQuizId],
+    queryFn: () => eduhubPlacementTestsAdmin.get(placementQuizId),
+    enabled:
+      Boolean(courseId) && isUuid(courseId) && isApiCourseLecturer && tabFromUrl === "quiz" && Boolean(placementQuizId),
+    retry: 1,
+  });
+
+  const displayedQuizzes = useMemo((): QuizResponse[] => {
+    const regular = courseQuizzesQuery.data?.quizzes ?? [];
+    const p = coursePlacementTestQuery.data;
+    if (!p) return regular;
+    const placementAsQuiz: QuizResponse = {
+      id: p.id,
+      courseId,
+      title: p.title,
+      quizType: "PLACEMENT_TEST",
+      releaseDate: p.releaseDate,
+      releaseTime: p.releaseTime,
+      timeLimitMinutes: p.timeLimitMinutes ?? 0,
+      passingScore: p.passingScore ?? 0,
+      isPublished: p.isPublished,
+      questions: p.questions as unknown as QuizQuestionResponse[],
+    };
+    return [...regular, placementAsQuiz];
+  }, [courseQuizzesQuery.data, coursePlacementTestQuery.data, courseId]);
+
   const [quizPublishingId, setQuizPublishingId] = useState<string | null>(null);
   const handlePublishQuiz = useCallback(
-    async (quizId: string) => {
-      if (!isUuid(courseId)) return;
+    async (quizId: string, isPlacementTest: boolean) => {
+      if (!isPlacementTest && !isUuid(courseId)) return;
       setQuizPublishingId(quizId);
       try {
-        await eduhubCourseQuizzes.publish(courseId, quizId);
-        await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", courseId] });
+        if (isPlacementTest) {
+          await eduhubPlacementTestsAdmin.setPublished(quizId, true);
+          await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "coursePlacementTest"] });
+        } else {
+          await eduhubCourseQuizzes.publish(courseId, quizId);
+          await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", courseId] });
+        }
         toast.success("Quiz published");
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Could not publish quiz.");
@@ -1590,10 +1630,10 @@ export default function TeacherCourseRosterPage() {
                     </div>
                     {!isSubstituteViewer ? (
                       <div className="flex flex-wrap items-center gap-2">
-                        {courseQuizzesQuery.data?.quizzes?.length ? (
+                        {displayedQuizzes.length ? (
                           <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-muted-foreground">
                             {t("teacher.roster.quiz.count", {
-                              count: courseQuizzesQuery.data.quizzes.length,
+                              count: displayedQuizzes.length,
                             })}
                           </span>
                         ) : null}
@@ -1655,7 +1695,7 @@ export default function TeacherCourseRosterPage() {
                             ? courseQuizzesQuery.error.message
                             : t("teacher.roster.quiz.loadError")}
                         </p>
-                      ) : !courseQuizzesQuery.data?.quizzes?.length ? (
+                      ) : !displayedQuizzes.length ? (
                         <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
                           <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full border border-border bg-background">
                             <ClipboardList className="h-5 w-5 text-muted-foreground" aria-hidden />
@@ -1682,7 +1722,7 @@ export default function TeacherCourseRosterPage() {
                         </div>
                       ) : (
                         <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-                          {courseQuizzesQuery.data.quizzes.map((q) => {
+                          {displayedQuizzes.map((q) => {
                             const isPlacement = (q.quizType ?? "QUIZ") === "PLACEMENT_TEST";
                             return (
                               <li
@@ -1743,7 +1783,7 @@ export default function TeacherCourseRosterPage() {
                                       size="sm"
                                       className="gap-1.5"
                                       disabled={quizPublishingId === q.id}
-                                      onClick={() => void handlePublishQuiz(q.id)}
+                                      onClick={() => void handlePublishQuiz(q.id, isPlacement)}
                                     >
                                       {quizPublishingId === q.id ? (
                                         <Loader2 className="h-3.5 w-3.5 animate-spin" />

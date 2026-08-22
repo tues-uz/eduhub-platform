@@ -12,23 +12,23 @@ export type PlacementGateStatus =
   | { gated: true; qualifies: false; reason: "below_level"; achievedLevelCode: string };
 
 export function resolvePlacementGate(params: {
-  courseSubject?: string | null;
+  placementQuizId?: string | null;
   courseLevel?: string | null;
-  /** Subjects (lowercased) with at least one published placement test. */
-  publishedTestSubjects: Set<string>;
-  /** The student's achieved level per subject (lowercased subject -> level code). */
-  achievedLevelBySubject: Map<string, string>;
+  /** Ids of published placement tests. */
+  publishedTestQuizIds: Set<string>;
+  /** The student's achieved level per placement test (quizId -> level code). */
+  achievedLevelByQuizId: Map<string, string>;
   /** sortOrder for each level code, higher = more advanced. */
   levelSortOrderByCode: Map<string, number>;
 }): PlacementGateStatus {
-  const { courseSubject, courseLevel, publishedTestSubjects, achievedLevelBySubject, levelSortOrderByCode } = params;
+  const { placementQuizId, courseLevel, publishedTestQuizIds, achievedLevelByQuizId, levelSortOrderByCode } = params;
 
-  const subject = courseSubject?.trim().toLowerCase();
+  const quizId = placementQuizId?.trim();
   const requiredLevelCode = courseLevel?.trim();
-  if (!subject || !requiredLevelCode) {
+  if (!quizId || !requiredLevelCode) {
     return { gated: false };
   }
-  if (!publishedTestSubjects.has(subject)) {
+  if (!publishedTestQuizIds.has(quizId)) {
     return { gated: false };
   }
 
@@ -37,7 +37,7 @@ export function resolvePlacementGate(params: {
     return { gated: false }; // unknown level code — mirrors the backend's "don't block on data we can't interpret"
   }
 
-  const achievedLevelCode = achievedLevelBySubject.get(subject);
+  const achievedLevelCode = achievedLevelByQuizId.get(quizId);
   if (!achievedLevelCode) {
     return { gated: true, qualifies: false, reason: "no_attempt" };
   }

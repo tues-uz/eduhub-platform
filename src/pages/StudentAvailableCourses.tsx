@@ -60,8 +60,8 @@ type AvailableCourseItem = {
   thumbnailUrl?: string;
   enrollmentCount?: number;
   enrolledStudents?: StudentAvatarPreview[];
-  /** Placement-test subject this class belongs to, if it's level-gated. */
-  subject?: string;
+  /** The placement test that gates this class, if any. */
+  placementQuizId?: string;
   /** Required class level, if it's level-gated. */
   level?: string;
   rejectionNote?: string;
@@ -155,8 +155,9 @@ const StudentAvailableCourses = () => {
   const [loading, setLoading] = useState(true);
   const [enrollmentStoreTick, setEnrollmentStoreTick] = useState(0);
   const [latestSchool, setLatestSchool] = useState<string | undefined>();
-  const [achievedLevelBySubject, setAchievedLevelBySubject] = useState<Map<string, string>>(new Map());
-  const [publishedTestSubjects, setPublishedTestSubjects] = useState<Set<string>>(new Set());
+  const [achievedLevelByQuizId, setAchievedLevelByQuizId] = useState<Map<string, string>>(new Map());
+  const [publishedTestQuizIds, setPublishedTestQuizIds] = useState<Set<string>>(new Set());
+  const [publishedTestTitleByQuizId, setPublishedTestTitleByQuizId] = useState<Map<string, string>>(new Map());
   const { levels: courseLevels } = useCourseLevels();
   const levelSortOrderByCode = useMemo(
     () => new Map(courseLevels.filter((l) => l.sortOrder !== undefined).map((l) => [l.value, l.sortOrder as number])),
@@ -171,26 +172,27 @@ const StudentAvailableCourses = () => {
 
   useEffect(() => {
     if (!getAccessToken()) {
-      setAchievedLevelBySubject(new Map());
-      setPublishedTestSubjects(new Set());
+      setAchievedLevelByQuizId(new Map());
+      setPublishedTestQuizIds(new Set());
+      setPublishedTestTitleByQuizId(new Map());
       return;
     }
     eduhubCourseQuizzes
       .getMyPlacementResults()
       .then((results) =>
-        setAchievedLevelBySubject(
-          new Map((results || []).map((r) => [r.subject.trim().toLowerCase(), r.levelCode])),
-        ),
+        setAchievedLevelByQuizId(new Map((results || []).map((r) => [r.quizId, r.levelCode]))),
       )
-      .catch(() => setAchievedLevelBySubject(new Map()));
+      .catch(() => setAchievedLevelByQuizId(new Map()));
     eduhubCourseQuizzes
       .getPlacementTests()
-      .then((tests) =>
-        setPublishedTestSubjects(
-          new Set((tests || []).filter((q) => q.subject).map((q) => q.subject!.trim().toLowerCase())),
-        ),
-      )
-      .catch(() => setPublishedTestSubjects(new Set()));
+      .then((tests) => {
+        setPublishedTestQuizIds(new Set((tests || []).map((q) => q.id)));
+        setPublishedTestTitleByQuizId(new Map((tests || []).map((q) => [q.id, q.title])));
+      })
+      .catch(() => {
+        setPublishedTestQuizIds(new Set());
+        setPublishedTestTitleByQuizId(new Map());
+      });
   }, []);
 
   useEffect(() => {
@@ -266,7 +268,7 @@ const StudentAvailableCourses = () => {
           currency: c.pricing?.currency,
           thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
           enrollmentCount: c.enrollmentCount,
-          subject: c.subject,
+          placementQuizId: c.placementQuizId,
           level: c.level,
           enrollmentStatus: enrollmentStatusFor(c.id),
           rejectionNote: resolveEnrollmentRejectionNote(applicationsByCourse.get(c.id)),
@@ -412,10 +414,10 @@ const StudentAvailableCourses = () => {
                   const isClassFull = isTeacherClassFull(course.enrollmentCount);
                   const canJoinClass = canApplyToTeacherClass(course.enrollmentStatus, course.enrollmentCount);
                   const placementGate: PlacementGateStatus = resolvePlacementGate({
-                    courseSubject: course.subject,
+                    placementQuizId: course.placementQuizId,
                     courseLevel: course.level,
-                    publishedTestSubjects,
-                    achievedLevelBySubject,
+                    publishedTestQuizIds,
+                    achievedLevelByQuizId,
                     levelSortOrderByCode,
                   });
 
@@ -634,8 +636,9 @@ const StudentAvailableCourses = () => {
                             >
                               {placementGate.reason === "no_attempt"
                                 ? t("availableCourses.placementGate.takeTest", {
-                                    subject: course.subject,
-                                    defaultValue: `Take the ${course.subject} placement test to join`,
+                                    testTitle:
+                                      publishedTestTitleByQuizId.get(course.placementQuizId ?? "") ?? "",
+                                    defaultValue: `Take the ${publishedTestTitleByQuizId.get(course.placementQuizId ?? "") ?? "placement"} test to join`,
                                   })
                                 : placementGate.reason === "below_level"
                                 ? t("availableCourses.placementGate.belowLevel", {

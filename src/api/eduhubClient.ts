@@ -551,15 +551,15 @@ export const eduhubCourseQuizzes = {
   getAllMyResults: () =>
     request<QuizResultResponse[]>("/quizzes/my-results"),
 
-  /** The authenticated student's achieved placement levels, one per subject. */
+  /** The authenticated student's achieved placement levels, one per placement test taken. */
   getMyPlacementResults: () =>
     request<StudentPlacementResultResponse[]>("/placement-results/me"),
 };
 
 /**
- * Placement test management — open to lecturers (who author the content) and admins. Tests are
- * institution-wide and scoped by subject — one published "Russian" test gates every Russian class,
- * not just the creator's own — so unlike per-class quizzes they carry no courseId.
+ * Placement test management — open to lecturers (who author the content) and admins. A test
+ * directly names which classes it gates via {@code courseIds} — one test can gate several classes
+ * at once — so unlike per-class quizzes it carries no single courseId of its own.
  */
 export const eduhubPlacementTestsAdmin = {
   list: () => request<PlacementTestAdminResponse[]>("/admin/placement-tests"),
@@ -608,8 +608,8 @@ export interface PlacementTestQuestion {
 export interface PlacementTestUpsertRequest {
   title: string;
   description?: string;
-  /** Must match the Course.subject of the classes this test should gate (e.g. "Russian"). */
-  subject: string;
+  /** Classes this test gates. May be empty — the test just won't gate anything yet. */
+  courseIds: string[];
   releaseDate?: string;
   releaseTime?: string;
   timeLimitMinutes?: number;
@@ -622,11 +622,16 @@ export interface PlacementTestUpsertRequest {
   bands: PlacementTestBand[];
 }
 
+export interface PlacementTestGatedCourse {
+  id: string;
+  title: string;
+  level?: string;
+}
+
 export interface PlacementTestAdminResponse {
   id: string;
   title: string;
   description?: string;
-  subject: string;
   releaseDate?: string;
   releaseTime?: string;
   timeLimitMinutes?: number;
@@ -635,6 +640,8 @@ export interface PlacementTestAdminResponse {
   isPublished: boolean;
   questions: PlacementTestQuestion[];
   bands: PlacementTestBand[];
+  /** The classes this test currently gates. */
+  gatedCourses: PlacementTestGatedCourse[];
 }
 
 /** Quiz - tied to lessons (legacy) */
@@ -675,8 +682,6 @@ export interface QuizCreateRequest {
   /** Cover image shown on quiz cards in the class roster. */
   thumbnailUrl?: string;
   quizType?: "QUIZ" | "PLACEMENT_TEST";
-  /** For placement tests: the subject a passing result qualifies the student in (e.g. "Russian"). */
-  subject?: string;
   releaseDate?: string;
   releaseTime?: string;
   timeLimitMinutes?: number;
@@ -709,8 +714,6 @@ export interface QuizResponse {
   /** Cover image shown on quiz cards in the class roster. */
   thumbnailUrl?: string;
   quizType?: "QUIZ" | "PLACEMENT_TEST";
-  /** For placement tests: the subject a passing result qualifies the student in (e.g. "Russian"). */
-  subject?: string;
   releaseDate?: string;
   releaseTime?: string;
   timeLimitMinutes: number;
@@ -743,8 +746,6 @@ export interface QuizResponseForStudent {
   title: string;
   description?: string;
   quizType?: "QUIZ" | "PLACEMENT_TEST";
-  /** For placement tests: the subject a passing result qualifies the student in (e.g. "Russian"). */
-  subject?: string;
   timeLimitMinutes: number;
   passingScore: number;
   questions: {
@@ -770,10 +771,10 @@ export interface PlacementTestBand {
   levelCode: string;
 }
 
-/** A student's achieved level for one subject: their best placement test result, never demoted by a weaker retake. */
+/** A student's achieved level on one placement test: their best result, never demoted by a weaker retake. */
 export interface StudentPlacementResultResponse {
   id: string;
-  subject: string;
+  quizId: string;
   levelCode: string;
   score: number;
   achievedAt: string;

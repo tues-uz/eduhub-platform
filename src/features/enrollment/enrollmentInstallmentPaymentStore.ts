@@ -41,18 +41,30 @@ async function fetchApplication(applicationId: string): Promise<void> {
   emit();
 }
 
+function isUserAdmin(): boolean {
+  if (typeof localStorage === "undefined") return false;
+  const role = localStorage.getItem("userRole");
+  const staffRole = localStorage.getItem("userStaffRole");
+  return role === "admin" || Boolean(staffRole && staffRole.startsWith("ADMIN"));
+}
+
 async function fetchAll(): Promise<void> {
-  const payments = await eduhubAdminInstallmentPayments.listAll();
-  allPayments = [...payments].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
-  for (const p of payments) {
-    const existing = byApplication.get(p.enrollmentApplicationId);
-    if (!existing) {
-      byApplication.set(p.enrollmentApplicationId, [p]);
-    } else if (!existing.some((e) => e.id === p.id)) {
-      byApplication.set(p.enrollmentApplicationId, [...existing, p]);
+  if (!isUserAdmin()) return;
+  try {
+    const payments = await eduhubAdminInstallmentPayments.listAll();
+    allPayments = [...payments].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
+    for (const p of payments) {
+      const existing = byApplication.get(p.enrollmentApplicationId);
+      if (!existing) {
+        byApplication.set(p.enrollmentApplicationId, [p]);
+      } else if (!existing.some((e) => e.id === p.id)) {
+        byApplication.set(p.enrollmentApplicationId, [...existing, p]);
+      }
     }
+    emit();
+  } catch {
+    // Non-admin or permission error — retain current state without throwing unhandled error
   }
-  emit();
 }
 
 function ensureApplicationLoaded(applicationId: string): void {
@@ -66,6 +78,7 @@ function ensureApplicationLoaded(applicationId: string): void {
 }
 
 function ensureAllLoaded(): void {
+  if (!isUserAdmin()) return;
   if (allFetch) return;
   allFetch = fetchAll().catch(() => {
     allFetch = null;

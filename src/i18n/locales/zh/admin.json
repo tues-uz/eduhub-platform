@@ -1053,10 +1053,6 @@
         "score": "Score",
         "result": "Result",
         "completed": "已完成"
-      },
-      "tabs": {
-        "results": "成绩",
-        "manage": "管理测试"
       }
     },
     "certifications": {

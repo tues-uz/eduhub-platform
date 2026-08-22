@@ -76,7 +76,6 @@ import TeacherCourseFormLessonsPage from "@/features/teacher/pages/TeacherCourse
 import TeacherCourseRosterPage from "@/features/teacher/pages/TeacherCourseRosterPage";
 import TeacherCourseResumeEditPage from "@/features/teacher/pages/TeacherCourseResumeEditPage";
 import TeacherQuizPage from "@/features/teacher/pages/TeacherQuizPage";
-import TeacherPlacementTestsPage from "@/features/teacher/pages/TeacherPlacementTestsPage";
 import TeacherQuizResultsPage from "@/features/teacher/pages/TeacherQuizResultsPage";
 import TeacherStudentsPage from "@/features/teacher/pages/TeacherStudentsPage";
 import TeacherAssignmentsPage from "@/features/teacher/pages/TeacherAssignmentsPage";
@@ -207,7 +206,6 @@ export function AppRoutes() {
         />
         <Route path="/dashboard/teacher/courses/:courseId" element={<TeacherCourseRosterPage />} />
         <Route path="/dashboard/teacher/placement-test" element={<TeacherQuizPage />} />
-        <Route path="/dashboard/teacher/placement-tests" element={<TeacherPlacementTestsPage />} />
         <Route path="/dashboard/teacher/placement-test/:courseId/:quizId/results" element={<TeacherQuizResultsPage />} />
         <Route path="/dashboard/teacher/placement-test/:courseId/:moduleId/:lessonId/results" element={<TeacherQuizResultsPage />} />
         <Route path="/dashboard/teacher/assignments" element={<TeacherAssignmentsPage />} />

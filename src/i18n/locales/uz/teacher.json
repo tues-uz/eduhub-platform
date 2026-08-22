@@ -367,10 +367,6 @@
           "advancedC1": "Advanced (C1)",
           "advancedC2": "Advanced (C2)"
         },
-        "subjectLabel": "Subject (optional)",
-        "subjectPlaceholder": "e.g. Russian, Korean, IT",
-        "subjectHint": "If students take a placement test for this subject, only students who qualify at this class's level or above can enroll.",
-        "subjectNoGateWarning": "No published placement test exists for \"{{subject}}\" yet — this class will not actually be level-gated until an admin publishes one in Admin → Placement Tests.",
         "aboutLabel": "About this sinf (optional)",
         "aboutPlaceholder": "What talabas will learn — a sentence or two is enough.",
         "datesSectionTitle": "Sinf dates (optional)",
@@ -534,9 +530,6 @@
         "typeLabel": "Type",
         "typePlaceholder": "Select type",
         "typeHint": "Quiz for practice, or Placement test for assessment.",
-        "subjectLabel": "Subject",
-        "subjectPlaceholder": "e.g. Russian, Korean, IT",
-        "subjectHint": "Must match a class's subject for enrollment gating to apply.",
         "release": {
           "label": "Release date & time",
           "date": "Date",
@@ -550,7 +543,10 @@
           "minScore": "Minimum score",
           "maxScore": "Maximum score",
           "addRow": "Add band"
-        }
+        },
+        "gatedCoursesLabel": "Which classes does this gate?",
+        "gatedCoursesHint": "Students must pass this test to enroll in any checked class. Leave all unchecked if this test shouldn't gate anything yet.",
+        "noClassesYet": "You don't have any classes yet."
       },
       "errors": {
         "titleRequired": "Test title is required.",
@@ -573,10 +569,6 @@
       "types": {
         "quiz": "Quiz",
         "placementTest": "Placement test"
-      },
-      "placementTestsPage": {
-        "title": "Daraja testlari",
-        "description": "Institution-wide tests you've authored. A published test gates enrollment into every class of its subject, not just your own."
       }
     },
     "quizResults": {

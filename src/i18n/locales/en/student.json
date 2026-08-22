@@ -140,7 +140,7 @@
     "dayPatternOdd": "Odd Day",
     "dayPatternEven": "Even Day",
     "placementGate": {
-      "takeTest": "Take the {{subject}} placement test to join",
+      "takeTest": "Take the {{testTitle}} test to join",
       "belowLevel": "You're placed at {{achieved}} — this class needs {{required}}"
     }
   },
