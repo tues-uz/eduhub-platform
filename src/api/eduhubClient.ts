@@ -690,6 +690,7 @@ export interface QuizCreateRequest {
     imageUrl?: string;
     orderIndex?: number;
     points?: number;
+    timeLimitSeconds?: number;
     options: {
       letter: string;
       text: string;

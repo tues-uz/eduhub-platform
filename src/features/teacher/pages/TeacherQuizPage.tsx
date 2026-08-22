@@ -608,6 +608,7 @@ const TeacherQuizPage = () => {
         imageUrl: q.image?.trim() || undefined,
         orderIndex: idx,
         points: 1,
+        timeLimitSeconds: q.timeLimitSeconds,
         options: q.options
           .filter((o) => o.text.trim())
           .map((o) => ({ letter: o.letter, text: o.text.trim(), isCorrect: o.correct })),
