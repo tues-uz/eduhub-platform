@@ -36,7 +36,8 @@
     "scheduleApprovals": "Schedule approvals",
     "notifications": "Notifications",
     "payroll": "Payroll",
-    "settings": "Settings"
+    "settings": "Settings",
+    "placementTests": "Placement Tests"
   },
   "studentNav": {
     "dashboard": "Dashboard",

@@ -35,7 +35,8 @@
     "scheduleApprovals": "Jadval tasdiqlari",
     "notifications": "Bildirishnomalar",
     "payroll": "Ish haqi",
-    "settings": "Sozlamalar"
+    "settings": "Sozlamalar",
+    "placementTests": "Daraja testlari"
   },
   "studentNav": {
     "dashboard": "Boshqaruv paneli",

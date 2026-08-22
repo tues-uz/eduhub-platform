@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { format, startOfDay } from "date-fns";
 import {
   ArrowLeft,
   Plus,
@@ -9,6 +10,7 @@ import {
   GripVertical,
   ChevronDown,
   ChevronUp,
+  CalendarClock,
   Loader2,
   Image as ImageIcon,
   X,
@@ -17,6 +19,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
@@ -40,21 +44,39 @@ import {
   eduhubCourseQuizzes,
   eduhubCourses,
   eduhubUploadFile,
+  eduhubPlacementTestsAdmin,
   type QuizResponse,
   type QuizCreateRequest,
+  type PlacementTestBand,
+  type PlacementTestUpsertRequest,
+  type PlacementTestAdminResponse,
 } from "@/api/eduhubClient";
 import { useTranslation } from "react-i18next";
 import { useLayoutContext } from "@/features/layout/context";
 import {
   type QuizQuestion,
+  type QuizType,
   LETTERS,
   TIME_LIMIT_OPTIONS,
+  QUIZ_TYPE_OPTIONS,
   createEmptyQuestion,
 } from "../quizTypes";
+import { useCourseLevels } from "../data/courseLevels";
 
 function randomId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
+
+const RELEASE_TIME_OPTIONS: { value: string; label: string }[] = (() => {
+  const opts: { value: string; label: string }[] = [];
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      const value = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      opts.push({ value, label: format(new Date(1970, 0, 1, h, m), "h:mm a") });
+    }
+  }
+  return opts;
+})();
 
 type MediaUploadBoxProps = {
   questionIndex: number;
@@ -224,8 +246,15 @@ const TeacherQuizPage = () => {
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
   const [editingSourceCourseId, setEditingSourceCourseId] = useState("");
   const [title, setTitle] = useState("");
+  const [quizType, setQuizType] = useState<QuizType>("quiz");
+  const [subject, setSubject] = useState("");
+  const [bands, setBands] = useState<PlacementTestBand[]>([]);
+  const { levels: availableLevels } = useCourseLevels();
   const [thumbnailDraft, setThumbnailDraft] = useState("");
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const [releaseDate, setReleaseDate] = useState("");
+  const [releaseTime, setReleaseTime] = useState("");
+  const [releaseDatePickerOpen, setReleaseDatePickerOpen] = useState(false);
   const [courseId, setCourseId] = useState("");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [error, setError] = useState("");
@@ -234,23 +263,31 @@ const TeacherQuizPage = () => {
   const [editLinkLoading, setEditLinkLoading] = useState(() =>
     typeof window !== "undefined" ? Boolean(new URLSearchParams(window.location.search).get("edit")?.trim()) : false,
   );
-  const [legacyPlacementQuiz, setLegacyPlacementQuiz] = useState(false);
 
   const createQuizFromQueryRef = useRef(false);
   const editQuizFromQueryRef = useRef(false);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   const goBackToClassQuizTab = useCallback(() => {
+    if (quizType === "placement-test") {
+      void navigate("/dashboard/teacher/placement-tests", { replace: true });
+      return;
+    }
     const cid = courseId.trim();
     if (cid) void navigate(`/dashboard/teacher/courses/${cid}?tab=quiz`, { replace: true });
     else void navigate("/dashboard/teacher/courses", { replace: true });
-  }, [courseId, navigate]);
+  }, [courseId, navigate, quizType]);
 
   const startNew = useCallback(() => {
     setEditingQuizId(null);
     setEditingSourceCourseId("");
     setTitle("");
+    setQuizType("quiz");
+    setSubject("");
+    setBands([]);
     setThumbnailDraft("");
+    setReleaseDate("");
+    setReleaseTime("");
     setQuestions([createEmptyQuestion(randomId())]);
     setError("");
   }, []);
@@ -259,7 +296,12 @@ const TeacherQuizPage = () => {
     setEditingQuizId(quiz.id);
     setEditingSourceCourseId(quiz.courseId ?? "");
     setTitle(quiz.title);
+    setQuizType("quiz");
+    setSubject("");
+    setBands([]);
     setThumbnailDraft(quiz.thumbnailUrl?.trim() || "");
+    setReleaseDate("");
+    setReleaseTime("");
     setCourseId(quiz.courseId ?? "");
     setQuestions(
       quiz.questions.length > 0
@@ -268,6 +310,35 @@ const TeacherQuizPage = () => {
           question: q.question,
           image: q.imageUrl,
           timeLimitSeconds: q.timeLimitSeconds ?? 30,
+            options: q.options.map((o) => ({
+              letter: o.letter as "A" | "B" | "C" | "D",
+              text: o.text,
+              correct: o.isCorrect,
+            })),
+          }))
+        : [createEmptyQuestion(randomId())],
+    );
+    setError("");
+  }, []);
+
+  const startEditPlacement = useCallback((quiz: PlacementTestAdminResponse) => {
+    setEditingQuizId(quiz.id);
+    setEditingSourceCourseId("");
+    setTitle(quiz.title);
+    setQuizType("placement-test");
+    setSubject(quiz.subject ?? "");
+    setBands(quiz.bands ?? []);
+    setThumbnailDraft("");
+    setReleaseDate(quiz.releaseDate ?? "");
+    setReleaseTime(quiz.releaseTime ? quiz.releaseTime.slice(0, 5) : "");
+    setCourseId("");
+    setQuestions(
+      quiz.questions.length > 0
+        ? quiz.questions.map((q) => ({
+            id: q.id,
+            question: q.question,
+            image: q.imageUrl,
+            timeLimitSeconds: 30,
             options: q.options.map((o) => ({
               letter: o.letter as "A" | "B" | "C" | "D",
               text: o.text,
@@ -307,35 +378,53 @@ const TeacherQuizPage = () => {
       return;
     }
 
-    if (editId && fromUrl) {
+    if (editId) {
       if (editQuizFromQueryRef.current) return;
       editQuizFromQueryRef.current = true;
       setEditLinkLoading(true);
-      void eduhubCourseQuizzes
-        .get(fromUrl, editId)
-        .then((quiz) => {
-          if (quiz.quizType === "PLACEMENT_TEST") {
-            // Placement tests are managed institution-wide, not per class — this class-scoped
-            // editor no longer has a form for them (see AdminPlacementTestsManager instead).
-            setLegacyPlacementQuiz(true);
-            return;
-          }
-          startEdit(quiz);
-          setSearchParams(
-            (prev) => {
-              const next = new URLSearchParams(prev);
-              next.delete("edit");
-              return next;
-            },
-            { replace: true },
-          );
-        })
-        .catch(() => {
-          setError(t("teacher.quiz.errors.loadFailed"));
-        })
-        .finally(() => setEditLinkLoading(false));
+
+      const clearEditParam = () =>
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev);
+            next.delete("edit");
+            return next;
+          },
+          { replace: true },
+        );
+
+      const loadAsPlacementTest = () =>
+        eduhubPlacementTestsAdmin
+          .get(editId)
+          .then((placementQuiz) => {
+            startEditPlacement(placementQuiz);
+            clearEditParam();
+          })
+          .catch(() => setError(t("teacher.quiz.errors.loadFailed")))
+          .finally(() => setEditLinkLoading(false));
+
+      if (fromUrl) {
+        // Most edit links come from a class roster, so try the class-scoped fetch first. If the
+        // quiz turns out to be a placement test (subject-wide, not tied to any one class), or the
+        // fetch fails outright — e.g. this link is stale because the test lost its class
+        // association when it moved to the placement-test form — fall back to loading it as one.
+        void eduhubCourseQuizzes
+          .get(fromUrl, editId)
+          .then((quiz) => {
+            if (quiz.quizType === "PLACEMENT_TEST") {
+              void loadAsPlacementTest();
+              return;
+            }
+            startEdit(quiz);
+            clearEditParam();
+            setEditLinkLoading(false);
+          })
+          .catch(() => void loadAsPlacementTest());
+      } else {
+        void loadAsPlacementTest();
+      }
     }
-  }, [searchParams, setSearchParams, startNew, startEdit, t]);
+  }, [searchParams, setSearchParams, startNew, startEdit, startEditPlacement, t]);
 
   useEffect(() => {
     eduhubCourses.getAll().then((res) => {
@@ -440,6 +529,69 @@ const TeacherQuizPage = () => {
     }
     setError("");
 
+    if (quizType === "placement-test") {
+      const trimmedSubject = subject.trim();
+      if (!trimmedSubject) {
+        setError("Set the subject — it decides which classes this test gates.");
+        return;
+      }
+      const usableBands = bands.filter((b) => b.levelCode.trim());
+      if (usableBands.length === 0) {
+        setError("Add at least one score band — without one, no student ever gets a level from this test.");
+        return;
+      }
+      for (const b of usableBands) {
+        if (b.minScore > b.maxScore) {
+          setError(`Band ${b.levelCode} has a minimum above its maximum.`);
+          return;
+        }
+      }
+      const sortedBands = [...usableBands].sort((a, b) => a.minScore - b.minScore);
+      for (let i = 1; i < sortedBands.length; i++) {
+        if (sortedBands[i].minScore <= sortedBands[i - 1].maxScore) {
+          setError(
+            `Bands ${sortedBands[i - 1].levelCode} and ${sortedBands[i].levelCode} overlap — each score must map to exactly one level.`,
+          );
+          return;
+        }
+      }
+
+      const placementPayload: PlacementTestUpsertRequest = {
+        title: trimmedTitle,
+        subject: trimmedSubject,
+        releaseDate: releaseDate.trim() || undefined,
+        releaseTime: releaseTime.trim() || undefined,
+        isPublished: true,
+        questions: validQuestions.map((q, idx) => ({
+          question: q.question.trim(),
+          imageUrl: q.image?.trim() || undefined,
+          orderIndex: idx,
+          points: 1,
+          options: q.options
+            .filter((o) => o.text.trim())
+            .map((o) => ({ letter: o.letter, text: o.text.trim(), isCorrect: o.correct })),
+        })),
+        bands: usableBands.map((b) => ({ minScore: b.minScore, maxScore: b.maxScore, levelCode: b.levelCode })),
+      };
+
+      try {
+        setLoading(true);
+        if (editingQuizId) {
+          await eduhubPlacementTestsAdmin.update(editingQuizId, placementPayload);
+        } else {
+          await eduhubPlacementTestsAdmin.create(placementPayload);
+        }
+        toast.success(editingQuizId ? "Placement test updated" : "Placement test created");
+        void navigate("/dashboard/teacher/placement-tests", { replace: true });
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : "Failed to save placement test.";
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     const quizCourseId = courseId.trim();
 
     if (!quizCourseId) {
@@ -493,19 +645,6 @@ const TeacherQuizPage = () => {
       <div className="flex flex-col items-center justify-center px-4 py-24 lg:px-6">
         <Loader2 className="h-8 w-8 animate-spin text-teal-700/70" aria-hidden />
         <p className="mt-4 text-sm text-muted-foreground">{t("teacher.quiz.loading")}</p>
-      </div>
-    );
-  }
-
-  if (legacyPlacementQuiz) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-3 px-4 py-24 text-center lg:px-6">
-        <p className="max-w-md text-sm text-muted-foreground">
-          {t("teacher.quiz.legacyPlacementNotice")}
-        </p>
-        <Button type="button" variant="outline" size="sm" onClick={goBackToClassQuizTab}>
-          {t("teacher.quiz.backToClass")}
-        </Button>
       </div>
     );
   }
@@ -639,7 +778,38 @@ const TeacherQuizPage = () => {
               )}
             </div>
 
-            {!classFieldLocked ? (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground">
+                {t("teacher.quiz.form.typeLabel")}
+              </Label>
+              <Select
+                value={quizType}
+                onValueChange={(v) => {
+                  const next = v as QuizType;
+                  setQuizType(next);
+                  // A placement test is subject-wide, not tied to one class — clear a stale
+                  // class selection so the header doesn't keep showing "for class X".
+                  if (next === "placement-test") setCourseId("");
+                }}
+                disabled={Boolean(editingQuizId)}
+              >
+                <SelectTrigger className="w-full bg-background">
+                  <SelectValue placeholder={t("teacher.quiz.form.typePlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {QUIZ_TYPE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.value === "placement-test"
+                        ? t("teacher.quiz.types.placementTest")
+                        : t("teacher.quiz.types.quiz")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{t("teacher.quiz.form.typeHint")}</p>
+            </div>
+
+            {quizType === "quiz" && !classFieldLocked ? (
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-muted-foreground">
                   {t("teacher.quiz.form.classLabel")}
@@ -665,7 +835,9 @@ const TeacherQuizPage = () => {
 
             <div className="space-y-2">
               <Label htmlFor="quiz-title" className="text-xs font-medium text-muted-foreground">
-                {t("teacher.quiz.form.titleLabels.quiz")}
+                {quizType === "placement-test"
+                  ? t("teacher.quiz.form.titleLabels.placement")
+                  : t("teacher.quiz.form.titleLabels.quiz")}
               </Label>
               <Input
                 id="quiz-title"
@@ -675,6 +847,155 @@ const TeacherQuizPage = () => {
               />
             </div>
 
+            {quizType === "placement-test" ? (
+              <div className="space-y-2 border-t border-border pt-4">
+                <Label htmlFor="quiz-subject" className="text-xs font-medium text-muted-foreground">
+                  {t("teacher.quiz.form.subjectLabel")}
+                </Label>
+                <Input
+                  id="quiz-subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder={t("teacher.quiz.form.subjectPlaceholder")}
+                  maxLength={100}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("teacher.quiz.form.subjectHint")}
+                </p>
+              </div>
+            ) : null}
+
+            {quizType === "placement-test" ? (
+              <div className="space-y-2 border-t border-border pt-4">
+                <Label className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <CalendarClock className="h-3.5 w-3.5" aria-hidden />
+                  {t("teacher.quiz.form.release.label")}
+                </Label>
+                <div className="space-y-2">
+                  <Popover open={releaseDatePickerOpen} onOpenChange={setReleaseDatePickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        id="release-date-picker"
+                        className="h-10 w-full justify-between bg-background font-normal"
+                      >
+                        <span className="truncate">
+                          {releaseDate
+                            ? format(new Date(releaseDate + "T12:00:00"), "PPP")
+                            : t("teacher.quiz.form.release.selectDate")}
+                        </span>
+                        <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={releaseDate ? new Date(releaseDate + "T12:00:00") : undefined}
+                        disabled={(date) => startOfDay(date) < startOfDay(new Date())}
+                        onSelect={(date) => {
+                          if (date) setReleaseDate(format(date, "yyyy-MM-dd"));
+                          setReleaseDatePickerOpen(false);
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Select value={releaseTime || undefined} onValueChange={setReleaseTime}>
+                    <SelectTrigger id="release-time" className="h-10 w-full bg-background">
+                      <SelectValue placeholder={t("teacher.quiz.form.release.selectTime")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RELEASE_TIME_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ) : null}
+
+            {quizType === "placement-test" ? (
+              <div className="space-y-2 border-t border-border pt-4">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  {t("teacher.quiz.form.bands.label")}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {t("teacher.quiz.form.bands.hint")}
+                </p>
+                <div className="space-y-2">
+                  {bands.map((band, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={band.minScore}
+                        onChange={(e) =>
+                          setBands((prev) =>
+                            prev.map((b, i) => (i === idx ? { ...b, minScore: Number(e.target.value) } : b)),
+                          )
+                        }
+                        className="w-16"
+                        aria-label={t("teacher.quiz.form.bands.minScore")}
+                      />
+                      <span className="text-xs text-muted-foreground">–</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={band.maxScore}
+                        onChange={(e) =>
+                          setBands((prev) =>
+                            prev.map((b, i) => (i === idx ? { ...b, maxScore: Number(e.target.value) } : b)),
+                          )
+                        }
+                        className="w-16"
+                        aria-label={t("teacher.quiz.form.bands.maxScore")}
+                      />
+                      <Select
+                        value={band.levelCode || undefined}
+                        onValueChange={(value) =>
+                          setBands((prev) => prev.map((b, i) => (i === idx ? { ...b, levelCode: value } : b)))
+                        }
+                      >
+                        <SelectTrigger className="h-9 flex-1 bg-background">
+                          <SelectValue placeholder={t("teacher.courseForm.details.levelPlaceholder")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableLevels.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.labelKey ? t(item.labelKey, { defaultValue: item.label }) : item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => setBands((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() =>
+                    setBands((prev) => [...prev, { minScore: 0, maxScore: 100, levelCode: "" }])
+                  }
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {t("teacher.quiz.form.bands.addRow")}
+                </Button>
+              </div>
+            ) : null}
           </aside>
 
           {/* Questions column */}

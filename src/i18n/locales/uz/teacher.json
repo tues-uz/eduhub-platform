@@ -477,8 +477,6 @@
     "quiz": {
       "loading": "Yuklanmoqda quiz…",
       "backToQuizzes": "Orqaga to sinf quizzes",
-      "backToClass": "Back to class",
-      "legacyPlacementNotice": "This test is now managed institution-wide in Admin → Placement Tests, not from a class.",
       "title": {
         "edit": "Tahrirlash quiz",
         "create": "Create quiz"
@@ -506,7 +504,8 @@
         "classLockedHint": "Sinf is locked for this quiz.",
         "classPickerHint": "Yuklanmoqda…",
         "titleLabels": {
-          "quiz": "Test title *"
+          "quiz": "Test title *",
+          "placement": "Placement test title"
         },
         "titlePlaceholder": "e.g. Economics Placement Test",
         "questionsTitle": "Questions (multiple choice)",
@@ -531,7 +530,27 @@
           "option": "Option {{letter}}"
         },
         "saveChanges": "Saqlash changes",
-        "createQuiz": "Create quiz"
+        "createQuiz": "Create quiz",
+        "typeLabel": "Type",
+        "typePlaceholder": "Select type",
+        "typeHint": "Quiz for practice, or Placement test for assessment.",
+        "subjectLabel": "Subject",
+        "subjectPlaceholder": "e.g. Russian, Korean, IT",
+        "subjectHint": "Must match a class's subject for enrollment gating to apply.",
+        "release": {
+          "label": "Release date & time",
+          "date": "Date",
+          "time": "Time",
+          "selectDate": "Select date",
+          "selectTime": "Select time"
+        },
+        "bands": {
+          "label": "Score-to-level bands",
+          "hint": "Map score ranges to a level. The student's best result sets their level for this subject.",
+          "minScore": "Minimum score",
+          "maxScore": "Maximum score",
+          "addRow": "Add band"
+        }
       },
       "errors": {
         "titleRequired": "Test title is required.",
@@ -550,6 +569,14 @@
           "title": "Remove this question?",
           "description": "This question will be removed from the quiz."
         }
+      },
+      "types": {
+        "quiz": "Quiz",
+        "placementTest": "Placement test"
+      },
+      "placementTestsPage": {
+        "title": "Daraja testlari",
+        "description": "Institution-wide tests you've authored. A published test gates enrollment into every class of its subject, not just your own."
       }
     },
     "quizResults": {

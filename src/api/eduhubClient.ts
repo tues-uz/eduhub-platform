@@ -557,8 +557,9 @@ export const eduhubCourseQuizzes = {
 };
 
 /**
- * Admin-owned placement tests. These are institution-wide and scoped by subject — one published
- * "Russian" test gates every Russian class — so unlike per-class quizzes they carry no courseId.
+ * Placement test management — open to lecturers (who author the content) and admins. Tests are
+ * institution-wide and scoped by subject — one published "Russian" test gates every Russian class,
+ * not just the creator's own — so unlike per-class quizzes they carry no courseId.
  */
 export const eduhubPlacementTestsAdmin = {
   list: () => request<PlacementTestAdminResponse[]>("/admin/placement-tests"),
@@ -609,6 +610,8 @@ export interface PlacementTestUpsertRequest {
   description?: string;
   /** Must match the Course.subject of the classes this test should gate (e.g. "Russian"). */
   subject: string;
+  releaseDate?: string;
+  releaseTime?: string;
   timeLimitMinutes?: number;
   passingScore?: number;
   /** Attempts allowed per student. Omit for unlimited. */
@@ -624,6 +627,8 @@ export interface PlacementTestAdminResponse {
   title: string;
   description?: string;
   subject: string;
+  releaseDate?: string;
+  releaseTime?: string;
   timeLimitMinutes?: number;
   passingScore?: number;
   maxAttempts?: number;

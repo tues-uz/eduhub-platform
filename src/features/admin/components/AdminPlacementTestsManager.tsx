@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, Plus } from "@/lib/icons";
 import { Badge } from "@/components/ui/badge";
@@ -23,17 +24,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { eduhubPlacementTestsAdmin } from "@/api/eduhubClient";
 import type { PlacementTestAdminResponse } from "@/api/eduhubClient";
-import { AdminPlacementTestEditor } from "./AdminPlacementTestEditor";
 
 /**
- * Manage institution-wide placement tests. Each one is scoped by subject and gates enrollment
- * into every class of that subject whose level sits above the student's achieved level.
+ * Lists institution-wide placement tests. Each one is scoped by subject and gates enrollment into
+ * every class of that subject whose level sits above the student's achieved level. Authoring
+ * content (questions, bands) happens on the teacher's placement-test form — this list is where a
+ * lecturer or admin finds an existing test to edit, since a subject-wide test has no single class
+ * roster to be discovered from.
  */
 export function AdminPlacementTestsManager() {
+  const navigate = useNavigate();
   const [tests, setTests] = useState<PlacementTestAdminResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<PlacementTestAdminResponse | null>(null);
-  const [creating, setCreating] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PlacementTestAdminResponse | null>(null);
 
   const load = useCallback(() => {
@@ -46,16 +48,6 @@ export function AdminPlacementTestsManager() {
   }, []);
 
   useEffect(() => load(), [load]);
-
-  const closeEditor = () => {
-    setCreating(false);
-    setEditing(null);
-  };
-
-  const handleSaved = () => {
-    closeEditor();
-    load();
-  };
 
   const togglePublished = async (test: PlacementTestAdminResponse) => {
     try {
@@ -80,22 +72,6 @@ export function AdminPlacementTestsManager() {
     }
   };
 
-  if (creating || editing) {
-    return (
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900">
-            {editing ? "Edit placement test" : "New placement test"}
-          </h2>
-          <p className="text-sm text-slate-600">
-            Applies to every class in this subject, regardless of teacher.
-          </p>
-        </div>
-        <AdminPlacementTestEditor existing={editing} onSaved={handleSaved} onCancel={closeEditor} />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-end">
@@ -103,7 +79,7 @@ export function AdminPlacementTestsManager() {
           type="button"
           size="sm"
           className="bg-slate-900 text-white hover:bg-slate-800"
-          onClick={() => setCreating(true)}
+          onClick={() => navigate("/dashboard/teacher/placement-test?new=1")}
         >
           <Plus className="mr-2 h-4 w-4" />
           New placement test
@@ -160,7 +136,12 @@ export function AdminPlacementTestsManager() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(test)}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/dashboard/teacher/placement-test?edit=${test.id}`)}
+                      >
                         Edit
                       </Button>
                       <Button type="button" variant="ghost" size="sm" onClick={() => togglePublished(test)}>
