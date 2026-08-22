@@ -11,7 +11,8 @@ export type StoredAttendanceMeeting = {
   endReason?: string;
   /** Instructor label, e.g. "Week 3 — Tuesday" */
   name: string;
-  /** Opaque backend QR token; only known in-memory for a session created in this tab (backend never re-exposes it). */
+  /** Opaque backend QR token; the backend re-exposes it for OPEN sessions to the lecturer/admin (see
+   * `AttendanceService.listSessions`), but this local copy from create-time avoids an extra round trip. */
   token?: string;
   /** 0-based row on the approved class schedule when QR was generated from the schedule dropdown. */
   scheduleSlotIndex?: number;
@@ -77,8 +78,9 @@ export function pickStoredMeetingForScheduleSlot(
 }
 
 /**
- * sessionStorage only (tab refresh recovery). Backend usually does not re-expose QR tokens on
- * listSessions, so we keep the create-time token here until the tab closes.
+ * sessionStorage only (tab refresh recovery). `listSessions` does return the token for OPEN
+ * sessions to staff, but only after a network round trip — this cache lets a refresh show the
+ * QR immediately, and covers the closed/expired case where the backend no longer returns it.
  */
 const QR_TOKEN_STORAGE_KEY = "eduhub_attendance_qr_tokens_v1";
 
@@ -185,6 +187,8 @@ export function endReasonLabel(reason: string): string {
       return "New QR / next meeting";
     case "MANUAL_STOP":
       return "Stopped by instructor";
+    case "SUPERSEDED":
+      return "Closed automatically (new QR started on another class)";
     default:
       return reason;
   }

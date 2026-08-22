@@ -65,6 +65,7 @@ const TeacherCourseFormLayout = () => {
 
   const [title, setTitle] = useState("");
   const [level, setLevel] = useState("");
+  const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [classMeetingsInSixMonths, setClassMeetingsInSixMonths] = useState("");
   const [lessons, setLessons] = useState<TeacherLesson[]>([]);
@@ -109,6 +110,7 @@ const TeacherCourseFormLayout = () => {
           .then((course) => {
             setTitle(course.title);
             setLevel(course.level ?? "");
+            setSubject(course.subject ?? "");
             setDescription(course.description ?? "");
             setThumbnailUrl(course.thumbnailUrl ?? "");
             {
@@ -330,6 +332,7 @@ const TeacherCourseFormLayout = () => {
           description: description.trim() || "—",
           category: instructorCategory.trim(),
           level: level.trim(),
+          ...(subject.trim() ? { subject: subject.trim() } : {}),
           status: "DRAFT",
           classMeetingsInSixMonths: meetingsSixMo,
           classMeetingTitles: meetingTitlesForSave,
@@ -365,6 +368,7 @@ const TeacherCourseFormLayout = () => {
           description: description.trim() || "—",
           category: instructorCategory.trim() || existingCourse.category,
           level: level.trim(),
+          subject: subject.trim() || undefined,
           status: existingCourse.status,
           classMeetingsInSixMonths: meetingsSixMo,
           classMeetingTitles: meetingTitlesForSave,
@@ -418,6 +422,8 @@ const TeacherCourseFormLayout = () => {
     category: instructorCategory,
     level,
     setLevel,
+    subject,
+    setSubject,
     description,
     setDescription,
     classMeetingsInSixMonths,

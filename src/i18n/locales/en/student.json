@@ -285,6 +285,7 @@
     "greatJob": "Great Job!",
     "completedMessage": "You have successfully completed the {{title}}.",
     "yourScore": "Your Score",
+    "yourLevel": "Your Level",
     "exploreMyClass": "Explore My Class",
     "submitFailed": "Failed to submit placement test. Please try again."
   },

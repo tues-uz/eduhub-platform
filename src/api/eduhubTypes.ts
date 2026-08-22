@@ -142,6 +142,8 @@ export interface CourseRequest {
   category: string;
   /** CEFR-style class level (e.g. beginner_a1). API may ignore until backend supports. */
   level?: string;
+  /** Placement-test subject this class belongs to (e.g. "Russian"), for level-gated enrollment. */
+  subject?: string;
   status?: CourseStatus;
   /** How many in-person/live class sessions meet within a 6‑month period (lecturer-provided). */
   classMeetingsInSixMonths?: number;
@@ -176,6 +178,8 @@ export interface CourseResponse {
   category: string;
   /** CEFR-style class level when returned by API. */
   level?: string;
+  /** Placement-test subject this class belongs to (e.g. "Russian"), for level-gated enrollment. */
+  subject?: string;
   lecturer: UserResponse;
   enrollmentCount?: number;
   pricing?: CoursePricingResponse;
@@ -206,6 +210,8 @@ export interface CourseSummaryResponse {
   category: string;
   /** CEFR-style class level when returned by API. */
   level?: string;
+  /** Placement-test subject this class belongs to (e.g. "Russian"), for level-gated enrollment. */
+  subject?: string;
   lecturerName: string;
   lecturerAvatarUrl?: string;
   enrollmentCount?: number;
@@ -481,6 +487,8 @@ export interface AttendanceSessionCreateRequest {
   modality?: AttendanceModality;
   scheduleSlotIndex?: number;
   scheduleSlotKey?: string;
+  /** Tuition schedule month (1-3) this meeting belongs to, for server-side payment gating at check-in. */
+  scheduleMonth?: number;
 }
 
 export interface AttendanceSessionResponse {
@@ -881,6 +889,9 @@ export interface QuizResponse {
   title: string;
   description?: string;
   courseId: string;
+  quizType?: "QUIZ" | "PLACEMENT_TEST";
+  /** For placement tests: the subject a passing result qualifies the student in (e.g. "Russian"). */
+  subject?: string;
   timeLimitMinutes?: number;
   passingScore?: number;
   isPlacementTest?: boolean;

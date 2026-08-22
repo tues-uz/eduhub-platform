@@ -550,6 +550,19 @@ export const eduhubCourseQuizzes = {
 
   getAllMyResults: () =>
     request<QuizResultResponse[]>("/quizzes/my-results"),
+
+  getPlacementBands: (quizId: string) =>
+    request<PlacementTestBand[]>(`/quizzes/${quizId}/placement-bands`),
+
+  replacePlacementBands: (quizId: string, bands: PlacementTestBand[]) =>
+    request<PlacementTestBand[]>(`/quizzes/${quizId}/placement-bands`, {
+      method: "PUT",
+      body: JSON.stringify(bands.map((b) => ({ minScore: b.minScore, maxScore: b.maxScore, levelCode: b.levelCode }))),
+    }),
+
+  /** The authenticated student's achieved placement levels, one per subject. */
+  getMyPlacementResults: () =>
+    request<StudentPlacementResultResponse[]>("/placement-results/me"),
 };
 
 /** Quiz - tied to lessons (legacy) */
@@ -590,6 +603,8 @@ export interface QuizCreateRequest {
   /** Cover image shown on quiz cards in the class roster. */
   thumbnailUrl?: string;
   quizType?: "QUIZ" | "PLACEMENT_TEST";
+  /** For placement tests: the subject a passing result qualifies the student in (e.g. "Russian"). */
+  subject?: string;
   releaseDate?: string;
   releaseTime?: string;
   timeLimitMinutes?: number;
@@ -621,6 +636,8 @@ export interface QuizResponse {
   /** Cover image shown on quiz cards in the class roster. */
   thumbnailUrl?: string;
   quizType?: "QUIZ" | "PLACEMENT_TEST";
+  /** For placement tests: the subject a passing result qualifies the student in (e.g. "Russian"). */
+  subject?: string;
   releaseDate?: string;
   releaseTime?: string;
   timeLimitMinutes: number;
@@ -653,6 +670,8 @@ export interface QuizResponseForStudent {
   title: string;
   description?: string;
   quizType?: "QUIZ" | "PLACEMENT_TEST";
+  /** For placement tests: the subject a passing result qualifies the student in (e.g. "Russian"). */
+  subject?: string;
   timeLimitMinutes: number;
   passingScore: number;
   questions: {
@@ -667,6 +686,24 @@ export interface QuizResponseForStudent {
       text: string;
     }[];
   }[];
+}
+
+/** Admin/teacher-configured score-to-level band for a placement test. */
+export interface PlacementTestBand {
+  id?: string;
+  quizId?: string;
+  minScore: number;
+  maxScore: number;
+  levelCode: string;
+}
+
+/** A student's achieved level for one subject, derived from their latest placement test attempt. */
+export interface StudentPlacementResultResponse {
+  id: string;
+  subject: string;
+  levelCode: string;
+  score: number;
+  achievedAt: string;
 }
 
 export interface QuizSubmissionRequest {
@@ -792,6 +829,14 @@ export const eduhubAdmin = {
     adminActionCode?: string;
   }) => request<CourseResponse>(`/admin/courses/${id}/review`, { method: "PATCH", body: JSON.stringify(body) }),
 
+  /** Updates referral/discount/trial code on an already-published course without re-triggering approval/publish side effects. */
+  updateCoursePricing: (id: string, body: {
+    referralCode?: string;
+    discountPercent?: number;
+    trialCode?: string;
+    adminActionCode?: string;
+  }) => request<CourseResponse>(`/admin/courses/${id}/pricing`, { method: "PATCH", body: JSON.stringify(body) }),
+
   createUser: (body: {
     fullName: string;
     email: string;
@@ -814,6 +859,9 @@ export const eduhubAdmin = {
 
   setUserStatus: (id: string, enabled: boolean) =>
     request<UserResponse>(`/admin/users/${id}/status`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
+
+  resetUserPassword: (id: string) =>
+    request<AdminCreateUserResponse>(`/admin/users/${id}/reset-password`, { method: "POST" }),
 
   setInstructorRevenueShare: (id: string, instructorRevenueShare: number | null, adminActionCode: string) =>
     request<UserResponse>(`/admin/users/${id}/revenue-share`, {
@@ -959,6 +1007,10 @@ export const eduhubAttendance = {
 
   listSessions: (courseId: string) =>
     request<AttendanceSessionResponse[]>(`/courses/${courseId}/attendance/sessions`),
+
+  /** My currently open attendance sessions across all classes (for the "you left one open elsewhere" check). */
+  myOpenSessions: () =>
+    request<AttendanceSessionResponse[]>("/attendance/sessions/mine/open"),
 
   closeSession: (sessionId: string, reason = "MANUAL_STOP") =>
     request<AttendanceSessionResponse>(`/attendance/sessions/${sessionId}/close`, {

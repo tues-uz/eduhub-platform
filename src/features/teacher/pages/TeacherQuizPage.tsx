@@ -46,6 +46,7 @@ import {
   eduhubUploadFile,
   type QuizResponse,
   type QuizCreateRequest,
+  type PlacementTestBand,
 } from "@/api/eduhubClient";
 import { useTranslation } from "react-i18next";
 import { useLayoutContext } from "@/features/layout/context";
@@ -57,6 +58,7 @@ import {
   QUIZ_TYPE_OPTIONS,
   createEmptyQuestion,
 } from "../quizTypes";
+import { useCourseLevels } from "../data/courseLevels";
 
 function randomId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -242,6 +244,9 @@ const TeacherQuizPage = () => {
   const [editingSourceCourseId, setEditingSourceCourseId] = useState("");
   const [title, setTitle] = useState("");
   const [quizType, setQuizType] = useState<QuizType>("quiz");
+  const [subject, setSubject] = useState("");
+  const [bands, setBands] = useState<PlacementTestBand[]>([]);
+  const { levels: availableLevels } = useCourseLevels();
   const [thumbnailDraft, setThumbnailDraft] = useState("");
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [releaseDate, setReleaseDate] = useState("");
@@ -271,6 +276,8 @@ const TeacherQuizPage = () => {
     setEditingSourceCourseId("");
     setTitle("");
     setQuizType("quiz");
+    setSubject("");
+    setBands([]);
     setThumbnailDraft("");
     setReleaseDate("");
     setReleaseTime("");
@@ -284,6 +291,14 @@ const TeacherQuizPage = () => {
     setTitle(quiz.title);
     const qt = quiz.quizType === "PLACEMENT_TEST" ? "placement-test" : "quiz";
     setQuizType(qt as QuizType);
+    setSubject(quiz.subject ?? "");
+    setBands([]);
+    if (qt === "placement-test") {
+      eduhubCourseQuizzes
+        .getPlacementBands(quiz.id)
+        .then((loaded) => setBands(loaded))
+        .catch(() => setBands([]));
+    }
     setThumbnailDraft(quiz.thumbnailUrl?.trim() || "");
     setReleaseDate(quiz.releaseDate ?? "");
     setReleaseTime(quiz.releaseTime ? quiz.releaseTime.slice(0, 5) : "");
@@ -472,6 +487,7 @@ const TeacherQuizPage = () => {
     const payload: QuizCreateRequest = {
       title: trimmedTitle,
       quizType: apiQuizType as "QUIZ" | "PLACEMENT_TEST",
+      subject: quizType === "placement-test" ? (subject.trim() || undefined) : undefined,
       thumbnailUrl: thumbnailDraft.trim() || undefined,
       releaseDate: quizType === "placement-test" ? (releaseDate.trim() || undefined) : undefined,
       releaseTime: quizType === "placement-test" ? (releaseTime.trim() || undefined) : undefined,
@@ -498,10 +514,16 @@ const TeacherQuizPage = () => {
 
     try {
       setLoading(true);
+      let savedQuizId = editingQuizId;
       if (editingQuizId) {
         await eduhubCourseQuizzes.update(quizCourseId, editingQuizId, payload);
       } else {
-        await eduhubCourseQuizzes.create(courseId.trim(), payload);
+        const created = await eduhubCourseQuizzes.create(courseId.trim(), payload);
+        savedQuizId = created.id;
+      }
+      if (apiQuizType === "PLACEMENT_TEST" && savedQuizId) {
+        const validBands = bands.filter((b) => b.levelCode.trim() && b.minScore <= b.maxScore);
+        await eduhubCourseQuizzes.replacePlacementBands(savedQuizId, validBands);
       }
       await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", quizCourseId] });
       toast.success(editingQuizId ? "Quiz updated" : "Quiz created");
@@ -719,6 +741,24 @@ const TeacherQuizPage = () => {
 
             {quizType === "placement-test" ? (
               <div className="space-y-2 border-t border-border pt-4">
+                <Label htmlFor="quiz-subject" className="text-xs font-medium text-muted-foreground">
+                  {t("teacher.quiz.form.subjectLabel")}
+                </Label>
+                <Input
+                  id="quiz-subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder={t("teacher.quiz.form.subjectPlaceholder")}
+                  maxLength={100}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("teacher.quiz.form.subjectHint")}
+                </p>
+              </div>
+            ) : null}
+
+            {quizType === "placement-test" ? (
+              <div className="space-y-2 border-t border-border pt-4">
                 <Label className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                   <CalendarClock className="h-3.5 w-3.5" aria-hidden />
                   {t("teacher.quiz.form.release.label")}
@@ -764,6 +804,88 @@ const TeacherQuizPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+            ) : null}
+
+            {quizType === "placement-test" ? (
+              <div className="space-y-2 border-t border-border pt-4">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  {t("teacher.quiz.form.bands.label")}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {t("teacher.quiz.form.bands.hint")}
+                </p>
+                <div className="space-y-2">
+                  {bands.map((band, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={band.minScore}
+                        onChange={(e) =>
+                          setBands((prev) =>
+                            prev.map((b, i) => (i === idx ? { ...b, minScore: Number(e.target.value) } : b)),
+                          )
+                        }
+                        className="w-16"
+                        aria-label={t("teacher.quiz.form.bands.minScore")}
+                      />
+                      <span className="text-xs text-muted-foreground">–</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={band.maxScore}
+                        onChange={(e) =>
+                          setBands((prev) =>
+                            prev.map((b, i) => (i === idx ? { ...b, maxScore: Number(e.target.value) } : b)),
+                          )
+                        }
+                        className="w-16"
+                        aria-label={t("teacher.quiz.form.bands.maxScore")}
+                      />
+                      <Select
+                        value={band.levelCode || undefined}
+                        onValueChange={(value) =>
+                          setBands((prev) => prev.map((b, i) => (i === idx ? { ...b, levelCode: value } : b)))
+                        }
+                      >
+                        <SelectTrigger className="h-9 flex-1 bg-background">
+                          <SelectValue placeholder={t("teacher.courseForm.details.levelPlaceholder")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableLevels.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.labelKey ? t(item.labelKey, { defaultValue: item.label }) : item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => setBands((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() =>
+                    setBands((prev) => [...prev, { minScore: 0, maxScore: 100, levelCode: "" }])
+                  }
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {t("teacher.quiz.form.bands.addRow")}
+                </Button>
               </div>
             ) : null}
           </aside>

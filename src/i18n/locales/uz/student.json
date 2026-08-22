@@ -280,6 +280,7 @@
     "greatJob": "Ajoyib ish!",
     "completedMessage": "Siz {{title}} ni muvaffaqiyatli tugatdingiz.",
     "yourScore": "Sizning ballingiz",
+    "yourLevel": "Sizning darajangiz",
     "exploreMyClass": "Mening darsimni ko'rish",
     "submitFailed": "Daraja testini yuborib bo'lmadi. Qayta urinib ko'ring."
   },

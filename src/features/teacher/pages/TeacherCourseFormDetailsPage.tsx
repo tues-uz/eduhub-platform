@@ -32,6 +32,8 @@ const TeacherCourseFormDetailsPage = () => {
     category,
     level,
     setLevel,
+    subject,
+    setSubject,
     description,
     setDescription,
     thumbnailUrl,
@@ -244,6 +246,21 @@ const TeacherCourseFormDetailsPage = () => {
                 {error}
               </p>
             ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="classSubject">{t("teacher.courseForm.details.subjectLabel")}</Label>
+            <Input
+              id="classSubject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder={t("teacher.courseForm.details.subjectPlaceholder")}
+              className="h-11 bg-background"
+              maxLength={100}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t("teacher.courseForm.details.subjectHint")}
+            </p>
           </div>
 
           <div className="space-y-2">

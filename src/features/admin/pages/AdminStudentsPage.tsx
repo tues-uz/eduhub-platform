@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Mail, MoreHorizontal, UserCheck, UserX } from "@/lib/icons";
+import { Lock, Mail, MoreHorizontal, UserCheck, UserX } from "@/lib/icons";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { StudentStatusBadge } from "@/features/admin/components/AdminStatusBadges";
@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { eduhubAdmin } from "@/api/eduhubClient";
+import { TemporaryPasswordDialog } from "@/features/admin/components/TemporaryPasswordDialog";
 import type { StudentStatus, UserResponse } from "@/api/eduhubTypes";
 
 interface StudentRow {
@@ -49,6 +50,7 @@ export default function AdminStudentsPage() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [resetPasswordData, setResetPasswordData] = useState<{ password: string; email: string } | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -87,6 +89,19 @@ export default function AdminStudentsPage() {
       toast.success(currentEnabled ? t("admin.students.toast.deactivated") : "Student activated");
     } catch (err: unknown) {
       toast.error((err as Error).message || t("admin.students.toast.updateFailed"));
+    }
+  };
+
+  const handleResetPassword = async (id: string, name: string, email: string) => {
+    if (!confirm(`This will replace ${name}'s current password with a new temporary one. They will need to change it on next login. Continue?`)) {
+      return;
+    }
+    try {
+      const res = await eduhubAdmin.resetUserPassword(id);
+      setResetPasswordData({ password: res.temporaryPassword, email });
+      toast.success(t("admin.resetPassword.toast.success"));
+    } catch (err: unknown) {
+      toast.error((err as Error).message || t("admin.resetPassword.toast.failed"));
     }
   };
 
@@ -218,6 +233,10 @@ export default function AdminStudentsPage() {
                               </>
                             )}
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleResetPassword(r.id, r.name, r.email)}>
+                            <Lock className="h-4 w-4 mr-2" />
+                            {t("admin.resetPassword.action")}
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -227,6 +246,14 @@ export default function AdminStudentsPage() {
             </TableBody>
           </Table>
         </div>
+
+        {resetPasswordData && (
+          <TemporaryPasswordDialog
+            temporaryPassword={resetPasswordData.password}
+            email={resetPasswordData.email}
+            onClose={() => setResetPasswordData(null)}
+          />
+        )}
       </div>
   );
 }

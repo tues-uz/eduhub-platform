@@ -280,6 +280,7 @@
     "greatJob": "做得好！",
     "completedMessage": "您已成功完成 {{title}}。",
     "yourScore": "您的得分",
+    "yourLevel": "您的等级",
     "exploreMyClass": "探索我的班级",
     "submitFailed": "提交分级测试失败。请重试。"
   },

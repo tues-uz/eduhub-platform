@@ -1,20 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, Phone, Square2Stack, User } from "@/lib/icons";
+import { Phone, User } from "@/lib/icons";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "react-i18next";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -29,6 +21,7 @@ import {
   normalizeAdminCode,
   registerAdminStaffCode,
 } from "@/features/admin/adminStaffCode";
+import { TemporaryPasswordDialog } from "@/features/admin/components/TemporaryPasswordDialog";
 
 /** Values are sent to `POST /admin/users`. Only roles the staging API accepts are listed. */
 const ADD_USER_ROLE_OPTIONS: { value: string; label: string }[] = [
@@ -41,7 +34,6 @@ export default function AdminAddUserRolePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [temporaryPassword, setTemporaryPassword] = useState("");
   const [createdAccountEmail, setCreatedAccountEmail] = useState("");
-  const [hasCopiedPassword, setHasCopiedPassword] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -109,7 +101,6 @@ export default function AdminAddUserRolePage() {
       }
       setTemporaryPassword(res.temporaryPassword);
       setCreatedAccountEmail(res.user.email);
-      setHasCopiedPassword(false);
       toast.success(`${formData.role} account created successfully`);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to create user");
@@ -120,16 +111,6 @@ export default function AdminAddUserRolePage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleCopyTemporaryPassword = async () => {
-    try {
-      await navigator.clipboard.writeText(temporaryPassword);
-      setHasCopiedPassword(true);
-      toast.success(t("admin.addUserRole.toast.passwordCopied"));
-    } catch {
-      toast.error(t("admin.addUserRole.toast.copyFailed"));
-    }
   };
 
   const handleTemporaryPasswordStored = () => {
@@ -282,45 +263,13 @@ export default function AdminAddUserRolePage() {
           </Button>
         </form>
 
-        <Dialog
-          open={Boolean(temporaryPassword)}
-          onOpenChange={(open) => {
-            if (!open) {
-              toast.info(t("admin.addUserRole.tempPasswordDialog.leaveWarning"));
-            }
-          }}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t("admin.addUserRole.tempPasswordDialog.title")}</DialogTitle>
-              <DialogDescription>
-                Share this password securely with {createdAccountEmail}. It will not be shown again.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-950">
-              <p className="text-sm font-medium">{t("admin.addUserRole.tempPasswordDialog.instruction")}</p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Input
-                  value={temporaryPassword}
-                  readOnly
-                  className="font-mono tracking-wide bg-white"
-                  aria-label={t("admin.addUserRole.tempPasswordDialog.ariaLabel")}
-                />
-                <Button type="button" variant="outline" onClick={handleCopyTemporaryPassword} className="min-h-10 gap-2">
-                  {hasCopiedPassword ? <Check className="h-4 w-4" aria-hidden="true" /> : <Square2Stack className="h-4 w-4" aria-hidden="true" />}
-                  {hasCopiedPassword ? t("admin.shared.copied") : t("admin.shared.copy")}
-                </Button>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button type="button" onClick={handleTemporaryPasswordStored}>
-                I have stored it securely
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {temporaryPassword && (
+          <TemporaryPasswordDialog
+            temporaryPassword={temporaryPassword}
+            email={createdAccountEmail}
+            onClose={handleTemporaryPasswordStored}
+          />
+        )}
       </div>
   );
 }
