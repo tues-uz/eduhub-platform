@@ -34,6 +34,9 @@ import type {
   AttendanceCheckInResponse,
   AttendanceRosterResponse,
   MyAttendanceResponse,
+  AttendanceCourseSummaryResponse,
+  QuizColumnRequest,
+  QuizColumnResponse,
   NotificationResponse,
   AdminCreateUserResponse,
   CourseCertificateResponse,
@@ -72,6 +75,9 @@ import type {
   AdminCertificationRowResponse,
   AdminPaymentRowResponse,
   GeneralReferralCodeResponse,
+  SpecialTuitionGrantResponse,
+  TeacherChecklistItemResponse,
+  TeacherComplaintResponse,
 } from "./eduhubTypes";
 
 
@@ -544,7 +550,104 @@ export const eduhubCourseQuizzes = {
 
   getAllMyResults: () =>
     request<QuizResultResponse[]>("/quizzes/my-results"),
+
+  /** All attempts for one quiz, across every student who took it — for lecturer/admin monitoring views. */
+  getAttemptsForQuiz: (quizId: string) =>
+    request<QuizResultResponse[]>(`/quizzes/${quizId}/attempts`),
+
+  /** The authenticated student's achieved placement levels, one per placement test taken. */
+  getMyPlacementResults: () =>
+    request<StudentPlacementResultResponse[]>("/placement-results/me"),
 };
+
+/**
+ * Placement test management — open to lecturers (who author the content) and admins. A test
+ * directly names which classes it gates via {@code courseIds} — one test can gate several classes
+ * at once — so unlike per-class quizzes it carries no single courseId of its own.
+ */
+export const eduhubPlacementTestsAdmin = {
+  list: () => request<PlacementTestAdminResponse[]>("/admin/placement-tests"),
+
+  get: (quizId: string) =>
+    request<PlacementTestAdminResponse>(`/admin/placement-tests/${quizId}`),
+
+  create: (body: PlacementTestUpsertRequest) =>
+    request<PlacementTestAdminResponse>("/admin/placement-tests", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  update: (quizId: string, body: PlacementTestUpsertRequest) =>
+    request<PlacementTestAdminResponse>(`/admin/placement-tests/${quizId}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
+  setPublished: (quizId: string, publish: boolean) =>
+    request<PlacementTestAdminResponse>(
+      `/admin/placement-tests/${quizId}/publish?publish=${publish}`,
+      { method: "PATCH" },
+    ),
+
+  delete: (quizId: string) =>
+    request<void>(`/admin/placement-tests/${quizId}`, { method: "DELETE" }),
+};
+
+export interface PlacementTestOption {
+  letter: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface PlacementTestQuestion {
+  id?: string;
+  question: string;
+  imageUrl?: string;
+  explanation?: string;
+  orderIndex?: number;
+  points?: number;
+  options: PlacementTestOption[];
+}
+
+export interface PlacementTestUpsertRequest {
+  title: string;
+  description?: string;
+  /** Classes this test gates. May be empty — the test just won't gate anything yet. */
+  courseIds: string[];
+  releaseDate?: string;
+  releaseTime?: string;
+  timeLimitMinutes?: number;
+  passingScore?: number;
+  /** Attempts allowed per student. Omit for unlimited. */
+  maxAttempts?: number;
+  isPublished?: boolean;
+  questions: PlacementTestQuestion[];
+  /** Required to publish: without bands no level is ever assigned. */
+  bands: PlacementTestBand[];
+}
+
+export interface PlacementTestGatedCourse {
+  id: string;
+  title: string;
+  level?: string;
+  lecturerName?: string;
+}
+
+export interface PlacementTestAdminResponse {
+  id: string;
+  title: string;
+  description?: string;
+  releaseDate?: string;
+  releaseTime?: string;
+  timeLimitMinutes?: number;
+  passingScore?: number;
+  maxAttempts?: number;
+  isPublished: boolean;
+  questions: PlacementTestQuestion[];
+  bands: PlacementTestBand[];
+  /** The classes this test currently gates. */
+  gatedCourses: PlacementTestGatedCourse[];
+}
 
 /** Quiz - tied to lessons (legacy) */
 export const eduhubQuizzes = {
@@ -597,6 +700,7 @@ export interface QuizCreateRequest {
     imageUrl?: string;
     orderIndex?: number;
     points?: number;
+    timeLimitSeconds?: number;
     options: {
       letter: string;
       text: string;
@@ -661,6 +765,24 @@ export interface QuizResponseForStudent {
       text: string;
     }[];
   }[];
+}
+
+/** Admin/teacher-configured score-to-level band for a placement test. */
+export interface PlacementTestBand {
+  id?: string;
+  quizId?: string;
+  minScore: number;
+  maxScore: number;
+  levelCode: string;
+}
+
+/** A student's achieved level on one placement test: their best result, never demoted by a weaker retake. */
+export interface StudentPlacementResultResponse {
+  id: string;
+  quizId: string;
+  levelCode: string;
+  score: number;
+  achievedAt: string;
 }
 
 export interface QuizSubmissionRequest {
@@ -786,6 +908,14 @@ export const eduhubAdmin = {
     adminActionCode?: string;
   }) => request<CourseResponse>(`/admin/courses/${id}/review`, { method: "PATCH", body: JSON.stringify(body) }),
 
+  /** Updates referral/discount/trial code on an already-published course without re-triggering approval/publish side effects. */
+  updateCoursePricing: (id: string, body: {
+    referralCode?: string;
+    discountPercent?: number;
+    trialCode?: string;
+    adminActionCode?: string;
+  }) => request<CourseResponse>(`/admin/courses/${id}/pricing`, { method: "PATCH", body: JSON.stringify(body) }),
+
   createUser: (body: {
     fullName: string;
     email: string;
@@ -808,6 +938,15 @@ export const eduhubAdmin = {
 
   setUserStatus: (id: string, enabled: boolean) =>
     request<UserResponse>(`/admin/users/${id}/status`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
+
+  resetUserPassword: (id: string) =>
+    request<AdminCreateUserResponse>(`/admin/users/${id}/reset-password`, { method: "POST" }),
+
+  setInstructorRevenueShare: (id: string, instructorRevenueShare: number | null, adminActionCode: string) =>
+    request<UserResponse>(`/admin/users/${id}/revenue-share`, {
+      method: "PATCH",
+      body: JSON.stringify({ instructorRevenueShare, adminActionCode }),
+    }),
 
   listTeachers: () =>
     request<TeacherResponse[]>("/admin/teachers"),
@@ -833,6 +972,36 @@ export const eduhubReferralCodes = {
     request<GeneralReferralCodeResponse>("/admin/referral-codes/general", {
       method: "PATCH",
       body: JSON.stringify(body),
+    }),
+};
+
+/** Teacher manual quiz grading (extra assessment columns beyond attendance/final score). */
+export const eduhubQuizGrading = {
+  listColumns: (courseId: string) =>
+    request<QuizColumnResponse[]>(`/courses/${courseId}/quiz-columns`),
+
+  addColumn: (courseId: string, body: QuizColumnRequest) =>
+    request<QuizColumnResponse>(`/courses/${courseId}/quiz-columns`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  renameColumn: (courseId: string, columnId: string, title: string) =>
+    request<QuizColumnResponse>(`/courses/${courseId}/quiz-columns/${columnId}`, {
+      method: "PUT",
+      body: JSON.stringify({ title }),
+    }),
+
+  deleteColumn: (courseId: string, columnId: string) =>
+    request<void>(`/courses/${courseId}/quiz-columns/${columnId}`, { method: "DELETE" }),
+
+  getScores: (courseId: string) =>
+    request<Record<string, Record<string, number>>>(`/courses/${courseId}/quiz-columns/scores`),
+
+  saveStudentScores: (courseId: string, studentId: string, scores: Record<string, number | null>) =>
+    request<void>(`/courses/${courseId}/quiz-columns/scores/${studentId}`, {
+      method: "PUT",
+      body: JSON.stringify({ scores }),
     }),
 };
 
@@ -918,6 +1087,10 @@ export const eduhubAttendance = {
   listSessions: (courseId: string) =>
     request<AttendanceSessionResponse[]>(`/courses/${courseId}/attendance/sessions`),
 
+  /** My currently open attendance sessions across all classes (for the "you left one open elsewhere" check). */
+  myOpenSessions: () =>
+    request<AttendanceSessionResponse[]>("/attendance/sessions/mine/open"),
+
   closeSession: (sessionId: string, reason = "MANUAL_STOP") =>
     request<AttendanceSessionResponse>(`/attendance/sessions/${sessionId}/close`, {
       method: "POST",
@@ -938,6 +1111,9 @@ export const eduhubAttendance = {
 
   myAttendance: (courseId: string) =>
     request<MyAttendanceResponse>(`/courses/${courseId}/attendance/my`),
+
+  summary: (courseId: string) =>
+    request<AttendanceCourseSummaryResponse>(`/courses/${courseId}/attendance/summary`),
 };
 
 /** Course completion: grades, certificates, and reviews */
@@ -1259,6 +1435,15 @@ export const eduhubMarketingPromos = {
     request<void>(`/admin/marketing-promos/${id}`, { method: "DELETE" }),
 };
 
+/** Newsletter API */
+export const eduhubNewsletter = {
+  subscribe: (email: string) =>
+    request<void>("/newsletter/subscribe", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+};
+
 /** Landing Page CMS API */
 export const eduhubLandingPage = {
   getContent: () => request<LandingPageContentResponse[]>("/landing-page"),
@@ -1330,6 +1515,58 @@ export const eduhubAdminPayments = {
       method: "POST",
       body: JSON.stringify({ paymentIds }),
     }),
+};
+
+/** Special (free-tuition) grants */
+export const eduhubAdminTuitionGrants = {
+  list: () => request<SpecialTuitionGrantResponse[]>("/admin/tuition-grants"),
+  upsert: (body: {
+    email: string;
+    courseId?: string | null;
+    note?: string;
+    active?: boolean;
+    adminActionCode: string;
+  }) =>
+    request<SpecialTuitionGrantResponse>("/admin/tuition-grants", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  remove: (id: string, adminActionCode: string) =>
+    request<void>(`/admin/tuition-grants/${id}?adminActionCode=${encodeURIComponent(adminActionCode)}`, {
+      method: "DELETE",
+    }),
+};
+
+export const eduhubTuitionGrants = {
+  /** Active free-tuition grant for the authenticated student on this course, if any. */
+  myGrant: (courseId: string) =>
+    request<SpecialTuitionGrantResponse | null>(`/tuition-grants/me?courseId=${encodeURIComponent(courseId)}`),
+};
+
+/** Per-instructor, per-course class checklist */
+export const eduhubTeacherChecklist = {
+  list: (courseId: string) =>
+    request<TeacherChecklistItemResponse[]>(`/courses/${courseId}/checklist`),
+  setItem: (courseId: string, itemKey: string, body: { title: string; completed: boolean }) =>
+    request<TeacherChecklistItemResponse>(`/courses/${courseId}/checklist/${encodeURIComponent(itemKey)}`, {
+      method: "PUT",
+      body: JSON.stringify({ itemKey, ...body }),
+    }),
+};
+
+/** Teacher / class complaints */
+export const eduhubComplaints = {
+  submit: (body: { courseId: string; category: "teacher" | "class" | "other"; mood: 1 | 2 | 3 | 4 | 5; message: string }) =>
+    request<TeacherComplaintResponse>("/complaints", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+};
+
+export const eduhubAdminComplaints = {
+  list: () => request<TeacherComplaintResponse[]>("/admin/complaints"),
+  markReviewed: (id: string) =>
+    request<TeacherComplaintResponse>(`/admin/complaints/${id}/reviewed`, { method: "PATCH" }),
 };
 
 

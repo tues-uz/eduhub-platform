@@ -9,10 +9,12 @@ export type ApiRole =
   | "LECTURER"
   | "STUDENT";
 
+export type StudentAffiliation = "INTERNAL" | "EXTERNAL";
+
 export interface UserResponse {
   id: string;
   fullName: string;
-  email: string;
+  email?: string;
   role: ApiRole;
   avatarUrl?: string;
   bio?: string;
@@ -35,11 +37,17 @@ export interface UserResponse {
   birthCity?: string;
   /** Most recent school the student attended. */
   latestSchool?: string;
+  /** Student affiliation (internal TUES vs external). */
+  studentAffiliation?: StudentAffiliation;
+  /** Faculty name for internal TUES students. */
+  faculty?: string;
   enabled?: boolean;
   passwordChanged?: boolean;
   createdAt?: string;
   coursesCount?: number;
   adminCode?: string;
+  /** Instructor's contract revenue-share override (0-1); null/undefined uses the platform default. */
+  instructorRevenueShare?: number | null;
 }
 
 export interface AdminCreateUserResponse {
@@ -66,6 +74,10 @@ export interface RegisterRequest {
   birthCity: string;
   /** Most recent school the student attended. */
   latestSchool: string;
+  /** Student affiliation (internal TUES vs external). */
+  studentAffiliation?: StudentAffiliation;
+  /** Faculty name for internal TUES students. */
+  faculty?: string;
   password: string;
   role: "STUDENT" | ApiRole;
 }
@@ -88,6 +100,7 @@ export interface TeacherResponse {
   courses: TeacherCourseRef[];
   totalStudents: number;
   category?: string;
+  instructorRevenueShare?: number | null;
 }
 
 
@@ -163,6 +176,8 @@ export interface CourseResponse {
   category: string;
   /** CEFR-style class level when returned by API. */
   level?: string;
+  /** The placement test that gates enrollment into this class, if any. */
+  placementQuizId?: string;
   lecturer: UserResponse;
   enrollmentCount?: number;
   pricing?: CoursePricingResponse;
@@ -193,6 +208,8 @@ export interface CourseSummaryResponse {
   category: string;
   /** CEFR-style class level when returned by API. */
   level?: string;
+  /** The placement test that gates enrollment into this class, if any. */
+  placementQuizId?: string;
   lecturerName: string;
   lecturerAvatarUrl?: string;
   enrollmentCount?: number;
@@ -468,6 +485,8 @@ export interface AttendanceSessionCreateRequest {
   modality?: AttendanceModality;
   scheduleSlotIndex?: number;
   scheduleSlotKey?: string;
+  /** Tuition schedule month (1-3) this meeting belongs to, for server-side payment gating at check-in. */
+  scheduleMonth?: number;
 }
 
 export interface AttendanceSessionResponse {
@@ -486,6 +505,27 @@ export interface AttendanceSessionResponse {
   presentCount?: number;
   enrolledCount?: number;
   token?: string;
+}
+
+export interface QuizColumnRequest {
+  title: string;
+  sessionSlotKey?: string;
+  sessionLabel?: string;
+  sessionDate?: string;
+}
+
+export interface QuizColumnResponse {
+  id: string;
+  title: string;
+  createdAt: string;
+  sessionSlotKey?: string;
+  sessionLabel?: string;
+  sessionDate?: string;
+}
+
+export interface AttendanceCourseSummaryResponse {
+  totalHeld: number;
+  attendedByStudentId: Record<string, number>;
 }
 
 export interface AttendanceJoinInfoResponse {
@@ -847,6 +887,7 @@ export interface QuizResponse {
   title: string;
   description?: string;
   courseId: string;
+  quizType?: "QUIZ" | "PLACEMENT_TEST";
   timeLimitMinutes?: number;
   passingScore?: number;
   isPlacementTest?: boolean;
@@ -1059,5 +1100,42 @@ export interface AdminPaymentRowResponse {
 }
 
 export type AdminPaymentRow = AdminPaymentRowResponse;
+
+export interface SpecialTuitionGrantResponse {
+  id: string;
+  studentId: string;
+  studentEmail: string;
+  studentName: string;
+  courseId?: string | null;
+  courseTitle?: string | null;
+  note: string;
+  active: boolean;
+  grantedByEmail?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeacherChecklistItemResponse {
+  itemKey: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface TeacherComplaintResponse {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  teacherId?: string | null;
+  teacherName?: string | null;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  category: "teacher" | "class" | "other";
+  mood: 1 | 2 | 3 | 4 | 5;
+  message: string;
+  status: "open" | "reviewed";
+  createdAt: string;
+  reviewedAt?: string | null;
+}
 
 

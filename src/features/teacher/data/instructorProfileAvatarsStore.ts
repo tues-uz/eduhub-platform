@@ -5,16 +5,16 @@ type AvatarStore = {
 
 const memoryAvatars: AvatarStore = { byEmail: {}, byName: {} };
 
-function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
+function normalizeEmail(email?: string | null): string {
+  return (email ?? "").trim().toLowerCase();
 }
 
-function normalizeName(name: string): string {
-  return name.trim().toLowerCase();
+function normalizeName(name?: string | null): string {
+  return (name ?? "").trim().toLowerCase();
 }
 
 export const instructorProfileAvatarsStore = {
-  set(email: string, name: string, avatarUrl: string | undefined): void {
+  set(email: string | undefined | null, name: string | undefined | null, avatarUrl: string | undefined): void {
     const emailKey = normalizeEmail(email);
     const nameKey = normalizeName(name);
     const url = avatarUrl?.trim();
@@ -28,13 +28,17 @@ export const instructorProfileAvatarsStore = {
     }
   },
 
-  getByEmail(email: string): string | undefined {
-    const url = memoryAvatars.byEmail[normalizeEmail(email)];
+  getByEmail(email?: string | null): string | undefined {
+    const emailKey = normalizeEmail(email);
+    if (!emailKey) return undefined;
+    const url = memoryAvatars.byEmail[emailKey];
     return url?.trim() || undefined;
   },
 
-  getByName(name: string): string | undefined {
-    const url = memoryAvatars.byName[normalizeName(name)];
+  getByName(name?: string | null): string | undefined {
+    const nameKey = normalizeName(name);
+    if (!nameKey) return undefined;
+    const url = memoryAvatars.byName[nameKey];
     return url?.trim() || undefined;
   },
 };

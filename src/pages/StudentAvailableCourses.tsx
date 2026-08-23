@@ -18,7 +18,9 @@ import {
 import { useAuthSession } from "@/features/auth/context";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { useStudentCourseScheduleSummaries } from "@/features/student/hooks/useStudentCourseScheduleSummaries";
-import { eduhubAuth, eduhubCategories, getAccessToken } from "@/api/eduhubClient";
+import { eduhubAuth, eduhubCategories, eduhubCourseQuizzes, getAccessToken } from "@/api/eduhubClient";
+import { resolvePlacementGate, type PlacementGateStatus } from "@/features/enrollment/resolvePlacementGate";
+import { useCourseLevels, formatCourseLevel } from "@/features/teacher/data/courseLevels";
 import type { CourseSummaryResponse } from "@/api/eduhubTypes";
 import { EnrollmentStatusBadge } from "@/features/enrollment/EnrollmentStatusBadge";
 import {
@@ -58,6 +60,10 @@ type AvailableCourseItem = {
   thumbnailUrl?: string;
   enrollmentCount?: number;
   enrolledStudents?: StudentAvatarPreview[];
+  /** The placement test that gates this class, if any. */
+  placementQuizId?: string;
+  /** Required class level, if it's level-gated. */
+  level?: string;
   rejectionNote?: string;
 };
 
@@ -98,6 +104,14 @@ function resolveCardTuition(
 }
 
 async function enrichWithEnrolledStudents(items: AvailableCourseItem[]): Promise<AvailableCourseItem[]> {
+  const role = typeof window !== "undefined" ? localStorage.getItem("userRole") : null;
+  if (role !== "admin" && role !== "teacher") {
+    return items.map((item) => ({
+      ...item,
+      enrolledStudents: [],
+      enrollmentCount: item.enrollmentCount ?? 0,
+    }));
+  }
   return Promise.all(
     items.map(async (item) => {
       const { students, totalCount } = await resolveEnrolledStudentPreviews({
@@ -131,7 +145,7 @@ const StudentAvailableCourses = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuthSession();
-  const emailNorm = user.email.trim().toLowerCase();
+  const emailNorm = (user.email ?? "").trim().toLowerCase();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const { byCourse: applicationsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") ?? "");
@@ -141,11 +155,44 @@ const StudentAvailableCourses = () => {
   const [loading, setLoading] = useState(true);
   const [enrollmentStoreTick, setEnrollmentStoreTick] = useState(0);
   const [latestSchool, setLatestSchool] = useState<string | undefined>();
+  const [achievedLevelByQuizId, setAchievedLevelByQuizId] = useState<Map<string, string>>(new Map());
+  const [publishedTestQuizIds, setPublishedTestQuizIds] = useState<Set<string>>(new Set());
+  const [publishedTestTitleByQuizId, setPublishedTestTitleByQuizId] = useState<Map<string, string>>(new Map());
+  const { levels: courseLevels } = useCourseLevels();
+  const levelSortOrderByCode = useMemo(
+    () => new Map(courseLevels.filter((l) => l.sortOrder !== undefined).map((l) => [l.value, l.sortOrder as number])),
+    [courseLevels],
+  );
 
   useEffect(() => {
     eduhubCategories.getAll()
       .then((res) => setCategories((res || []).map((c) => c.name)))
       .catch((err) => console.error("Failed to load categories", err));
+  }, []);
+
+  useEffect(() => {
+    if (!getAccessToken()) {
+      setAchievedLevelByQuizId(new Map());
+      setPublishedTestQuizIds(new Set());
+      setPublishedTestTitleByQuizId(new Map());
+      return;
+    }
+    eduhubCourseQuizzes
+      .getMyPlacementResults()
+      .then((results) =>
+        setAchievedLevelByQuizId(new Map((results || []).map((r) => [r.quizId, r.levelCode]))),
+      )
+      .catch(() => setAchievedLevelByQuizId(new Map()));
+    eduhubCourseQuizzes
+      .getPlacementTests()
+      .then((tests) => {
+        setPublishedTestQuizIds(new Set((tests || []).map((q) => q.id)));
+        setPublishedTestTitleByQuizId(new Map((tests || []).map((q) => [q.id, q.title])));
+      })
+      .catch(() => {
+        setPublishedTestQuizIds(new Set());
+        setPublishedTestTitleByQuizId(new Map());
+      });
   }, []);
 
   useEffect(() => {
@@ -180,12 +227,8 @@ const StudentAvailableCourses = () => {
 
   useEffect(() => {
     const bump = () => setEnrollmentStoreTick((n) => n + 1);
-    window.addEventListener("eduhub-enrollment-applications-changed", bump);
     window.addEventListener("storage", bump);
-    return () => {
-      window.removeEventListener("eduhub-enrollment-applications-changed", bump);
-      window.removeEventListener("storage", bump);
-    };
+    return () => window.removeEventListener("storage", bump);
   }, []);
 
   useEffect(() => {
@@ -225,12 +268,10 @@ const StudentAvailableCourses = () => {
           currency: c.pricing?.currency,
           thumbnailUrl: c.thumbnailUrl?.trim() || undefined,
           enrollmentCount: c.enrollmentCount,
+          placementQuizId: c.placementQuizId,
+          level: c.level,
           enrollmentStatus: enrollmentStatusFor(c.id),
-          rejectionNote: resolveEnrollmentRejectionNote(
-            c.id,
-            emailNorm,
-            applicationsByCourse.get(c.id),
-          ),
+          rejectionNote: resolveEnrollmentRejectionNote(applicationsByCourse.get(c.id)),
           progress: enrolledData?.progress,
           status: enrolledData?.status,
           nextLesson: enrolledData?.nextLesson,
@@ -372,6 +413,13 @@ const StudentAvailableCourses = () => {
                     : null;
                   const isClassFull = isTeacherClassFull(course.enrollmentCount);
                   const canJoinClass = canApplyToTeacherClass(course.enrollmentStatus, course.enrollmentCount);
+                  const placementGate: PlacementGateStatus = resolvePlacementGate({
+                    placementQuizId: course.placementQuizId,
+                    courseLevel: course.level,
+                    publishedTestQuizIds,
+                    achievedLevelByQuizId,
+                    levelSortOrderByCode,
+                  });
 
                   return (
                   <div
@@ -575,6 +623,32 @@ const StudentAvailableCourses = () => {
                           >
                             {t("availableCourses.classFull")}
                           </Button>
+                        ) : placementGate.gated && placementGate.qualifies === false ? (
+                          <Link
+                            to="/dashboard/placement-tests"
+                            className="block"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-auto w-full rounded-xl border-violet-300 bg-violet-50 px-5 py-2.5 text-sm font-medium text-violet-900 hover:bg-violet-100"
+                            >
+                              {placementGate.reason === "no_attempt"
+                                ? t("availableCourses.placementGate.takeTest", {
+                                    testTitle:
+                                      publishedTestTitleByQuizId.get(course.placementQuizId ?? "") ?? "",
+                                    defaultValue: `Take the ${publishedTestTitleByQuizId.get(course.placementQuizId ?? "") ?? "placement"} test to join`,
+                                  })
+                                : placementGate.reason === "below_level"
+                                ? t("availableCourses.placementGate.belowLevel", {
+                                    achieved: formatCourseLevel(placementGate.achievedLevelCode),
+                                    required: formatCourseLevel(course.level),
+                                    defaultValue: `You're placed at ${formatCourseLevel(placementGate.achievedLevelCode)} — this class needs ${formatCourseLevel(course.level)}`,
+                                  })
+                                : null}
+                            </Button>
+                          </Link>
                         ) : (
                           <Link
                             to={`/dashboard/available-courses/enroll/${encodeURIComponent(course.linkId)}`}

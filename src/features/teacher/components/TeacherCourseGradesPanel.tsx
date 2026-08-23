@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Award, Download, Eye, Loader2, Star } from "@/lib/icons";
 import { toast } from "sonner";
-import { eduhubCompletion } from "@/api/eduhubClient";
+import { eduhubCompletion, eduhubQuizGrading } from "@/api/eduhubClient";
 import type { CourseGradebookRowResponse } from "@/api/eduhubTypes";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -13,39 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  ATTENDANCE_ROLL_CHANGED,
-  ATTENDANCE_ROLL_STORAGE_KEY,
-  countSessionsStudentAttended,
-} from "@/features/attendance/attendanceRollStorage";
-import {
-  COURSE_CERTIFICATES_CHANGED,
-  getCourseCertificate,
-  issueCourseCertificate,
-  listCourseCertificates,
-} from "@/features/courses/courseCertificatesStorage";
 import { downloadCourseCertificatePdf } from "@/features/courses/courseCertificatePdf";
 import { formatDisplayPersonName, profileInitials } from "@/lib/formatPersonName";
 import { cn } from "@/lib/utils";
-import {
-  COURSE_REVIEWS_CHANGED,
-  getStudentCourseReviewSummary,
-  type StudentCourseReviewSummary,
-} from "@/features/student/courseReviewsStorage";
+import type { StudentCourseReviewSummary } from "@/features/student/courseReviewsStorage";
 import { useTranslation } from "react-i18next";
-import {
-  computeAttendanceScore,
-  computeTotalFinalScore,
-  COURSE_FINAL_GRADES_CHANGED,
-  listCourseFinalGrades,
-  readInstructorScore,
-  saveCourseFinalGrade,
-  type CourseFinalGradeRecord,
-} from "@/features/teacher/data/courseFinalGradesStorage";
-import {
-  computeManualQuizStudentTotal,
-  MANUAL_QUIZ_SCORES_CHANGED,
-} from "@/features/teacher/data/manualQuizScoresStorage";
 
 export type RosterStudentRow = {
   id: string;
@@ -73,10 +45,8 @@ type GradeTableRow = {
   dirty: boolean;
   reviews: GradeReviewSummary;
   published: boolean;
-  certificate?: CourseGradebookRowResponse["certificate"] | ReturnType<typeof getCourseCertificate>;
-  apiRow?: CourseGradebookRowResponse;
-  localStudent?: RosterStudentRow;
-  localSaved?: CourseFinalGradeRecord;
+  certificate?: CourseGradebookRowResponse["certificate"];
+  apiRow: CourseGradebookRowResponse;
 };
 
 type TeacherCourseGradesPanelProps = {
@@ -252,24 +222,13 @@ function RosterEmptyState({
 
 export function TeacherCourseGradesPanel({
   courseId,
-  courseTitle,
-  students,
-  instructorEmail,
   instructorName,
   isApiCourse,
   isLoading = false,
   isError = false,
-  plannedSessions = null,
 }: TeacherCourseGradesPanelProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [gradesTick, setGradesTick] = useState(0);
-  const [quizTick, setQuizTick] = useState(0);
-  const [certTick, setCertTick] = useState(0);
-  const [attendanceTick, setAttendanceTick] = useState(0);
-  const [reviewsTick, setReviewsTick] = useState(0);
-  const [savingId, setSavingId] = useState<string | null>(null);
-  const [publishingId, setPublishingId] = useState<string | "all" | null>(null);
   const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null);
   const [reviewStudent, setReviewStudent] = useState<{
     name: string;
@@ -280,6 +239,12 @@ export function TeacherCourseGradesPanel({
   const apiGradesQuery = useQuery({
     queryKey: ["teacher", "course-gradebook", courseId],
     queryFn: () => eduhubCompletion.gradebook(courseId),
+    enabled: isApiCourse,
+  });
+
+  const quizScoresQuery = useQuery({
+    queryKey: ["teacher", "quiz-scores", courseId],
+    queryFn: () => eduhubQuizGrading.getScores(courseId),
     enabled: isApiCourse,
   });
 
@@ -311,274 +276,50 @@ export function TeacherCourseGradesPanel({
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not publish certificates."),
   });
 
-  const savedGrades = useMemo(() => {
-    void gradesTick;
-    return listCourseFinalGrades(courseId);
-  }, [courseId, gradesTick]);
-
-  useEffect(() => {
-    const bumpGrades = (e: Event) => {
-      const ce = e as CustomEvent<{ courseId?: string }>;
-      if (!ce.detail?.courseId || ce.detail.courseId === courseId) {
-        setGradesTick((t) => t + 1);
-      }
-    };
-    window.addEventListener(COURSE_FINAL_GRADES_CHANGED, bumpGrades);
-    return () => window.removeEventListener(COURSE_FINAL_GRADES_CHANGED, bumpGrades);
-  }, [courseId]);
-
-  useEffect(() => {
-    const bump = (e: Event) => {
-      const ce = e as CustomEvent<{ courseId?: string }>;
-      if (!ce.detail?.courseId || ce.detail.courseId === courseId) {
-        setQuizTick((t) => t + 1);
-      }
-    };
-    window.addEventListener(MANUAL_QUIZ_SCORES_CHANGED, bump);
-    return () => window.removeEventListener(MANUAL_QUIZ_SCORES_CHANGED, bump);
-  }, [courseId]);
-
-  useEffect(() => {
-    const bump = () => setCertTick((t) => t + 1);
-    window.addEventListener(COURSE_CERTIFICATES_CHANGED, bump);
-    return () => window.removeEventListener(COURSE_CERTIFICATES_CHANGED, bump);
-  }, []);
-
-  useEffect(() => {
-    const bump = () => setAttendanceTick((t) => t + 1);
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === ATTENDANCE_ROLL_STORAGE_KEY) bump();
-    };
-    window.addEventListener(ATTENDANCE_ROLL_CHANGED, bump);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(ATTENDANCE_ROLL_CHANGED, bump);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
-
-  useEffect(() => {
-    const bump = (e: Event) => {
-      const ce = e as CustomEvent<{ courseId?: string }>;
-      if (!ce.detail?.courseId || ce.detail.courseId === courseId) {
-        setReviewsTick((t) => t + 1);
-      }
-    };
-    window.addEventListener(COURSE_REVIEWS_CHANGED, bump);
-    return () => window.removeEventListener(COURSE_REVIEWS_CHANGED, bump);
-  }, [courseId]);
-
-  const handleSave = useCallback(
-    (student: RosterStudentRow, attendanceScore: number | null, quizTotal: number) => {
-      setSavingId(student.id);
-      try {
-        const existing = savedGrades[student.id];
-        const totalFinalScore = computeTotalFinalScore(attendanceScore, quizTotal);
-        const record: CourseFinalGradeRecord = {
-          studentId: student.id,
-          instructorScore: quizTotal,
-          attendanceScore: attendanceScore ?? undefined,
-          totalFinalScore: totalFinalScore ?? undefined,
-          comment: existing?.comment,
-          updatedAt: new Date().toISOString(),
-          updatedByEmail: instructorEmail.trim().toLowerCase() || undefined,
-        };
-        saveCourseFinalGrade(courseId, record);
-        toast.success(`Saved grades for ${student.fullName}`);
-        setGradesTick((t) => t + 1);
-      } finally {
-        setSavingId(null);
-      }
-    },
-    [courseId, instructorEmail, savedGrades],
-  );
-
-  const publishedCerts = useMemo(() => {
-    void certTick;
-    const map = new Map<string, ReturnType<typeof getCourseCertificate>>();
-    for (const c of listCourseCertificates(courseId)) {
-      map.set(c.studentId, c);
-    }
-    return map;
-  }, [courseId, certTick]);
-
-  const publishCertificate = useCallback(
-    async (student: RosterStudentRow, saved: CourseFinalGradeRecord | undefined, total: number | null) => {
-      if (total == null) {
-        toast.error("Save the final score before publishing a certificate.");
-        return;
-      }
-      if (publishedCerts.has(student.id)) {
-        toast.info("Certificate already published for this student.");
-        return;
-      }
-      setPublishingId(student.id);
-      try {
-        const cert = issueCourseCertificate({
-          courseId,
-          courseTitle,
-          studentId: student.id,
-          studentEmail: student.email,
-          studentName: formatDisplayPersonName(student.fullName),
-          totalFinalScore: total,
-          attendanceScore: saved?.attendanceScore,
-          instructorScore: readInstructorScore(saved),
-          instructorName: instructorName?.trim()
-            ? formatDisplayPersonName(instructorName.trim())
-            : undefined,
-          publishedByEmail: instructorEmail,
-        });
-        try {
-          await downloadCourseCertificatePdf(cert, instructorName);
-          toast.success("Certificate published", {
-            description: `${student.fullName} — PDF downloaded`,
-          });
-        } catch {
-          toast.success("Certificate published", {
-            description: `${student.fullName} — PDF download failed; retry from Certificates.`,
-          });
-        }
-        setCertTick((t) => t + 1);
-      } finally {
-        setPublishingId(null);
-      }
-    },
-    [courseId, courseTitle, instructorEmail, instructorName, publishedCerts],
-  );
-
-  const publishAllEligible = useCallback(() => {
-    let count = 0;
-    setPublishingId("all");
+  const downloadPublishedCertificate = async (studentId: string) => {
+    const row = apiGradesQuery.data?.find((r) => r.studentId === studentId);
+    if (!row?.certificate) return;
+    setDownloadingCertId(studentId);
     try {
-      for (const s of students) {
-        const saved = savedGrades[s.id];
-        const total = computeTotalFinalScore(
-          saved?.attendanceScore ??
-            computeAttendanceScore(
-              countSessionsStudentAttended(courseId, s.id, s.email),
-              plannedSessions,
-            ),
-          readInstructorScore(saved) ?? null,
-        );
-        if (total == null || publishedCerts.has(s.id)) continue;
-        issueCourseCertificate({
-          courseId,
-          courseTitle,
-          studentId: s.id,
-          studentEmail: s.email,
-          studentName: formatDisplayPersonName(s.fullName),
-          totalFinalScore: total,
-          attendanceScore: saved?.attendanceScore,
-          instructorScore: readInstructorScore(saved),
-          instructorName: instructorName?.trim()
-            ? formatDisplayPersonName(instructorName.trim())
-            : undefined,
-          publishedByEmail: instructorEmail,
-        });
-        count += 1;
-      }
-      if (count === 0) {
-        toast.info("No students ready to publish — save final scores first.");
-      } else {
-        toast.success(`Published ${count} certificate${count === 1 ? "" : "s"}`);
-        setCertTick((t) => t + 1);
-      }
+      await downloadCourseCertificatePdf(row.certificate, instructorName);
+      toast.success(t("teacher.grades.toast.certificateDownloaded"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("teacher.grades.toast.downloadFailed"));
     } finally {
-      setPublishingId(null);
+      setDownloadingCertId(null);
     }
-  }, [courseId, courseTitle, instructorEmail, instructorName, plannedSessions, publishedCerts, savedGrades, students]);
-
-  const downloadPublishedCertificate = useCallback(
-    async (studentId: string) => {
-      const cert = publishedCerts.get(studentId);
-      if (!cert) return;
-      setDownloadingCertId(studentId);
-      try {
-        await downloadCourseCertificatePdf(cert, instructorName);
-        toast.success("Certificate downloaded");
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Could not generate certificate PDF");
-      } finally {
-        setDownloadingCertId(null);
-      }
-    },
-    [instructorName, publishedCerts],
-  );
+  };
 
   const effectiveLoading = isApiCourse ? apiGradesQuery.isLoading : isLoading;
   const effectiveError = isApiCourse ? apiGradesQuery.isError : isError;
-  const apiRows = apiGradesQuery.data ?? [];
+  const apiRows = useMemo(() => apiGradesQuery.data ?? [], [apiGradesQuery.data]);
+  const quizScoresByStudent = useMemo(() => quizScoresQuery.data ?? {}, [quizScoresQuery.data]);
 
   const tableRows = useMemo((): GradeTableRow[] => {
-    void quizTick;
-    if (isApiCourse) {
-      return apiRows.map((row) => {
-        const quizTotal = computeManualQuizStudentTotal(courseId, row.studentId);
-        const savedInstructor = row.instructorScore;
-        return {
-          studentId: row.studentId,
-          fullName: row.studentName,
-          email: row.studentEmail,
-          attended: row.attendanceAttended,
-          plannedTotal: row.attendanceTotal,
-          attendanceScore: row.attendanceScore,
-          quizTotal,
-          instructorScore: savedInstructor,
-          totalFinalScore: row.totalFinalScore,
-          dirty: quizTotal != null && quizTotal !== savedInstructor,
-          reviews: row.reviewSummary,
-          published: Boolean(row.certificate),
-          certificate: row.certificate,
-          apiRow: row,
-        };
-      });
-    }
-
-    void attendanceTick;
-    void reviewsTick;
-    return students.map((s) => {
-      const emailNorm = s.email.trim().toLowerCase();
-      const reviews = getStudentCourseReviewSummary(courseId, emailNorm);
-      const saved = savedGrades[s.id];
-      const savedInstructor = readInstructorScore(saved);
-      const quizTotal = computeManualQuizStudentTotal(courseId, s.id);
-      const attended = countSessionsStudentAttended(courseId, s.id, s.email);
-      const attendanceScore = computeAttendanceScore(attended, plannedSessions);
-      const savedTotal = computeTotalFinalScore(
-        saved?.attendanceScore ?? attendanceScore,
-        savedInstructor ?? null,
-      );
-      const published = publishedCerts.get(s.id);
+    return apiRows.map((row) => {
+      const rowScores = quizScoresByStudent[row.studentId];
+      const quizTotal = rowScores
+        ? Object.values(rowScores).reduce((sum, v) => sum + v, 0)
+        : null;
+      const savedInstructor = row.instructorScore;
       return {
-        studentId: s.id,
-        fullName: s.fullName,
-        email: s.email,
-        attended,
-        plannedTotal: plannedSessions ?? null,
-        attendanceScore,
+        studentId: row.studentId,
+        fullName: row.studentName,
+        email: row.studentEmail,
+        attended: row.attendanceAttended,
+        plannedTotal: row.attendanceTotal,
+        attendanceScore: row.attendanceScore,
         quizTotal,
         instructorScore: savedInstructor,
-        totalFinalScore: savedTotal,
+        totalFinalScore: row.totalFinalScore,
         dirty: quizTotal != null && quizTotal !== savedInstructor,
-        reviews,
-        published: Boolean(published),
-        certificate: published,
-        localStudent: s,
-        localSaved: saved,
+        reviews: row.reviewSummary,
+        published: Boolean(row.certificate),
+        certificate: row.certificate,
+        apiRow: row,
       };
     });
-  }, [
-    apiRows,
-    attendanceTick,
-    courseId,
-    isApiCourse,
-    plannedSessions,
-    publishedCerts,
-    quizTick,
-    reviewsTick,
-    savedGrades,
-    students,
-  ]);
+  }, [apiRows, quizScoresByStudent]);
 
   const rosterGate = (
     <RosterEmptyState
@@ -605,16 +346,10 @@ export function TeacherCourseGradesPanel({
             type="button"
             size="sm"
             className="shrink-0 gap-1.5 bg-teal-700 hover:bg-teal-800"
-            disabled={isApiCourse ? publishAllApiCertificatesMutation.isPending : publishingId === "all"}
-            onClick={() => {
-              if (isApiCourse) {
-                publishAllApiCertificatesMutation.mutate();
-              } else {
-                publishAllEligible();
-              }
-            }}
+            disabled={publishAllApiCertificatesMutation.isPending}
+            onClick={() => publishAllApiCertificatesMutation.mutate()}
           >
-            {(isApiCourse ? publishAllApiCertificatesMutation.isPending : publishingId === "all") ? (
+            {publishAllApiCertificatesMutation.isPending ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <Award className="h-3.5 w-3.5" />
@@ -665,14 +400,12 @@ export function TeacherCourseGradesPanel({
                   {tableRows.map((row) => {
                     const liveTotal = row.quizTotal;
                     const canPublish = row.totalFinalScore != null && !row.published;
-                    const savingThisRow = isApiCourse
-                      ? saveApiGradeMutation.isPending &&
-                        saveApiGradeMutation.variables?.row.studentId === row.studentId
-                      : savingId === row.studentId;
-                    const publishingThisRow = isApiCourse
-                      ? publishApiCertificateMutation.isPending &&
-                        publishApiCertificateMutation.variables === row.studentId
-                      : publishingId === row.studentId;
+                    const savingThisRow =
+                      saveApiGradeMutation.isPending &&
+                      saveApiGradeMutation.variables?.row.studentId === row.studentId;
+                    const publishingThisRow =
+                      publishApiCertificateMutation.isPending &&
+                      publishApiCertificateMutation.variables === row.studentId;
                     const downloadingThisRow = downloadingCertId === row.studentId;
                     const displayName = formatDisplayPersonName(row.fullName);
                     return (
@@ -739,12 +472,7 @@ export function TeacherCourseGradesPanel({
                                   setReviewStudent({
                                     name: row.fullName,
                                     email: row.email,
-                                    reviews: isApiCourse
-                                      ? gradeReviewToSummary(row.reviews)
-                                      : getStudentCourseReviewSummary(
-                                          courseId,
-                                          row.email.trim().toLowerCase(),
-                                        ),
+                                    reviews: gradeReviewToSummary(row.reviews),
                                   })
                                 }
                               >
@@ -771,13 +499,7 @@ export function TeacherCourseGradesPanel({
                                   toast.error(t("teacher.grades.noQuizScores"));
                                   return;
                                 }
-                                if (isApiCourse && row.apiRow) {
-                                  saveApiGradeMutation.mutate({ row: row.apiRow, score: row.quizTotal });
-                                  return;
-                                }
-                                if (row.localStudent) {
-                                  handleSave(row.localStudent, row.attendanceScore, row.quizTotal);
-                                }
+                                saveApiGradeMutation.mutate({ row: row.apiRow, score: row.quizTotal });
                               }}
                             >
                               {savingThisRow ? (
@@ -800,25 +522,7 @@ export function TeacherCourseGradesPanel({
                                   variant="outline"
                                   className="h-7 px-2 text-xs"
                                   disabled={downloadingThisRow}
-                                  onClick={() => {
-                                    if (isApiCourse && row.certificate) {
-                                      setDownloadingCertId(row.studentId);
-                                      void downloadCourseCertificatePdf(row.certificate, instructorName)
-                                        .then(() =>
-                                          toast.success(t("teacher.grades.toast.certificateDownloaded")),
-                                        )
-                                        .catch((e) =>
-                                          toast.error(
-                                            e instanceof Error
-                                              ? e.message
-                                              : t("teacher.grades.toast.downloadFailed"),
-                                          ),
-                                        )
-                                        .finally(() => setDownloadingCertId(null));
-                                      return;
-                                    }
-                                    void downloadPublishedCertificate(row.studentId);
-                                  }}
+                                  onClick={() => void downloadPublishedCertificate(row.studentId)}
                                 >
                                   {downloadingThisRow ? (
                                     <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
@@ -834,19 +538,7 @@ export function TeacherCourseGradesPanel({
                                 variant="outline"
                                 className="h-7 gap-1 px-2.5 text-xs"
                                 disabled={!canPublish || publishingThisRow}
-                                onClick={() => {
-                                  if (isApiCourse) {
-                                    publishApiCertificateMutation.mutate(row.studentId);
-                                    return;
-                                  }
-                                  if (row.localStudent) {
-                                    void publishCertificate(
-                                      row.localStudent,
-                                      row.localSaved,
-                                      row.totalFinalScore,
-                                    );
-                                  }
-                                }}
+                                onClick={() => publishApiCertificateMutation.mutate(row.studentId)}
                               >
                                 {publishingThisRow ? (
                                   <Loader2 className="h-3 w-3 animate-spin" />

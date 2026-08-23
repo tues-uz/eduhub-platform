@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -37,6 +38,7 @@ import {
   eduhubSchedule,
   eduhubUploadFile,
   eduhubEnrollmentApplications,
+  eduhubTuitionGrants,
   getAccessToken,
 } from "@/api/eduhubClient";
 import type { CourseResponse, GeneralReferralCodeResponse, ScheduleProposalResponse, UserResponse } from "@/api/eduhubTypes";
@@ -48,10 +50,8 @@ import {
   matchGeneralReferralCode,
   matchGeneralTrialCode,
 } from "@/features/admin/data/generalReferralCodesStore";
-import { findActiveSpecialTuitionGrant, SPECIAL_TUITION_GRANTS_CHANGED_EVENT } from "@/features/admin/data/specialTuitionGrantsStore";
 import {
   buildEnrollmentScheduleSessionSummaries,
-  enrollmentRecordToPdfData,
   type EnrollmentApplicationPdfData,
 } from "@/features/enrollment/enrollmentApplicationPdf";
 import type {
@@ -192,7 +192,6 @@ const StudentEnrollmentApplicationPage = () => {
   const [scheduleProposal, setScheduleProposal] = useState<ScheduleProposalResponse | null>(null);
   const [courseThumbnailUrl, setCourseThumbnailUrl] = useState<string | undefined>(undefined);
   const [paymentMethod, setPaymentMethod] = useState<EnrollmentPaymentMethod>("BANK_TRANSFER");
-  const [grantsTick, setGrantsTick] = useState(0);
   const [selectedPaymentMonths, setSelectedPaymentMonths] = useState<Set<MonthlyPlanMonthCount>>(
     () => new Set([1]),
   );
@@ -230,24 +229,11 @@ const StudentEnrollmentApplicationPage = () => {
     if (parentPhone) setPhoneSecondary(parentPhone);
   }, [apiUser, phoneSecondaryTouched]);
 
-  useEffect(() => {
-    const refresh = () => setGrantsTick((n) => n + 1);
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === "eduhub_special_tuition_grants") refresh();
-    };
-    window.addEventListener(SPECIAL_TUITION_GRANTS_CHANGED_EVENT, refresh);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(SPECIAL_TUITION_GRANTS_CHANGED_EVENT, refresh);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
-
-  const specialTuitionGrant = useMemo(() => {
-    void grantsTick;
-    if (!courseId) return null;
-    return findActiveSpecialTuitionGrant(user.email, courseId);
-  }, [courseId, user.email, grantsTick]);
+  const { data: specialTuitionGrant = null } = useQuery({
+    queryKey: ["tuition-grants", "me", courseId],
+    queryFn: () => eduhubTuitionGrants.myGrant(courseId as string),
+    enabled: Boolean(courseId) && isUuid(courseId),
+  });
 
   const requiresVerificationUploads =
     !specialTuitionGrant && enrollmentRequiresVerificationUploads(paymentMethod);
@@ -524,8 +510,8 @@ const StudentEnrollmentApplicationPage = () => {
   }, [courseId]);
 
   useEffect(() => {
-    if (!courseId || !user.email.trim()) return;
-    const emailNorm = user.email.trim().toLowerCase();
+    if (!courseId || !(user.email ?? "").trim()) return;
+    const emailNorm = (user.email ?? "").trim().toLowerCase();
     eduhubEnrollmentApplications
       .getMyPending(courseId, emailNorm)
       .then((pending) => {
@@ -604,8 +590,8 @@ const StudentEnrollmentApplicationPage = () => {
       toast.error(`This class is full (${TEACHER_CLASS_MAX_STUDENTS} students). New enrollments are closed.`);
       return;
     }
-    const emailNorm = user.email.trim().toLowerCase();
-    if (!user.name.trim() || !user.email.trim() || !primaryPhone || !address.trim()) {
+    const emailNorm = (user.email ?? "").trim().toLowerCase();
+    if (!user.name?.trim() || !primaryPhone || !address.trim()) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -683,11 +669,6 @@ const StudentEnrollmentApplicationPage = () => {
         }
       }
       paymentDetailLines.push(`Listed class price: ${affiliationPriceDisplay || "—"}`);
-      if (affiliationPrice?.usedExternalPrice) {
-        paymentDetailLines.push(
-          `External student surcharge (demo): ${formatPrice(affiliationPrice.surcharge, priceCurrency)}`,
-        );
-      }
       const referralEntered = referralCodeInput.trim();
       if (referralEntered) {
         paymentDetailLines.push(`Referral code entered: ${referralEntered}`);
@@ -722,7 +703,7 @@ const StudentEnrollmentApplicationPage = () => {
       await eduhubEnrollmentApplications.submit({
         courseId,
         fullName: user.name.trim(),
-        email: user.email.trim(),
+        email: (user.email ?? "").trim(),
         phone: primaryPhone,
         phoneSecondary: phoneSecondary.trim() || undefined,
         address: address.trim(),
@@ -747,7 +728,7 @@ const StudentEnrollmentApplicationPage = () => {
         courseId,
         tuitionLabel: affiliationPriceDisplay || "—",
         fullName: user.name.trim(),
-        email: user.email.trim(),
+        email: (user.email ?? "").trim(),
         phone: primaryPhone,
         phoneSecondary: phoneSecondary.trim() || undefined,
         address: address.trim(),
@@ -922,11 +903,6 @@ const StudentEnrollmentApplicationPage = () => {
                                 ? "…"
                                 : affiliationPriceDisplay}
                             </div>
-                            {affiliationPrice?.usedExternalPrice && !specialTuitionGrant ? (
-                              <div className="rounded-full border border-amber-200/40 bg-amber-500/20 px-3 py-1 text-[11px] font-medium text-white/95 backdrop-blur-sm">
-                                External student tuition
-                              </div>
-                            ) : null}
                             {transferDueSummary.amount != null ? (
                               <div className="rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-xs font-semibold tabular-nums text-white/95 backdrop-blur-sm">
                                 Due now: {formatPrice(transferDueSummary.amount, priceCurrency)}
@@ -1018,7 +994,7 @@ const StudentEnrollmentApplicationPage = () => {
                         readOnly
                         aria-readonly="true"
                         className={`mt-1.5 h-11 ${readonlyProfileClass}`}
-                        value={user.email}
+                        value={user.email || ""}
                         autoComplete="email"
                       />
                     </div>

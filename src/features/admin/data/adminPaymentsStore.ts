@@ -1,5 +1,5 @@
 import { useSyncExternalStore, useEffect } from "react";
-import { eduhubAdminPayments, eduhubAdminInstallmentPayments } from "@/api/eduhubClient";
+import { eduhubAdminPayments } from "@/api/eduhubClient";
 import type { AdminPaymentRow, PaymentStatus } from "@/api/eduhubTypes";
 
 type Listener = () => void;
@@ -49,12 +49,6 @@ export const adminPaymentsStore = {
   updatePayment(id: string, patch: Partial<AdminPaymentRow>): void {
     cachedSnapshot = cachedSnapshot.map((p) => (p.id === id ? { ...p, ...patch } : p));
     emit();
-
-    if (patch.status === "paid") {
-      void eduhubAdminInstallmentPayments.approve(id).catch(() => {});
-    } else if (patch.status === "overdue") {
-      void eduhubAdminInstallmentPayments.reject(id).catch(() => {});
-    }
   },
 };
 

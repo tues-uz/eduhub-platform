@@ -4,7 +4,7 @@ import {
   COURSE_SCHEDULE_PROPOSAL_STORAGE_KEY,
   courseScheduleProposalStore,
 } from "@/features/courses/courseScheduleProposalStore";
-import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
+import { deriveScheduleWorkflow } from "@/features/courses/courseScheduleWorkflow";
 
 /** API sometimes omits `classMeetingsInSixMonths` but returns slots or titles arrays. */
 export function resolvedSessionsSixMonths(c: CourseResponse): number | undefined {
@@ -108,7 +108,7 @@ export function resolvedAdminScheduleSessionTotal(
   if (typeof apiProposal?.sessionCount === "number" && apiProposal.sessionCount > 0) {
     return apiProposal.sessionCount;
   }
-  const wf = courseScheduleWorkflowStore.get(courseId);
+  const wf = deriveScheduleWorkflow(detail);
   const useLocal = wf?.status === "approved";
   const display = mergeScheduleDisplayForAdminReview(courseId, detail ?? ({ id: courseId } as CourseResponse), {
     useLocalProposalSnapshot: useLocal,

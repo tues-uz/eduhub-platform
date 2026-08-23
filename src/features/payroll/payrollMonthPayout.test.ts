@@ -48,7 +48,7 @@ describe("payrollMonthPayout", () => {
       slots,
       schedulePeriodKey: "2026-01",
       paidStudentCount: 5,
-      instructorEmail: "teacher@test.com",
+      instructorShare: 0.6,
     });
 
     expect(quote).not.toBeNull();

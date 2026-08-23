@@ -27,7 +27,6 @@ import {
   type CourseReviewTarget,
 } from "@/features/student/courseReviewsStorage";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import { resolveStudentCourseEnrollmentDisplayStatus } from "@/features/enrollment/studentCourseEnrollmentStatus";
 import { useMyEnrollmentApplicationsByCourse } from "@/features/enrollment/useMyEnrollmentApplicationsByCourse";
 import { formatDisplayPersonName } from "@/lib/formatPersonName";
@@ -354,7 +353,7 @@ const StudentCourseCompletionPage = () => {
   const state = (location.state as LocationState | null) ?? {};
   const { user } = useAuthSession();
   const queryClient = useQueryClient();
-  const emailNorm = user.email.trim().toLowerCase();
+  const emailNorm = (user.email ?? "").trim().toLowerCase();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
   const { byCourse: enrollmentAppsByCourse } = useMyEnrollmentApplicationsByCourse(emailNorm);
   const [completionTick, setCompletionTick] = useState(0);
@@ -435,25 +434,8 @@ const StudentCourseCompletionPage = () => {
         instructor: formatDisplayPersonName(enrolled.instructor),
       };
     }
-    const app = enrollmentApplicationStore
-      .list()
-      .find((r) => r.courseId === courseId && r.applicantEmailNorm === emailNorm);
-    if (app) {
-      return {
-        title: app.courseTitle ?? courseId,
-        instructor: "—",
-      };
-    }
     return { title: courseId, instructor: "—" };
-  }, [
-    courseId,
-    isPreview,
-    searchParams,
-    state.courseTitle,
-    state.instructor,
-    enrolledCourses,
-    emailNorm,
-  ]);
+  }, [courseId, isPreview, searchParams, state.courseTitle, state.instructor, enrolledCourses]);
 
   useEffect(() => {
     if (courseId && emailNorm && !isPreview) {

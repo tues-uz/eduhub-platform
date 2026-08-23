@@ -167,6 +167,8 @@ const SignUp = () => {
         getCountryByIso(formData.parentPhoneCountryIso).dial,
         formData.parentPhoneNational,
       );
+      const affiliation = studentAffiliation === "internal" ? "INTERNAL" : "EXTERNAL";
+      const faculty = studentAffiliation === "internal" ? formData.faculty.trim() : undefined;
       const res = await eduhubAuth.register({
         fullName: formData.fullName,
         ...(formData.email.trim() ? { email: formData.email.trim() } : {}),
@@ -179,6 +181,8 @@ const SignUp = () => {
         dateOfBirth: formData.dateOfBirth,
         birthCity: formData.birthCity,
         latestSchool,
+        studentAffiliation: affiliation,
+        ...(faculty ? { faculty } : {}),
         password: formData.password,
         role: "STUDENT",
       });

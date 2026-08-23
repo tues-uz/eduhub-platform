@@ -62,13 +62,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   eduhubAdminEnrollmentApplications,
+  eduhubAttendance,
   eduhubCourseQuizzes,
   eduhubCourses,
   eduhubClassResumes,
+  eduhubPlacementTestsAdmin,
   eduhubSchedule,
   eduhubSubstituteInvites,
   ApiError,
   type QuizResponse,
+  type QuizQuestionResponse,
 } from "@/api/eduhubClient";
 import type {
   ClassResumeResponse,
@@ -92,15 +95,13 @@ import { usePayrollClassesQuery } from "@/features/teacher/hooks/useTeacherQueri
 import { formatMoney } from "@/features/payroll/classPayrollAggregate";
 import {
   formatContractShareLabel,
-  getInstructorRevenueShare,
-  useInstructorRevenueShareOverrides,
-} from "@/features/payroll/instructorRevenueShareStorage";
+  resolveInstructorShare,
+} from "@/features/payroll/revenueShare";
 import {
   buildScheduleMonthTabs,
   orderSessionSlotsChronologically,
   type SessionSlotLike,
 } from "@/features/courses/classSchedulePreview";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import {
   ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED,
   adminEnrollmentPaidMonthsStore,
@@ -129,12 +130,6 @@ import {
   ATTENDANCE_MEETINGS_CHANGED,
   fetchAttendanceMeetings,
 } from "@/features/teacher/attendance/attendanceMeetingsStorage";
-import {
-  ATTENDANCE_ROLL_BROADCAST,
-  ATTENDANCE_ROLL_CHANGED,
-  ATTENDANCE_ROLL_STORAGE_KEY,
-  countSessionsStudentAttended,
-} from "@/features/attendance/attendanceRollStorage";
 import { useTeacherClassChecklist } from "@/features/teacher/hooks/useTeacherClassChecklist";
 import { useTranslation } from "react-i18next";
 
@@ -403,10 +398,7 @@ export default function TeacherCourseRosterPage() {
 
   const courseLeadEmail = apiCourseQuery.data?.lecturer?.email?.trim();
 
-  /** Re-render when admin changes this instructor’s contract share. */
-  useInstructorRevenueShareOverrides();
-  const revenueShareEmail = courseLeadEmail || user.email;
-  const instructorRevenueShare = getInstructorRevenueShare(revenueShareEmail);
+  const instructorRevenueShare = resolveInstructorShare(apiCourseQuery.data?.lecturer?.instructorRevenueShare);
   const instructorSharePct = Math.round(instructorRevenueShare * 100);
   const contractShareLabel = formatContractShareLabel(instructorRevenueShare);
 
@@ -457,9 +449,12 @@ export default function TeacherCourseRosterPage() {
     return map;
   }, [payrollClassForCourse]);
 
+  const isAdminUser = user?.role === "admin" || Boolean(user?.staffRole);
+
   const courseEnrollmentsQuery = useQuery({
     queryKey: ["teacher", "roster", "enrollments", courseId],
     queryFn: async (): Promise<EnrollmentApplicationResponse[]> => {
+      if (!isAdminUser) return [];
       const byId = new Map<string, EnrollmentApplicationResponse>();
       try {
         const all = await eduhubAdminEnrollmentApplications.listAll();
@@ -467,33 +462,11 @@ export default function TeacherCourseRosterPage() {
           if (a.courseId === courseId && a.status === "APPROVED") byId.set(a.id, a);
         }
       } catch {
-        // Teacher may not have admin enrollment access — fall back to local cache below.
-      }
-      for (const a of enrollmentApplicationStore.list()) {
-        if (a.courseId !== courseId || a.status !== "APPROVED" || byId.has(a.id)) continue;
-        byId.set(a.id, {
-          id: a.id,
-          courseId: a.courseId,
-          courseTitle: a.courseTitle ?? "",
-          applicantEmailNorm: a.applicantEmailNorm,
-          fullName: a.fullName,
-          email: a.email,
-          phone: a.phone,
-          address: a.address,
-          paymentPlan: a.paymentPlan === "INSTALLMENT" ? "DOWN_PAYMENT" : a.paymentPlan,
-          installmentCount:
-            a.installmentCount === 3 || a.installmentCount === 12
-              ? 2
-              : (a.installmentCount as 1 | 2 | 4 | 6 | 8 | undefined),
-          status: a.status,
-          submittedAt: a.submittedAt,
-          amountPaid: a.amountPaid,
-          priceCurrency: a.priceCurrency,
-        });
+        // Teacher may not have admin enrollment access.
       }
       return [...byId.values()];
     },
-    enabled: Boolean(courseId) && isUuid(courseId) && (isApiCourseLecturer || substituteCanAccess),
+    enabled: Boolean(courseId) && isUuid(courseId) && (isApiCourseLecturer || substituteCanAccess) && isAdminUser,
   });
 
   const installmentPaymentsTick = useEnrollmentInstallmentPayments();
@@ -502,11 +475,9 @@ export default function TeacherCourseRosterPage() {
     const bump = () => setPaidMonthsTick((n) => n + 1);
     window.addEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
     window.addEventListener(ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED, bump);
-    window.addEventListener("eduhub-enrollment-applications-changed", bump);
     return () => {
       window.removeEventListener(ADMIN_ENROLLMENT_PAID_MONTHS_CHANGED, bump);
       window.removeEventListener(ENROLLMENT_INSTALLMENT_PAYMENTS_CHANGED, bump);
-      window.removeEventListener("eduhub-enrollment-applications-changed", bump);
     };
   }, []);
 
@@ -530,14 +501,49 @@ export default function TeacherCourseRosterPage() {
     retry: 1,
   });
 
+  const placementQuizId = apiCourseQuery.data?.placementQuizId?.trim() ?? "";
+
+  /** Placement tests are institution-wide (no courseId), so the one gating this class is fetched by id directly. */
+  const coursePlacementTestQuery = useQuery({
+    queryKey: ["teacher", "roster", "coursePlacementTest", placementQuizId],
+    queryFn: () => eduhubPlacementTestsAdmin.get(placementQuizId),
+    enabled:
+      Boolean(courseId) && isUuid(courseId) && isApiCourseLecturer && tabFromUrl === "quiz" && Boolean(placementQuizId),
+    retry: 1,
+  });
+
+  const displayedQuizzes = useMemo((): QuizResponse[] => {
+    const regular = courseQuizzesQuery.data?.quizzes ?? [];
+    const p = coursePlacementTestQuery.data;
+    if (!p) return regular;
+    const placementAsQuiz: QuizResponse = {
+      id: p.id,
+      courseId,
+      title: p.title,
+      quizType: "PLACEMENT_TEST",
+      releaseDate: p.releaseDate,
+      releaseTime: p.releaseTime,
+      timeLimitMinutes: p.timeLimitMinutes ?? 0,
+      passingScore: p.passingScore ?? 0,
+      isPublished: p.isPublished,
+      questions: p.questions as unknown as QuizQuestionResponse[],
+    };
+    return [...regular, placementAsQuiz];
+  }, [courseQuizzesQuery.data, coursePlacementTestQuery.data, courseId]);
+
   const [quizPublishingId, setQuizPublishingId] = useState<string | null>(null);
   const handlePublishQuiz = useCallback(
-    async (quizId: string) => {
-      if (!isUuid(courseId)) return;
+    async (quizId: string, isPlacementTest: boolean) => {
+      if (!isPlacementTest && !isUuid(courseId)) return;
       setQuizPublishingId(quizId);
       try {
-        await eduhubCourseQuizzes.publish(courseId, quizId);
-        await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", courseId] });
+        if (isPlacementTest) {
+          await eduhubPlacementTestsAdmin.setPublished(quizId, true);
+          await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "coursePlacementTest"] });
+        } else {
+          await eduhubCourseQuizzes.publish(courseId, quizId);
+          await queryClient.invalidateQueries({ queryKey: ["teacher", "roster", "courseQuizzes", courseId] });
+        }
         toast.success("Quiz published");
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Could not publish quiz.");
@@ -775,37 +781,18 @@ export default function TeacherCourseRosterPage() {
 
   useEffect(() => {
     const bump = () => setAttendanceUiKey((k) => k + 1);
-    const onStorage = (e: StorageEvent) => {
-      if (!e.key) return;
-      if (e.key === ATTENDANCE_ROLL_STORAGE_KEY) bump();
-    };
     const onFocus = () => bump();
     const onVis = () => {
       if (document.visibilityState === "visible") bump();
     };
-    window.addEventListener(ATTENDANCE_ROLL_CHANGED, bump);
     window.addEventListener(ATTENDANCE_MEETINGS_CHANGED, bump);
-    window.addEventListener("storage", onStorage);
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVis);
     return () => {
-      window.removeEventListener(ATTENDANCE_ROLL_CHANGED, bump);
       window.removeEventListener(ATTENDANCE_MEETINGS_CHANGED, bump);
-      window.removeEventListener("storage", onStorage);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [courseMeta?.id]);
-
-  useEffect(() => {
-    if (typeof BroadcastChannel === "undefined" || !courseMeta?.id) return;
-    const bump = () => setAttendanceUiKey((k) => k + 1);
-    const bc = new BroadcastChannel(ATTENDANCE_ROLL_BROADCAST);
-    bc.onmessage = (ev: MessageEvent) => {
-      const d = ev.data as { type?: string; courseId?: string } | undefined;
-      if (d?.type === "check-in" && d.courseId === courseMeta.id) bump();
-    };
-    return () => bc.close();
   }, [courseMeta?.id]);
 
   useEffect(() => {
@@ -841,6 +828,12 @@ export default function TeacherCourseRosterPage() {
     () => attendanceMeetingsQuery.data ?? [],
     [attendanceMeetingsQuery.data],
   );
+
+  const attendanceSummaryQuery = useQuery({
+    queryKey: ["teacher", "attendance-summary", courseMeta?.id, attendanceUiKey],
+    queryFn: () => eduhubAttendance.summary(courseMeta!.id),
+    enabled: Boolean(courseMeta?.id) && isUuid(courseMeta.id),
+  });
 
   useEffect(() => {
     if (!courseMeta?.id) return;
@@ -1252,10 +1245,9 @@ export default function TeacherCourseRosterPage() {
                           </TableHeader>
                           <TableBody>
                             {studentsQuery.data.map((s) => {
-                              void attendanceUiKey;
                               const displayName = formatDisplayPersonName(s.fullName);
                               const planned = apiCourseQuery.data?.classMeetingsInSixMonths;
-                              const attended = countSessionsStudentAttended(courseMeta.id, s.id, s.email);
+                              const attended = attendanceSummaryQuery.data?.attendedByStudentId[s.id] ?? 0;
                               const emailKey = s.email?.trim().toLowerCase();
                               const paymentInfo =
                                 studentPaymentByKey.get(s.id) ??
@@ -1638,10 +1630,10 @@ export default function TeacherCourseRosterPage() {
                     </div>
                     {!isSubstituteViewer ? (
                       <div className="flex flex-wrap items-center gap-2">
-                        {courseQuizzesQuery.data?.quizzes?.length ? (
+                        {displayedQuizzes.length ? (
                           <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-muted-foreground">
                             {t("teacher.roster.quiz.count", {
-                              count: courseQuizzesQuery.data.quizzes.length,
+                              count: displayedQuizzes.length,
                             })}
                           </span>
                         ) : null}
@@ -1703,7 +1695,7 @@ export default function TeacherCourseRosterPage() {
                             ? courseQuizzesQuery.error.message
                             : t("teacher.roster.quiz.loadError")}
                         </p>
-                      ) : !courseQuizzesQuery.data?.quizzes?.length ? (
+                      ) : !displayedQuizzes.length ? (
                         <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
                           <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full border border-border bg-background">
                             <ClipboardList className="h-5 w-5 text-muted-foreground" aria-hidden />
@@ -1730,7 +1722,7 @@ export default function TeacherCourseRosterPage() {
                         </div>
                       ) : (
                         <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-                          {courseQuizzesQuery.data.quizzes.map((q) => {
+                          {displayedQuizzes.map((q) => {
                             const isPlacement = (q.quizType ?? "QUIZ") === "PLACEMENT_TEST";
                             return (
                               <li
@@ -1791,7 +1783,7 @@ export default function TeacherCourseRosterPage() {
                                       size="sm"
                                       className="gap-1.5"
                                       disabled={quizPublishingId === q.id}
-                                      onClick={() => void handlePublishQuiz(q.id)}
+                                      onClick={() => void handlePublishQuiz(q.id, isPlacement)}
                                     >
                                       {quizPublishingId === q.id ? (
                                         <Loader2 className="h-3.5 w-3.5 animate-spin" />

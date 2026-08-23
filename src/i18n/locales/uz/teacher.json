@@ -494,27 +494,16 @@
           "remove": "Olib tashlash",
           "previewAlt": "Test muqovasi"
         },
-        "typeLabel": "Type",
-        "typePlaceholder": "Select type",
-        "typeHint": "Test for practice or Placement test for assessment.",
         "classLabel": "Sinf",
         "classPlaceholder": "Select sinf",
         "noClass": "No sinf",
         "classLockedHint": "Sinf is locked for this quiz.",
         "classPickerHint": "Yuklanmoqda…",
         "titleLabels": {
-          "placement": "Placement test title *",
-          "quiz": "Test title *"
+          "quiz": "Test title *",
+          "placement": "Placement test title"
         },
         "titlePlaceholder": "e.g. Economics Placement Test",
-        "release": {
-          "label": "Release date and time",
-          "date": "Date",
-          "time": "Time",
-          "selectDate": "Select date",
-          "selectTime": "Select time"
-        },
-        "releaseHint": "When this placement test becomes available to talabas.",
         "questionsTitle": "Questions (multiple choice)",
         "addQuestion": "Add question",
         "questionActions": {
@@ -537,11 +526,27 @@
           "option": "Option {{letter}}"
         },
         "saveChanges": "Saqlash changes",
-        "createQuiz": "Create quiz"
-      },
-      "types": {
-        "quiz": "Test",
-        "placementTest": "Placement test"
+        "createQuiz": "Create quiz",
+        "typeLabel": "Type",
+        "typePlaceholder": "Select type",
+        "typeHint": "Quiz for practice, or Placement test for assessment.",
+        "release": {
+          "label": "Release date & time",
+          "date": "Date",
+          "time": "Time",
+          "selectDate": "Select date",
+          "selectTime": "Select time"
+        },
+        "bands": {
+          "label": "Score-to-level bands",
+          "hint": "Map score ranges to a level. The student's best result sets their level for this subject.",
+          "minScore": "Minimum score",
+          "maxScore": "Maximum score",
+          "addRow": "Add band"
+        },
+        "gatedCoursesLabel": "Which classes does this gate?",
+        "gatedCoursesHint": "Students must pass this test to enroll in any checked class. Leave all unchecked if this test shouldn't gate anything yet.",
+        "noClassesYet": "You don't have any classes yet."
       },
       "errors": {
         "titleRequired": "Test title is required.",
@@ -560,6 +565,10 @@
           "title": "Remove this question?",
           "description": "This question will be removed from the quiz."
         }
+      },
+      "types": {
+        "quiz": "Quiz",
+        "placementTest": "Placement test"
       }
     },
     "quizResults": {
@@ -1215,6 +1224,20 @@
       "toast": {
         "generateFailed": "Could not generate attendance QR",
         "stopFailed": "Could not stop attendance session"
+      },
+      "confirmSameCourse": {
+        "title": "Start a new meeting?",
+        "body": "{{present}} of {{enrolled}} students have checked in to \"{{meetingName}}\". Starting a new QR closes that meeting and begins a separate one with an empty roster. Those students stay recorded on the old meeting, but this will count as two meetings held.",
+        "keep": "Keep current QR",
+        "confirm": "Close it & start new meeting"
+      },
+      "confirmCrossCourse": {
+        "title": "You still have a check-in open elsewhere",
+        "body": "Starting this one will close it.",
+        "checkedIn": "checked in",
+        "remaining": "remaining",
+        "cancel": "Cancel",
+        "confirm": "Close it & start here"
       },
       "setupTitle": "Sozlash",
       "sessionLabel": "Dars",

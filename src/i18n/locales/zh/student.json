@@ -133,7 +133,11 @@
     "clearFilters": "清除筛选",
     "defaultCategory": "课程",
     "dayPatternOdd": "单日",
-    "dayPatternEven": "双日"
+    "dayPatternEven": "双日",
+    "placementGate": {
+      "takeTest": "Take the {{testTitle}} test to join",
+      "belowLevel": "You're placed at {{achieved}} — this class needs {{required}}"
+    }
   },
   "classSearch": {
     "placeholder": "搜索课程…",
@@ -280,6 +284,7 @@
     "greatJob": "做得好！",
     "completedMessage": "您已成功完成 {{title}}。",
     "yourScore": "您的得分",
+    "yourLevel": "您的等级",
     "exploreMyClass": "探索我的班级",
     "submitFailed": "提交分级测试失败。请重试。"
   },

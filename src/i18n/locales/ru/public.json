@@ -317,6 +317,8 @@
       "subscribeConsent": "Подписываясь, вы соглашаетесь с нашей",
       "privacyPolicy": "Политикой конфиденциальности",
       "subscribeConsentSuffix": "и даёте согласие на получение обновлений от EduHub.",
+      "subscribeSuccess": "Спасибо за подписку!",
+      "subscribeError": "Что-то пошло не так. Попробуйте ещё раз.",
       "contact": "Контакты",
       "menuLinks": "Ссылки меню",
       "copyright": "© 2026 EduHub. Все права защищены.",

@@ -3,7 +3,7 @@ import { ATTENDANCE_SESSION_MAX_MS } from "@/features/teacher/attendance/attenda
 import { scheduleSlotKeyFromParts } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
 import type { TeacherCourse } from "@/features/teacher/types";
 import { courseScheduleProposalStore } from "@/features/courses/courseScheduleProposalStore";
-import { courseScheduleWorkflowStore } from "@/features/courses/courseScheduleWorkflowStore";
+import { deriveScheduleWorkflow } from "@/features/courses/courseScheduleWorkflow";
 import {
   distributeSessionsIntoMonths,
   distributeSessionsIntoThreeMonths,
@@ -276,7 +276,7 @@ export function resolvePreviewSessionSlots(
         durationMinutes: s.durationMinutes,
       }));
     }
-    const wf = courseScheduleWorkflowStore.get(courseId);
+    const wf = deriveScheduleWorkflow(apiDetail);
     const useProposal = wf?.status === "approved";
     if (useProposal) {
       const p = courseScheduleProposalStore.get(courseId);
@@ -312,6 +312,7 @@ export function classScheduleStatusHint(
   isApiCourse: boolean,
   scheduleProposal: ScheduleProposalResponse | null,
   hasSlots: boolean,
+  apiCourse?: CourseResponse | null,
 ): string | null {
   if (!courseId || !isApiCourse || !isUuid(courseId)) {
     return hasSlots ? "Planned class sessions for this course." : null;
@@ -319,7 +320,7 @@ export function classScheduleStatusHint(
   if (scheduleProposal?.sessions.length) {
     return "Schedule proposed by the school and shared for enrollment.";
   }
-  const wf = courseScheduleWorkflowStore.get(courseId);
+  const wf = deriveScheduleWorkflow(apiCourse);
   if (wf?.status === "pending_instructor") {
     return "A schedule is being reviewed by the instructor—session dates may change.";
   }

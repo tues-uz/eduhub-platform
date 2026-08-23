@@ -1,75 +1,50 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useAuthSession } from "@/features/auth/context";
-import {
-  clearTeacherClassChecklist,
-  DEFAULT_TEACHER_CLASS_CHECKLIST_ITEMS,
-  getTeacherClassChecklist,
-  instructorVerifyItemId,
-  setTeacherClassChecklistItem,
-  TEACHER_CLASS_CHECKLIST_CHANGED,
-  TEACHER_CLASS_CHECKLIST_STORAGE_KEY,
-  teacherClassChecklistUserKey,
-} from "@/features/teacher/data/teacherClassChecklistStorage";
+import { useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { eduhubTeacherChecklist } from "@/api/eduhubClient";
+
+export const instructorVerifyItemId = "instructor-verify";
+
+function titleForItemKey(itemKey: string): string {
+  if (itemKey.startsWith(instructorVerifyItemId)) return "Verify attendance";
+  return "Checklist item";
+}
 
 export function useTeacherClassChecklist(courseId: string | undefined) {
-  const { user } = useAuthSession();
-  const userKey = useMemo(
-    () => teacherClassChecklistUserKey(user.id, user.email),
-    [user.id, user.email],
-  );
-  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const queryClient = useQueryClient();
+  const queryKey = useMemo(() => ["teacher", "class-checklist", courseId] as const, [courseId]);
 
-  const reload = useCallback(() => {
-    if (!courseId || !userKey) {
-      setChecked({});
-      return;
+  const { data } = useQuery({
+    queryKey,
+    queryFn: () => eduhubTeacherChecklist.list(courseId as string),
+    enabled: Boolean(courseId),
+  });
+
+  const checked = useMemo(() => {
+    const out: Record<string, boolean> = {};
+    for (const item of data ?? []) {
+      if (item.completed) out[item.itemKey] = true;
     }
-    setChecked(getTeacherClassChecklist(userKey, courseId));
-  }, [courseId, userKey]);
+    return out;
+  }, [data]);
 
-  useEffect(() => {
-    reload();
-  }, [reload]);
+  const toggleMutation = useMutation({
+    mutationFn: ({ itemId, value }: { itemId: string; value: boolean }) =>
+      eduhubTeacherChecklist.setItem(courseId as string, itemId, {
+        title: titleForItemKey(itemId),
+        completed: value,
+      }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey }),
+  });
 
-  useEffect(() => {
-    const bump = () => reload();
-    window.addEventListener(TEACHER_CLASS_CHECKLIST_CHANGED, bump);
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === TEACHER_CLASS_CHECKLIST_STORAGE_KEY) bump();
-    };
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(TEACHER_CLASS_CHECKLIST_CHANGED, bump);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, [reload]);
-
-  const toggle = useCallback(
-    (itemId: string, value: boolean) => {
-      if (!courseId || !userKey) return;
-      setTeacherClassChecklistItem(userKey, courseId, itemId, value);
-      setChecked((prev) => {
-        const next = { ...prev };
-        if (value) next[itemId] = true;
-        else delete next[itemId];
-        return next;
-      });
-    },
-    [courseId, userKey],
-  );
-
-  const reset = useCallback(() => {
-    if (!courseId || !userKey) return;
-    clearTeacherClassChecklist(userKey, courseId);
-    setChecked({});
-  }, [courseId, userKey]);
+  const toggle = (itemId: string, value: boolean) => {
+    if (!courseId) return;
+    toggleMutation.mutate({ itemId, value });
+  };
 
   return {
-    items: DEFAULT_TEACHER_CLASS_CHECKLIST_ITEMS,
     checked,
     toggle,
-    reset,
-    ready: Boolean(courseId && userKey),
+    ready: Boolean(courseId),
     verifyItemId: instructorVerifyItemId,
   };
 }

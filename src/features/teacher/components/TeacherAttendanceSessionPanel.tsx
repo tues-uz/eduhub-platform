@@ -3,6 +3,16 @@ import { Link } from "react-router-dom";
 import QRCode from "react-qr-code";
 import { Maximize2, Minimize2, QrCode, RefreshCw, Square } from "@/lib/icons";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,19 +26,19 @@ import {
 import { useAuthSession } from "@/features/auth/context";
 import type { TeacherCourse } from "@/features/teacher/types";
 import { eduhubAttendance, eduhubCourses, eduhubSchedule, eduhubSubstituteInvites } from "@/api/eduhubClient";
+import type { AttendanceSessionResponse } from "@/api/eduhubTypes";
 import { isUuid } from "@/api/utils";
 import {
   buildCourseScheduleSlots,
   toApprovedScheduleSlotOptions,
 } from "@/features/courses/courseScheduleSlots";
+import { orderSessionSlotsChronologically } from "@/features/courses/classSchedulePreview";
+import { paymentMonthForScheduleSlotKey } from "@/features/enrollment/enrollmentPaidMonths";
+import type { ClassMeetingSlot } from "@/features/teacher/types";
 import {
   refreshScheduleAttendanceState,
   scheduleSlotKeyFromParts,
 } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
-import {
-  notifyAttendanceQrGenerated,
-  notifyAttendanceSessionCompleted,
-} from "@/features/notifications/appNotificationStore";
 import {
   ATTENDANCE_OVERVIEW_SESSION_SYNC,
   ATTENDANCE_SESSION_MAX_MS,
@@ -120,6 +130,15 @@ export function TeacherAttendanceSessionPanel({
   /** Planned schedule row chosen with no matching QR yet — enables Generate using that label. */
   const [rosterScheduleSlotIntent, setRosterScheduleSlotIntent] = useState<ApprovedScheduleSlotOption | null>(null);
   const [loadedScheduleSlots, setLoadedScheduleSlots] = useState<ApprovedScheduleSlotOption[]>([]);
+  /** Pending confirmation before Generate actually closes a still-active check-in window. */
+  const [confirmState, setConfirmState] = useState<
+    | { kind: "same-course"; meetingName: string; presentCount: number; enrolledCount: number }
+    | { kind: "cross-course"; sessions: AttendanceSessionResponse[] }
+    | null
+  >(null);
+  const [checkingBeforeGenerate, setCheckingBeforeGenerate] = useState(false);
+  /** Raw ordered slots (same shape used by the payment tabs) so Generate can attach a tuition schedule month. */
+  const [orderedRawSlots, setOrderedRawSlots] = useState<ClassMeetingSlot[]>([]);
   const qrPreviewRef = useRef<HTMLDivElement | null>(null);
 
   const approvedScheduleSlots =
@@ -134,10 +153,12 @@ export function TeacherAttendanceSessionPanel({
   useEffect(() => {
     if (rosterAttendanceOverviewPicker?.approvedScheduleSlots?.length) {
       setLoadedScheduleSlots([]);
+      setOrderedRawSlots([]);
       return;
     }
     if (!courseId || !isUuid(courseId)) {
       setLoadedScheduleSlots([]);
+      setOrderedRawSlots([]);
       return;
     }
     let cancelled = false;
@@ -149,9 +170,13 @@ export function TeacherAttendanceSessionPanel({
         if (cancelled) return;
         const slots = buildCourseScheduleSlots(course, proposal, courseId);
         setLoadedScheduleSlots(toApprovedScheduleSlotOptions(slots));
+        setOrderedRawSlots(orderSessionSlotsChronologically(slots));
       })
       .catch(() => {
-        if (!cancelled) setLoadedScheduleSlots([]);
+        if (!cancelled) {
+          setLoadedScheduleSlots([]);
+          setOrderedRawSlots([]);
+        }
       });
     return () => {
       cancelled = true;
@@ -314,11 +339,13 @@ export function TeacherAttendanceSessionPanel({
     if (!name) return;
 
     const prevSessionId = sessionId;
-    const prevMeeting = prevSessionId ? storedMeetings.find((m) => m.sessionId === prevSessionId) : undefined;
-    const courseTitle = selectedCourse?.title?.trim() || "Class";
 
     const slotIndex = scheduleSlotForGenerate?.index;
     const scheduleSlotKey = slotKeyForScheduleOption(scheduleSlotForGenerate);
+    const scheduleMonth =
+      scheduleSlotKey && orderedRawSlots.length
+        ? paymentMonthForScheduleSlotKey(orderedRawSlots, scheduleSlotKey) ?? undefined
+        : undefined;
     let created;
     try {
       created = await eduhubAttendance.createSession(courseId, {
@@ -326,6 +353,7 @@ export function TeacherAttendanceSessionPanel({
         modality: "IN_PERSON",
         scheduleSlotIndex: typeof slotIndex === "number" && slotIndex >= 0 ? slotIndex : undefined,
         scheduleSlotKey,
+        scheduleMonth,
       });
     } catch (e) {
       toast.error("Could not generate attendance QR", {
@@ -334,23 +362,6 @@ export function TeacherAttendanceSessionPanel({
       return;
     }
 
-    // Backend auto-closes the previous open session (reason NEW_SESSION) as part of createSession.
-    if (prevMeeting && !prevMeeting.endedAt) {
-      const startMs = new Date(prevMeeting.createdAt).getTime();
-      const endMs = new Date(created.startedAt).getTime();
-      if (Number.isFinite(startMs) && Number.isFinite(endMs)) {
-        notifyAttendanceSessionCompleted({
-          id: prevMeeting.sessionId,
-          courseTitle,
-          meetingName: prevMeeting.name,
-          endedAt: created.startedAt,
-          durationMs: Math.max(0, endMs - startMs),
-          endReason: "NEW_SESSION",
-          instructorEmail: user.email ?? "",
-          instructorName: user.name ?? "",
-        });
-      }
-    }
     void refreshScheduleAttendanceState(courseId);
 
     const next: StoredAttendanceMeeting = {
@@ -382,30 +393,67 @@ export function TeacherAttendanceSessionPanel({
     }
     setNextMeetingName(useSchedulePicker ? "" : (suggestedMeetingName?.trim() ?? ""));
 
-    notifyAttendanceQrGenerated({
-      id: next.sessionId,
-      courseTitle,
-      meetingName: name,
-      startedAt: created.startedAt,
-      instructorEmail: user.email ?? "",
-      instructorName: user.name ?? "",
-    });
     if (useSchedulePicker) {
       setRosterScheduleSlotIntent(null);
     }
   }, [
     courseId,
     nextMeetingName,
+    orderedRawSlots,
     scheduleSlotForGenerate,
     slotKeyForScheduleOption,
     sessionId,
-    selectedCourse?.title,
-    storedMeetings,
     suggestedMeetingName,
     useSchedulePicker,
-    user.email,
-    user.name,
   ]);
+
+  const canGenerate =
+    Boolean(courseId) &&
+    (!useSchedulePicker ? Boolean(nextMeetingName.trim()) : Boolean(rosterOverviewSessionId || rosterScheduleSlotIntent));
+
+  /** Checks for an already-open check-in window (this class or another) before Generate closes it,
+   * so students already checked in aren't silently split off into a second "meeting held". */
+  const requestGenerate = useCallback(async () => {
+    if (!canGenerate || !courseId) return;
+    setCheckingBeforeGenerate(true);
+    try {
+      if (sessionId) {
+        try {
+          const fresh = await eduhubAttendance.listSessions(courseId);
+          const current = fresh.find((s) => s.id === sessionId);
+          if (current && current.status === "OPEN" && (current.presentCount ?? 0) > 0) {
+            setConfirmState({
+              kind: "same-course",
+              meetingName: current.meetingName,
+              presentCount: current.presentCount ?? 0,
+              enrolledCount: current.enrolledCount ?? 0,
+            });
+            return;
+          }
+        } catch {
+          // Can't verify live state — fall through and let Generate proceed.
+        }
+      }
+      try {
+        const mine = await eduhubAttendance.myOpenSessions();
+        const others = mine.filter((s) => s.courseId !== courseId);
+        if (others.length > 0) {
+          setConfirmState({ kind: "cross-course", sessions: others });
+          return;
+        }
+      } catch {
+        // Can't verify — fall through and let Generate proceed.
+      }
+      await generateSession();
+    } finally {
+      setCheckingBeforeGenerate(false);
+    }
+  }, [canGenerate, courseId, generateSession, sessionId]);
+
+  const confirmGenerate = useCallback(async () => {
+    setConfirmState(null);
+    await generateSession();
+  }, [generateSession]);
 
   const joinUrl = useMemo(() => {
     if (!courseId || !sessionId) return "";
@@ -520,9 +568,6 @@ export function TeacherAttendanceSessionPanel({
     if (!isUuid(sid)) return;
     if (finalizedMaxDurationRef.current.has(sid)) return;
     finalizedMaxDurationRef.current.add(sid);
-    const courseTitle = selectedCourse?.title?.trim() || "Class";
-    const meetingName = activeMeeting.name.trim() || "Meeting";
-    const startedAtIso = activeMeeting.createdAt;
     eduhubAttendance
       .closeSession(sid, "MAX_DURATION")
       .then((closed) => {
@@ -534,20 +579,6 @@ export function TeacherAttendanceSessionPanel({
           ),
         );
         void refreshScheduleAttendanceState(courseId);
-        const startMs = new Date(startedAtIso).getTime();
-        const endMs = closed.endedAt ? new Date(closed.endedAt).getTime() : NaN;
-        if (Number.isFinite(startMs) && Number.isFinite(endMs)) {
-          notifyAttendanceSessionCompleted({
-            id: sid,
-            courseTitle,
-            meetingName,
-            endedAt: closed.endedAt as string,
-            durationMs: Math.max(0, endMs - startMs),
-            endReason: closed.endReason ?? "MAX_DURATION",
-            instructorEmail: user.email ?? "",
-            instructorName: user.name ?? "",
-          });
-        }
       })
       .catch(() => {
         finalizedMaxDurationRef.current.delete(sid);
@@ -559,9 +590,6 @@ export function TeacherAttendanceSessionPanel({
     activeMeeting?.name,
     isBackendSessionClosed,
     sessionElapsedMs,
-    selectedCourse?.title,
-    user.email,
-    user.name,
   ]);
 
   const stopSession = useCallback(async () => {
@@ -569,10 +597,6 @@ export function TeacherAttendanceSessionPanel({
     if (manuallyStoppedSessionIds.includes(sessionId)) return;
     if (manualStopOnceRef.current.has(sessionId)) return;
     manualStopOnceRef.current.add(sessionId);
-
-    const courseTitle = selectedCourse?.title?.trim() || "Class";
-    const meetingName = activeMeeting.name.trim() || "Meeting";
-    const startedAtIso = activeMeeting.createdAt;
 
     try {
       if (isUuid(sessionId)) {
@@ -585,20 +609,6 @@ export function TeacherAttendanceSessionPanel({
           ),
         );
         void refreshScheduleAttendanceState(courseId);
-        const startMs = new Date(startedAtIso).getTime();
-        const endMs = closed.endedAt ? new Date(closed.endedAt).getTime() : NaN;
-        if (Number.isFinite(startMs) && Number.isFinite(endMs)) {
-          notifyAttendanceSessionCompleted({
-            id: sessionId,
-            courseTitle,
-            meetingName,
-            endedAt: closed.endedAt as string,
-            durationMs: Math.max(0, endMs - startMs),
-            endReason: closed.endReason ?? "MANUAL_STOP",
-            instructorEmail: user.email ?? "",
-            instructorName: user.name ?? "",
-          });
-        }
       }
     } catch (e) {
       toast.error("Could not stop attendance session", {
@@ -615,14 +625,7 @@ export function TeacherAttendanceSessionPanel({
     sessionId,
     activeMeeting,
     manuallyStoppedSessionIds,
-    selectedCourse?.title,
-    user.email,
-    user.name,
   ]);
-
-  const canGenerate =
-    Boolean(courseId) &&
-    (!useSchedulePicker ? Boolean(nextMeetingName.trim()) : Boolean(rosterOverviewSessionId || rosterScheduleSlotIntent));
 
   const setupControls = (
     <div className="space-y-5">
@@ -692,8 +695,8 @@ export function TeacherAttendanceSessionPanel({
         <Button
           type="button"
           className="w-full justify-center bg-teal-700 hover:bg-teal-800"
-          onClick={generateSession}
-          disabled={!canGenerate}
+          onClick={requestGenerate}
+          disabled={!canGenerate || checkingBeforeGenerate}
           title={
             useSchedulePicker && !canGenerate
               ? t("teacher.attendancePanel.generateQr.pickSessionFirst")
@@ -901,6 +904,62 @@ export function TeacherAttendanceSessionPanel({
           </Button>
         </div>
       ) : null}
+
+      <AlertDialog open={confirmState?.kind === "same-course"} onOpenChange={(open) => !open && setConfirmState(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("teacher.attendancePanel.confirmSameCourse.title")}</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <span>
+                {confirmState?.kind === "same-course"
+                  ? t("teacher.attendancePanel.confirmSameCourse.body", {
+                      present: confirmState.presentCount,
+                      enrolled: confirmState.enrolledCount,
+                      meetingName: confirmState.meetingName,
+                    })
+                  : ""}
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("teacher.attendancePanel.confirmSameCourse.keep")}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmGenerate}>
+              {t("teacher.attendancePanel.confirmSameCourse.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmState?.kind === "cross-course"} onOpenChange={(open) => !open && setConfirmState(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("teacher.attendancePanel.confirmCrossCourse.title")}</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <span className="space-y-2">
+                <span className="block">{t("teacher.attendancePanel.confirmCrossCourse.body")}</span>
+                {confirmState?.kind === "cross-course"
+                  ? confirmState.sessions.map((s) => (
+                      <span key={s.id} className="block rounded-md border border-border bg-muted/30 px-3 py-2 text-foreground">
+                        <span className="block font-medium">{s.courseTitle}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {s.meetingName} · {s.presentCount ?? 0} {t("teacher.attendancePanel.confirmCrossCourse.checkedIn")} ·{" "}
+                          {formatElapsedLabel(Math.max(0, Date.parse(s.endsAt) - Date.now()))}{" "}
+                          {t("teacher.attendancePanel.confirmCrossCourse.remaining")}
+                        </span>
+                      </span>
+                    ))
+                  : null}
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("teacher.attendancePanel.confirmCrossCourse.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmGenerate}>
+              {t("teacher.attendancePanel.confirmCrossCourse.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

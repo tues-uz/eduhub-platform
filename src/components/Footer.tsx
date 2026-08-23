@@ -2,7 +2,10 @@ import { Facebook, Twitter, Instagram, Linkedin, Youtube, Mail, Phone, MapPin, A
 import { useLocation } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { isPublicLandingPage } from "@/app/routes";
+import { eduhubNewsletter } from "@/api/eduhubClient";
 
 type FooterLinkKey =
   | "about"
@@ -86,9 +89,21 @@ const Footer = () => {
     }));
   }, [isEduHubPage, t]);
 
+  const subscribeMutation = useMutation({
+    mutationFn: (subscribeEmail: string) => eduhubNewsletter.subscribe(subscribeEmail),
+    onSuccess: () => {
+      toast.success(t("public.footer.subscribeSuccess"));
+      setEmail("");
+    },
+    onError: () => {
+      toast.error(t("public.footer.subscribeError"));
+    },
+  });
+
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
-    setEmail("");
+    if (!email.trim()) return;
+    subscribeMutation.mutate(email.trim());
   };
 
   if (isJournalPage) {
@@ -232,7 +247,8 @@ const Footer = () => {
                     />
                     <button
                       type="submit"
-                      className="inline-flex items-center justify-center gap-2 rounded-full py-3 px-5 text-base font-medium shrink-0 hover:opacity-90 text-white transition-colors"
+                      disabled={subscribeMutation.isPending}
+                      className="inline-flex items-center justify-center gap-2 rounded-full py-3 px-5 text-base font-medium shrink-0 hover:opacity-90 text-white transition-colors disabled:opacity-60"
                       style={{ backgroundColor: "#199eff" }}
                     >
                       {t("public.footer.subscribeButton")}

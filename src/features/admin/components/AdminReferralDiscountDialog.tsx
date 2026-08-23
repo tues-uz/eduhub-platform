@@ -168,11 +168,8 @@ export function AdminReferralDiscountDialog({
         const referralCode = trialSelected.pricing.referralCode ?? "";
         const discountPercent = trialSelected.pricing.discountPercent ?? 0;
 
-        await eduhubAdmin.reviewCourse(trialSelected.id, {
-          decision: "APPROVE",
-          priceAmount: trialSelected.pricing.amount,
-          currency: trialSelected.pricing.currency,
-          referralCode,
+        await eduhubAdmin.updateCoursePricing(trialSelected.id, {
+          referralCode: referralCode || undefined,
           discountPercent,
           trialCode: trialCode || undefined,
           adminActionCode: code,
@@ -203,11 +200,8 @@ export function AdminReferralDiscountDialog({
 
       const trialCode = selected.pricing.trialCode ?? "";
 
-      await eduhubAdmin.reviewCourse(selected.id, {
-        decision: "APPROVE",
-        priceAmount: selected.pricing.amount,
-        currency: selected.pricing.currency,
-        referralCode,
+      await eduhubAdmin.updateCoursePricing(selected.id, {
+        referralCode: referralCode || undefined,
         discountPercent,
         trialCode: trialCode || undefined,
         adminActionCode: code,

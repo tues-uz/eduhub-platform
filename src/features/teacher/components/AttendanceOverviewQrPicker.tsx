@@ -18,12 +18,6 @@ import {
   type StoredAttendanceMeeting,
 } from "@/features/teacher/attendance/attendanceMeetingsStorage";
 import { scheduleSlotKeyFromParts } from "@/features/teacher/attendance/heldScheduleMeetingsStorage";
-import {
-  ATTENDANCE_ROLL_BROADCAST,
-  ATTENDANCE_ROLL_CHANGED,
-  ATTENDANCE_ROLL_STORAGE_KEY,
-  countPresentForSession,
-} from "@/features/attendance/attendanceRollStorage";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
@@ -105,8 +99,6 @@ export function AttendanceOverviewQrPicker({
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   /** Radix value when user chose a plan row with no matching QR yet (`schedule-slot-${index}`). */
   const [pendingScheduleSelectValue, setPendingScheduleSelectValue] = useState<string | null>(null);
-  /** Re-render when local roll updates so “present” counts in the list stay fresh. */
-  const [rollTick, setRollTick] = useState(0);
   /** Previous meetings list head — used to detect “Generate QR” prepending a new session. */
   const prevListHeadRef = useRef<string | null>(null);
   /** Bumped on every refresh() call so a stale in-flight fetch (e.g. courseId changed mid-flight) is ignored. */
@@ -181,30 +173,11 @@ export function AttendanceOverviewQrPicker({
       const ce = e as CustomEvent<{ courseId?: string }>;
       if (ce.detail?.courseId === courseId) void refresh();
     };
-    const bumpRoll = () => setRollTick((t) => t + 1);
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === ATTENDANCE_ROLL_STORAGE_KEY) bumpRoll();
-    };
     window.addEventListener(ATTENDANCE_MEETINGS_CHANGED, onChanged);
-    window.addEventListener(ATTENDANCE_ROLL_CHANGED, bumpRoll);
-    window.addEventListener("storage", onStorage);
     return () => {
       window.removeEventListener(ATTENDANCE_MEETINGS_CHANGED, onChanged);
-      window.removeEventListener(ATTENDANCE_ROLL_CHANGED, bumpRoll);
-      window.removeEventListener("storage", onStorage);
     };
   }, [courseId, refresh]);
-
-  useEffect(() => {
-    if (typeof BroadcastChannel === "undefined") return;
-    const bumpRoll = () => setRollTick((t) => t + 1);
-    const bc = new BroadcastChannel(ATTENDANCE_ROLL_BROADCAST);
-    bc.onmessage = (ev: MessageEvent) => {
-      const d = ev.data as { type?: string; courseId?: string } | undefined;
-      if (d?.type === "check-in" && d.courseId === courseId) bumpRoll();
-    };
-    return () => bc.close();
-  }, [courseId]);
 
   useEffect(() => {
     const onSync = (e: Event) => {
@@ -320,8 +293,7 @@ export function AttendanceOverviewQrPicker({
                 Past check-ins
               </SelectLabel>
               {meetings.map((m) => {
-                void rollTick;
-                const present = countPresentForSession(courseId, m.sessionId);
+                const present = m.presentCount ?? 0;
                 const suffix = present > 0 ? ` · ${present} checked in` : "";
                 return (
                   <SelectItem key={m.sessionId} value={m.sessionId}>

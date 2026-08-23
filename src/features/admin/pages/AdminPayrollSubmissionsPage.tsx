@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "@/lib/icons";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { usePayrollSubmissions } from "@/features/admin/data/adminPayrollHistoryStore";
+import { eduhubPayroll } from "@/api/eduhubClient";
 
 function formatWhen(iso: string) {
   try {
@@ -28,8 +29,30 @@ function formatWhen(iso: string) {
 
 export default function AdminPayrollSubmissionsPage() {
   const { t } = useTranslation();
-  const rows = usePayrollSubmissions();
   const [q, setQ] = useState("");
+
+  const { data: requests = [] } = useQuery({
+    queryKey: ["admin", "payroll", "requests", "with-proof"],
+    queryFn: () => eduhubPayroll.listRequests(),
+  });
+
+  const rows = useMemo(
+    () =>
+      requests
+        .filter((r) => r.proof)
+        .map((r) => ({
+          id: r.id,
+          submittedAt: r.proof?.approvedAt ?? r.proof?.uploadedAt ?? r.resolvedAt ?? r.submittedAt,
+          classSection: r.classSection,
+          course: r.course,
+          instructorName: r.instructorName,
+          instructorEmail: r.instructorEmailNorm,
+          summary: r.summary,
+          notesPreview: r.proof?.informationNotes ?? r.adminNote,
+        }))
+        .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
+    [requests],
+  );
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();

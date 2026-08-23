@@ -359,7 +359,7 @@ const DashboardSidebar = () => {
                 {!isCollapsed && (
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-foreground">{userName}</p>
-                    <p className="truncate text-xs text-foreground/60">{userEmail}</p>
+                    <p className="truncate text-xs text-foreground/60">{userEmail || user.phoneNumber || "—"}</p>
                   </div>
                 )}
               </div>

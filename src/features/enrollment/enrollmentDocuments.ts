@@ -32,8 +32,3 @@ export function hasOfficialEnrollmentDocuments(app: EnrollmentApplicationRespons
   const e = enrichEnrollmentApplication(app);
   return Boolean(e.invoiceNumber && e.receiptNumber && e.status === "APPROVED");
 }
-
-export function isDemoEnrollmentDocuments(app: EnrollmentApplicationResponse): boolean {
-  if (app.invoiceNumber && app.receiptNumber) return false;
-  return Boolean(enrollmentDocumentStore.get(app.id)?.isDemo);
-}

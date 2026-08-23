@@ -42,7 +42,6 @@ import AdminAttendancePage from "@/features/admin/pages/AdminAttendancePage";
 import AdminPaymentsPage from "@/features/admin/pages/AdminPaymentsPage";
 import AdminInstallmentPaymentsPage from "@/features/admin/pages/AdminInstallmentPaymentsPage";
 import AdminPayrollPage from "@/features/admin/pages/AdminPayrollPage";
-import AdminPayrollProofPage from "@/features/admin/pages/AdminPayrollProofPage";
 import AdminInstructorPayrollRequestDetailPage from "@/features/admin/pages/AdminInstructorPayrollRequestDetailPage";
 import AdminPlacementTestsPage from "@/features/admin/pages/AdminPlacementTestsPage";
 import AdminCertificationsPage from "@/features/admin/pages/AdminCertificationsPage";
@@ -149,7 +148,6 @@ export function AppRoutes() {
             path="/dashboard/admin/payroll/instructor-requests"
             element={<Navigate to="/dashboard/admin/payroll?tab=requests" replace />}
           />
-          <Route path="/dashboard/admin/payroll/proof" element={<AdminPayrollProofPage />} />
           <Route
             path="/dashboard/admin/payroll/submissions"
             element={<Navigate to="/dashboard/admin/payroll?tab=proof" replace />}

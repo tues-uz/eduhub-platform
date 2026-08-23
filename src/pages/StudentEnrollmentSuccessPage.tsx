@@ -15,12 +15,7 @@ import {
 import { SessionTimingChip } from "@/features/courses/SessionTimingChip";
 import { useScheduleAttendanceState } from "@/features/courses/useScheduleAttendanceState";
 import {
-  enrollmentApplicationStore,
-  type EnrollmentApplicationRecord,
-} from "@/features/enrollment/enrollmentApplicationStore";
-import {
   buildEnrollmentScheduleSessionSummaries,
-  enrollmentRecordToPdfData,
   type EnrollmentApplicationPdfData,
   type EnrollmentScheduleSessionSummary,
 } from "@/features/enrollment/enrollmentApplicationPdf";
@@ -55,20 +50,7 @@ function resolvePdfData(
   } catch {
     /* ignore */
   }
-  const pending = enrollmentApplicationStore.findPendingForCourseAndEmail(courseId, emailNorm);
-  if (pending) return enrollmentRecordToPdfData(pending);
   return null;
-}
-
-function findRecordForCourse(
-  courseId: string | undefined,
-  emailNorm: string,
-): EnrollmentApplicationRecord | undefined {
-  if (!courseId) return undefined;
-  return enrollmentApplicationStore
-    .list()
-    .filter((r) => r.courseId === courseId && r.applicantEmailNorm === emailNorm)
-    .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))[0];
 }
 
 function isHttpUrl(value: string): boolean {
@@ -178,16 +160,11 @@ const StudentEnrollmentSuccessPage = () => {
   const courseId = rawCourseId ? decodeURIComponent(rawCourseId) : undefined;
   const location = useLocation();
   const { user } = useAuthSession();
-  const emailNorm = user.email.trim().toLowerCase();
+  const emailNorm = (user.email ?? "").trim().toLowerCase();
 
   const pdfData = useMemo(
     () => resolvePdfData(courseId, emailNorm, location.state as LocationState | null),
     [courseId, emailNorm, location.state],
-  );
-
-  const latestRecord = useMemo(
-    () => findRecordForCourse(courseId, emailNorm),
-    [courseId, emailNorm],
   );
 
   const [teacherName, setTeacherName] = useState(pdfData?.teacherName?.trim() || "");
@@ -254,7 +231,6 @@ const StudentEnrollmentSuccessPage = () => {
   const displayTeacher = teacherName ? formatDisplayPersonName(teacherName) || teacherName : "";
   const joinFrom = d.joinFromSessionNumber ?? 1;
   const meetingCount = scheduleSessions.length || d.scheduleSessionCount || 0;
-  const isPending = !latestRecord || latestRecord.status === "PENDING";
 
   const contactRows = (
     [
@@ -297,16 +273,9 @@ const StudentEnrollmentSuccessPage = () => {
                     {t("enrollmentSuccess.applicationReceived")}
                   </h1>
                   <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                      isPending
-                        ? "bg-amber-100 text-amber-900"
-                        : "bg-emerald-100 text-emerald-900",
-                    )}
+                    className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900"
                   >
-                    {isPending
-                      ? t("enrollmentSuccess.pendingReview")
-                      : latestRecord?.status ?? t("enrollmentSuccess.submittedStatus")}
+                    {t("enrollmentSuccess.pendingReview")}
                   </span>
                 </div>
                 <p className="mt-1.5 text-sm leading-6 text-zinc-500">

@@ -29,7 +29,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Lock } from "@/lib/icons";
 import { eduhubAdmin } from "@/api/eduhubClient";
+import { TemporaryPasswordDialog } from "@/features/admin/components/TemporaryPasswordDialog";
 import type { TeacherResponse, TeacherCourseRef } from "@/api/eduhubTypes";
 
 export default function AdminTeachersPage() {
@@ -40,6 +42,20 @@ export default function AdminTeachersPage() {
   const [loadFilter, setLoadFilter] = useState<string>("all");
   const [teachers, setTeachers] = useState<TeacherResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [resetPasswordData, setResetPasswordData] = useState<{ password: string; email: string } | null>(null);
+
+  const handleResetPassword = async (id: string, name: string, email: string) => {
+    if (!confirm(`This will replace ${name}'s current password with a new temporary one. They will need to change it on next login. Continue?`)) {
+      return;
+    }
+    try {
+      const res = await eduhubAdmin.resetUserPassword(id);
+      setResetPasswordData({ password: res.temporaryPassword, email });
+      toast.success(t("admin.resetPassword.toast.success"));
+    } catch (err: unknown) {
+      toast.error((err as Error).message || t("admin.resetPassword.toast.failed"));
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -177,7 +193,17 @@ export default function AdminTeachersPage() {
                         <Badge variant="secondary">{t("admin.shared.inactive")}</Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right flex items-center justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleResetPassword(teacher.id, teacher.fullName, teacher.email)}
+                        title={t("admin.resetPassword.action")}
+                      >
+                        <Lock className="h-4 w-4 mr-1.5" />
+                        {t("admin.resetPassword.action")}
+                      </Button>
                       <Button type="button" variant="outline" size="sm" onClick={() => setProfileTeacher(teacher)}>
                         {t("admin.teachers.viewProfile")}
                       </Button>
@@ -279,6 +305,14 @@ export default function AdminTeachersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {resetPasswordData && (
+          <TemporaryPasswordDialog
+            temporaryPassword={resetPasswordData.password}
+            email={resetPasswordData.email}
+            onClose={() => setResetPasswordData(null)}
+          />
+        )}
       </div>
   );
 }

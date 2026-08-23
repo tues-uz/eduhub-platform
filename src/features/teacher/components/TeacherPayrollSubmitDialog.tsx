@@ -39,9 +39,8 @@ import {
 } from "@/features/payroll/payrollMonthPayout";
 import { formatMoney } from "@/features/payroll/classPayrollAggregate";
 import {
-  getInstructorRevenueShare,
-  getPlatformRevenueShare,
-} from "@/features/payroll/instructorRevenueShareStorage";
+  useMyInstructorRevenueShare,
+} from "@/features/payroll/revenueShare";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
@@ -98,8 +97,8 @@ export function TeacherPayrollSubmitDialog({
   onSubmit,
 }: Props) {
   const { t } = useTranslation();
-  const instructorShare = getInstructorRevenueShare(instructorEmail);
-  const platformShare = getPlatformRevenueShare(instructorEmail);
+  const instructorShare = useMyInstructorRevenueShare();
+  const platformShare = 1 - instructorShare;
   const payrollSchedule = usePayrollRequestSchedule({
     classSection,
     course,
@@ -144,6 +143,7 @@ export function TeacherPayrollSubmitDialog({
         isApiCourse,
         payrollSchedule.scheduleProposal,
         payrollSchedule.slots.length > 0,
+        payrollSchedule.apiCourse,
       ) ?? "Months come from the schedule admin created and you approved."
     );
   }, [payrollSchedule]);
@@ -182,7 +182,7 @@ export function TeacherPayrollSubmitDialog({
       platformShareLabel: formatMoney(platformShareAmount, classPriceCurrency),
       hasPrice: true,
     };
-  }, [classPriceCurrency, enrolledStudentCount, instructorShare, listedTuitionPerStudent]);
+  }, [classPriceCurrency, enrolledStudentCount, instructorShare, platformShare, listedTuitionPerStudent]);
 
   const monthlyInstructorPayroll = useMemo(() => {
     const studentCount = paidStudentCount > 0 ? paidStudentCount : enrolledStudentCount;
@@ -198,7 +198,7 @@ export function TeacherPayrollSubmitDialog({
           slots: payrollSchedule.slots,
           schedulePeriodKey: option.id,
           paidStudentCount: studentCount,
-          instructorEmail,
+          instructorShare,
         });
         if (!quote) return null;
         return {
@@ -226,7 +226,7 @@ export function TeacherPayrollSubmitDialog({
     enrolledStudentCount,
     listedTuitionPerStudent,
     paidStudentCount,
-    instructorEmail,
+    instructorShare,
     payrollSchedule.slots,
     periodOptionViews,
   ]);
@@ -240,11 +240,11 @@ export function TeacherPayrollSubmitDialog({
       slots: payrollSchedule.slots,
       schedulePeriodKey: form.schedulePeriodKey,
       paidStudentCount,
-      instructorEmail,
+      instructorShare,
     });
   }, [
     form?.schedulePeriodKey,
-    instructorEmail,
+    instructorShare,
     listedTuitionPerStudent,
     payrollSchedule.apiCourse?.pricing?.currency,
     paymentCurrency,

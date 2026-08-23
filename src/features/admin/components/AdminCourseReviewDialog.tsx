@@ -11,7 +11,6 @@ import {
   AdminActionCodeField,
   useAdminActionCodeState,
 } from "@/features/admin/components/AdminActionCodeField";
-import { courseReviewAuditStore } from "@/features/admin/courseReviewAuditStore";
 import { validateAdminActionCodeOrThrow } from "@/features/admin/adminStaffCode";
 import { Button } from "@/components/ui/button";
 import {
@@ -101,7 +100,6 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
         const rejectionReason = rejectionInput.trim();
         if (!rejectionReason) throw new Error(t("admin.components.courseReviewDialog.toast.rejectionRequired"));
         const result = await eduhubAdmin.reviewCourse(courseId, { decision, rejectionReason, adminActionCode: code });
-        courseReviewAuditStore.record(courseId, decision, code);
         return result;
       }
 
@@ -131,7 +129,6 @@ export function AdminCourseReviewDialog({ courseId, courseTitle, open, onOpenCha
         trialCode: detail?.pricing?.trialCode ?? undefined,
         adminActionCode: code,
       });
-      courseReviewAuditStore.record(courseId, decision, code);
       return result;
     },
     onSuccess: (_data, decision) => {

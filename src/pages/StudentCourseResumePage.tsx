@@ -3,9 +3,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, FileText } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
-import { useAuthSession } from "@/features/auth/context";
 import { ClassResumeArticleLayout } from "@/features/courses/ClassResumeArticleLayout";
-import { enrollmentApplicationStore } from "@/features/enrollment/enrollmentApplicationStore";
 import { useStudentCoursesQuery } from "@/features/student/hooks/useStudentQueries";
 import { eduhubClassResumes } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
@@ -18,8 +16,6 @@ const StudentCourseResumePage = () => {
   }>();
   const courseId = rawCourseId ? decodeURIComponent(rawCourseId) : "";
   const resumeId = rawResumeId ? decodeURIComponent(rawResumeId) : "";
-  const { user } = useAuthSession();
-  const emailNorm = user.email.trim().toLowerCase();
   const { data: enrolledCourses = [] } = useStudentCoursesQuery();
 
   const isApiCourse = Boolean(courseId) && isUuid(courseId);
@@ -33,10 +29,7 @@ const StudentCourseResumePage = () => {
 
   const resume = apiResumeQuery.data ?? null;
 
-  const isEnrolled = enrolledCourses.some((c) => String(c.id) === courseId);
-  const hasAccess =
-    isEnrolled ||
-    (emailNorm && enrollmentApplicationStore.isApprovedForCourse(courseId, emailNorm));
+  const hasAccess = enrolledCourses.some((c) => String(c.id) === courseId);
 
   const courseTitle = enrolledCourses.find((c) => String(c.id) === courseId)?.title ?? courseId;
 

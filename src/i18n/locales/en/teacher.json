@@ -512,27 +512,16 @@
           "remove": "Remove",
           "previewAlt": "Quiz cover preview"
         },
-        "typeLabel": "Type",
-        "typePlaceholder": "Select type",
-        "typeHint": "Quiz for practice, or Placement test for assessment.",
         "classLabel": "Class",
         "classPlaceholder": "Select class",
         "noClass": "No class",
         "classLockedHint": "Saved for the class you opened from My Class.",
         "classPickerHint": "Link to one of your classes.",
         "titleLabels": {
-          "placement": "Placement test title",
-          "quiz": "Quiz title"
+          "quiz": "Quiz title",
+          "placement": "Placement test title"
         },
         "titlePlaceholder": "e.g. Week 2 practice quiz",
-        "release": {
-          "label": "Release date & time",
-          "date": "Date",
-          "time": "Time",
-          "selectDate": "Select date",
-          "selectTime": "Select time"
-        },
-        "releaseHint": "When students can take this placement test.",
         "questionsTitle": "Questions",
         "questionsHint": "Multiple choice — mark the correct option.",
         "addQuestion": "Add question",
@@ -559,11 +548,27 @@
           "option": "Option {{letter}}"
         },
         "saveChanges": "Save",
-        "createQuiz": "Create quiz"
-      },
-      "types": {
-        "quiz": "Quiz",
-        "placementTest": "Placement test"
+        "createQuiz": "Create quiz",
+        "typeLabel": "Type",
+        "typePlaceholder": "Select type",
+        "typeHint": "Quiz for practice, or Placement test for assessment.",
+        "release": {
+          "label": "Release date & time",
+          "date": "Date",
+          "time": "Time",
+          "selectDate": "Select date",
+          "selectTime": "Select time"
+        },
+        "bands": {
+          "label": "Score-to-level bands",
+          "hint": "Map score ranges to a level. The student's best result sets their level for this subject.",
+          "minScore": "Minimum score",
+          "maxScore": "Maximum score",
+          "addRow": "Add band"
+        },
+        "gatedCoursesLabel": "Which classes does this gate?",
+        "gatedCoursesHint": "Students must pass this test to enroll in any checked class. Leave all unchecked if this test shouldn't gate anything yet.",
+        "noClassesYet": "You don't have any classes yet."
       },
       "errors": {
         "titleRequired": "Quiz title is required.",
@@ -582,6 +587,10 @@
           "title": "Remove this question?",
           "description": "This question will be removed from the quiz."
         }
+      },
+      "types": {
+        "quiz": "Quiz",
+        "placementTest": "Placement test"
       }
     },
     "quizResults": {
@@ -1293,6 +1302,20 @@
       "toast": {
         "generateFailed": "Could not generate attendance QR",
         "stopFailed": "Could not stop attendance session"
+      },
+      "confirmSameCourse": {
+        "title": "Start a new meeting?",
+        "body": "{{present}} of {{enrolled}} students have checked in to \"{{meetingName}}\". Starting a new QR closes that meeting and begins a separate one with an empty roster. Those students stay recorded on the old meeting, but this will count as two meetings held.",
+        "keep": "Keep current QR",
+        "confirm": "Close it & start new meeting"
+      },
+      "confirmCrossCourse": {
+        "title": "You still have a check-in open elsewhere",
+        "body": "Starting this one will close it.",
+        "checkedIn": "checked in",
+        "remaining": "remaining",
+        "cancel": "Cancel",
+        "confirm": "Close it & start here"
       }
     },
     "attendancePicker": {

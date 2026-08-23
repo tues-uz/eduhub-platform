@@ -133,7 +133,11 @@
     "clearFilters": "Filtrlarni tozalash",
     "defaultCategory": "Dars",
     "dayPatternOdd": "Toq kun",
-    "dayPatternEven": "Juft kun"
+    "dayPatternEven": "Juft kun",
+    "placementGate": {
+      "takeTest": "Take the {{testTitle}} test to join",
+      "belowLevel": "You're placed at {{achieved}} — this class needs {{required}}"
+    }
   },
   "classSearch": {
     "placeholder": "Darslarni qidirish…",
@@ -280,6 +284,7 @@
     "greatJob": "Ajoyib ish!",
     "completedMessage": "Siz {{title}} ni muvaffaqiyatli tugatdingiz.",
     "yourScore": "Sizning ballingiz",
+    "yourLevel": "Sizning darajangiz",
     "exploreMyClass": "Mening darsimni ko'rish",
     "submitFailed": "Daraja testini yuborib bo'lmadi. Qayta urinib ko'ring."
   },

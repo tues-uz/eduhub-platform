@@ -85,6 +85,7 @@ export function ClassSchedulePreviewPanel({
     isApiCourse,
     scheduleProposal,
     sessionSlotsPreview.length > 0,
+    apiCourse,
   );
 
   const tabValue = paymentMonthsToScheduleTab(

@@ -243,12 +243,7 @@ const StudentPaymentInfo = () => {
     t("payment.filterAllStatuses");
 
   const loadRows = useCallback(() => {
-    const emailNorm = user.email.trim().toLowerCase();
-    if (!emailNorm) {
-      setRows([]);
-      setLoading(false);
-      return;
-    }
+    const emailNorm = (user.email ?? "").trim().toLowerCase();
     setLoading(true);
     eduhubEnrollmentApplications
       .getMy(emailNorm)

@@ -494,27 +494,16 @@
           "remove": "移除",
           "previewAlt": "测验封面预览"
         },
-        "typeLabel": "Type",
-        "typePlaceholder": "Select type",
-        "typeHint": "测验 for practice or Placement test for assessment.",
         "classLabel": "课程",
         "classPlaceholder": "Select 课程",
         "noClass": "No 课程",
         "classLockedHint": "课程 is locked for this quiz.",
         "classPickerHint": "加载中…",
         "titleLabels": {
-          "placement": "Placement test title *",
-          "quiz": "测验 title *"
+          "quiz": "测验 title *",
+          "placement": "Placement test title"
         },
         "titlePlaceholder": "e.g. Economics Placement Test",
-        "release": {
-          "label": "Release date and time",
-          "date": "Date",
-          "time": "Time",
-          "selectDate": "Select date",
-          "selectTime": "Select time"
-        },
-        "releaseHint": "When this placement test becomes available to 学生s.",
         "questionsTitle": "Questions (multiple choice)",
         "addQuestion": "Add question",
         "questionActions": {
@@ -537,11 +526,27 @@
           "option": "Option {{letter}}"
         },
         "saveChanges": "保存 changes",
-        "createQuiz": "Create quiz"
-      },
-      "types": {
-        "quiz": "测验",
-        "placementTest": "Placement test"
+        "createQuiz": "Create quiz",
+        "typeLabel": "Type",
+        "typePlaceholder": "Select type",
+        "typeHint": "Quiz for practice, or Placement test for assessment.",
+        "release": {
+          "label": "Release date & time",
+          "date": "Date",
+          "time": "Time",
+          "selectDate": "Select date",
+          "selectTime": "Select time"
+        },
+        "bands": {
+          "label": "Score-to-level bands",
+          "hint": "Map score ranges to a level. The student's best result sets their level for this subject.",
+          "minScore": "Minimum score",
+          "maxScore": "Maximum score",
+          "addRow": "Add band"
+        },
+        "gatedCoursesLabel": "Which classes does this gate?",
+        "gatedCoursesHint": "Students must pass this test to enroll in any checked class. Leave all unchecked if this test shouldn't gate anything yet.",
+        "noClassesYet": "You don't have any classes yet."
       },
       "errors": {
         "titleRequired": "测验 title is required.",
@@ -560,6 +565,10 @@
           "title": "Remove this question?",
           "description": "This question will be removed from the quiz."
         }
+      },
+      "types": {
+        "quiz": "Quiz",
+        "placementTest": "Placement test"
       }
     },
     "quizResults": {
@@ -1215,6 +1224,20 @@
       "toast": {
         "generateFailed": "Could not generate attendance QR",
         "stopFailed": "Could not stop attendance session"
+      },
+      "confirmSameCourse": {
+        "title": "Start a new meeting?",
+        "body": "{{present}} of {{enrolled}} students have checked in to \"{{meetingName}}\". Starting a new QR closes that meeting and begins a separate one with an empty roster. Those students stay recorded on the old meeting, but this will count as two meetings held.",
+        "keep": "Keep current QR",
+        "confirm": "Close it & start new meeting"
+      },
+      "confirmCrossCourse": {
+        "title": "You still have a check-in open elsewhere",
+        "body": "Starting this one will close it.",
+        "checkedIn": "checked in",
+        "remaining": "remaining",
+        "cancel": "Cancel",
+        "confirm": "Close it & start here"
       },
       "setupTitle": "设置",
       "sessionLabel": "课时",

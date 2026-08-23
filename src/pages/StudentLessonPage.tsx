@@ -12,7 +12,6 @@ import {
   ExternalLink,
 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
-import { lessonProgressStore } from "@/features/student/data/lessonProgressStore";
 import { eduhubCourses, eduhubLessons, eduhubLessonProgress } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
 
@@ -117,11 +116,7 @@ const StudentLessonPage = () => {
 
   const [markedComplete, setMarkedComplete] = useState(false);
   useEffect(() => {
-    if (!courseId || !lessonId) return;
-    if (!isApiCourse) {
-      setMarkedComplete(lessonProgressStore.isComplete(courseId, lessonId));
-      return;
-    }
+    if (!courseId || !lessonId || !isApiCourse) return;
     if (!currentLessonModuleId) return;
     let cancelled = false;
     eduhubLessonProgress
@@ -273,14 +268,10 @@ const StudentLessonPage = () => {
                 if (!courseId || !lessonId) return;
                 const next = !markedComplete;
                 setMarkedComplete(next);
-                if (isApiCourse && currentLessonModuleId) {
-                  eduhubLessonProgress
-                    .mark(courseId, currentLessonModuleId, lessonId, { completed: next })
-                    .catch(() => setMarkedComplete(!next));
-                  return;
-                }
-                if (next) lessonProgressStore.markComplete(courseId, lessonId);
-                else lessonProgressStore.unmarkComplete(courseId, lessonId);
+                if (!isApiCourse || !currentLessonModuleId) return;
+                eduhubLessonProgress
+                  .mark(courseId, currentLessonModuleId, lessonId, { completed: next })
+                  .catch(() => setMarkedComplete(!next));
               }}
             >
               {markedComplete ? (

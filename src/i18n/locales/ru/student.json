@@ -133,7 +133,11 @@
     "clearFilters": "Сбросить фильтры",
     "defaultCategory": "Класс",
     "dayPatternOdd": "Нечётный день",
-    "dayPatternEven": "Чётный день"
+    "dayPatternEven": "Чётный день",
+    "placementGate": {
+      "takeTest": "Take the {{testTitle}} test to join",
+      "belowLevel": "You're placed at {{achieved}} — this class needs {{required}}"
+    }
   },
   "classSearch": {
     "placeholder": "Поиск классов…",
@@ -280,6 +284,7 @@
     "greatJob": "Отличная работа!",
     "completedMessage": "Вы успешно завершили {{title}}.",
     "yourScore": "Ваш результат",
+    "yourLevel": "Ваш уровень",
     "exploreMyClass": "Изучить «Мой класс»",
     "submitFailed": "Не удалось отправить вступительный тест. Попробуйте снова."
   },

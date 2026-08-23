@@ -16,10 +16,10 @@ import {
   persistUiLanguagePreference,
 } from "@/features/settings/LanguageSettingsSection";
 
-function formatRegistrationDate(value: string, notAvailable: string): string {
-  if (!value.trim()) return notAvailable;
-  const parsed = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(parsed.getTime())) return value;
+function formatRegistrationDate(value: string | undefined | null, notAvailable: string): string {
+  if (!value?.trim()) return notAvailable;
+  const parsed = new Date(`${value.trim()}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return value.trim();
   return parsed.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
@@ -50,7 +50,7 @@ const StudentSettings = () => {
   const notAvailable = t("common.notAvailable");
   const { user, refreshUser } = useAuthSession();
   const [name, setName] = useState(user.name);
-  const [email, setEmail] = useState(user.email);
+  const [email, setEmail] = useState(user.email ?? "");
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl ?? "");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -79,10 +79,15 @@ const StudentSettings = () => {
     const dateOfBirth = formatRegistrationDate(apiUser?.dateOfBirth ?? "", notAvailable);
     const birthCity = (apiUser?.birthCity ?? "").trim() || notAvailable;
     const latestSchool = (apiUser?.latestSchool ?? "").trim() || notAvailable;
+    const isInternal =
+      apiUser?.studentAffiliation === "INTERNAL" ||
+      (apiUser?.latestSchool ? apiUser.latestSchool.startsWith("TUES University") : false);
+    const affiliation = isInternal ? "Internal (TUES University)" : "External";
+    const faculty = (apiUser?.faculty ?? "").trim() || notAvailable;
 
     return {
       fullName: formatDisplayPersonName(apiUser?.fullName ?? user.name),
-      email: (apiUser?.email ?? user.email).trim() || notAvailable,
+      email: (apiUser?.email ?? user.email ?? "").trim() || notAvailable,
       phone,
       parentPhone,
       passport,
@@ -92,6 +97,9 @@ const StudentSettings = () => {
       dateOfBirth,
       birthCity,
       latestSchool,
+      affiliation,
+      faculty,
+      isInternal,
     };
   }, [apiUser, notAvailable, user.email, user.name, user.phoneNumber]);
 
@@ -294,6 +302,10 @@ const StudentSettings = () => {
                 ) : null}
                 <RegistrationDetail icon={Calendar} label={t("settings.dateOfBirth")} value={registrationDetails.dateOfBirth} notAvailable={notAvailable} />
                 <RegistrationDetail icon={MapPin} label={t("settings.bornCity")} value={registrationDetails.birthCity} notAvailable={notAvailable} />
+                <RegistrationDetail icon={GraduationCap} label={t("settings.studentAffiliation") || "Affiliation"} value={registrationDetails.affiliation} notAvailable={notAvailable} />
+                {registrationDetails.isInternal ? (
+                  <RegistrationDetail icon={GraduationCap} label={t("auth.signUp.faculty") || "Faculty"} value={registrationDetails.faculty} notAvailable={notAvailable} />
+                ) : null}
                 <RegistrationDetail icon={GraduationCap} label={t("settings.latestSchool")} value={registrationDetails.latestSchool} notAvailable={notAvailable} />
               </div>
             </div>

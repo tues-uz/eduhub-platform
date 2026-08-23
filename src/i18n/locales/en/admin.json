@@ -189,6 +189,15 @@
         "updateFailed": "Failed to update status"
       }
     },
+    "resetPassword": {
+      "action": "Reset password",
+      "confirmTitle": "Reset password?",
+      "confirmDescription": "This will replace {{name}}'s current password with a new temporary one. They will need to change it on next login.",
+      "toast": {
+        "success": "Password reset successfully",
+        "failed": "Failed to reset password"
+      }
+    },
     "teachers": {
       "description": "Lecturer accounts and class load.",
       "searchPlaceholder": "Search name, email, classes, students…",

@@ -7,7 +7,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { eduhubAttendance } from "@/api/eduhubClient";
 import { isUuid } from "@/api/utils";
-import { getPresentForStudent } from "@/features/attendance/attendanceRollStorage";
 import {
   formatMeetingOptionLabel,
   pickStoredMeetingForScheduleSlot,
@@ -218,16 +217,11 @@ export function TeacherAttendanceMatrixPanel({
           rosterBySession.get(sessionId)?.get(student.id) ??
           rosterBySession.get(sessionId)?.get(`email:${student.email.trim().toLowerCase()}`);
         if (apiEntry?.present) return apiEntry;
-
-        const localEntry = getPresentForStudent(courseId, sessionId, student.id, student.email);
-        if (localEntry) {
-          return { present: true, checkedAt: localEntry.checkedAt };
-        }
       }
 
       return { present: false };
     };
-  }, [courseId, rosterBySession]);
+  }, [rosterBySession]);
 
   const filteredStudents = useMemo(() => {
     const q = search.trim().toLowerCase();

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { adminPayrollHistoryStore } from "@/features/admin/data/adminPayrollHistoryStore";
 import { useTranslation } from "react-i18next";
 import {
   adminPayrollProofStore,
@@ -15,7 +14,6 @@ import {
   payrollProofKey,
   usePayrollProofMap,
 } from "@/features/admin/data/adminPayrollProofStore";
-import { notifyInstructorPayrollSubmitted } from "@/features/notifications/appNotificationStore";
 
 function formatShortDate(iso: string) {
   try {
@@ -115,33 +113,11 @@ export function PayrollInstructorProofPanel({
       toast.error(t("admin.components.payrollProofPanel.toast.approveFailed"));
       return;
     }
-    adminPayrollHistoryStore.add({
-      classSection: className,
-      course,
-      instructorName: instructorName ?? "—",
-      instructorEmail: instructorEmail?.trim() || undefined,
-      summary: payrollSummary ?? "—",
-      notesPreview: notesDraft.trim() ? notesDraft.trim().slice(0, 160) : undefined,
-    });
-    notifyInstructorPayrollSubmitted({
-      instructorEmailNorm: instructorEmail?.trim() ?? "",
-      instructorName: (instructorName ?? "").trim(),
-      classSection: className,
-      course,
-      summary: payrollSummary ?? "",
-      adminNote: notesDraft.trim() || undefined,
-    });
-    const canRouteNotify =
-      Boolean(instructorEmail?.trim()) || Boolean((instructorName ?? "").trim());
-    toast.success(t("admin.components.payrollProofPanel.toast.submittedApproved"), {
-      description: canRouteNotify
-        ? "Instructor notified in-app (demo: same browser storage)."
-        : "No instructor email or name on this page — notification skipped. Open proof from a class card or payroll request so instructor context is set.",
-    });
+    toast.success(t("admin.components.payrollProofPanel.toast.submittedApproved"));
   };
 
-  const onRemove = () => {
-    adminPayrollProofStore.remove(className, course);
+  const onRemove = async () => {
+    await adminPayrollProofStore.remove(className, course, requestId);
     toast.message(t("admin.components.payrollProofPanel.toast.fileRemoved"));
   };
 
@@ -281,7 +257,7 @@ export function PayrollInstructorProofPanel({
                 variant="ghost"
                 size="sm"
                 className="w-full gap-1.5 text-red-600 hover:bg-red-50 hover:text-red-700"
-                onClick={onRemove}
+                onClick={() => void onRemove()}
               >
                 <Trash2 className="h-3.5 w-3.5" aria-hidden />
                 Remove file

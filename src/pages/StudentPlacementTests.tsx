@@ -5,6 +5,7 @@ import { CheckCircle2, ClipboardList, Loader2 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { StudentQuizListEmptyState } from "@/components/StudentQuizListEmptyState";
 import { eduhubCourseQuizzes, QuizResponseForStudent, QuizResultResponse } from "@/api/eduhubClient";
+import { formatCourseLevel } from "@/features/teacher/data/courseLevels";
 
 const LETTER_COLORS = ["bg-blue-500", "bg-red-500", "bg-amber-500", "bg-green-500"] as const;
 
@@ -24,6 +25,7 @@ export default function StudentPlacementTests() {
   const [quizResult, setQuizResult] = useState<QuizResultResponse | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [quizStartTime, setQuizStartTime] = useState<number | null>(null);
+  const [achievedLevel, setAchievedLevel] = useState<string | null>(null);
 
   const fetchQuizzes = useCallback(async () => {
     try {
@@ -77,12 +79,25 @@ export default function StudentPlacementTests() {
     } else {
       try {
         setSubmitting(true);
-        if (!currentQuiz.courseId) throw new Error("Class ID missing on quiz");
         const timeSpentSeconds = quizStartTime ? Math.round((Date.now() - quizStartTime) / 1000) : 0;
-        const result = await eduhubCourseQuizzes.submit(currentQuiz.courseId, currentQuiz.id, { answers: newAnswers, timeSpentSeconds });
+        // Placement tests are institution-wide and never have a courseId; the URL still needs a
+        // UUID in that slot, but the backend ignores it entirely and grades by quizId alone.
+        const result = await eduhubCourseQuizzes.submit(
+          currentQuiz.courseId || currentQuiz.id,
+          currentQuiz.id,
+          { answers: newAnswers, timeSpentSeconds },
+        );
         setQuizResult(result);
         setCompletedQuizIds(prev => new Set(prev).add(currentQuiz.id));
         setScreen("result");
+
+        eduhubCourseQuizzes
+          .getMyPlacementResults()
+          .then((results) => {
+            const match = results.find((r) => r.quizId === currentQuiz.id);
+            setAchievedLevel(match ? match.levelCode : null);
+          })
+          .catch(() => setAchievedLevel(null));
       } catch (e) {
         console.error("Failed to submit placement test", e);
         alert(t("placementTests.submitFailed"));
@@ -281,6 +296,17 @@ export default function StudentPlacementTests() {
                     {score}<span className="text-3xl text-violet-300">/100</span>
                   </p>
                 </div>
+
+                {achievedLevel && (
+                  <div className="mb-8 -mt-4 inline-block rounded-2xl bg-green-50 px-8 py-4 border-2 border-dashed border-green-200">
+                    <p className="text-sm font-bold text-green-500 uppercase tracking-[0.2em] mb-1">
+                      {t("placementTests.yourLevel")}
+                    </p>
+                    <p className="text-2xl font-black text-green-700">
+                      {formatCourseLevel(achievedLevel)}
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex flex-col items-center gap-4">
                   <Button

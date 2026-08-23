@@ -317,6 +317,8 @@
       "subscribeConsent": "Obuna bo'lish orqali siz bizning",
       "privacyPolicy": "Maxfiylik siyosatimizga",
       "subscribeConsentSuffix": "rozilik bildirasiz va EduHub yangilanishlarini olishga rozilik berasiz.",
+      "subscribeSuccess": "Obuna bo'lganingiz uchun rahmat!",
+      "subscribeError": "Xatolik yuz berdi. Qaytadan urinib ko'ring.",
       "contact": "Aloqa",
       "menuLinks": "Menyu havolalari",
       "copyright": "© 2026 EduHub. Barcha huquqlar himoyalangan.",
