@@ -191,7 +191,11 @@
     "viewCalendar": "View calendar",
     "due": "Due {{date}}",
     "join": "Join",
-    "open": "Open"
+    "open": "Open",
+    "online": "Online",
+    "loading": "Loading your schedule...",
+    "loadFailed": "Failed to load your schedule",
+    "empty": "No upcoming classes or assignments right now."
   },
   "progressPage": {
     "subtitle": "Track your learning progress across all classes.",

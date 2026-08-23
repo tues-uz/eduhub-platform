@@ -186,7 +186,11 @@
     "viewCalendar": "Kalendarni ko'rish",
     "due": "Muddat: {{date}}",
     "join": "Qo'shilish",
-    "open": "Ochish"
+    "open": "Ochish",
+    "online": "Onlayn",
+    "loading": "Jadval yuklanmoqda...",
+    "loadFailed": "Jadvalni yuklab bo'lmadi",
+    "empty": "Hozircha yaqinlashayotgan darslar yoki topshiriqlar yo'q."
   },
   "progressPage": {
     "subtitle": "Barcha darslardagi o'rganish progressingizni kuzating.",

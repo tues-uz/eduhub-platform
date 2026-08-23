@@ -6,6 +6,7 @@ export const studentKeys = {
   browseableCourses: (enrolledKey: string) =>
     [...studentKeys.all, "browseableCourses", enrolledKey] as const,
   upcomingSchedule: () => [...studentKeys.all, "upcomingSchedule"] as const,
+  upcomingAssignments: () => [...studentKeys.all, "upcomingAssignments"] as const,
   courseScheduleSummary: (courseId: string) =>
     [...studentKeys.all, "courseScheduleSummary", courseId] as const,
 };

@@ -186,7 +186,11 @@
     "viewCalendar": "查看日历",
     "due": "截止 {{date}}",
     "join": "加入",
-    "open": "打开"
+    "open": "打开",
+    "online": "线上",
+    "loading": "正在加载您的日程...",
+    "loadFailed": "加载日程失败",
+    "empty": "目前没有即将开始的课程或作业。"
   },
   "progressPage": {
     "subtitle": "跟踪您在所有课程中的学习进度。",
