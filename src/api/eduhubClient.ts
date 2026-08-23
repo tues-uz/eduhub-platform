@@ -551,6 +551,10 @@ export const eduhubCourseQuizzes = {
   getAllMyResults: () =>
     request<QuizResultResponse[]>("/quizzes/my-results"),
 
+  /** All attempts for one quiz, across every student who took it — for lecturer/admin monitoring views. */
+  getAttemptsForQuiz: (quizId: string) =>
+    request<QuizResultResponse[]>(`/quizzes/${quizId}/attempts`),
+
   /** The authenticated student's achieved placement levels, one per placement test taken. */
   getMyPlacementResults: () =>
     request<StudentPlacementResultResponse[]>("/placement-results/me"),
@@ -626,6 +630,7 @@ export interface PlacementTestGatedCourse {
   id: string;
   title: string;
   level?: string;
+  lecturerName?: string;
 }
 
 export interface PlacementTestAdminResponse {

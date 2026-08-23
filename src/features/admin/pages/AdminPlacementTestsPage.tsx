@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import { eduhubCourseQuizzes } from "@/api/eduhubClient";
+import { eduhubCourseQuizzes, eduhubPlacementTestsAdmin } from "@/api/eduhubClient";
 import type { QuizResultResponse } from "@/api/eduhubClient";
 import { Loader2 } from "@/lib/icons";
 import { Badge } from "@/components/ui/badge";
@@ -44,24 +44,44 @@ export default function AdminPlacementTestsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
-    eduhubCourseQuizzes
-      .getAllMyResults()
-      .then((data) => {
-        const rows: PlacementRow[] = (data || []).map((r: QuizResultResponse) => ({
-          id: r.id,
-          studentName: r.student?.fullName || "—",
-          course: "General Placement",
-          lecturerName: "—",
-          quizTitle: "Placement Test",
-          scorePercent: r.scorePercent ?? 0,
-          passed: r.passed ?? false,
-          completedAt: r.completedAt ? new Date(r.completedAt).toLocaleDateString() : "—",
-        }));
+    eduhubPlacementTestsAdmin
+      .list()
+      .then(async (tests) => {
+        const perTest = await Promise.all(
+          tests.map((test) =>
+            eduhubCourseQuizzes
+              .getAttemptsForQuiz(test.id)
+              .then((attempts) => ({ test, attempts }))
+              .catch(() => ({ test, attempts: [] as QuizResultResponse[] })),
+          ),
+        );
+        if (cancelled) return;
+        const rows: PlacementRow[] = perTest.flatMap(({ test, attempts }) =>
+          attempts.map((r) => ({
+            id: r.id,
+            studentName: r.student?.fullName || "—",
+            course: test.gatedCourses.map((c) => c.title).join(", ") || "—",
+            lecturerName:
+              Array.from(new Set(test.gatedCourses.map((c) => c.lecturerName).filter(Boolean))).join(", ") || "—",
+            quizTitle: test.title,
+            scorePercent: r.scorePercent ?? 0,
+            passed: r.passed ?? false,
+            completedAt: r.completedAt ? new Date(r.completedAt).toLocaleDateString() : "—",
+          })),
+        );
         setResultsList(rows);
       })
-      .catch(() => setResultsList([]))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (!cancelled) setResultsList([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const courseOptions = useMemo(() => {
